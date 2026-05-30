@@ -62,6 +62,7 @@ create table public.analyses (
   confidence_score      numeric,
   career_fit_adjustment numeric,
   recommendation        text,
+  recommendation_label  text,
   narrative_json        jsonb,
   created_at            timestamptz not null default now()
 );
@@ -186,6 +187,12 @@ create policy "comparisons_all_own" on public.comparisons
 insert into storage.buckets (id, name, public)
 values ('resumes', 'resumes', false)
 on conflict (id) do nothing;
+
+-- Idempotent storage policies (safe to re-run if a prior attempt partially applied).
+drop policy if exists "resumes_storage_select_own" on storage.objects;
+drop policy if exists "resumes_storage_insert_own" on storage.objects;
+drop policy if exists "resumes_storage_update_own" on storage.objects;
+drop policy if exists "resumes_storage_delete_own" on storage.objects;
 
 create policy "resumes_storage_select_own" on storage.objects
   for select using (bucket_id = 'resumes' and auth.uid()::text = (storage.foldername(name))[1]);

@@ -60,7 +60,7 @@ Guest Mode uses anonymous sign-in, which still yields a valid JWT.
 - **careerFitAdjustment** — signed ±15 from industry + archetype alignment.
 - **fitScore** — adjusted qualification, blended toward a neutral 50 in
   proportion to low confidence.
-- **recommendation** — `strong_apply | apply | stretch | long_shot | not_recommended`.
+- **recommendation** — `strong_apply | apply | stretch | not_recommended` (V1 bands).
 
 > Neither client recomputes any of this. Both call `/analyze`. Run the tests
 > with `deno test` inside `functions/` to verify behavior.
@@ -73,3 +73,10 @@ supabase db push                         # apply migrations to the cloud DB
 supabase functions deploy parse-resume parse-job analyze
 supabase secrets set --env-file ./.env   # push OPENAI_API_KEY
 ```
+
+### Hosted DB setup via Dashboard
+
+If `db push` is not available, run **`supabase/scripts/hosted_bootstrap.sql`**
+in the project SQL Editor (one shot). It is idempotent: safe after partial runs
+that only created storage policies. Ends with `notify pgrst, 'reload schema'`
+so the API picks up new tables immediately.

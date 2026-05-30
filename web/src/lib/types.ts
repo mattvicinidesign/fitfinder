@@ -16,6 +16,11 @@ export interface ParsedResume {
   aiExperience: string[];
   tools: string[];
   archetypes: string[];
+  softwareModels?: string[];
+  country?: string | null;
+  timezone?: string | null;
+  desiredCompensation?: Compensation | null;
+  roleTitle?: string | null;
 }
 
 export interface Compensation {
@@ -31,23 +36,70 @@ export interface ParsedJob {
   workflows: string[];
   compensation: Compensation | null;
   toolRequirements: string[];
+  bonusToolRequirements?: string[];
   aiRequirements: string[];
+  softwareModels?: string[];
+  countryRequirement?: string | null;
+  timezoneRequirement?: string | null;
+  roleTitle?: string | null;
+  aiMaturityLevel?: number | null;
+  employerType?: "agency" | "product_company" | "unknown";
+  hireTarget?: "freelancer" | "agency" | "direct_hire" | "unknown";
+  postingContextDetail?: string | null;
+}
+
+export interface PostingContext {
+  employerType: "agency" | "product_company" | "unknown";
+  hireTarget: "freelancer" | "agency" | "direct_hire" | "unknown";
+  label: string;
+  detail: string | null;
+}
+
+export type MatchStatus = "match" | "mismatch" | "unknown";
+
+export type CategoryKey =
+  | "skills"
+  | "industry"
+  | "workflow"
+  | "tools"
+  | "aiEmphasis"
+  | "archetype"
+  | "softwareModel"
+  | "compensation"
+  | "country"
+  | "timezone";
+
+export interface CoverageMatchDetail {
+  label: string;
+  matched: boolean;
+  /** Resume text that satisfied the match (skill, tool, title, summary, etc.). */
+  resumeMatch?: string | null;
+  /** Tool was listed in a bonus / nice-to-have section of the posting. */
+  listedInBonus?: boolean;
+}
+
+/** @deprecated Use CoverageMatchDetail */
+export type SkillMatchDetail = CoverageMatchDetail;
+
+export interface CategoryScore {
+  category: CategoryKey;
+  label: string;
+  status: MatchStatus;
+  score: number;
+  weight: number;
+  contribution: number;
+  matchedCount?: number;
+  totalCount?: number;
+  matchDetail?: CoverageMatchDetail[];
+  /** @deprecated Use matchDetail */
+  skillsDetail?: CoverageMatchDetail[];
 }
 
 export type Recommendation =
   | "strong_apply"
   | "apply"
   | "stretch"
-  | "long_shot"
   | "not_recommended";
-
-export interface ScoreBreakdown {
-  skillsMatch: number;
-  toolsMatch: number;
-  aiMatch: number;
-  industryAlignment: number;
-  signalCoverage: number;
-}
 
 export interface ScoreResult {
   qualificationScore: number;
@@ -55,7 +107,15 @@ export interface ScoreResult {
   careerFitAdjustment: number;
   fitScore: number;
   recommendation: Recommendation;
-  breakdown: ScoreBreakdown;
+  recommendationLabel: string;
+  scoringMode: "guest" | "registered";
+  categoryBreakdown: CategoryScore[];
+  unknownCategories: string[];
+  explanation: string;
+  strengths: string[];
+  gaps: string[];
+  positiveSignalsFound: string[];
+  negativeSignalsFound: string[];
 }
 
 export interface Narrative {
@@ -70,11 +130,14 @@ export interface AnalysisResult {
   companyName: string | null;
   jobTitle: string | null;
   parsedJob: ParsedJob;
+  parsedResume?: ParsedResume;
+  /** Original pasted JD — used to detect bonus-section tools in the UI. */
+  jobDescription?: string | null;
   score: ScoreResult;
   narrative: Narrative;
+  postingContext?: PostingContext;
 }
 
-/** A persisted analyses row, as returned from the database. */
 export interface AnalysisRecord {
   id: string;
   company_name: string | null;
@@ -84,15 +147,9 @@ export interface AnalysisRecord {
   confidence_score: number | null;
   career_fit_adjustment: number | null;
   recommendation: Recommendation | null;
+  /** Canonical label from the scoring engine (e.g. "Strong Pursuit"). */
+  recommendation_label: string | null;
   narrative_json: Narrative | null;
   parsed_job_json: ParsedJob | null;
   created_at: string;
 }
-
-export const RECOMMENDATION_LABELS: Record<Recommendation, string> = {
-  strong_apply: "Strong apply",
-  apply: "Apply",
-  stretch: "Stretch",
-  long_shot: "Long shot",
-  not_recommended: "Not recommended",
-};

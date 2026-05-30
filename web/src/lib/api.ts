@@ -7,6 +7,7 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
+import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import type { AnalysisResult, ParsedJob, ParsedResume } from "@/lib/types";
 
 async function invoke<T>(
@@ -14,27 +15,58 @@ async function invoke<T>(
   body: Record<string, unknown>,
 ): Promise<T> {
   const supabase = createClient();
-  const { data, error } = await supabase.functions.invoke<T>(name, { body });
-  if (error) {
-    let message = error.message;
-    const context = (error as { context?: unknown }).context;
-    if (context instanceof Response) {
-      const payload = (await context
-        .clone()
-        .json()
-        .catch(() => null)) as { error?: string } | null;
-      if (payload?.error) message = payload.error;
-    }
-    throw new Error(message);
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) {
+    throw new Error("Sign in required. Use Continue as guest or your email.");
   }
-  return data as T;
+  await supabase.auth.refreshSession().catch(() => {
+    /* best-effort */
+  });
+
+  let res: Response;
+  try {
+    res = await fetch(`/api/functions/${name}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error(
+      "Could not reach the analysis service. Check your connection and try again.",
+    );
+  }
+
+  const payload = (await res.json().catch(() => null)) as
+    | T
+    | { error?: string; message?: string }
+    | null;
+
+  if (!res.ok) {
+    const err =
+      (payload && typeof payload === "object" && "error" in payload
+        ? payload.error
+        : null) ??
+      (payload && typeof payload === "object" && "message" in payload
+        ? payload.message
+        : null) ??
+      res.statusText;
+    if (res.status === 401) {
+      throw new Error("Session expired. Sign in again (guest or email).");
+    }
+    throw new Error(err || "Request failed");
+  }
+
+  return payload as T;
 }
 
+export type ParseResumeArgs =
+  | { resumeText: string; resumeId?: string }
+  | { resumeId: string };
+
 export function parseResume(
-  resumeText: string,
-  resumeId?: string,
+  args: ParseResumeArgs,
 ): Promise<{ parsedResume: ParsedResume }> {
-  return invoke("parse-resume", { resumeText, resumeId });
+  return invoke("parse-resume", args as unknown as Record<string, unknown>);
 }
 
 export function parseJob(jobText: string): Promise<{ parsedJob: ParsedJob }> {
@@ -48,10 +80,19 @@ export interface AnalyzeArgs {
   resumeId?: string;
   parsedResume?: ParsedResume;
   persist?: boolean;
+  /** Dev/QA: force full 10-category weights on the server. */
+  scoringMode?: "registered";
 }
 
-export function analyze(
+export async function analyze(
   args: AnalyzeArgs,
 ): Promise<{ analysisId: string | null; result: AnalysisResult }> {
-  return invoke("analyze", { ...args } as unknown as Record<string, unknown>);
+  const data = await invoke<{ analysisId: string | null; result: unknown }>(
+    "analyze",
+    { ...args } as unknown as Record<string, unknown>,
+  );
+  return {
+    analysisId: data.analysisId,
+    result: normalizeAnalysisResult(data.result),
+  };
 }

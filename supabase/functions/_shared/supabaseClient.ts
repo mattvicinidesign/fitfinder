@@ -2,6 +2,7 @@
 // write made inside an Edge Function is still subject to Row Level Security.
 
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { corsHeaders } from "./cors.ts";
 
 export function createUserClient(req: Request): SupabaseClient {
   const authHeader = req.headers.get("Authorization") ?? "";
@@ -20,7 +21,7 @@ export async function requireUser(client: SupabaseClient): Promise<string> {
   if (error || !data.user) {
     throw new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
   return data.user.id;

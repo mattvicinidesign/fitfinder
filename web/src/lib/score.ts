@@ -8,6 +8,14 @@ export function scoreColor(score: number): string {
   return "text-rose-600 dark:text-rose-400";
 }
 
+/** Fill color for a 0–100 progress bar (pairs with scoreColor). */
+export function scoreProgressClass(score: number): string {
+  if (score >= 80) return "bg-emerald-600 dark:bg-emerald-500";
+  if (score >= 60) return "bg-amber-600 dark:bg-amber-500";
+  if (score >= 40) return "bg-orange-600 dark:bg-orange-500";
+  return "bg-rose-600 dark:bg-rose-500";
+}
+
 /** Badge variant intent for a recommendation. */
 export function recommendationTone(
   rec: Recommendation,
@@ -18,8 +26,6 @@ export function recommendationTone(
       return "positive";
     case "stretch":
       return "neutral";
-    case "long_shot":
-      return "warning";
     case "not_recommended":
       return "negative";
   }

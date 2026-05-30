@@ -6,14 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { IosGroupedRow, IosGroupedSection } from "@/components/ui/ios-grouped-section";
 import { isNativePlatform } from "@/lib/platform";
 import { toast } from "sonner";
 
@@ -39,11 +32,8 @@ export function LoginForm() {
       },
     });
     setSending(false);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Check your email for a sign-in link.");
-    }
+    if (error) toast.error(error.message);
+    else toast.success("Check your email for a sign-in link.");
   }
 
   async function continueAsGuest() {
@@ -58,44 +48,39 @@ export function LoginForm() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Sign in to Fit Finder</CardTitle>
-        <CardDescription>
-          Use a magic link to keep your analyses synced across devices.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={sendMagicLink} className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={sending}>
+    <div className="space-y-6">
+      <form onSubmit={sendMagicLink}>
+        <IosGroupedSection title="Email">
+          <IosGroupedRow className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-[13px] text-muted-foreground">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-11 text-[17px] bg-transparent border-0 shadow-none px-0 focus-visible:ring-0"
+              />
+            </div>
+          </IosGroupedRow>
+        </IosGroupedSection>
+        <div className="mt-4">
+          <Button type="submit" className="w-full h-12 rounded-xl" disabled={sending}>
             {sending ? "Sending…" : "Send magic link"}
           </Button>
-        </form>
-
-        <div className="flex items-center gap-3">
-          <Separator className="flex-1" />
-          <span className="text-xs text-muted-foreground">or</span>
-          <Separator className="flex-1" />
         </div>
+      </form>
 
-        <Button variant="outline" className="w-full" onClick={continueAsGuest}>
-          Continue as guest
-        </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          Guest analyses are saved to a temporary anonymous session.
-        </p>
-      </CardContent>
-    </Card>
+      <Button variant="outline" className="w-full h-11 rounded-xl" onClick={continueAsGuest}>
+        Continue as guest
+      </Button>
+      <p className="text-center text-[13px] text-muted-foreground">
+        Guest analyses use a temporary anonymous session.
+      </p>
+    </div>
   );
 }

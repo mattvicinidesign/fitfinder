@@ -31,12 +31,14 @@ src/
     └── resume-upload.ts      # Storage + parse-resume
 ```
 
-### Responsive navigation
+### Canonical UI (iOS-first everywhere)
 
-- **md and up:** left sidebar (`AppSidebar`)
-- **below md / Capacitor iOS:** bottom tab bar (`AppBottomNav`)
+- **One layout:** centered `max-w-[480px]` phone column on desktop (letterbox only differs).
+- **One navigation:** iOS tab bar on **all** platforms — no sidebar, no desktop header nav.
+- **One component set:** screens live in `components/screens/` (Analyze, Saved, History, Compare, Profile).
+- **Fit Finder Preview:** `/preview` — same chrome + `AnalyzeScreen` with sample data (no separate preview modes).
 
-Both use `APP_NAV` from `lib/navigation.ts` — no duplicate route lists.
+`APP_NAV` in `lib/navigation.ts` is the single source of truth for tabs.
 
 ### Builds
 

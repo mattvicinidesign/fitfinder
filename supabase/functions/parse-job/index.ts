@@ -3,6 +3,7 @@
 // Parses a raw job description into a ParsedJob. Stateless (no persistence).
 
 import { completeJSON } from "../_shared/openai.ts";
+import { normalizeParsedJob } from "../_shared/normalize_parsed_job.ts";
 import { JOB_PARSE_SYSTEM } from "../_shared/prompts.ts";
 import { createUserClient, requireUser } from "../_shared/supabaseClient.ts";
 import { error, handlePreflight, json } from "../_shared/cors.ts";
@@ -23,10 +24,11 @@ Deno.serve(async (req: Request) => {
       return error("jobText is required");
     }
 
-    const parsed = await completeJSON<ParsedJob>([
+    const parsedRaw = await completeJSON<ParsedJob>([
       { role: "system", content: JOB_PARSE_SYSTEM },
       { role: "user", content: jobText },
     ]);
+    const parsed = normalizeParsedJob(parsedRaw, jobText);
 
     return json({ parsedJob: parsed });
   } catch (e) {

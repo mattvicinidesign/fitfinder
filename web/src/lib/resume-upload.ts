@@ -3,30 +3,23 @@
 import { createClient } from "@/lib/supabase/client";
 import { parseResume } from "@/lib/api";
 
-const TEXT_TYPES = new Set([
-  "text/plain",
-  "text/markdown",
-  "application/json",
-]);
-
-const TEXT_EXTENSIONS = /\.(txt|md|markdown|json|csv)$/i;
+const TEXT_TYPES = new Set(["text/plain"]);
+const TEXT_EXTENSIONS = /\.(txt)$/i;
 
 /** Read plain-text content from a user-selected file when possible. */
 export async function readResumeTextFromFile(file: File): Promise<string> {
   if (TEXT_TYPES.has(file.type) || TEXT_EXTENSIONS.test(file.name)) {
     return file.text();
   }
-  // PDF/DOC: no client parser in MVP — caller should prompt to paste after upload.
   return "";
 }
 
 /**
  * Upload resume to Supabase Storage (private `resumes` bucket, user folder),
- * parse via the shared Edge Function, and return resume id + parsed JSON.
+ * parse via the shared Edge Function, and return resume id.
  */
 export async function uploadAndParseResume(file: File): Promise<{
   resumeId: string;
-  resumeText: string;
   fileUrl: string;
 }> {
   const supabase = createClient();
@@ -46,15 +39,7 @@ export async function uploadAndParseResume(file: File): Promise<{
   const {
     data: { publicUrl },
   } = supabase.storage.from("resumes").getPublicUrl(path);
-  // Bucket is private; store the storage path as the canonical reference.
   const fileRef = path;
-
-  let resumeText = await readResumeTextFromFile(file);
-  if (!resumeText.trim()) {
-    throw new Error(
-      "Could not read text from this file. Paste your resume as text, or upload a .txt / .md file.",
-    );
-  }
 
   const { data: row, error: insertError } = await supabase
     .from("resumes")
@@ -63,11 +48,15 @@ export async function uploadAndParseResume(file: File): Promise<{
     .single();
   if (insertError) throw new Error(insertError.message);
 
-  const { parsedResume } = await parseResume(resumeText, row.id);
+  const resumeText = await readResumeTextFromFile(file);
+  if (resumeText.trim()) {
+    await parseResume({ resumeText, resumeId: row.id });
+  } else {
+    await parseResume({ resumeId: row.id });
+  }
 
   return {
     resumeId: row.id,
-    resumeText,
     fileUrl: publicUrl,
   };
 }
