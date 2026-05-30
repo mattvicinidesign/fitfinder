@@ -32,3 +32,18 @@ Deno.test("normalizeParsedResume extracts tools from resume text", () => {
   assertEquals(out.tools.includes("Slack"), true);
   assertEquals(out.tools.includes("ClickUp"), true);
 });
+
+Deno.test("normalizeParsedResume drops excluded ecommerce-cluster industries", () => {
+  const parsed: ParsedResume = {
+    skills: [],
+    industries: ["Ecommerce", "Retail", "SaaS"],
+    workHistory: [],
+    aiExperience: [],
+    tools: [],
+    archetypes: [],
+  };
+  const out = normalizeParsedResume(parsed);
+  assertEquals(out.industries.includes("Ecommerce"), false);
+  assertEquals(out.industries.includes("Retail"), false);
+  assertEquals(out.industries.includes("SaaS"), true);
+});

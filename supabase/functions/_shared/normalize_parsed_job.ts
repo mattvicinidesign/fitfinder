@@ -1,6 +1,7 @@
 // Post-process parsed job JSON so toolRequirements reflect the full posting
 // (including bonus / nice-to-have sections the model often skips).
 
+import { normalizePostingDetails } from "./posting_details.ts";
 import {
   extractIndustriesFromText,
   normalizeIndustryList,
@@ -260,11 +261,14 @@ export function normalizeParsedJob(
     }
   }
 
+  const postingDetails = normalizePostingDetails(parsed, jobText);
+
   return {
     ...parsed,
     skills: dedupeLabels([...skills, ...fromModel.rehomedAsSkills]),
     industries,
     toolRequirements,
     bonusToolRequirements,
+    postingDetails,
   };
 }

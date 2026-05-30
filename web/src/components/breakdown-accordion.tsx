@@ -4,11 +4,13 @@ import { useId, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const breakdownAccordionPanelClass = cn(
-  "mt-2 rounded-lg border border-border/80 bg-muted/30",
-  "max-h-[min(300px,50vh)] overflow-y-auto overscroll-contain",
-  "p-3.5 space-y-3",
+/** Bordered container for each category row in Category matching. */
+export const breakdownCategoryCardClass = cn(
+  "rounded-lg border border-border/80 p-3",
+  "transition-colors hover:bg-muted/40",
 );
+
+export const breakdownAccordionPanelClass = cn("mt-2 space-y-3");
 
 export function BreakdownAccordion({
   summary,
@@ -31,16 +33,17 @@ export function BreakdownAccordion({
   const toggleLabel = open ? `Hide ${expandHint}` : `Show ${expandHint}`;
 
   return (
-    <div className={cn("py-3 border-b border-border/80", className)}>
+    <div className={cn(breakdownCategoryCardClass, className)}>
       <button
         type="button"
-        className="w-full text-left rounded-lg -mx-1 px-1 py-0.5 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 transition-colors"
+        className="w-full text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
       >
         <div className="space-y-2">{summary}</div>
-        <span className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+        <span className="mt-1.5 flex w-full items-center justify-between gap-2 text-[11px] font-medium text-muted-foreground">
+          <span>{toggleLabel}</span>
           <ChevronDown
             className={cn(
               "size-3.5 shrink-0 transition-transform duration-200",
@@ -48,7 +51,6 @@ export function BreakdownAccordion({
             )}
             aria-hidden
           />
-          <span>{toggleLabel}</span>
         </span>
       </button>
 

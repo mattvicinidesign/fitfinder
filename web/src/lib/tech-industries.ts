@@ -191,8 +191,6 @@ export const CANONICAL_INDUSTRY_CLUSTERS: string[][] = [
 export const CANONICAL_RELATED_INDUSTRY_PAIRS: [string, string][] = [
   ["saas", "analytics"],
   ["saas", "developer tools"],
-  ["martech", "ecommerce"],
-  ["adtech", "ecommerce"],
   ["adtech", "media and publishing"],
   ["fintech", "saas"],
   ["healthtech", "saas"],

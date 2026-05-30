@@ -32,7 +32,7 @@ function normalizeToken(value: string): string {
     .trim();
 }
 
-function timezoneOverlap(requirement: string, candidate: string): boolean {
+export function timezoneOverlap(requirement: string, candidate: string): boolean {
   const nr = normalizeToken(requirement);
   const nc = normalizeToken(candidate);
   return nr === nc || nr.includes(nc) || nc.includes(nr);

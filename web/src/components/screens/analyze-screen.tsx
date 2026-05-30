@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { analyze } from "@/lib/api";
+import { saveAnalysisReport } from "@/lib/analysis-report-cache";
 import { sanitizeJobText } from "@/lib/sanitize-job-text";
 import {
   fetchProfileDesiredCompensation,
@@ -88,12 +90,17 @@ const DEMO_RESULT: AnalysisResult = {
   postingContext: {
     employerType: "product_company",
     hireTarget: "freelancer",
-    label: "Product company hiring a freelancer",
-    detail: "Demo: SaaS company seeking contract help.",
+    label: "Product company hiring a Freelancer",
+    detail: null,
+    engagementDuration: "ongoing",
+    engagementPath: "contract",
+    payStructure: "hourly",
+    badges: ["Ongoing", "Contract", "Hourly"],
   },
 };
 
 export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
+  const router = useRouter();
   const qaRegistered = isQaRegisteredScoring();
   const qaCached = !demo && qaRegistered ? getQaPreloadedResumeLocal() : null;
 
@@ -110,10 +117,6 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   const [jobText, setJobText] = useState("");
 
   const [status, setStatus] = useState<string | null>(null);
-  const [result, setResult] = useState<AnalysisResult | null>(
-    demo ? DEMO_RESULT : null,
-  );
-  const [lastAnalysisId, setLastAnalysisId] = useState<string | null>(null);
   const [profileDesiredCompensation, setProfileDesiredCompensation] =
     useState<Compensation | null>(null);
   const [profileQualifiedIndustries, setProfileQualifiedIndustries] = useState<
@@ -199,7 +202,6 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
       toast.error("Paste a job description to analyze.");
       return;
     }
-    setResult(null);
     try {
       const cleaned = sanitizeJobText(jobText);
       if (cleaned.removedFooter || cleaned.trimmed) {
@@ -222,9 +224,20 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         resumeId,
         ...(qaRegistered ? { scoringMode: "registered" as const } : {}),
       });
-      setResult(result);
-      setLastAnalysisId(analysisId);
+      const reportId = analysisId ?? crypto.randomUUID();
+      saveAnalysisReport(reportId, {
+        result: {
+          ...result,
+          jobDescription: result.jobDescription ?? cleaned.text,
+        },
+        analysisId,
+        profileDesiredCompensation,
+        profileQualifiedIndustries,
+        profileCountry,
+        profileTimezone,
+      });
       toast.success("Analysis complete and saved.");
+      router.push(`/analyze/report?id=${encodeURIComponent(reportId)}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Analysis failed.");
     } finally {
@@ -320,19 +333,25 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         </div>
       </form>
 
-      {result ? (
+      {demo ? (
         <div className="px-4 pb-6">
-          <AnalysisResultView
-            result={{
-              ...result,
-              jobDescription: result.jobDescription ?? jobText,
-            }}
-            analysisId={lastAnalysisId}
-            profileDesiredCompensation={profileDesiredCompensation}
-            profileQualifiedIndustries={profileQualifiedIndustries}
-            profileCountry={profileCountry}
-            profileTimezone={profileTimezone}
-          />
+          <p className="text-[13px] text-muted-foreground text-center mb-4">
+            Preview uses sample data on the report page after you tap Analyze fit
+            (disabled here).{" "}
+            <button
+              type="button"
+              className="text-primary underline-offset-2 hover:underline"
+              onClick={() => {
+                saveAnalysisReport("demo", {
+                  result: DEMO_RESULT,
+                  analysisId: null,
+                });
+                router.push("/analyze/report?id=demo");
+              }}
+            >
+              View sample report
+            </button>
+          </p>
         </div>
       ) : null}
     </>

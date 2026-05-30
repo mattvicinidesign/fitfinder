@@ -8,11 +8,11 @@ import {
   type CoverageMatchPopoverLabels,
 } from "@/components/coverage-match-popover";
 import { AiEmphasisBreakdownRow } from "@/components/ai-emphasis-breakdown-row";
-import { ArchetypeBreakdownRow } from "@/components/archetype-breakdown-row";
 import { CompensationBreakdownRow } from "@/components/compensation-breakdown-row";
 import { CountryBreakdownRow } from "@/components/country-breakdown-row";
-import { IndustryBreakdownRow } from "@/components/industry-breakdown-row";
-import { SoftwareModelBreakdownRow } from "@/components/software-model-breakdown-row";
+import { breakdownCategoryCardClass } from "@/components/breakdown-accordion";
+import { QualificationSummarySection } from "@/components/qualification-summary-section";
+import { SummarySectionCard } from "@/components/summary-section-card";
 import { TimezoneBreakdownRow } from "@/components/timezone-breakdown-row";
 import {
   coverageDetailForCategory,
@@ -34,28 +34,22 @@ import { cn } from "@/lib/utils";
 
 const GUEST_SCORED_KEYS = new Set(GUEST_WEIGHT_ROWS.map((r) => r.key));
 
+/** Shown in the summary card grid — omitted from the category table. */
+const SUMMARY_ONLY_KEYS = new Set<CategoryKey>([
+  "industry",
+  "compensation",
+  "aiEmphasis",
+  "country",
+  "timezone",
+]);
+
 const COVERAGE_UI: Record<
   CoverageCategoryKey,
-  {
-    popoverLabels: CoverageMatchPopoverLabels;
-    caption: (matched: number, total: number) => string;
-  }
+  { popoverLabels: CoverageMatchPopoverLabels }
 > = {
-  skills: {
-    popoverLabels: SKILLS_POPOVER_LABELS,
-    caption: (matched, total) =>
-      `${matched} of ${total} skills in the posting matched on your resume`,
-  },
-  tools: {
-    popoverLabels: TOOLS_POPOVER_LABELS,
-    caption: (matched, total) =>
-      `${matched} of ${total} tools in the posting matched your resume and work history`,
-  },
-  workflow: {
-    popoverLabels: SKILLS_POPOVER_LABELS,
-    caption: (matched, total) =>
-      `${matched} of ${total} workflow signals in the posting matched your resume`,
-  },
+  skills: { popoverLabels: SKILLS_POPOVER_LABELS },
+  tools: { popoverLabels: TOOLS_POPOVER_LABELS },
+  workflow: { popoverLabels: SKILLS_POPOVER_LABELS },
 };
 
 function resolveCoverageCategory(
@@ -88,33 +82,6 @@ function resolveCoverageCategory(
     totalCount: computed.total,
     matchDetail: computed.items,
   };
-}
-
-function PostingContextCallout({ context }: { context: PostingContext }) {
-  const show =
-    context.employerType !== "unknown" ||
-    context.hireTarget !== "unknown" ||
-    context.detail;
-
-  if (!show) return null;
-
-  return (
-    <div
-      className="rounded-xl border border-border/80 bg-muted/40 px-3.5 py-3 space-y-1"
-      role="note"
-    >
-      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        Posting context
-      </p>
-      <p className="text-[15px] font-medium leading-snug">{context.label}</p>
-      {context.detail ? (
-        <p className="text-[13px] text-muted-foreground leading-snug">{context.detail}</p>
-      ) : null}
-      <p className="text-[12px] text-muted-foreground leading-snug pt-0.5">
-        Informational only — does not affect qualification scores.
-      </p>
-    </div>
-  );
 }
 
 function CoverageBreakdownRow({
@@ -177,17 +144,12 @@ function CoverageBreakdownRow({
           <ProgressIndicator className={scoreProgressClass(pct)} />
         </ProgressTrack>
       </Progress>
-      {showFraction ? (
-        <p className="text-[12px] text-muted-foreground leading-snug">
-          {ui.caption(matched, total)}
-        </p>
-      ) : null}
     </>
   );
 
   if (!hasDetail) {
     return (
-      <div className="py-3 border-b border-border/80 space-y-2">{body}</div>
+      <div className={cn(breakdownCategoryCardClass, "space-y-2")}>{body}</div>
     );
   }
 
@@ -205,25 +167,23 @@ function CoverageBreakdownRow({
 function BreakdownRow({
   label,
   match,
-  isTotal,
   mutedMatch,
 }: {
   label: string;
   match: string;
-  isTotal?: boolean;
   mutedMatch?: boolean;
 }) {
   const matchNum = parseFloat(match);
   const matchClass =
-    !mutedMatch && !isTotal && !Number.isNaN(matchNum)
+    !mutedMatch && !Number.isNaN(matchNum)
       ? scoreColor(matchNum)
       : "text-foreground";
 
   return (
     <div
       className={cn(
-        "flex items-baseline justify-between gap-4 py-3 border-b border-border/80 last:border-b-0",
-        isTotal && "pt-4 font-semibold",
+        breakdownCategoryCardClass,
+        "flex items-baseline justify-between gap-4",
       )}
     >
       <span className="text-[15px] flex-1 min-w-0">{label}</span>
@@ -257,7 +217,7 @@ export function QualificationBreakdown({
   parsedJob,
   parsedResume,
   jobDescription,
-  jobTitle,
+  jobTitle: analysisJobTitle,
   profileDesiredCompensation,
   profileQualifiedIndustries,
   profileCountry,
@@ -275,28 +235,44 @@ export function QualificationBreakdown({
   profileTimezone?: string | null;
 }) {
   const rows = REGISTERED_WEIGHT_ROWS;
+  const categoryRows = rows.filter(({ key }) => !SUMMARY_ONLY_KEYS.has(key));
   const breakdown = score.categoryBreakdown;
   const isGuest = score.scoringMode === "guest";
+  const industryCategory = lookupCategory(breakdown, "industry");
+  const industryLabel =
+    rows.find(({ key }) => key === "industry")?.label ?? "Industry";
   const guestLabel =
     isGuest && process.env.NEXT_PUBLIC_QA_REGISTERED_SCORING === "true"
       ? "Guest account (re-run analyze after QA refresh for full breakdown)"
       : null;
 
   return (
-    <div className="w-full space-y-4">
-      {postingContext ? <PostingContextCallout context={postingContext} /> : null}
+    <div className="w-full space-y-3">
+      <QualificationSummarySection
+        score={score}
+        industryLabel={industryLabel}
+        industryCategory={
+          industryCategory ?? {
+            category: "industry",
+            label: industryLabel,
+            status: "unknown",
+            score: 0,
+            weight: isGuest ? 30 : 18,
+            contribution: 0,
+          }
+        }
+        parsedJob={parsedJob}
+        parsedResume={parsedResume}
+        profileQualifiedIndustries={profileQualifiedIndustries}
+        profileDesiredCompensation={profileDesiredCompensation}
+        profileTimezone={profileTimezone}
+        jobDescription={jobDescription}
+        jobTitle={analysisJobTitle}
+      />
 
-      <div>
-        <div className="flex items-baseline justify-between gap-4 pb-2 border-b border-border">
-          <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground flex-1">
-            Category
-          </span>
-          <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground w-16 text-right">
-            Match
-          </span>
-        </div>
-
-        {rows.map(({ key, label }) => {
+      <SummarySectionCard title="Category matching">
+        <div className="space-y-3">
+          {categoryRows.map(({ key, label }) => {
           if (isGuest && !GUEST_SCORED_KEYS.has(key)) {
             return (
               <BreakdownRow
@@ -346,44 +322,6 @@ export function QualificationBreakdown({
                 category={c}
                 parsedJob={parsedJob}
                 parsedResume={parsedResume}
-              />
-            );
-          }
-
-          if (key === "archetype" && c && c.status !== "unknown") {
-            return (
-              <ArchetypeBreakdownRow
-                key={key}
-                label={label}
-                category={c}
-                parsedJob={parsedJob}
-                parsedResume={parsedResume}
-                jobTitle={jobTitle}
-              />
-            );
-          }
-
-          if (key === "softwareModel") {
-            return (
-              <SoftwareModelBreakdownRow
-                key={key}
-                label={label}
-                category={c}
-                parsedJob={parsedJob}
-                parsedResume={parsedResume}
-              />
-            );
-          }
-
-          if (key === "industry" && c) {
-            return (
-              <IndustryBreakdownRow
-                key={key}
-                label={label}
-                category={c}
-                parsedJob={parsedJob}
-                parsedResume={parsedResume}
-                profileQualifiedIndustries={profileQualifiedIndustries}
               />
             );
           }
@@ -442,29 +380,13 @@ export function QualificationBreakdown({
           );
         })}
 
-        <BreakdownRow
-          label="Qualification"
-          match={
-            breakdown.length > 0 ? `${Math.round(score.qualificationScore)}%` : "—"
-          }
-          isTotal
-        />
-
-        {guestLabel ? (
-          <p className="text-[12px] text-amber-700 dark:text-amber-500 mt-2 leading-snug">
-            {guestLabel}
-          </p>
-        ) : null}
-        <p className="text-[12px] text-muted-foreground mt-3 leading-snug">
-          {isGuest
-            ? "You are on guest scoring (Skills, Industry, AI Emphasis only). "
-            : ""}
-          <span className="font-medium">Not scored</span> — not used in your plan.
-          {" "}
-          <span className="font-medium">Unknown</span> — no signal in the job or resume
-          for that category (excluded from qualification, not a mismatch).
-        </p>
-      </div>
+          {guestLabel ? (
+            <p className="text-[12px] text-amber-700 dark:text-amber-500 mt-2 leading-snug">
+              {guestLabel}
+            </p>
+          ) : null}
+        </div>
+      </SummarySectionCard>
     </div>
   );
 }

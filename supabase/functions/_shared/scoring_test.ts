@@ -182,7 +182,7 @@ Deno.test("V1: canonical recommendation labels", () => {
     "Strong Pursuit",
     "Good Opportunity",
     "Proceed With Caution",
-    "Low Alignment",
+    "Not Recommended",
   ]);
   assert(labels.has(low.recommendationLabel));
 });

@@ -7,8 +7,6 @@ export const REGISTERED_WEIGHT_ROWS: { key: CategoryKey; label: string; weight: 
   { key: "industry", label: "Industry", weight: 18 },
   { key: "tools", label: "Tools", weight: 12 },
   { key: "aiEmphasis", label: "AI Emphasis", weight: 10 },
-  { key: "archetype", label: "Archetype", weight: 7 },
-  { key: "softwareModel", label: "Software Model", weight: 5 },
   { key: "compensation", label: "Compensation", weight: 5 },
   { key: "country", label: "Country", weight: 2 },
   { key: "timezone", label: "Timezone", weight: 1 },

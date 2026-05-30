@@ -1,3 +1,4 @@
+import { isExcludedIndustryMatch } from "@/lib/qualified-industries";
 import {
   industrySimilarity,
   normalizeIndustryList,
@@ -28,14 +29,17 @@ function mergeForMatching(
   resumeIndustries: string[],
   qualificationIndustries?: string[] | null,
 ): string[] {
-  const seen = new Set<string>(resumeIndustries);
-  const merged = [...resumeIndustries];
+  const seen = new Set<string>();
+  const merged: string[] = [];
+  const add = (label: string | undefined) => {
+    if (!label || isExcludedIndustryMatch(label) || seen.has(label)) return;
+    seen.add(label);
+    merged.push(label);
+  };
+
+  for (const label of resumeIndustries) add(label);
   for (const raw of qualificationIndustries ?? []) {
-    const label = normalizeIndustryList([raw]).industries[0];
-    if (label && !seen.has(label)) {
-      seen.add(label);
-      merged.push(label);
-    }
+    add(normalizeIndustryList([raw]).industries[0]);
   }
   return merged;
 }
@@ -51,11 +55,15 @@ function normalizeParsedIndustries(
 } {
   const jobNorm = normalizeIndustryList(job.industries);
   const resumeNorm = normalizeIndustryList(resume?.industries);
+  const resumeIndustries = resumeNorm.industries.filter(
+    (l) => !isExcludedIndustryMatch(l),
+  );
+
   return {
     jobIndustries: jobNorm.industries,
-    resumeIndustries: resumeNorm.industries,
+    resumeIndustries,
     matchIndustries: mergeForMatching(
-      resumeNorm.industries,
+      resumeIndustries,
       qualificationIndustries,
     ),
   };

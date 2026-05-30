@@ -29,7 +29,7 @@ export const QA_RESUME_FILE_MARKER =
 const CACHE_KEY = "ff-qa-resume-cache-v2";
 
 /** Bump when resume parse/normalization changes so QA auto-refreshes once. */
-export const QA_RESUME_PARSE_VERSION = 3;
+export const QA_RESUME_PARSE_VERSION = 4;
 
 export interface PreloadQaResumeOptions {
   /** Skip cache + DB reuse; upload fixture PDF and parse again. */

@@ -20,6 +20,7 @@ import { toast } from "sonner";
 type FullAnalysis = AnalysisRecord & {
   narrative_json: Narrative | null;
   parsed_job_json: AnalysisResult["parsedJob"] | null;
+  job_description: string | null;
   career_fit_adjustment: number | null;
 };
 
@@ -47,6 +48,7 @@ function toResult(row: FullAnalysis): AnalysisResult | null {
     },
     narrative: row.narrative_json,
     postingContext: resolvePostingContext(row.parsed_job_json),
+    jobDescription: row.job_description,
   };
 }
 
@@ -82,7 +84,7 @@ export function CompareScreen() {
     void supabase
       .from("analyses")
       .select(
-        "id, company_name, job_title, fit_score, qualification_score, confidence_score, career_fit_adjustment, recommendation, recommendation_label, narrative_json, parsed_job_json, created_at",
+        "id, company_name, job_title, job_description, fit_score, qualification_score, confidence_score, career_fit_adjustment, recommendation, recommendation_label, narrative_json, parsed_job_json, created_at",
       )
       .order("created_at", { ascending: false })
       .then(({ data }) => setAnalyses((data ?? []) as FullAnalysis[]));

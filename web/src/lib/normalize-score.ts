@@ -1,9 +1,11 @@
+import { normalizePostingDetails } from "@/lib/posting-details";
 import { resolvePostingContext } from "@/lib/posting-context";
 import {
   coverageDetailForCategory,
   collectResumeWorkflowTokens,
 } from "@/lib/coverage-detail";
 import { resumeToolsMatchPool } from "@/lib/resume-tools";
+import { recommendFromFitScore } from "@/lib/recommendation-bands";
 import type {
   AnalysisResult,
   CategoryKey,
@@ -131,20 +133,17 @@ export function normalizeScoreResult(
 ): ScoreResult {
   const s = (score ?? {}) as Partial<ScoreResult> & Record<string, unknown>;
 
+  const fitScore = Number(s.fitScore) || 0;
+  const { recommendation, label: recommendationLabel } =
+    recommendFromFitScore(fitScore);
+
   const base: ScoreResult = {
     qualificationScore: Number(s.qualificationScore) || 0,
     confidenceScore: Number(s.confidenceScore) || 0,
     careerFitAdjustment: Number(s.careerFitAdjustment) || 0,
-    fitScore: Number(s.fitScore) || 0,
-    recommendation:
-      s.recommendation === "strong_apply" ||
-      s.recommendation === "apply" ||
-      s.recommendation === "stretch" ||
-      s.recommendation === "not_recommended"
-        ? s.recommendation
-        : "stretch",
-    recommendationLabel:
-      typeof s.recommendationLabel === "string" ? s.recommendationLabel : "",
+    fitScore,
+    recommendation,
+    recommendationLabel,
     scoringMode: s.scoringMode === "guest" ? "guest" : "registered",
     categoryBreakdown: asArray<unknown>(s.categoryBreakdown).map(normalizeCategoryScore),
     unknownCategories: asArray<string>(s.unknownCategories),
@@ -191,34 +190,74 @@ function defaultParsedJob(): ParsedJob {
 function normalizePostingContext(
   raw: unknown,
   job: ParsedJob,
+  jobDescription?: string | null,
 ): PostingContext {
+  const resolved = resolvePostingContext(job, null, jobDescription);
   const p = raw as Partial<PostingContext> | undefined;
   if (p?.label && p.employerType && p.hireTarget) {
     return {
+      ...resolved,
       employerType: p.employerType,
       hireTarget: p.hireTarget,
       label: p.label,
-      detail: typeof p.detail === "string" ? p.detail : null,
+      detail: typeof p.detail === "string" ? p.detail : resolved.detail,
+      engagementDuration: p.engagementDuration ?? resolved.engagementDuration,
+      engagementPath: p.engagementPath ?? resolved.engagementPath,
+      payStructure: p.payStructure ?? resolved.payStructure,
+      badges: p.badges?.length ? p.badges : resolved.badges,
     };
   }
-  return resolvePostingContext(job);
+  return resolved;
+}
+
+function enrichParsedJob(
+  parsedJob: ParsedJob,
+  jobDescription: string | null | undefined,
+  jobTitle: string | null | undefined,
+): ParsedJob {
+  const text = jobDescription?.trim();
+  if (!text) return parsedJob;
+
+  const postingDetails = normalizePostingDetails(parsedJob, text);
+  const roleTitle =
+    parsedJob.roleTitle?.trim() ||
+    (typeof jobTitle === "string" && jobTitle.trim() ? jobTitle.trim() : null) ||
+    parsedJob.roleTitle;
+
+  return {
+    ...parsedJob,
+    postingDetails,
+    ...(roleTitle ? { roleTitle } : {}),
+  };
 }
 
 export function normalizeAnalysisResult(result: unknown): AnalysisResult {
   const r = (result ?? {}) as Partial<AnalysisResult>;
-  const parsedJob = r.parsedJob ?? defaultParsedJob();
+  const jobDescription =
+    typeof r.jobDescription === "string" ? r.jobDescription : null;
+  const jobTitle = typeof r.jobTitle === "string" ? r.jobTitle : null;
+  const parsedJob = enrichParsedJob(
+    r.parsedJob ?? defaultParsedJob(),
+    jobDescription,
+    jobTitle,
+  );
   const parsedResume = r.parsedResume ?? undefined;
   return {
     companyName: r.companyName ?? null,
-    jobTitle: r.jobTitle ?? null,
+    jobTitle,
+    jobDescription,
     parsedJob,
     parsedResume,
     score: normalizeScoreResult(r.score, {
       parsedJob,
       parsedResume,
-      jobDescription: r.jobDescription,
+      jobDescription,
     }),
     narrative: normalizeNarrative(r.narrative),
-    postingContext: normalizePostingContext(r.postingContext, parsedJob),
+    postingContext: normalizePostingContext(
+      r.postingContext,
+      parsedJob,
+      jobDescription,
+    ),
   };
 }

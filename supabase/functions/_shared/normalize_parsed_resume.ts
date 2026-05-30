@@ -2,6 +2,7 @@ import {
   extractToolsFromJobText,
   partitionSkillsAndTools,
 } from "./normalize_parsed_job.ts";
+import { isExcludedIndustryMatch } from "./qualified_industries.ts";
 import {
   type CanonicalTechIndustry,
   extractIndustriesFromText,
@@ -78,9 +79,13 @@ export function normalizeParsedResume(
   const toolsFromText = resumeText ? extractToolsFromJobText(resumeText) : [];
   const toolsFromWork = extractToolsFromJobText(workHistoryText(parsed));
 
+  const industriesFiltered = industries.filter(
+    (l) => !isExcludedIndustryMatch(l),
+  );
+
   return {
     ...parsed,
-    industries,
+    industries: industriesFiltered,
     skills: dedupeSkills([...skillsOnly, ...fromModel.rehomedAsSkills]),
     tools: dedupeTools([
       ...(parsed.tools ?? []),

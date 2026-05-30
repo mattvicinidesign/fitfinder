@@ -30,6 +30,19 @@ export interface Compensation {
   period: "year" | "month" | "hour" | null;
 }
 
+/** Non-scored fields extracted from the posting (display only). */
+export interface JobPostingDetails {
+  datePosted?: string | null;
+  hireArea?: string | null;
+  clientRating?: string | null;
+  clientOrigin?: string | null;
+  /** City from About the client (e.g. Corona Del Mar), when Upwork shows local time. */
+  clientCity?: string | null;
+  clientAverageHourlyRate?: string | null;
+  hoursNeeded?: string | null;
+  duration?: string | null;
+}
+
 export interface ParsedJob {
   skills: string[];
   industries: string[];
@@ -46,6 +59,13 @@ export interface ParsedJob {
   employerType?: "agency" | "product_company" | "unknown";
   hireTarget?: "freelancer" | "agency" | "direct_hire" | "unknown";
   postingContextDetail?: string | null;
+  /** Informational — ongoing vs short-term engagement. */
+  engagementDuration?: "ongoing" | "short_term" | "unknown";
+  /** Informational — contract-to-hire vs contract vs direct hire. */
+  engagementPath?: "contract_to_hire" | "contract" | "direct_hire" | "unknown";
+  /** Informational — hourly vs fixed-price vs salary. */
+  payStructure?: "hourly" | "fixed_price" | "salary" | "unknown";
+  postingDetails?: JobPostingDetails;
 }
 
 export interface PostingContext {
@@ -53,6 +73,11 @@ export interface PostingContext {
   hireTarget: "freelancer" | "agency" | "direct_hire" | "unknown";
   label: string;
   detail: string | null;
+  engagementDuration: "ongoing" | "short_term" | "unknown";
+  engagementPath: "contract_to_hire" | "contract" | "direct_hire" | "unknown";
+  payStructure: "hourly" | "fixed_price" | "salary" | "unknown";
+  /** Resolved chips for Summary UI (duration, path, pay). */
+  badges: string[];
 }
 
 export type MatchStatus = "match" | "mismatch" | "unknown";

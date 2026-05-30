@@ -16,8 +16,6 @@ export const PROFILE_QUALIFIED_INDUSTRY_LABELS = [
   "Enterprise Software",
   "Analytics",
   "Business Intelligence",
-  "CPG",
-  "Retail Analytics",
   "Beverage Technology",
   "Gaming",
   "Entertainment",
@@ -26,6 +24,18 @@ export const PROFILE_QUALIFIED_INDUSTRY_LABELS = [
   "HOA Technology",
   "Marketing Analytics",
   "Media & Publishing",
-  "Retail",
-  "Ecommerce",
 ] as const;
+
+/** Not used for industry matching (profile or resume). */
+export const PROFILE_INDUSTRY_MATCH_EXCLUSIONS = [
+  "Ecommerce",
+  "Retail",
+  "CPG",
+  "Retail Analytics",
+] as const;
+
+export function isExcludedIndustryMatch(label: string): boolean {
+  return (PROFILE_INDUSTRY_MATCH_EXCLUSIONS as readonly string[]).includes(
+    label,
+  );
+}

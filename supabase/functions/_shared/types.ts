@@ -28,6 +28,20 @@ export interface WorkHistoryItem {
   summary: string | null;
 }
 
+/** Non-scored fields extracted from the posting (display only). */
+export interface JobPostingDetails {
+  datePosted?: string | null;
+  /** e.g. "United States only", "Worldwide" */
+  hireArea?: string | null;
+  clientRating?: string | null;
+  clientOrigin?: string | null;
+  clientCity?: string | null;
+  clientAverageHourlyRate?: string | null;
+  hoursNeeded?: string | null;
+  /** Human-readable project length, e.g. "3 to 6 months" */
+  duration?: string | null;
+}
+
 /** Structured job posting extracted by the AI parser. */
 export interface ParsedJob {
   skills: string[];
@@ -51,6 +65,11 @@ export interface ParsedJob {
   hireTarget?: "freelancer" | "agency" | "direct_hire" | "unknown";
   /** One sentence explaining agency/freelancer detection. */
   postingContextDetail?: string | null;
+  engagementDuration?: "ongoing" | "short_term" | "unknown";
+  engagementPath?: "contract_to_hire" | "contract" | "direct_hire" | "unknown";
+  payStructure?: "hourly" | "fixed_price" | "salary" | "unknown";
+  /** Informational metadata — not used in scoring. */
+  postingDetails?: JobPostingDetails;
 }
 
 export interface Compensation {
@@ -130,6 +149,10 @@ export interface PostingContext {
   hireTarget: "freelancer" | "agency" | "direct_hire" | "unknown";
   label: string;
   detail: string | null;
+  engagementDuration: "ongoing" | "short_term" | "unknown";
+  engagementPath: "contract_to_hire" | "contract" | "direct_hire" | "unknown";
+  payStructure: "hourly" | "fixed_price" | "salary" | "unknown";
+  badges: string[];
 }
 
 /** Full analysis payload returned by POST /analyze. */

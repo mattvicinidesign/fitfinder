@@ -64,6 +64,35 @@ function periodLabel(period: Compensation["period"]): string {
   return "/yr";
 }
 
+/** Job offer hourly band overlaps profile desired hourly band. */
+export function isHourlyCompensationWithinProfileRange(
+  jobOffer: Compensation | null | undefined,
+  profileAsk: Compensation | null | undefined,
+): boolean {
+  if (!jobOffer || !profileAsk) return false;
+  if (jobOffer.period !== "hour" || profileAsk.period !== "hour") return false;
+
+  const jMin = jobOffer.min ?? jobOffer.max;
+  const jMax = jobOffer.max ?? jobOffer.min;
+  const pMin = profileAsk.min ?? profileAsk.max;
+  const pMax = profileAsk.max ?? profileAsk.min;
+
+  if (
+    jMin == null ||
+    jMax == null ||
+    pMin == null ||
+    pMax == null ||
+    !Number.isFinite(jMin) ||
+    !Number.isFinite(jMax) ||
+    !Number.isFinite(pMin) ||
+    !Number.isFinite(pMax)
+  ) {
+    return false;
+  }
+
+  return jMax >= pMin && jMin <= pMax;
+}
+
 export function formatCompensation(comp: Compensation | null | undefined): string | null {
   if (!comp) return null;
   const { min, max, currency, period } = comp;

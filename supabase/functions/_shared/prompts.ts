@@ -47,7 +47,19 @@ You extract structured data from job descriptions. Return ONLY valid JSON matchi
   "aiMaturityLevel": number|null,
   "employerType": "agency"|"product_company"|"unknown",
   "hireTarget": "freelancer"|"agency"|"direct_hire"|"unknown",
-  "postingContextDetail": string|null
+  "engagementDuration": "ongoing"|"short_term"|"unknown",
+  "engagementPath": "contract_to_hire"|"contract"|"direct_hire"|"unknown",
+  "payStructure": "hourly"|"fixed_price"|"salary"|"unknown",
+  "postingContextDetail": string|null,
+  "postingDetails": {
+    "datePosted": string|null,
+    "hireArea": string|null,
+    "clientRating": string|null,
+    "clientOrigin": string|null,
+    "clientAverageHourlyRate": string|null,
+    "hoursNeeded": string|null,
+    "duration": string|null
+  }|null
 }
 
 Posting context (informational only):
@@ -56,6 +68,14 @@ Posting context (informational only):
 - hireTarget "freelancer": contract, freelance, 1099, consultant, Upwork, project-based, hourly contractor.
 - hireTarget "agency": vendor, subcontract, creative partner, agency of record, RFP to agency.
 - hireTarget "direct_hire": full-time, FTE, employee, W2, join our team (not freelance, not hiring an agency).
+- engagementDuration "ongoing": retainer, ongoing projects, long-term, continuous, open-ended, permanent engagement.
+- engagementDuration "short_term": one-off project, temporary, fixed duration, N weeks/months, single engagement.
+- engagementPath "contract_to_hire": contract-to-hire, temp-to-perm, conversion to full-time/FTE after contract.
+- engagementPath "contract": freelance/contractor/1099 engagement without stated conversion to hire (use when not contract_to_hire).
+- engagementPath "direct_hire": W2/FTE/staff role with no contract phase (align with hireTarget direct_hire when clear).
+- payStructure "hourly": hourly rate, $/hr, per hour (also set compensation.period "hour" when amounts present).
+- payStructure "fixed_price": fixed fee, flat rate, fixed budget, lump sum, total project price (not hourly, not annual salary).
+- payStructure "salary": annual/monthly salary, W2 pay band, compensation.period "year" or "month".
 - Use "unknown" when unclear. postingContextDetail: one short sentence citing evidence.
 
 Skills vs toolRequirements (critical):
@@ -76,6 +96,18 @@ industries (job posting):
 - NEVER put skills, disciplines, or tools here (e.g. NOT "web design", "mobile app development", "user research") — use skills or toolRequirements instead.
 
 workflows: always return [] (not used in V1).
+
+postingDetails (informational only — NOT used in scoring):
+- Extract only when explicitly stated in the posting (common on freelance platforms).
+- datePosted: when the job was posted, as written (e.g. "Posted 2 days ago", "Mar 15, 2025").
+- hireArea: "Looking to hire in …", talent location, or geographic restriction for applicants.
+- clientRating: client star rating or score as written (e.g. "4.9 of 5", "5.0").
+- clientOrigin: client's country/location when shown (e.g. "United States", "Client's country: Germany").
+- clientAverageHourlyRate: average hourly rate the client has paid, verbatim (e.g. "$45.00/hr").
+- hoursNeeded: weekly hours expectation (e.g. "More than 30 hours per week", "Less than 10 hrs/week").
+- duration: project/engagement length as written (e.g. "3 to 6 months", "Less than 1 month") — not the same as engagementDuration enum.
+- roleTitle: job role / title (maps to "Role" in UI).
+- Use null for each field when absent. Do not invent platform stats.
 
 Use [] for absent lists, null for absent optional fields. Do not invent compensation or location unless stated.
 `.trim();

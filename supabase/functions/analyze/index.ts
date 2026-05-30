@@ -152,7 +152,7 @@ Deno.serve(async (req: Request) => {
       { role: "user", content: narrativeUserPayload(resume, parsedJob, score) },
     ]);
 
-    const postingContext = resolvePostingContext(parsedJob);
+    const postingContext = resolvePostingContext(parsedJob, jobText);
 
     const result: AnalysisResult = {
       companyName,
