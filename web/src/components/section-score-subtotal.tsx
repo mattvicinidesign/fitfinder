@@ -6,12 +6,13 @@ import {
   scoreProgressClass,
   scoreProgressTrackClass,
 } from "@/lib/score";
+import { SCORING_CATEGORY_SUBTOTAL_LABEL } from "@/lib/scoring-terminology";
 import { cn } from "@/lib/utils";
 
-/** Footer subtotal row for a summary score card (label, %, progress bar). */
+/** Footer subtotal row for a scoring category card (label, %, progress bar). */
 export function SectionScoreSubtotal({
   score,
-  label = "Subtotal",
+  label = SCORING_CATEGORY_SUBTOTAL_LABEL,
   className,
 }: {
   score: number | null;

@@ -9,18 +9,26 @@ import {
 } from "@/lib/section-score-rollups";
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
 import {
+  GLOBAL_SCORE_LABEL,
+  SCORING_CATEGORY_WEIGHTS,
+} from "@/lib/scoring-terminology";
+import type { ScoringCategoryId } from "@/lib/scoring-terminology";
+import {
   scoreColor,
   scoreProgressClass,
   scoreProgressTrackClass,
 } from "@/lib/score";
+import type { ReportRollupOptions } from "@/lib/section-score-rollups";
 import type { ScoreResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-function SectionRollupRow({
+function ScoringCategoryRollupRow({
   title,
+  weightPercent,
   score,
 }: {
   title: string;
+  weightPercent: number;
   score: number | null;
 }) {
   const hasScore = score != null;
@@ -31,6 +39,10 @@ function SectionRollupRow({
       <div className="flex items-baseline justify-between gap-3">
         <span className="font-[Georgia,'Times_New_Roman',serif] text-[14px] text-foreground leading-snug">
           {title}
+          <span className="text-muted-foreground font-normal">
+            {" "}
+            ({weightPercent}%)
+          </span>
         </span>
         <span
           className={cn(
@@ -57,32 +69,39 @@ function SectionRollupRow({
   );
 }
 
-/** Dual-column header: section rollups (left) and grand fit score ring (right). */
+/** Global score card: scoring category rollups (left) and 0–10 ring (right). */
 export function QualificationScoreOverview({
   score,
+  rollupOptions,
 }: {
   score: ScoreResult;
+  rollupOptions: ReportRollupOptions;
 }) {
   const isGuest = score.scoringMode === "guest";
-  const rollups = computeReportSectionRollups(score.categoryBreakdown, isGuest);
+  const rollups = computeReportSectionRollups(
+    score.categoryBreakdown,
+    isGuest,
+    rollupOptions,
+  );
   const reportFitScore =
-    computeWeightedReportScore(score.categoryBreakdown, isGuest) ??
+    computeWeightedReportScore(score.categoryBreakdown, isGuest, rollupOptions) ??
     score.fitScore;
   const { recommendation, label: recommendationLabel } =
     recommendFromFitScore(reportFitScore);
 
   return (
-    <SummarySectionCard title="Score Summary">
+    <SummarySectionCard title={GLOBAL_SCORE_LABEL}>
       <div
         className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:items-center pt-0.5"
         role="region"
-        aria-label="Score summary"
+        aria-label={GLOBAL_SCORE_LABEL}
       >
-        <div className="space-y-3 min-w-0">
+        <div className="space-y-3 min-w-0" role="list" aria-label="Scoring categories">
           {rollups.map((section) => (
-            <SectionRollupRow
+            <ScoringCategoryRollupRow
               key={section.id}
               title={section.title}
+              weightPercent={SCORING_CATEGORY_WEIGHTS[section.id as ScoringCategoryId]}
               score={section.score}
             />
           ))}

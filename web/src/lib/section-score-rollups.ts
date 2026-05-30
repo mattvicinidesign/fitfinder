@@ -1,139 +1,109 @@
 /**
- * Report section rollups — partial weighted scores per summary card.
- * Section weights (of overall 100): Qualifications 45, Role 25, Client Profile 20, Preferences 10.
- * Ring score = weighted sum of section subtotals (renormalized when a section is unknown).
+ * Scoring category rollups — partial scores per category card toward the global score.
+ * Category weights (of overall 100): Qualifications 50, Role 25, Client Profile 15, Preferences 10.
+ * Within each category, identified scoring items are weighted equally (see equalWeightSectionSubtotal).
+ * Global score = weighted sum of category subtotals (renormalized when a category is unknown).
  */
 
-import { GUEST_WEIGHT_ROWS, REGISTERED_WEIGHT_ROWS } from "@/lib/scoring-weights";
-import type { CategoryKey, CategoryScore } from "@/lib/types";
+import type { PostingDetailHighlightContext } from "@/lib/posting-detail-highlights";
+import type { PostingDetailRow } from "@/lib/posting-details";
+import {
+  buildSectionFields,
+  equalWeightSectionSubtotal,
+  type SectionFieldScoreContext,
+} from "@/lib/section-field-scoring";
+import {
+  SCORING_CATEGORY_LABELS,
+  SCORING_CATEGORY_WEIGHTS,
+  type ReportSectionId,
+  type ScoringCategoryId,
+} from "@/lib/scoring-terminology";
+import type { CategoryScore } from "@/lib/types";
 
-export type ReportSectionId =
-  | "clientProfile"
-  | "clientPreferences"
-  | "roleDetails"
-  | "categoryMatching";
+export type { ReportSectionId, ScoringCategoryId } from "@/lib/scoring-terminology";
 
-/** Share of overall score per summary card (sums to 100). */
-export const REPORT_SECTION_WEIGHTS: Record<ReportSectionId, number> = {
-  categoryMatching: 45,
-  roleDetails: 25,
-  clientProfile: 20,
-  clientPreferences: 10,
-};
+/** @deprecated Use SCORING_CATEGORY_WEIGHTS from scoring-terminology */
+export const REPORT_SECTION_WEIGHTS = SCORING_CATEGORY_WEIGHTS;
 
 export interface ReportSectionRollup {
   id: ReportSectionId;
   title: string;
-  /** 0–100 partial score, or null when no scored categories in this section. */
+  /** 0–100 partial score, or null when no identified items in this category. */
   score: number | null;
 }
 
-const REGISTERED_SECTIONS: {
-  id: ReportSectionId;
-  title: string;
-  categories: CategoryKey[];
-}[] =
-  [
-    { id: "clientProfile", title: "Client Profile", categories: ["timezone"] },
-    {
-      id: "clientPreferences",
-      title: "Client Preferences",
-      categories: ["country", "aiEmphasis"],
-    },
-    {
-      id: "roleDetails",
-      title: "Role Details",
-      categories: ["industry", "compensation"],
-    },
-    {
-      id: "categoryMatching",
-      title: "Qualifications",
-      categories: ["skills", "tools"],
-    },
-  ];
-
-const GUEST_SECTIONS: {
-  id: ReportSectionId;
-  title: string;
-  categories: CategoryKey[];
-}[] = [
-  {
-    id: "clientPreferences",
-    title: "Client Preferences",
-    categories: ["aiEmphasis"],
-  },
-  { id: "roleDetails", title: "Role Details", categories: ["industry"] },
-  { id: "categoryMatching", title: "Qualifications", categories: ["skills"] },
+const REGISTERED_SECTION_IDS: ReportSectionId[] = [
+  "clientProfile",
+  "clientPreferences",
+  "roleDetails",
+  "categoryMatching",
 ];
 
-function weightMap(
-  rows: { key: CategoryKey; weight: number }[],
-): Map<CategoryKey, number> {
-  return new Map(rows.map((r) => [r.key, r.weight]));
+const GUEST_SECTION_IDS: ReportSectionId[] = [
+  "clientPreferences",
+  "roleDetails",
+  "categoryMatching",
+];
+
+export interface ReportRollupOptions {
+  fieldContext: SectionFieldScoreContext;
+  postingRows: PostingDetailRow[];
+  highlightCtx: PostingDetailHighlightContext;
 }
 
-function partialScore(
-  breakdown: CategoryScore[],
-  keys: CategoryKey[],
-  weights: Map<CategoryKey, number>,
+function rollupScoreForCategory(
+  sectionId: ReportSectionId,
+  options: ReportRollupOptions,
 ): number | null {
-  let weighted = 0;
-  let totalWeight = 0;
-
-  for (const key of keys) {
-    const row = breakdown.find((c) => c.category === key);
-    if (!row || row.status === "unknown") continue;
-    const w = weights.get(key) ?? 0;
-    if (w <= 0) continue;
-    weighted += row.score * w;
-    totalWeight += w;
-  }
-
-  if (totalWeight === 0) return null;
-  return Math.round(weighted / totalWeight);
+  const fields = buildSectionFields(
+    sectionId,
+    options.fieldContext,
+    options.postingRows,
+    options.highlightCtx,
+  );
+  return equalWeightSectionSubtotal(fields);
 }
 
 export function computeReportSectionRollups(
   breakdown: CategoryScore[],
   isGuest: boolean,
+  options: ReportRollupOptions,
 ): ReportSectionRollup[] {
-  const sections = isGuest ? GUEST_SECTIONS : REGISTERED_SECTIONS;
-  const weights = weightMap(isGuest ? GUEST_WEIGHT_ROWS : REGISTERED_WEIGHT_ROWS);
+  const sectionIds = isGuest ? GUEST_SECTION_IDS : REGISTERED_SECTION_IDS;
 
-  return sections.map(({ id, title, categories }) => ({
+  return sectionIds.map((id) => ({
     id,
-    title,
-    score: partialScore(breakdown, categories, weights),
+    title: SCORING_CATEGORY_LABELS[id],
+    score: rollupScoreForCategory(id, options),
   }));
 }
 
-/** Partial weighted score for one summary card (matches Score Summary rollups). */
+/** Partial score for one scoring category (equal-weight identified items). */
 export function sectionRollupScore(
   breakdown: CategoryScore[],
   isGuest: boolean,
   sectionId: ReportSectionId,
+  options: ReportRollupOptions,
 ): number | null {
-  return (
-    computeReportSectionRollups(breakdown, isGuest).find((s) => s.id === sectionId)
-      ?.score ?? null
-  );
+  return rollupScoreForCategory(sectionId, options);
 }
 
 /**
- * Overall report fit score (0–100) from section subtotals and REPORT_SECTION_WEIGHTS.
- * Unknown sections are omitted; remaining weights renormalize to 100%.
+ * Global score (0–100) from scoring category subtotals and SCORING_CATEGORY_WEIGHTS.
+ * Unknown categories are omitted; remaining weights renormalize to 100%.
  */
 export function computeWeightedReportScore(
   breakdown: CategoryScore[],
   isGuest: boolean,
+  options: ReportRollupOptions,
 ): number | null {
-  const rollups = computeReportSectionRollups(breakdown, isGuest);
+  const rollups = computeReportSectionRollups(breakdown, isGuest, options);
   let weighted = 0;
   let totalWeight = 0;
 
   for (const { id, score } of rollups) {
     if (score == null) continue;
-    const w = REPORT_SECTION_WEIGHTS[id];
+    const w = SCORING_CATEGORY_WEIGHTS[id];
     weighted += score * w;
     totalWeight += w;
   }

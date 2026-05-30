@@ -30,7 +30,12 @@ export function AnalysisResultView({
     profileDesiredCompensation ??
     (isQaRegisteredScoring() ? QA_ONBOARDING_DESIRED_COMPENSATION : null);
 
-  const normalized = normalizeAnalysisResult(result);
+  const normalized = normalizeAnalysisResult(result, {
+    profileDesiredCompensation: compensationForMatching,
+    profileQualifiedIndustries,
+    profileCountry,
+    profileTimezone,
+  });
   const jobDescription =
     normalized.jobDescription ?? result.jobDescription ?? null;
   const { score, postingContext, parsedJob, parsedResume } = normalized;

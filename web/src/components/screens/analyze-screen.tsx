@@ -274,7 +274,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
       ) : null}
       <IosLargeTitle
         title="Analyze"
-        subtitle="Upload your resume, paste a job description, and get a fit score."
+        subtitle="Upload your resume, paste a job description, and get a global score."
       />
 
       <form onSubmit={run} className="py-4 space-y-6">

@@ -4,23 +4,23 @@ import type { CategoryKey } from "./types.ts";
 
 export type ScoringMode = "guest" | "registered";
 
-/** Card sections sum to 100: Qualifications 45, Role 25, Client Profile 20, Preferences 10. */
+/** Card sections sum to 100: Qualifications 50, Role 25, Client Profile 15, Preferences 10. */
 export const REGISTERED_WEIGHTS: Record<CategoryKey, number> = {
-  skills: 30,
+  skills: 33,
   industry: 20,
   workflow: 0, // hidden in V1 UI — not scored until product defines workflow matching
-  tools: 15,
+  tools: 17,
   aiEmphasis: 8,
   archetype: 0,
   softwareModel: 0,
   compensation: 5,
   country: 2,
-  timezone: 20,
+  timezone: 15,
 };
 
-/** Guest: same section split minus Client Profile (45 + 25 + 10 = 80, renormalized in engine). */
+/** Guest: same section split minus Client Profile (50 + 25 + 10 = 85, renormalized in engine). */
 export const GUEST_WEIGHTS: Partial<Record<CategoryKey, number>> = {
-  skills: 45,
+  skills: 50,
   industry: 25,
   aiEmphasis: 10,
 };

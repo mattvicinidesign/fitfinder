@@ -15,6 +15,7 @@ import { QualificationScoreOverview } from "@/components/qualification-score-ove
 import { QualificationSummarySection } from "@/components/qualification-summary-section";
 import { SectionScoreSubtotal } from "@/components/section-score-subtotal";
 import { SummarySectionCard } from "@/components/summary-section-card";
+import { buildReportRollupOptions } from "@/lib/report-rollup-context";
 import { sectionRollupScore } from "@/lib/section-score-rollups";
 import { TimezoneBreakdownRow } from "@/components/timezone-breakdown-row";
 import {
@@ -27,6 +28,8 @@ import {
   scoreProgressClass,
   scoreProgressTrackClass,
 } from "@/lib/score";
+import { NOT_SPECIFIED_LABEL } from "@/lib/not-specified";
+import { scoringCategoryTitle } from "@/lib/scoring-terminology";
 import { GUEST_WEIGHT_ROWS, REGISTERED_WEIGHT_ROWS } from "@/lib/scoring-weights";
 import type {
   CategoryKey,
@@ -41,7 +44,7 @@ import { cn } from "@/lib/utils";
 
 const GUEST_SCORED_KEYS = new Set(GUEST_WEIGHT_ROWS.map((r) => r.key));
 
-/** Shown in the summary card grid — omitted from the category table. */
+/** Shown in scoring category cards — omitted from the qualifications table. */
 const SUMMARY_ONLY_KEYS = new Set<CategoryKey>([
   "industry",
   "compensation",
@@ -254,15 +257,28 @@ export function QualificationBreakdown({
     isGuest && process.env.NEXT_PUBLIC_QA_REGISTERED_SCORING === "true"
       ? "Guest account (re-run analyze after QA refresh for full breakdown)"
       : null;
+  const rollupOptions = buildReportRollupOptions({
+    score,
+    parsedJob,
+    parsedResume,
+    profileDesiredCompensation,
+    profileQualifiedIndustries,
+    profileCountry,
+    profileTimezone,
+    jobDescription,
+    jobTitle: analysisJobTitle,
+  });
+
   const qualificationsSubtotal = sectionRollupScore(
     breakdown,
     isGuest,
     "categoryMatching",
+    rollupOptions,
   );
 
   return (
     <div className="w-full space-y-3">
-      <QualificationScoreOverview score={score} />
+      <QualificationScoreOverview score={score} rollupOptions={rollupOptions} />
       <QualificationSummarySection
         score={score}
         industryLabel={industryLabel}
@@ -285,7 +301,7 @@ export function QualificationBreakdown({
         jobTitle={analysisJobTitle}
       />
 
-      <SummarySectionCard title="Qualifications">
+      <SummarySectionCard title={scoringCategoryTitle("categoryMatching")}>
         <div className="space-y-3">
           {categoryRows.map(({ key, label }) => {
           if (isGuest && !GUEST_SCORED_KEYS.has(key)) {
@@ -382,7 +398,7 @@ export function QualificationBreakdown({
 
           const match =
             !c || c.status === "unknown"
-              ? "Unknown"
+              ? NOT_SPECIFIED_LABEL
               : `${Math.round(c.score)}%`;
 
           return (
@@ -390,7 +406,7 @@ export function QualificationBreakdown({
               key={key}
               label={label}
               match={match}
-              mutedMatch={match === "Unknown"}
+              mutedMatch={match === NOT_SPECIFIED_LABEL}
             />
           );
         })}

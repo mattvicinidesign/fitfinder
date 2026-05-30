@@ -1,34 +1,37 @@
 "use client";
 
-import { SummaryFieldLabel } from "@/components/summary-field-label";
-import { SummaryInfoBadge } from "@/components/summary-info-badge";
+import { SummaryScoredField } from "@/components/summary-scored-field";
 import {
   jobCountryRequirementDisplay,
   jobTimezoneRequirementDisplay,
-  type JobPostingRequirementDisplay,
 } from "@/lib/job-posting-requirements";
+import type { SectionFieldScore } from "@/lib/section-field-scoring";
 import type { ParsedJob } from "@/lib/types";
 
-function RequirementRow({
-  title,
-  display,
-}: {
-  title: string;
-  display: JobPostingRequirementDisplay;
-}) {
-  return (
-    <div className="space-y-1.5 min-w-0" role="group" aria-label={display.statusLine}>
-      <SummaryFieldLabel>{title}</SummaryFieldLabel>
-      <SummaryInfoBadge
-        label={display.badgeLabel}
-        muted={!display.hasExplicitRequirement}
-        positive={display.positive}
-      />
-    </div>
-  );
+function requirementField(
+  key: string,
+  title: string,
+  display: ReturnType<typeof jobCountryRequirementDisplay>,
+): SectionFieldScore {
+  return {
+    key,
+    title,
+    identified: display.hasExplicitRequirement,
+    badgeLabel: display.badgeLabel,
+    state: display.hasExplicitRequirement
+      ? display.positive
+        ? "match"
+        : "mismatch"
+      : "unknown",
+    points: display.hasExplicitRequirement
+      ? display.positive
+        ? 100
+        : 0
+      : null,
+  };
 }
 
-/** Country / timezone requirements extracted from the job parse. */
+/** Country / timezone requirements extracted from the job posting. */
 export function JobPostingRequirementFields({
   parsedJob,
   jobDescription,
@@ -36,16 +39,14 @@ export function JobPostingRequirementFields({
   parsedJob?: ParsedJob;
   jobDescription?: string | null;
 }) {
-  if (!parsedJob && !jobDescription?.trim()) return null;
-
   const options = { jobDescription };
   const country = jobCountryRequirementDisplay(parsedJob, options);
   const timezone = jobTimezoneRequirementDisplay(parsedJob, options);
 
   return (
     <div className="grid grid-cols-1 gap-3 min-w-0 sm:grid-cols-2">
-      <RequirementRow title="Country preferred" display={country} />
-      <RequirementRow title="Timezone preferred" display={timezone} />
+      <SummaryScoredField field={requirementField("countryPreferred", "Country preferred", country)} />
+      <SummaryScoredField field={requirementField("timezonePreferred", "Timezone preferred", timezone)} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { normalizeCountry } from "@/lib/country-match";
+import { NOT_SPECIFIED_LABEL } from "@/lib/not-specified";
 import {
   resolveJobCountryRequirement,
   resolveJobTimezoneRequirement,
@@ -36,8 +37,6 @@ export function postingRequiresAmericasRegion(requirement: string): boolean {
   return false;
 }
 
-const NOT_STATED_COUNTRY = "Not stated in posting";
-const NOT_SPECIFIED_TIMEZONE = "Not Specified";
 
 export interface JobPostingRequirementsOptions {
   jobDescription?: string | null;
@@ -50,8 +49,7 @@ function toDisplay(
 ): JobPostingRequirementDisplay {
   const value = requirement?.trim() ?? "";
   const hasExplicitRequirement = value.length > 0;
-  const emptyLabel =
-    kind === "timezone" ? NOT_SPECIFIED_TIMEZONE : NOT_STATED_COUNTRY;
+  const emptyLabel = NOT_SPECIFIED_LABEL;
   return {
     requirement: value,
     hasExplicitRequirement,

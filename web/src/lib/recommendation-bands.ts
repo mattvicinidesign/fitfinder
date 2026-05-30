@@ -1,5 +1,5 @@
 /**
- * Fit score recommendation bands — keep in sync with
+ * Global score recommendation bands — keep in sync with
  * supabase/functions/_shared/scoring_constants.ts RECOMMENDATION_BANDS
  *
  * Display scale 0–10 = fitScore ÷ 100.

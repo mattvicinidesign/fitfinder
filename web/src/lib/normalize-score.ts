@@ -6,11 +6,13 @@ import {
 } from "@/lib/coverage-detail";
 import { resumeToolsMatchPool } from "@/lib/resume-tools";
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
+import { buildReportRollupOptions } from "@/lib/report-rollup-context";
 import { computeWeightedReportScore } from "@/lib/section-score-rollups";
 import type {
   AnalysisResult,
   CategoryKey,
   CategoryScore,
+  Compensation,
   CoverageMatchDetail,
   Narrative,
   ParsedJob,
@@ -130,6 +132,11 @@ export function normalizeScoreResult(
     parsedJob?: ParsedJob;
     parsedResume?: ParsedResume | null;
     jobDescription?: string | null;
+    jobTitle?: string | null;
+    profileDesiredCompensation?: Compensation | null;
+    profileQualifiedIndustries?: string[] | null;
+    profileCountry?: string | null;
+    profileTimezone?: string | null;
   },
 ): ScoreResult {
   const s = (score ?? {}) as Partial<ScoreResult> & Record<string, unknown>;
@@ -138,21 +145,13 @@ export function normalizeScoreResult(
   const categoryBreakdown = asArray<unknown>(s.categoryBreakdown).map(
     normalizeCategoryScore,
   );
-  const reportFitScore = computeWeightedReportScore(
-    categoryBreakdown,
-    scoringMode === "guest",
-  );
-  const fitScore = reportFitScore ?? (Number(s.fitScore) || 0);
-  const { recommendation, label: recommendationLabel } =
-    recommendFromFitScore(fitScore);
-
-  const base: ScoreResult = {
+  const baseScore: ScoreResult = {
     qualificationScore: Number(s.qualificationScore) || 0,
     confidenceScore: Number(s.confidenceScore) || 0,
     careerFitAdjustment: Number(s.careerFitAdjustment) || 0,
-    fitScore,
-    recommendation,
-    recommendationLabel,
+    fitScore: Number(s.fitScore) || 0,
+    recommendation: "not_recommended",
+    recommendationLabel: "",
     scoringMode,
     categoryBreakdown,
     unknownCategories: asArray<string>(s.unknownCategories),
@@ -163,15 +162,43 @@ export function normalizeScoreResult(
     negativeSignalsFound: asArray<string>(s.negativeSignalsFound),
   };
 
+  const rollupOptions = buildReportRollupOptions({
+    score: baseScore,
+    parsedJob: options?.parsedJob,
+    parsedResume: options?.parsedResume,
+    profileDesiredCompensation: options?.profileDesiredCompensation,
+    profileQualifiedIndustries: options?.profileQualifiedIndustries,
+    profileCountry: options?.profileCountry,
+    profileTimezone: options?.profileTimezone,
+    jobDescription: options?.jobDescription,
+    jobTitle: options?.jobTitle,
+  });
+
+  const reportFitScore = computeWeightedReportScore(
+    categoryBreakdown,
+    scoringMode === "guest",
+    rollupOptions,
+  );
+  const fitScore = reportFitScore ?? (Number(s.fitScore) || 0);
+  const { recommendation, label: recommendationLabel } =
+    recommendFromFitScore(fitScore);
+
+  const normalized: ScoreResult = {
+    ...baseScore,
+    fitScore,
+    recommendation,
+    recommendationLabel,
+  };
+
   if (options?.parsedJob) {
     return enrichCoverageCategories(
-      base,
+      normalized,
       options.parsedJob,
       options.parsedResume,
       options.jobDescription,
     );
   }
-  return base;
+  return normalized;
 }
 
 export function normalizeNarrative(narrative: unknown): Narrative {
@@ -240,7 +267,15 @@ function enrichParsedJob(
   };
 }
 
-export function normalizeAnalysisResult(result: unknown): AnalysisResult {
+export function normalizeAnalysisResult(
+  result: unknown,
+  profile?: {
+    profileDesiredCompensation?: Compensation | null;
+    profileQualifiedIndustries?: string[] | null;
+    profileCountry?: string | null;
+    profileTimezone?: string | null;
+  },
+): AnalysisResult {
   const r = (result ?? {}) as Partial<AnalysisResult>;
   const jobDescription =
     typeof r.jobDescription === "string" ? r.jobDescription : null;
@@ -261,6 +296,11 @@ export function normalizeAnalysisResult(result: unknown): AnalysisResult {
       parsedJob,
       parsedResume,
       jobDescription,
+      jobTitle,
+      profileDesiredCompensation: profile?.profileDesiredCompensation,
+      profileQualifiedIndustries: profile?.profileQualifiedIndustries,
+      profileCountry: profile?.profileCountry,
+      profileTimezone: profile?.profileTimezone,
     }),
     narrative: normalizeNarrative(r.narrative),
     postingContext: normalizePostingContext(

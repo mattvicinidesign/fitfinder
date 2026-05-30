@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Fit Finder — AI job-fit analysis",
   description:
-    "Upload your resume, paste a job description, and get an instant qualification and fit score with a narrative breakdown.",
+    "Upload your resume, paste a job description, and get an instant qualification report with a global score and narrative breakdown.",
   appleWebApp: {
     capable: true,
     title: "Fit Finder",

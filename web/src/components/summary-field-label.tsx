@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-/** Serif sub-labels for summary cards (Role, Client rating, Industry, etc.). */
+/** Serif label for a scoring item (Timezone, Role, Industry, etc.). */
 export function SummaryFieldLabel({
   children,
   className,

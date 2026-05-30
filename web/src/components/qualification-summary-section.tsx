@@ -1,22 +1,18 @@
 "use client";
 
-import { JobPostingRequirementFields } from "@/components/job-posting-requirement-fields";
-import { TalentTypeField } from "@/components/talent-type-field";
 import { IndustrySummaryContent } from "@/components/industry-breakdown-row";
-import { PostingDetailFields } from "@/components/posting-details-grid";
-import { SummaryFieldLabel } from "@/components/summary-field-label";
-import { SummaryMatchBadge } from "@/components/summary-match-badge";
+import { SummaryScoredField } from "@/components/summary-scored-field";
 import { SectionScoreSubtotal } from "@/components/section-score-subtotal";
 import { SummarySectionCard } from "@/components/summary-section-card";
+import { buildReportRollupOptions } from "@/lib/report-rollup-context";
+import {
+  buildClientProfileFields,
+  buildClientPreferencesFields,
+  buildRoleDetailsFields,
+} from "@/lib/section-field-scoring";
+import { scoringCategoryTitle } from "@/lib/scoring-terminology";
 import { sectionRollupScore } from "@/lib/section-score-rollups";
 import { cn } from "@/lib/utils";
-import type { PostingDetailHighlightContext } from "@/lib/posting-detail-highlights";
-import { resolvePostingDetailSections } from "@/lib/posting-details";
-import { talentTypeDisplay } from "@/lib/talent-type-display";
-import {
-  buildSummaryCriteria,
-  type SummaryCriterion,
-} from "@/lib/summary-criteria";
 import type {
   CategoryScore,
   Compensation,
@@ -25,18 +21,9 @@ import type {
   ScoreResult,
 } from "@/lib/types";
 
-function SummaryCriterionField({ criterion }: { criterion: SummaryCriterion }) {
-  return (
-    <div className="space-y-1.5 min-w-0">
-      <SummaryFieldLabel>{criterion.title}</SummaryFieldLabel>
-      <SummaryMatchBadge label={criterion.badgeLabel} state={criterion.state} />
-    </div>
-  );
+function fieldByKey<T extends { key: string }>(fields: T[], key: string): T | undefined {
+  return fields.find((f) => f.key === key);
 }
-
-const CLIENT_CARD_CRITERION_KEYS = new Set(["timezone"]);
-const ROLE_CARD_CRITERION_KEYS = new Set(["compensation"]);
-const CLIENT_PREFERENCES_CRITERION_KEYS = new Set(["aiEmphasis"]);
 
 export function QualificationSummarySection({
   score,
@@ -46,6 +33,7 @@ export function QualificationSummarySection({
   parsedResume,
   profileQualifiedIndustries,
   profileDesiredCompensation,
+  profileCountry,
   profileTimezone,
   jobDescription,
   jobTitle,
@@ -57,156 +45,135 @@ export function QualificationSummarySection({
   parsedResume?: ParsedResume | null;
   profileQualifiedIndustries?: string[] | null;
   profileDesiredCompensation?: Compensation | null;
+  profileCountry?: string | null;
   profileTimezone?: string | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
 }) {
   const isGuest = score.scoringMode === "guest";
-  const showIndustry = Boolean(industryCategory || parsedJob);
-  const showPostingDetails = parsedJob != null;
-  const criteria = buildSummaryCriteria({
+  const rollupOptions = buildReportRollupOptions({
+    score,
     parsedJob,
     parsedResume,
     profileDesiredCompensation,
+    profileQualifiedIndustries,
+    profileCountry,
     profileTimezone,
     jobDescription,
-    breakdown: score.categoryBreakdown,
-    isGuest,
+    jobTitle,
   });
 
-  const clientCardCriteria = criteria.filter((c) =>
-    CLIENT_CARD_CRITERION_KEYS.has(c.key),
-  );
-  const roleCardCriteria = criteria.filter((c) => ROLE_CARD_CRITERION_KEYS.has(c.key));
-  const preferencesCardCriteria = criteria.filter((c) =>
-    CLIENT_PREFERENCES_CRITERION_KEYS.has(c.key),
-  );
-  const compensationCriterion = roleCardCriteria.find((c) => c.key === "compensation");
-  const aiEmphasisCriterion = preferencesCardCriteria.find(
-    (c) => c.key === "aiEmphasis",
-  );
-
-  if (
-    !showIndustry &&
-    !showPostingDetails &&
-    clientCardCriteria.length === 0 &&
-    roleCardCriteria.length === 0 &&
-    preferencesCardCriteria.length === 0
-  ) {
-    return null;
-  }
-
-  const postingSections = parsedJob
-    ? resolvePostingDetailSections(parsedJob, { jobDescription, jobTitle })
-    : [];
-  const clientSection = postingSections.find((s) => s.id === "client");
-  const clientOriginRow = clientSection?.rows.find((r) => r.key === "clientOrigin");
-  const clientRatingRow = clientSection?.rows.find((r) => r.key === "clientRating");
-  const clientAvgHourlyRow = clientSection?.rows.find(
-    (r) => r.key === "clientAverageHourlyRate",
-  );
-  const clientTimezoneCriterion = clientCardCriteria.find((c) => c.key === "timezone");
-  const showClientHeroRow = Boolean(clientOriginRow || clientTimezoneCriterion);
-  const showClientStatsRow = Boolean(clientRatingRow || clientAvgHourlyRow);
-  const roleSection = postingSections.find((s) => s.id === "role");
-  const rolePostingRow = roleSection?.rows.find((r) => r.key === "role");
-  const hoursNeededRow = roleSection?.rows.find((r) => r.key === "hoursNeeded");
-  const durationRow = roleSection?.rows.find((r) => r.key === "duration");
-  const otherRolePostingRows =
-    roleSection?.rows.filter(
-      (r) =>
-        r.key !== "hireArea" &&
-        r.key !== "role" &&
-        r.key !== "datePosted" &&
-        r.key !== "hoursNeeded" &&
-        r.key !== "duration",
-    ) ?? [];
-  const showRoleMetaRow = Boolean(rolePostingRow);
-  const showIndustryCompRow = showIndustry || Boolean(compensationCriterion);
-  const showRoleEngagementRow = Boolean(hoursNeededRow || durationRow);
-  const showTalentType = talentTypeDisplay(jobDescription).hasExplicitRequirement;
-  const showClientCard = Boolean(clientSection || clientCardCriteria.length > 0);
-  const showJobRequirements = Boolean(parsedJob || jobDescription?.trim());
-  const showClientPreferencesMetaRow = Boolean(
-    showTalentType || aiEmphasisCriterion,
-  );
-  const showClientPreferencesCard = Boolean(
-    showJobRequirements || showClientPreferencesMetaRow,
-  );
-  const showRoleCard = Boolean(
-    roleSection ||
-      showIndustry ||
-      compensationCriterion ||
-      showRoleEngagementRow,
-  );
-
-  const highlightCtx: PostingDetailHighlightContext = {
+  const postingRows = rollupOptions?.postingRows ?? [];
+  const highlightCtx = rollupOptions?.highlightCtx ?? {
     profileDesiredCompensation,
     parsedResume,
     parsedJob,
     jobTitle,
   };
+  const fieldCtx =
+    rollupOptions?.fieldContext ?? {
+      parsedJob,
+      parsedResume,
+      profileDesiredCompensation,
+      profileQualifiedIndustries,
+      profileCountry,
+      profileTimezone,
+      jobDescription,
+      jobTitle,
+      breakdown: score.categoryBreakdown,
+      isGuest,
+    };
 
-  const breakdown = score.categoryBreakdown;
+  const clientFields = buildClientProfileFields(
+    fieldCtx,
+    postingRows,
+    highlightCtx,
+  );
+  const preferencesFields = buildClientPreferencesFields(fieldCtx);
+  const roleFields = buildRoleDetailsFields(fieldCtx, postingRows, highlightCtx);
+
+  const showClientCard = !isGuest && clientFields.length > 0;
+  const showPreferencesCard = preferencesFields.length > 0;
+  const showRoleCard =
+    roleFields.length > 0 || Boolean(industryCategory || parsedJob);
+
+  if (!showClientCard && !showPreferencesCard && !showRoleCard) {
+    return null;
+  }
+
   const clientProfileSubtotal = sectionRollupScore(
-    breakdown,
+    score.categoryBreakdown,
     isGuest,
     "clientProfile",
+    rollupOptions,
   );
   const clientPreferencesSubtotal = sectionRollupScore(
-    breakdown,
+    score.categoryBreakdown,
     isGuest,
     "clientPreferences",
+    rollupOptions,
   );
-  const roleDetailsSubtotal = sectionRollupScore(breakdown, isGuest, "roleDetails");
+  const roleDetailsSubtotal = sectionRollupScore(
+    score.categoryBreakdown,
+    isGuest,
+    "roleDetails",
+    rollupOptions,
+  );
+
+  const locationField = fieldByKey(clientFields, "clientOrigin");
+  const timezoneField = fieldByKey(clientFields, "timezone");
+  const ratingField = fieldByKey(clientFields, "clientRating");
+  const avgPayField = fieldByKey(clientFields, "clientAverageHourlyRate");
+
+  const roleField = fieldByKey(roleFields, "role");
+  const compensationField = fieldByKey(roleFields, "compensation");
+  const hoursField = fieldByKey(roleFields, "hoursNeeded");
+  const durationField = fieldByKey(roleFields, "duration");
+  const countryField = fieldByKey(preferencesFields, "countryPreferred");
+  const timezonePrefField = fieldByKey(preferencesFields, "timezonePreferred");
+  const talentField = fieldByKey(preferencesFields, "talentType");
+  const aiField = fieldByKey(preferencesFields, "aiEmphasis");
 
   return (
-    <div className="space-y-3 w-full" role="region" aria-label="Qualification summary">
+    <div className="space-y-3 w-full" role="region" aria-label="Scoring categories">
       {showClientCard ? (
-        <SummarySectionCard title={clientSection?.title ?? "Client Profile"}>
+        <SummarySectionCard title={scoringCategoryTitle("clientProfile")}>
           <div className="space-y-3">
-            {showClientHeroRow ? (
+            {locationField || timezoneField ? (
               <div
                 className={cn(
                   "grid min-w-0 gap-x-4 gap-y-3",
-                  clientOriginRow && clientTimezoneCriterion
-                    ? "grid-cols-2"
-                    : "grid-cols-1",
+                  locationField && timezoneField ? "grid-cols-2" : "grid-cols-1",
                 )}
               >
-                {clientOriginRow ? (
-                  <PostingDetailFields
-                    rows={[clientOriginRow]}
-                    highlightCtx={highlightCtx}
-                    layout="stack"
+                {locationField ? (
+                  <SummaryScoredField
+                    field={locationField}
+                    postingDetailKey="clientOrigin"
                   />
                 ) : null}
-                {clientTimezoneCriterion ? (
-                  <SummaryCriterionField criterion={clientTimezoneCriterion} />
+                {timezoneField ? (
+                  <SummaryScoredField field={timezoneField} />
                 ) : null}
               </div>
             ) : null}
-            {showClientStatsRow ? (
+            {ratingField || avgPayField ? (
               <div
                 className={cn(
                   "grid min-w-0 gap-x-4 gap-y-3",
-                  clientRatingRow && clientAvgHourlyRow
-                    ? "grid-cols-2"
-                    : "grid-cols-1",
+                  ratingField && avgPayField ? "grid-cols-2" : "grid-cols-1",
                 )}
               >
-                {clientRatingRow ? (
-                  <PostingDetailFields
-                    rows={[clientRatingRow]}
-                    highlightCtx={highlightCtx}
-                    layout="stack"
+                {ratingField ? (
+                  <SummaryScoredField
+                    field={ratingField}
+                    postingDetailKey="clientRating"
                   />
                 ) : null}
-                {clientAvgHourlyRow ? (
-                  <PostingDetailFields
-                    rows={[clientAvgHourlyRow]}
-                    highlightCtx={highlightCtx}
-                    layout="stack"
+                {avgPayField ? (
+                  <SummaryScoredField
+                    field={avgPayField}
+                    postingDetailKey="clientAverageHourlyRate"
                   />
                 ) : null}
               </div>
@@ -216,30 +183,35 @@ export function QualificationSummarySection({
         </SummarySectionCard>
       ) : null}
 
-      {showClientPreferencesCard ? (
-        <SummarySectionCard title="Client Preferences">
+      {showPreferencesCard ? (
+        <SummarySectionCard title={scoringCategoryTitle("clientPreferences")}>
           <div className="space-y-3">
-            {showJobRequirements ? (
-              <JobPostingRequirementFields
-                parsedJob={parsedJob}
-                jobDescription={jobDescription}
-              />
-            ) : null}
-            {showClientPreferencesMetaRow ? (
+            {countryField || timezonePrefField ? (
               <div
                 className={cn(
                   "grid min-w-0 gap-x-4 gap-y-3",
-                  showTalentType && aiEmphasisCriterion
-                    ? "grid-cols-2"
+                  countryField && timezonePrefField
+                    ? "grid-cols-1 sm:grid-cols-2"
                     : "grid-cols-1",
                 )}
               >
-                {showTalentType ? (
-                  <TalentTypeField jobDescription={jobDescription} />
+                {countryField ? <SummaryScoredField field={countryField} /> : null}
+                {timezonePrefField ? (
+                  <SummaryScoredField field={timezonePrefField} />
                 ) : null}
-                {aiEmphasisCriterion ? (
-                  <SummaryCriterionField criterion={aiEmphasisCriterion} />
-                ) : null}
+              </div>
+            ) : null}
+            {talentField || aiField ? (
+              <div
+                className={cn(
+                  "grid min-w-0 gap-x-4 gap-y-3",
+                  talentField && aiField
+                    ? "grid-cols-1 sm:grid-cols-2"
+                    : "grid-cols-1",
+                )}
+              >
+                {talentField ? <SummaryScoredField field={talentField} /> : null}
+                {aiField ? <SummaryScoredField field={aiField} /> : null}
               </div>
             ) : null}
           </div>
@@ -248,66 +220,46 @@ export function QualificationSummarySection({
       ) : null}
 
       {showRoleCard ? (
-        <SummarySectionCard title={roleSection?.title ?? "Role Details"}>
+        <SummarySectionCard title={scoringCategoryTitle("roleDetails")}>
           <div className="space-y-3">
-            {showRoleMetaRow && rolePostingRow ? (
-              <PostingDetailFields
-                rows={[rolePostingRow]}
-                highlightCtx={highlightCtx}
-                layout="stack"
+            {roleField ? <SummaryScoredField field={roleField} postingDetailKey="role" /> : null}
+            <div
+              className={cn(
+                "grid min-w-0 gap-x-4 gap-y-3",
+                !isGuest && compensationField ? "grid-cols-2" : "grid-cols-1",
+              )}
+            >
+              <IndustrySummaryContent
+                label={industryLabel}
+                category={industryCategory}
+                parsedJob={parsedJob}
+                parsedResume={parsedResume}
+                profileQualifiedIndustries={profileQualifiedIndustries}
               />
-            ) : null}
-            {showIndustryCompRow ? (
+              {!isGuest && compensationField ? (
+                <SummaryScoredField field={compensationField} />
+              ) : null}
+            </div>
+            {hoursField || durationField ? (
               <div
                 className={cn(
                   "grid min-w-0 gap-x-4 gap-y-3",
-                  showIndustry && compensationCriterion
-                    ? "grid-cols-2"
-                    : "grid-cols-1",
+                  hoursField && durationField ? "grid-cols-2" : "grid-cols-1",
                 )}
               >
-                {showIndustry ? (
-                  <IndustrySummaryContent
-                    label={industryLabel}
-                    category={industryCategory}
-                    parsedJob={parsedJob}
-                    parsedResume={parsedResume}
-                    profileQualifiedIndustries={profileQualifiedIndustries}
+                {hoursField ? (
+                  <SummaryScoredField
+                    field={hoursField}
+                    postingDetailKey="hoursNeeded"
                   />
                 ) : null}
-                {compensationCriterion ? (
-                  <SummaryCriterionField criterion={compensationCriterion} />
-                ) : null}
-              </div>
-            ) : null}
-            {showRoleEngagementRow ? (
-              <div
-                className={cn(
-                  "grid min-w-0 gap-x-4 gap-y-3",
-                  hoursNeededRow && durationRow ? "grid-cols-2" : "grid-cols-1",
-                )}
-              >
-                {hoursNeededRow ? (
-                  <PostingDetailFields
-                    rows={[hoursNeededRow]}
-                    highlightCtx={highlightCtx}
-                    layout="stack"
-                  />
-                ) : null}
-                {durationRow ? (
-                  <PostingDetailFields
-                    rows={[durationRow]}
-                    highlightCtx={highlightCtx}
-                    layout="stack"
+                {durationField ? (
+                  <SummaryScoredField
+                    field={durationField}
+                    postingDetailKey="duration"
                   />
                 ) : null}
               </div>
-            ) : null}
-            {otherRolePostingRows.length > 0 ? (
-              <PostingDetailFields
-                rows={otherRolePostingRows}
-                highlightCtx={highlightCtx}
-              />
             ) : null}
           </div>
           <SectionScoreSubtotal score={roleDetailsSubtotal} />

@@ -7,6 +7,7 @@ import {
   isPostingDetailHighlightPositive,
   type PostingDetailHighlightContext,
 } from "@/lib/posting-detail-highlights";
+import { NOT_SPECIFIED_LABEL } from "@/lib/not-specified";
 import type { PostingDetailRow } from "@/lib/posting-details";
 
 export function PostingDetailFields({
@@ -31,8 +32,12 @@ export function PostingDetailFields({
         <div key={row.key} className="space-y-1.5 min-w-0">
           <SummaryFieldLabel>{row.title}</SummaryFieldLabel>
           <SummaryInfoBadge
-            label={row.value}
-            icon={getPostingDetailBadgeIcon(row.key, row.value)}
+            label={row.missing ? NOT_SPECIFIED_LABEL : row.value}
+            icon={
+              !row.missing
+                ? getPostingDetailBadgeIcon(row.key, row.value)
+                : undefined
+            }
             muted={row.missing}
             positive={
               !row.missing &&
