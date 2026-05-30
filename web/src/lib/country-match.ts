@@ -42,6 +42,31 @@ export function normalizeCountry(value: string): string {
   return n;
 }
 
+/** True when PQ Location / regional requirement fits the candidate country (e.g. US ∈ Americas). */
+export function preferredLocationMatchesCandidate(
+  requirement: string,
+  candidateCountry: string | null | undefined,
+): boolean {
+  const cand = candidateCountry?.trim();
+  if (!cand || !requirement.trim()) return false;
+
+  const candNorm = normalizeCountry(cand);
+  const reqNorm = normalizeToken(requirement);
+
+  if (normalizeCountry(requirement) === candNorm) return true;
+
+  if (candNorm === "us") {
+    if (/\bamericas\b/.test(reqNorm)) return true;
+    if (/\b(?:north|south|latin)\s+america\b/.test(reqNorm)) return true;
+    if (/\bamerica\b/.test(reqNorm) && !/\bamerican\s+english\b/.test(reqNorm)) {
+      return true;
+    }
+    if (/\bunited states\b|\bu s a\b/.test(reqNorm)) return true;
+  }
+
+  return false;
+}
+
 export function evaluateCountry(
   jobRequirement: string | null | undefined,
   candidateCountry: string | null | undefined,

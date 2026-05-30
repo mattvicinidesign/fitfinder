@@ -1,10 +1,13 @@
-import { normalizeCountry } from "@/lib/country-match";
+import {
+  normalizeCountry,
+  preferredLocationMatchesCandidate,
+} from "@/lib/country-match";
 import { NOT_SPECIFIED_LABEL } from "@/lib/not-specified";
 import {
-  resolveJobCountryRequirement,
+  resolveJobPreferredLocation,
   resolveJobTimezoneRequirement,
 } from "@/lib/preferred-qualifications-parse";
-import type { ParsedJob } from "@/lib/types";
+import type { ParsedJob, ParsedResume } from "@/lib/types";
 
 export interface JobPostingRequirementDisplay {
   requirement: string;
@@ -44,8 +47,8 @@ export interface JobPostingRequirementsOptions {
 
 function toDisplay(
   requirement: string | null,
-  kind: "country" | "timezone",
-  positive = false,
+  kind: "location" | "timezone",
+  matched = false,
 ): JobPostingRequirementDisplay {
   const value = requirement?.trim() ?? "";
   const hasExplicitRequirement = value.length > 0;
@@ -58,24 +61,40 @@ function toDisplay(
       ? `Posting requires ${kind}: ${value}`
       : kind === "timezone"
         ? "No timezone field in Preferred qualifications"
-        : "Posting has no explicit country requirement",
-    positive: hasExplicitRequirement && positive,
+        : "Posting has no Location in Preferred qualifications",
+    positive: hasExplicitRequirement && matched,
   };
 }
 
+export interface JobPreferredLocationOptions extends JobPostingRequirementsOptions {
+  parsedResume?: ParsedResume | null;
+  profileCountry?: string | null;
+}
+
+export function jobPreferredLocationDisplay(
+  parsedJob?: ParsedJob,
+  options?: JobPreferredLocationOptions,
+): JobPostingRequirementDisplay {
+  const requirement = resolveJobPreferredLocation(
+    parsedJob,
+    options?.jobDescription,
+  );
+  const candidate =
+    options?.parsedResume?.country?.trim() ??
+    options?.profileCountry?.trim() ??
+    null;
+  const matched = requirement
+    ? preferredLocationMatchesCandidate(requirement, candidate)
+    : false;
+  return toDisplay(requirement, "location", matched);
+}
+
+/** @deprecated Use jobPreferredLocationDisplay */
 export function jobCountryRequirementDisplay(
   parsedJob?: ParsedJob,
   options?: JobPostingRequirementsOptions,
 ): JobPostingRequirementDisplay {
-  const requirement = resolveJobCountryRequirement(
-    parsedJob,
-    options?.jobDescription,
-  );
-  return toDisplay(
-    requirement,
-    "country",
-    postingRequiresAmericasRegion(requirement ?? ""),
-  );
+  return jobPreferredLocationDisplay(parsedJob, options);
 }
 
 export function jobTimezoneRequirementDisplay(

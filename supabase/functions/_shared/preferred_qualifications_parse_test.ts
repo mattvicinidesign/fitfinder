@@ -38,6 +38,16 @@ Deno.test("resolveJobCountryRequirement uses Location when parse field empty", (
   );
 });
 
+Deno.test("resolveJobPreferredLocation prefers PQ Location over vague Worldwide parse", () => {
+  assertEquals(
+    resolveJobCountryRequirement(
+      { countryRequirement: "Worldwide" },
+      PREFERRED_BLOCK,
+    ),
+    "Americas, Europe",
+  );
+});
+
 Deno.test("resolveJobTimezoneRequirement ignores job parse; uses preferred block only", () => {
   assertEquals(resolveJobTimezoneRequirement({}, PREFERRED_BLOCK), null);
   assertEquals(

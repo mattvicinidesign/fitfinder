@@ -129,7 +129,7 @@ export function QualificationSummarySection({
   const compensationField = fieldByKey(roleFields, "compensation");
   const hoursField = fieldByKey(roleFields, "hoursNeeded");
   const durationField = fieldByKey(roleFields, "duration");
-  const countryField = fieldByKey(preferencesFields, "countryPreferred");
+  const countryField = fieldByKey(preferencesFields, "locationPreferred");
   const timezonePrefField = fieldByKey(preferencesFields, "timezonePreferred");
   const talentField = fieldByKey(preferencesFields, "talentType");
   const aiField = fieldByKey(preferencesFields, "aiEmphasis");

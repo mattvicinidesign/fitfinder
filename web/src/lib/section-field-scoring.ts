@@ -17,10 +17,12 @@ import {
   extractTimezoneFromAboutClient,
 } from "@/lib/client-origin-timezone";
 import { buildIndustryDetail } from "@/lib/industry-match";
+import { preferredLocationMatchesCandidate } from "@/lib/country-match";
 import {
-  jobCountryRequirementDisplay,
+  jobPreferredLocationDisplay,
   jobTimezoneRequirementDisplay,
 } from "@/lib/job-posting-requirements";
+import { resolveJobPreferredLocation } from "@/lib/preferred-qualifications-parse";
 import { NOT_SPECIFIED_LABEL, isNotSpecifiedDisplay } from "@/lib/not-specified";
 import {
   isClientRatingAtLeast3,
@@ -40,7 +42,6 @@ import {
   type CoverageResult,
 } from "@/lib/coverage-detail";
 import { talentTypeDisplay } from "@/lib/talent-type-display";
-import { buildCountryDetail } from "@/lib/country-match";
 import type { SummaryMatchState } from "@/lib/summary-criteria";
 import type {
   CategoryScore,
@@ -234,7 +235,7 @@ export function buildClientProfileFields(
       identified
         ? binaryField(
             "clientAverageHourlyRate",
-            "Avg Pay Rate",
+            "Avg. Rate",
             true,
             avgRow.value,
             isClientAvgHourlyAtOrAboveProfile(
@@ -242,7 +243,7 @@ export function buildClientProfileFields(
               highlightCtx.profileDesiredCompensation,
             ),
           )
-        : field("clientAverageHourlyRate", "Avg Pay Rate", false, "", "unknown", null),
+        : field("clientAverageHourlyRate", "Avg. Rate", false, "", "unknown", null),
     );
   }
 
@@ -252,18 +253,27 @@ export function buildClientProfileFields(
 export function buildClientPreferencesFields(
   ctx: SectionFieldScoreContext,
 ): SectionFieldScore[] {
-  const options = { jobDescription: ctx.jobDescription };
-  const countryDisplay = jobCountryRequirementDisplay(ctx.parsedJob, options);
-  const timezoneDisplay = jobTimezoneRequirementDisplay(ctx.parsedJob, options);
+  const locationOptions = {
+    jobDescription: ctx.jobDescription,
+    parsedResume: ctx.parsedResume,
+    profileCountry: ctx.profileCountry,
+  };
+  const locationDisplay = jobPreferredLocationDisplay(
+    ctx.parsedJob,
+    locationOptions,
+  );
+  const timezoneDisplay = jobTimezoneRequirementDisplay(ctx.parsedJob, {
+    jobDescription: ctx.jobDescription,
+  });
   const talent = talentTypeDisplay(ctx.jobDescription);
+  const pqLocation = resolveJobPreferredLocation(
+    ctx.parsedJob,
+    ctx.jobDescription,
+  );
+  const candidateCountry =
+    ctx.parsedResume?.country?.trim() ?? ctx.profileCountry?.trim() ?? null;
   const countryRow = lookupCategory(ctx.breakdown, "country");
   const countryCat = categoryPoints(countryRow);
-  const countryDetail = buildCountryDetail(
-    ctx.parsedJob,
-    ctx.parsedResume,
-    ctx.profileCountry,
-    countryRow,
-  );
   const tzCat = categoryPoints(lookupCategory(ctx.breakdown, "timezone"));
   const aiCat = lookupCategory(ctx.breakdown, "aiEmphasis");
   const aiDetail = buildAiEmphasisDetail(ctx.parsedJob, ctx.parsedResume);
@@ -293,12 +303,14 @@ export function buildClientPreferencesFields(
     aiLabel = matched ? "YES" : "NO";
   }
 
-  const countryIdentified = countryDisplay.hasExplicitRequirement;
-  const countryMatched =
-    countryIdentified &&
-    (countryCat.identified
-      ? countryCat.state === "match" || (countryCat.points ?? 0) >= 50
-      : countryDetail.outcome === "matched");
+  const locationIdentified = locationDisplay.hasExplicitRequirement;
+  const locationMatched =
+    locationIdentified &&
+    (pqLocation
+      ? preferredLocationMatchesCandidate(pqLocation, candidateCountry)
+      : countryCat.identified
+        ? countryCat.state === "match" || (countryCat.points ?? 0) >= 50
+        : false);
 
   const tzReqIdentified = timezoneDisplay.hasExplicitRequirement;
   const tzReqMatched = tzReqIdentified
@@ -309,16 +321,16 @@ export function buildClientPreferencesFields(
 
   return [
     field(
-      "countryPreferred",
-      "Country preferred",
-      countryIdentified,
-      countryDisplay.badgeLabel,
-      countryMatched ? "match" : "mismatch",
-      countryIdentified ? (countryMatched ? 100 : countryCat.points ?? 0) : null,
+      "locationPreferred",
+      "Location",
+      locationIdentified,
+      locationDisplay.badgeLabel,
+      locationMatched ? "match" : "mismatch",
+      locationIdentified ? (locationMatched ? 100 : countryCat.points ?? 0) : null,
     ),
     field(
       "timezonePreferred",
-      "Timezone preferred",
+      "Timezone",
       tzReqIdentified,
       timezoneDisplay.badgeLabel,
       tzReqMatched ? "match" : "mismatch",
@@ -326,12 +338,12 @@ export function buildClientPreferencesFields(
     ),
     binaryField(
       "talentType",
-      "Talent type",
+      "Type",
       talent.hasExplicitRequirement,
       talent.badgeLabel,
       talent.positive,
     ),
-    field("aiEmphasis", "AI Emphasis", aiIdentified, aiLabel, aiState, aiPoints),
+    field("aiEmphasis", "AI", aiIdentified, aiLabel, aiState, aiPoints),
   ];
 }
 
@@ -393,12 +405,12 @@ export function buildRoleDetailsFields(
     postingRowIdentified(hoursRow)
       ? binaryField(
           "hoursNeeded",
-          "Hours needed",
+          "Hours",
           true,
           hoursRow!.value,
           isHoursNeededAtLeast30PerWeek(hoursRow!.value),
         )
-      : field("hoursNeeded", "Hours needed", false, "", "unknown", null),
+      : field("hoursNeeded", "Hours", false, "", "unknown", null),
   );
 
   fields.push(

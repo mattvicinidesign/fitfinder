@@ -80,18 +80,35 @@ export function resolveJobTalentType(
   return extractPreferredQualificationsFields(text).talentType;
 }
 
+const VAGUE_LOCATION_REQUIREMENT =
+  /\b(worldwide|global|anywhere|any\s+country|open\s+to\s+all)\b/i;
+
+function isVagueLocationRequirement(value: string): boolean {
+  return VAGUE_LOCATION_REQUIREMENT.test(value.trim());
+}
+
+export function resolveJobPreferredLocation(
+  parsedJob: { countryRequirement?: string | null } | undefined,
+  jobDescription?: string | null,
+): string | null {
+  const text = jobDescription?.trim();
+  if (text) {
+    const pq = extractPreferredQualificationsFields(text);
+    if (pq.location?.trim()) return pq.location.trim();
+    if (pq.country?.trim()) return pq.country.trim();
+  }
+
+  const fromJob = parsedJob?.countryRequirement?.trim();
+  if (fromJob && !isVagueLocationRequirement(fromJob)) return fromJob;
+
+  return null;
+}
+
 export function resolveJobCountryRequirement(
   parsedJob: { countryRequirement?: string | null } | undefined,
   jobDescription?: string | null,
 ): string | null {
-  const fromJob = parsedJob?.countryRequirement?.trim();
-  if (fromJob) return fromJob;
-
-  const text = jobDescription?.trim();
-  if (!text) return null;
-
-  const pq = extractPreferredQualificationsFields(text);
-  return pq.country ?? pq.location ?? null;
+  return resolveJobPreferredLocation(parsedJob, jobDescription);
 }
 
 export function resolveJobTimezoneRequirement(

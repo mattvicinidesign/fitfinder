@@ -331,11 +331,11 @@ const ROW_DEFS: {
 }[] = [
   { key: "clientOrigin", title: "Location", section: "client" },
   { key: "clientRating", title: "Rating", section: "client" },
-  { key: "clientAverageHourlyRate", title: "Avg Pay Rate", section: "client" },
+  { key: "clientAverageHourlyRate", title: "Avg. Rate", section: "client" },
   { key: "hireArea", title: "Who Can Apply", section: "role" },
   { key: "role", title: "Role", section: "role" },
   { key: "datePosted", title: "Date posted", section: "role" },
-  { key: "hoursNeeded", title: "Hours needed", section: "role" },
+  { key: "hoursNeeded", title: "Hours", section: "role" },
   { key: "duration", title: "Duration", section: "role" },
 ];
 

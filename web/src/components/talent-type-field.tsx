@@ -13,7 +13,7 @@ export function TalentTypeField({
   const display = talentTypeDisplay(jobDescription);
   const field: SectionFieldScore = {
     key: "talentType",
-    title: "Talent type",
+    title: "Type",
     identified: display.hasExplicitRequirement,
     badgeLabel: display.badgeLabel,
     state: display.hasExplicitRequirement

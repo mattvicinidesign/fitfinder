@@ -2,7 +2,7 @@
 
 import { SummaryScoredField } from "@/components/summary-scored-field";
 import {
-  jobCountryRequirementDisplay,
+  jobPreferredLocationDisplay,
   jobTimezoneRequirementDisplay,
 } from "@/lib/job-posting-requirements";
 import type { SectionFieldScore } from "@/lib/section-field-scoring";
@@ -11,7 +11,7 @@ import type { ParsedJob } from "@/lib/types";
 function requirementField(
   key: string,
   title: string,
-  display: ReturnType<typeof jobCountryRequirementDisplay>,
+  display: ReturnType<typeof jobPreferredLocationDisplay>,
 ): SectionFieldScore {
   return {
     key,
@@ -40,13 +40,13 @@ export function JobPostingRequirementFields({
   jobDescription?: string | null;
 }) {
   const options = { jobDescription };
-  const country = jobCountryRequirementDisplay(parsedJob, options);
+  const country = jobPreferredLocationDisplay(parsedJob, options);
   const timezone = jobTimezoneRequirementDisplay(parsedJob, options);
 
   return (
     <div className="grid grid-cols-1 gap-3 min-w-0 sm:grid-cols-2">
-      <SummaryScoredField field={requirementField("countryPreferred", "Country preferred", country)} />
-      <SummaryScoredField field={requirementField("timezonePreferred", "Timezone preferred", timezone)} />
+      <SummaryScoredField field={requirementField("locationPreferred", "Location", country)} />
+      <SummaryScoredField field={requirementField("timezonePreferred", "Timezone", timezone)} />
     </div>
   );
 }
