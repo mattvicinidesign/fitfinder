@@ -50,7 +50,7 @@ const DEMO_RESULT: AnalysisResult = {
     careerFitAdjustment: 7,
     fitScore: 89,
     recommendation: "strong_apply",
-    recommendationLabel: "Strong Pursuit",
+    recommendationLabel: "Highly Recommended",
     scoringMode: "registered",
     categoryBreakdown: [
       {

@@ -6,6 +6,7 @@ import {
 } from "@/lib/coverage-detail";
 import { resumeToolsMatchPool } from "@/lib/resume-tools";
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
+import { computeWeightedReportScore } from "@/lib/section-score-rollups";
 import type {
   AnalysisResult,
   CategoryKey,
@@ -133,7 +134,15 @@ export function normalizeScoreResult(
 ): ScoreResult {
   const s = (score ?? {}) as Partial<ScoreResult> & Record<string, unknown>;
 
-  const fitScore = Number(s.fitScore) || 0;
+  const scoringMode = s.scoringMode === "guest" ? "guest" : "registered";
+  const categoryBreakdown = asArray<unknown>(s.categoryBreakdown).map(
+    normalizeCategoryScore,
+  );
+  const reportFitScore = computeWeightedReportScore(
+    categoryBreakdown,
+    scoringMode === "guest",
+  );
+  const fitScore = reportFitScore ?? (Number(s.fitScore) || 0);
   const { recommendation, label: recommendationLabel } =
     recommendFromFitScore(fitScore);
 
@@ -144,8 +153,8 @@ export function normalizeScoreResult(
     fitScore,
     recommendation,
     recommendationLabel,
-    scoringMode: s.scoringMode === "guest" ? "guest" : "registered",
-    categoryBreakdown: asArray<unknown>(s.categoryBreakdown).map(normalizeCategoryScore),
+    scoringMode,
+    categoryBreakdown,
     unknownCategories: asArray<string>(s.unknownCategories),
     explanation: typeof s.explanation === "string" ? s.explanation : "",
     strengths: asArray<string>(s.strengths),

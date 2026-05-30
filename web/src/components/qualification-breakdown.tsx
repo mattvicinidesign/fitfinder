@@ -11,15 +11,22 @@ import { AiEmphasisBreakdownRow } from "@/components/ai-emphasis-breakdown-row";
 import { CompensationBreakdownRow } from "@/components/compensation-breakdown-row";
 import { CountryBreakdownRow } from "@/components/country-breakdown-row";
 import { breakdownCategoryCardClass } from "@/components/breakdown-accordion";
+import { QualificationScoreOverview } from "@/components/qualification-score-overview";
 import { QualificationSummarySection } from "@/components/qualification-summary-section";
+import { SectionScoreSubtotal } from "@/components/section-score-subtotal";
 import { SummarySectionCard } from "@/components/summary-section-card";
+import { sectionRollupScore } from "@/lib/section-score-rollups";
 import { TimezoneBreakdownRow } from "@/components/timezone-breakdown-row";
 import {
   coverageDetailForCategory,
   type CoverageCategoryKey,
   type CoverageResult,
 } from "@/lib/coverage-detail";
-import { scoreColor, scoreProgressClass } from "@/lib/score";
+import {
+  scoreColor,
+  scoreProgressClass,
+  scoreProgressTrackClass,
+} from "@/lib/score";
 import { GUEST_WEIGHT_ROWS, REGISTERED_WEIGHT_ROWS } from "@/lib/scoring-weights";
 import type {
   CategoryKey,
@@ -140,7 +147,9 @@ function CoverageBreakdownRow({
         </div>
       </div>
       <Progress value={pct} className="w-full gap-0">
-        <ProgressTrack className="h-1.5">
+        <ProgressTrack
+          className={cn("h-1.5 bg-transparent", scoreProgressTrackClass(pct))}
+        >
           <ProgressIndicator className={scoreProgressClass(pct)} />
         </ProgressTrack>
       </Progress>
@@ -245,9 +254,15 @@ export function QualificationBreakdown({
     isGuest && process.env.NEXT_PUBLIC_QA_REGISTERED_SCORING === "true"
       ? "Guest account (re-run analyze after QA refresh for full breakdown)"
       : null;
+  const qualificationsSubtotal = sectionRollupScore(
+    breakdown,
+    isGuest,
+    "categoryMatching",
+  );
 
   return (
     <div className="w-full space-y-3">
+      <QualificationScoreOverview score={score} />
       <QualificationSummarySection
         score={score}
         industryLabel={industryLabel}
@@ -270,7 +285,7 @@ export function QualificationBreakdown({
         jobTitle={analysisJobTitle}
       />
 
-      <SummarySectionCard title="Category matching">
+      <SummarySectionCard title="Qualifications">
         <div className="space-y-3">
           {categoryRows.map(({ key, label }) => {
           if (isGuest && !GUEST_SCORED_KEYS.has(key)) {
@@ -385,6 +400,7 @@ export function QualificationBreakdown({
               {guestLabel}
             </p>
           ) : null}
+          <SectionScoreSubtotal score={qualificationsSubtotal} />
         </div>
       </SummarySectionCard>
     </div>

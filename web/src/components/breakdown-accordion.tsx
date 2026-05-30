@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** Bordered container for each category row in Category matching. */
+/** Bordered container for each category row in Qualifications. */
 export const breakdownCategoryCardClass = cn(
   "rounded-lg border border-border/80 p-3",
   "transition-colors hover:bg-muted/40",

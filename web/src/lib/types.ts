@@ -172,7 +172,7 @@ export interface AnalysisRecord {
   confidence_score: number | null;
   career_fit_adjustment: number | null;
   recommendation: Recommendation | null;
-  /** Canonical label from the scoring engine (e.g. "Strong Pursuit"). */
+  /** Canonical label from the scoring engine (e.g. "Highly Recommended"). */
   recommendation_label: string | null;
   narrative_json: Narrative | null;
   parsed_job_json: ParsedJob | null;

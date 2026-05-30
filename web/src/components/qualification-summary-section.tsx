@@ -4,10 +4,11 @@ import { JobPostingRequirementFields } from "@/components/job-posting-requiremen
 import { TalentTypeField } from "@/components/talent-type-field";
 import { IndustrySummaryContent } from "@/components/industry-breakdown-row";
 import { PostingDetailFields } from "@/components/posting-details-grid";
-import { QualificationScoreCircle } from "@/components/qualification-score-circle";
 import { SummaryFieldLabel } from "@/components/summary-field-label";
 import { SummaryMatchBadge } from "@/components/summary-match-badge";
+import { SectionScoreSubtotal } from "@/components/section-score-subtotal";
 import { SummarySectionCard } from "@/components/summary-section-card";
+import { sectionRollupScore } from "@/lib/section-score-rollups";
 import { cn } from "@/lib/utils";
 import type { PostingDetailHighlightContext } from "@/lib/posting-detail-highlights";
 import { resolvePostingDetailSections } from "@/lib/posting-details";
@@ -146,16 +147,21 @@ export function QualificationSummarySection({
     jobTitle,
   };
 
+  const breakdown = score.categoryBreakdown;
+  const clientProfileSubtotal = sectionRollupScore(
+    breakdown,
+    isGuest,
+    "clientProfile",
+  );
+  const clientPreferencesSubtotal = sectionRollupScore(
+    breakdown,
+    isGuest,
+    "clientPreferences",
+  );
+  const roleDetailsSubtotal = sectionRollupScore(breakdown, isGuest, "roleDetails");
+
   return (
     <div className="space-y-3 w-full" role="region" aria-label="Qualification summary">
-      <div className="flex justify-center py-1">
-        <QualificationScoreCircle
-          fitScore={score.fitScore}
-          recommendationLabel={score.recommendationLabel}
-          recommendation={score.recommendation}
-        />
-      </div>
-
       {showClientCard ? (
         <SummarySectionCard title={clientSection?.title ?? "Client Profile"}>
           <div className="space-y-3">
@@ -206,6 +212,7 @@ export function QualificationSummarySection({
               </div>
             ) : null}
           </div>
+          <SectionScoreSubtotal score={clientProfileSubtotal} />
         </SummarySectionCard>
       ) : null}
 
@@ -236,6 +243,7 @@ export function QualificationSummarySection({
               </div>
             ) : null}
           </div>
+          <SectionScoreSubtotal score={clientPreferencesSubtotal} />
         </SummarySectionCard>
       ) : null}
 
@@ -302,6 +310,7 @@ export function QualificationSummarySection({
               />
             ) : null}
           </div>
+          <SectionScoreSubtotal score={roleDetailsSubtotal} />
         </SummarySectionCard>
       ) : null}
     </div>

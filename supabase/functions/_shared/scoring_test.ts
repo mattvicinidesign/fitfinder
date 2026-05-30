@@ -159,7 +159,7 @@ Deno.test("V1: scoring is deterministic", () => {
 
 Deno.test("V1: canonical recommendation labels", () => {
   const high = scoreFit(productResume, productJob, { mode: "registered" });
-  assertEquals(high.recommendationLabel, "Strong Pursuit");
+  assertEquals(high.recommendationLabel, "Highly Recommended");
 
   const unrelated: ParsedResume = {
     skills: ["Phlebotomy"],
@@ -179,9 +179,9 @@ Deno.test("V1: canonical recommendation labels", () => {
   };
   const low = scoreFit(unrelated, engJob, { mode: "registered" });
   const labels = new Set([
-    "Strong Pursuit",
-    "Good Opportunity",
-    "Proceed With Caution",
+    "Highly Recommended",
+    "Recommended",
+    "Somewhat Recommended",
     "Not Recommended",
   ]);
   assert(labels.has(low.recommendationLabel));

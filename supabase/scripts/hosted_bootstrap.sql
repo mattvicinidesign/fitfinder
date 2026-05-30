@@ -215,9 +215,9 @@ alter table public.analyses
 
 update public.analyses
 set recommendation_label = case recommendation
-  when 'strong_apply' then 'Strong Pursuit'
-  when 'apply' then 'Good Opportunity'
-  when 'stretch' then 'Proceed With Caution'
+  when 'strong_apply' then 'Highly Recommended'
+  when 'apply' then 'Recommended'
+  when 'stretch' then 'Somewhat Recommended'
   when 'not_recommended' then 'Low Alignment'
   else recommendation_label
 end

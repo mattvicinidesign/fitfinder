@@ -5,6 +5,10 @@
  * Display scale 0–10 = fitScore ÷ 100.
  */
 
+import {
+  recommendationShadeTier,
+  scoreRingStrokeClass,
+} from "@/lib/score";
 import type { Recommendation } from "@/lib/types";
 
 export const RECOMMENDATION_BANDS: {
@@ -12,9 +16,9 @@ export const RECOMMENDATION_BANDS: {
   recommendation: Recommendation;
   label: string;
 }[] = [
-  { min: 85, recommendation: "strong_apply", label: "Strong Pursuit" },
-  { min: 70, recommendation: "apply", label: "Good Opportunity" },
-  { min: 50, recommendation: "stretch", label: "Proceed With Caution" },
+  { min: 85, recommendation: "strong_apply", label: "Highly Recommended" },
+  { min: 70, recommendation: "apply", label: "Recommended" },
+  { min: 50, recommendation: "stretch", label: "Somewhat Recommended" },
   { min: 0, recommendation: "not_recommended", label: "Not Recommended" },
 ];
 
@@ -30,17 +34,7 @@ export function recommendFromFitScore(fitScore: number): {
   return RECOMMENDATION_BANDS[RECOMMENDATION_BANDS.length - 1];
 }
 
-/** Ring stroke color by recommendation band. */
+/** Ring stroke color by recommendation band (pill-aligned tints). */
 export function recommendationRingClass(recommendation?: Recommendation): string {
-  switch (recommendation) {
-    case "strong_apply":
-    case "apply":
-      return "stroke-emerald-500";
-    case "stretch":
-      return "stroke-amber-500";
-    case "not_recommended":
-      return "stroke-rose-400";
-    default:
-      return "stroke-emerald-500";
-  }
+  return scoreRingStrokeClass(recommendationShadeTier(recommendation));
 }

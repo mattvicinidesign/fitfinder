@@ -4,23 +4,25 @@ import type { CategoryKey } from "./types.ts";
 
 export type ScoringMode = "guest" | "registered";
 
+/** Card sections sum to 100: Qualifications 45, Role 25, Client Profile 20, Preferences 10. */
 export const REGISTERED_WEIGHTS: Record<CategoryKey, number> = {
-  skills: 25,
-  industry: 18,
+  skills: 30,
+  industry: 20,
   workflow: 0, // hidden in V1 UI — not scored until product defines workflow matching
-  tools: 12,
-  aiEmphasis: 10,
-  archetype: 7,
-  softwareModel: 5,
+  tools: 15,
+  aiEmphasis: 8,
+  archetype: 0,
+  softwareModel: 0,
   compensation: 5,
   country: 2,
-  timezone: 1,
+  timezone: 20,
 };
 
+/** Guest: same section split minus Client Profile (45 + 25 + 10 = 80, renormalized in engine). */
 export const GUEST_WEIGHTS: Partial<Record<CategoryKey, number>> = {
-  skills: 50,
-  industry: 30,
-  aiEmphasis: 20,
+  skills: 45,
+  industry: 25,
+  aiEmphasis: 10,
 };
 
 export const CATEGORY_LABELS: Record<CategoryKey, string> = {
@@ -178,11 +180,11 @@ export const ARCHETYPE_SIMILARITY: Record<string, Record<string, number>> = {
 
 /**
  * Canonical recommendation bands (fitScore 0–100; display ÷10 for 0–10 ring).
- * 8.5–10.0 Strong Pursuit | 7.0–8.4 Good Opportunity | 5.0–6.9 Proceed With Caution | 0.0–4.9 Not Recommended
+ * 8.5–10.0 Highly Recommended | 7.0–8.4 Recommended | 5.0–6.9 Somewhat Recommended | 0.0–4.9 Not Recommended
  */
 export const RECOMMENDATION_BANDS = [
-  { min: 85, recommendation: "strong_apply" as const, label: "Strong Pursuit" },
-  { min: 70, recommendation: "apply" as const, label: "Good Opportunity" },
-  { min: 50, recommendation: "stretch" as const, label: "Proceed With Caution" },
+  { min: 85, recommendation: "strong_apply" as const, label: "Highly Recommended" },
+  { min: 70, recommendation: "apply" as const, label: "Recommended" },
+  { min: 50, recommendation: "stretch" as const, label: "Somewhat Recommended" },
   { min: 0, recommendation: "not_recommended" as const, label: "Not Recommended" },
 ];
