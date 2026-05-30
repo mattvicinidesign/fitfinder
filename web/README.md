@@ -1,47 +1,81 @@
-# Fit Finder — Web
+# Fit Finder — Frontend (Next.js + Capacitor)
 
-Desktop companion built with Next.js 16 (App Router), TypeScript, Tailwind v4,
-and shadcn/ui. It consumes the shared Supabase backend and the scoring Edge
-Functions — it never computes scores locally.
+Single UI for **desktop web**, **mobile web**, and **iOS (App Store)**. Built
+with Next.js 16, TypeScript, Tailwind v4, and shadcn/ui. Wrapped for iOS with
+[Capacitor](https://capacitorjs.com/).
 
-## Setup
-
-```bash
-cp .env.local.example .env.local   # add your Supabase URL + anon key
-npm install
-npm run dev                        # http://localhost:3000
-```
-
-## Structure
+## Architecture
 
 ```
 src/
 ├── app/
-│   ├── page.tsx              # landing
-│   ├── login/                # magic link + guest (anonymous) sign-in
-│   ├── auth/callback/        # OAuth/magic-link code exchange
-│   ├── analyze/              # run an analysis
-│   └── dashboard/            # saved analyses (RLS-scoped)
+│   ├── page.tsx              # marketing landing
+│   ├── login/
+│   ├── auth/callback/        # magic link + deep link (web + fitfinder://)
+│   └── (app)/                # authenticated shell
+│       ├── layout.tsx        # AppShell (sidebar + bottom tabs)
+│       ├── analyze/
+│       ├── saved/
+│       ├── history/
+│       ├── compare/
+│       └── profile/
 ├── components/
-│   ├── site-header.tsx       # nav + auth state
-│   ├── auth-menu.tsx
-│   ├── analysis-result.tsx   # score + narrative display
-│   └── ui/                   # shadcn primitives
-├── lib/
-│   ├── api.ts                # calls the shared Edge Functions
-│   ├── types.ts              # mirror of supabase/functions/_shared/types.ts
-│   ├── score.ts              # presentation helpers
-│   └── supabase/             # browser + server + middleware clients
-└── proxy.ts                  # session refresh + route protection (Next 16 proxy convention)
+│   ├── app-shell/            # shared navigation (desktop + mobile)
+│   ├── analysis-result.tsx
+│   ├── resume-file-picker.tsx
+│   └── capacitor-bridge.tsx  # fitfinder:// deep links
+└── lib/
+    ├── api.ts                # shared Edge Function client (no scoring in UI)
+    ├── navigation.ts         # single nav config
+    ├── platform.ts           # Capacitor detection
+    └── resume-upload.ts      # Storage + parse-resume
 ```
 
-## How scoring works here
+### Responsive navigation
 
-`src/lib/api.ts` calls `supabase.functions.invoke("analyze", …)`. All scoring
-logic lives in `supabase/functions/_shared/scoring.ts`. If scoring behavior
-needs to change, change it there — not in this app.
+- **md and up:** left sidebar (`AppSidebar`)
+- **below md / Capacitor iOS:** bottom tab bar (`AppBottomNav`)
 
-## Deploy (Vercel)
+Both use `APP_NAV` from `lib/navigation.ts` — no duplicate route lists.
 
-Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` as project
-environment variables, then connect the repo (root directory `web/`).
+### Builds
+
+| Script | Purpose |
+| ------ | ------- |
+| `npm run dev` | Next dev server (Vercel-style, uses `proxy.ts` for auth) |
+| `npm run build` | Production build for **Vercel** (SSR) |
+| `npm run build:capacitor` | Static export (`out/`) for **Capacitor iOS** |
+| `npm run cap:sync` | Export + `cap sync ios` |
+| `npm run cap:open` | Open Xcode |
+
+Capacitor loads the static `out/` bundle in a WKWebView. Auth on iOS uses
+client-side session handling in `AppShell` plus `fitfinder://auth-callback`
+deep links.
+
+## Setup
+
+```bash
+cp .env.local.example .env.local
+npm install
+npm run dev
+```
+
+## iOS deployment checklist
+
+1. `npm run cap:run` — opens Xcode.
+2. Set your Apple team + bundle ID (`com.fitfinder.app`) in Xcode.
+3. Add `fitfinder://auth-callback` to Supabase Auth redirect URLs.
+4. Enable Anonymous sign-ins in Supabase for guest mode.
+5. Product → Archive → Distribute to App Store.
+
+### File uploads on iOS
+
+`ResumeFilePicker` uses standard HTML file inputs, which work in the iOS WebView
+for **Files** and **camera roll** (`accept` for documents and `image/*`).
+
+## Deploy web (Vercel)
+
+Root directory: `web/`. Environment variables:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`

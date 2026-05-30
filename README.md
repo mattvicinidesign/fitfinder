@@ -4,74 +4,83 @@ AI-powered job-fit analysis. Upload a resume, paste a job description, and get a
 qualification score, confidence score, career-fit adjustment, and a narrative
 breakdown of strengths, gaps, and recommendations.
 
-Fit Finder is **iOS-first** with a **desktop web companion**. Both clients share a
-single Supabase backend and a single scoring service, so scores are identical
-everywhere.
+**One UI codebase** powers the desktop browser, mobile browser, and iOS App Store
+app (via Capacitor). All clients share a single Supabase backend and scoring
+service, so results are identical everywhere.
 
 ```
-Native iOS App (SwiftUI)
+Next.js + Capacitor (web + iOS)
         │
         ▼
    Supabase Backend  ──►  Edge Functions (shared scoring + AI service)
-        │
-        ▼
-Responsive Web App (Next.js)
 ```
 
 ## Monorepo layout
 
 | Path        | What it is                                                                 |
 | ----------- | -------------------------------------------------------------------------- |
-| `supabase/` | Shared backend: Postgres schema, Row Level Security, and Edge Functions.   |
-| `supabase/functions/_shared/` | **The shared scoring/AI service.** Single source of truth for scoring. |
-| `web/`      | Next.js 16 + TypeScript + Tailwind + shadcn/ui desktop companion.          |
-| `ios/`      | SwiftUI (MVVM) app targeting iOS 18+, deployable to the App Store.         |
+| `web/`      | **The only frontend** — Next.js 16, Tailwind, shadcn/ui, Capacitor iOS.   |
+| `web/ios/`  | Capacitor-generated Xcode project (after `npm run cap:sync`).              |
+| `supabase/` | Shared backend: Postgres, Auth, Storage, RLS, Edge Functions.                |
+| `supabase/functions/_shared/` | **Shared scoring/AI service** — single source of truth.          |
 
 ## Why scoring lives in the backend
 
-The product requires **identical scoring on every platform**. To guarantee that,
-all parsing and scoring logic lives in TypeScript inside Supabase Edge Functions
-(`supabase/functions/`). The iOS and web clients never compute scores themselves —
-they call the same HTTP endpoints:
+All parsing and scoring logic lives in TypeScript inside Supabase Edge Functions.
+The UI calls `web/src/lib/api.ts`, which invokes:
 
 - `POST /functions/v1/parse-resume`
 - `POST /functions/v1/parse-job`
 - `POST /functions/v1/analyze`
 
-This is the single most important architectural rule in the repo:
-**do not reimplement scoring in Swift or in Next.js.**
+**Do not reimplement scoring in the Next.js app.**
 
 ## Getting started
 
-Each sub-project has its own README:
+### Backend
 
-- [`supabase/README.md`](./supabase/README.md) — backend, migrations, functions
-- [`web/README.md`](./web/README.md) — Next.js web app
-- [`ios/README.md`](./ios/README.md) — SwiftUI iOS app
+See [`supabase/README.md`](./supabase/README.md).
 
-### Quick start
+### Web (local dev)
 
 ```bash
-# 1. Backend
-cd supabase
-supabase start            # local stack (Postgres, Auth, Storage, Edge runtime)
-supabase db reset         # apply migrations + seed
-
-# 2. Web
-cd ../web
-cp .env.local.example .env.local   # fill in Supabase URL + anon key
-npm install && npm run dev
-
-# 3. iOS
-cd ../ios
-xcodegen generate         # produces FitFinder.xcodeproj
-open FitFinder.xcodeproj
+cd web
+cp .env.local.example .env.local   # Supabase URL + anon key
+npm install
+npm run dev                        # http://localhost:3000
 ```
 
-## Environments
+### iOS (Capacitor → Xcode → App Store)
 
-| Service  | Provider | Deploy target          |
-| -------- | -------- | ---------------------- |
-| Backend  | Supabase | Supabase Cloud project |
-| Web      | Next.js  | Vercel                 |
-| iOS      | SwiftUI  | Apple App Store        |
+```bash
+cd web
+npm install
+npm run cap:run                    # build static export, sync, open Xcode
+```
+
+In Supabase Dashboard → Authentication → URL Configuration, add redirect URLs:
+
+- `http://localhost:3000/auth/callback`
+- `fitfinder://auth-callback`
+
+Enable **Anonymous sign-ins** for guest mode.
+
+After `cap sync`, confirm `fitfinder` URL scheme in `web/ios/App/App/Info.plist`
+(under `CFBundleURLTypes`).
+
+## Navigation (one app, responsive chrome)
+
+| Viewport | Navigation |
+| -------- | ---------- |
+| Desktop  | Left sidebar |
+| Mobile / iOS | Bottom tab bar |
+
+Same routes everywhere: `/analyze`, `/saved`, `/history`, `/compare`, `/profile`.
+
+## Deploy
+
+| Target | Command / platform |
+| ------ | ------------------ |
+| Web    | Vercel — root directory `web/`, standard `next build` |
+| iOS    | Xcode archive from `web/ios/` after `npm run cap:sync` |
+| API    | Supabase Cloud — `supabase db push` + `functions deploy` |

@@ -19,13 +19,11 @@ supabase/.env
 # macOS
 .DS_Store
 
-# Xcode / iOS
-ios/FitFinder.xcodeproj/
-ios/build/
-ios/DerivedData/
+# Capacitor iOS (generated native shell lives in web/ios)
+web/ios/App/build/
+web/ios/DerivedData/
 *.xcuserstate
 xcuserdata/
-.swiftpm/
 
 # Local tooling cache (downloaded binaries, deno cache)
 .tools/

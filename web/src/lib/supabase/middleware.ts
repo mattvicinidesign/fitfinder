@@ -33,7 +33,13 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const protectedPrefixes = ["/dashboard", "/analyze", "/compare"];
+  const protectedPrefixes = [
+    "/analyze",
+    "/saved",
+    "/history",
+    "/compare",
+    "/profile",
+  ];
   const needsAuth = protectedPrefixes.some((p) =>
     request.nextUrl.pathname.startsWith(p),
   );

@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { SiteHeader } from "@/components/site-header";
+import { CapacitorBridge } from "@/components/capacitor-bridge";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +18,16 @@ export const metadata: Metadata = {
   title: "Fit Finder — AI job-fit analysis",
   description:
     "Upload your resume, paste a job description, and get an instant qualification and fit score with a narrative breakdown.",
+  appleWebApp: {
+    capable: true,
+    title: "Fit Finder",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -30,9 +40,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="bg-background text-foreground min-h-full flex flex-col">
-        <SiteHeader />
-        <div className="flex-1">{children}</div>
+      <body className="bg-background text-foreground min-h-dvh">
+        <CapacitorBridge />
+        {children}
         <Toaster richColors />
       </body>
     </html>

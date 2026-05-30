@@ -1,4 +1,7 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SaveJobButton } from "@/components/save-job-button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { scoreColor } from "@/lib/score";
@@ -47,8 +50,10 @@ function NarrativeList({
 
 export function AnalysisResultView({
   result,
+  analysisId = null,
 }: {
   result: AnalysisResult;
+  analysisId?: string | null;
 }) {
   const { score, narrative } = result;
   const adj = score.careerFitAdjustment;
@@ -70,9 +75,12 @@ export function AnalysisResultView({
               </span>
             </p>
           </div>
-          <Badge className="text-sm">
-            {RECOMMENDATION_LABELS[score.recommendation]}
-          </Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge className="text-sm">
+              {RECOMMENDATION_LABELS[score.recommendation]}
+            </Badge>
+            <SaveJobButton analysisId={analysisId} />
+          </div>
         </CardHeader>
         <CardContent className="grid gap-5 sm:grid-cols-3">
           <ScoreStat label="Fit score" value={score.fitScore} />

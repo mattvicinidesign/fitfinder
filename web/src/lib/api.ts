@@ -1,10 +1,13 @@
 "use client";
 
+/**
+ * Shared API layer — all product clients call the Supabase Edge Functions here.
+ * Scoring, parsing, and narrative generation live only on the backend
+ * (`supabase/functions/_shared/`). Never duplicate that logic in UI code.
+ */
+
 import { createClient } from "@/lib/supabase/client";
 import type { AnalysisResult, ParsedJob, ParsedResume } from "@/lib/types";
-
-// Typed wrappers around the shared scoring/AI Edge Functions.
-// The browser never computes scores; it calls these endpoints.
 
 async function invoke<T>(
   name: string,
@@ -13,8 +16,6 @@ async function invoke<T>(
   const supabase = createClient();
   const { data, error } = await supabase.functions.invoke<T>(name, { body });
   if (error) {
-    // functions.invoke surfaces non-2xx as FunctionsHttpError, whose `context`
-    // is the raw Response. Try to read the backend's `{ error }` message.
     let message = error.message;
     const context = (error as { context?: unknown }).context;
     if (context instanceof Response) {
