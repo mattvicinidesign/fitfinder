@@ -32,6 +32,12 @@ import { waitForResumeParse } from "@/lib/resume-upload";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { SkeletonAnalysisReport, SkeletonPrimitive } from "@/components/ui/skeletons";
+import {
+  screenShellClass,
+  StickyBottomCta,
+  StickyScreenBody,
+  StickyScreenHeader,
+} from "@/components/ui/sticky-bottom-cta";
 
 const DEMO_RESULT: AnalysisResult = {
   companyName: null,
@@ -200,13 +206,13 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   }
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col">
+    <div className={screenShellClass}>
       {demo ? (
-        <p className="mx-4 mt-2 text-center text-[13px] font-medium text-primary">
+        <p className="mx-4 mt-2 shrink-0 text-center text-[13px] font-medium text-primary">
           Fit Finder Preview — canonical UI (sample data)
         </p>
       ) : (
-        <header className="sticky top-0 z-10 shrink-0 bg-background px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
+        <StickyScreenHeader className="px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
           <div className="flex items-center justify-between gap-3">
             <Link
               href="/home"
@@ -227,14 +233,18 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
               </Link>
             ) : null}
           </div>
-        </header>
+        </StickyScreenHeader>
       )}
-      <IosLargeTitle
-        title="Analyze"
-        subtitle="Upload your resume and paste a job to score your fit."
-      />
 
-      <form onSubmit={run} className="flex min-h-0 flex-1 flex-col overflow-hidden py-4">
+      <form
+        onSubmit={run}
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      >
+        <StickyScreenBody className="py-4">
+          <IosLargeTitle
+            title="Analyze"
+            subtitle="Upload your resume and paste a job to score your fit."
+          />
         <section
           className={cn(
             ANALYZE_SECTION_CLASS,
@@ -325,7 +335,30 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           />
         </section>
 
-        <div className="px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {demo ? (
+            <div className="px-4 pb-2">
+              <p className="text-[13px] text-muted-foreground text-center mb-4">
+                Preview uses sample data on the report page after you tap Analyze fit
+                (disabled here).{" "}
+                <button
+                  type="button"
+                  className="text-primary underline-offset-2 hover:underline"
+                  onClick={() => {
+                    saveAnalysisReport("demo", {
+                      result: DEMO_RESULT,
+                      analysisId: null,
+                    });
+                    router.push("/analyze/report?id=demo");
+                  }}
+                >
+                  View sample report
+                </button>
+              </p>
+            </div>
+          ) : null}
+        </StickyScreenBody>
+
+        <StickyBottomCta>
           <Button
             type="submit"
             className="w-full h-12 gap-2 text-[17px] rounded-xl"
@@ -340,30 +373,8 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
               "Analyze fit"
             )}
           </Button>
-        </div>
+        </StickyBottomCta>
       </form>
-
-      {demo ? (
-        <div className="px-4 pb-6">
-          <p className="text-[13px] text-muted-foreground text-center mb-4">
-            Preview uses sample data on the report page after you tap Analyze fit
-            (disabled here).{" "}
-            <button
-              type="button"
-              className="text-primary underline-offset-2 hover:underline"
-              onClick={() => {
-                saveAnalysisReport("demo", {
-                  result: DEMO_RESULT,
-                  analysisId: null,
-                });
-                router.push("/analyze/report?id=demo");
-              }}
-            >
-              View sample report
-            </button>
-          </p>
-        </div>
-      ) : null}
 
       {busy ? (
         <div

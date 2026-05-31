@@ -1,10 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  screenShellClass,
+  StickyBottomCta,
+  StickyScreenBody,
+  StickyScreenHeader,
+} from "@/components/ui/sticky-bottom-cta";
 
 export interface OnboardingStep {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   content: React.ReactNode;
 }
 
@@ -14,6 +20,7 @@ interface OnboardingWizardProps {
   onStepChange: (step: number) => void;
   onFinish: () => void;
   onSkip?: () => void;
+  onBackFromStart?: () => void;
   busy?: boolean;
   loading?: boolean;
   finishLabel?: string;
@@ -28,6 +35,7 @@ export function OnboardingWizard({
   onStepChange,
   onFinish,
   onSkip,
+  onBackFromStart,
   busy = false,
   loading = false,
   finishLabel = "Finish",
@@ -43,21 +51,38 @@ export function OnboardingWizard({
   if (!current) return null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <header className="shrink-0 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[13px] font-medium text-muted-foreground">
-            Step {step + 1} of {totalSteps}
-          </span>
+    <div className={screenShellClass}>
+      <StickyScreenHeader className="px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
+        <div className="flex items-center justify-between gap-3">
+          {step === 0 && onBackFromStart ? (
+            <button
+              type="button"
+              onClick={onBackFromStart}
+              className="text-[13px] font-medium text-primary"
+            >
+              Back
+            </button>
+          ) : (
+            <span className="text-[13px] font-medium text-muted-foreground">
+              Step {step + 1} of {totalSteps}
+            </span>
+          )}
+          {step === 0 && onBackFromStart ? (
+            <span className="text-[13px] font-medium text-muted-foreground">
+              Step {step + 1} of {totalSteps}
+            </span>
+          ) : null}
           {onSkip ? (
             <button
               type="button"
               onClick={onSkip}
-              className="text-[13px] font-medium text-muted-foreground hover:text-foreground"
+              className="ml-auto text-[13px] font-medium text-muted-foreground hover:text-foreground"
             >
               {skipLabel}
             </button>
-          ) : null}
+          ) : (
+            <span className="w-8" aria-hidden />
+          )}
         </div>
         <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
           <div
@@ -65,19 +90,23 @@ export function OnboardingWizard({
             style={{ width: `${progress}%` }}
           />
         </div>
-      </header>
+      </StickyScreenHeader>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <StickyScreenBody className="px-4">
         <h1 className="text-[26px] font-bold leading-tight tracking-tight">
           {current.title}
         </h1>
-        <p className="mt-1 text-[15px] text-muted-foreground leading-snug">
-          {current.subtitle}
-        </p>
-        <div className="mt-5">{loading ? null : current.content}</div>
-      </div>
+        {current.subtitle ? (
+          <p className="mt-1 text-[15px] text-muted-foreground leading-snug">
+            {current.subtitle}
+          </p>
+        ) : null}
+        <div className={current.subtitle ? "mt-5" : "mt-4"}>
+          {loading ? null : current.content}
+        </div>
+      </StickyScreenBody>
 
-      <footer className="shrink-0 border-t border-border/60 bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <StickyBottomCta>
         <div className="flex gap-3">
           {step > 0 ? (
             <Button
@@ -98,7 +127,7 @@ export function OnboardingWizard({
             {isLast ? (busy ? busyLabel : finishLabel) : continueLabel}
           </Button>
         </div>
-      </footer>
+      </StickyBottomCta>
     </div>
   );
 }

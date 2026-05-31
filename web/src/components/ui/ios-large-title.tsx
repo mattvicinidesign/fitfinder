@@ -7,7 +7,7 @@ export function IosLargeTitle({
   subtitle?: string;
 }) {
   return (
-    <header className="shrink-0 px-4 pt-2 pb-3 border-b border-border/60 bg-background">
+    <header className="shrink-0 bg-background px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
       <h1 className="text-[34px] font-bold leading-tight tracking-tight">{title}</h1>
       {subtitle ? (
         <p className="mt-1 text-[15px] text-muted-foreground leading-snug">

@@ -3,7 +3,7 @@
 import type { ComponentType } from "react";
 import type { LottieComponentProps } from "lottie-react";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LaunchOverlayFrame } from "@/components/launch-overlay-frame";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +28,11 @@ export function SplashScreen({
   const [phase, setPhase] = useState<SplashPhase>("loading");
   const [animationData, setAnimationData] = useState<object | null>(null);
   const [LottiePlayer, setLottiePlayer] = useState<LottiePlayer | null>(null);
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,18 +51,18 @@ export function SplashScreen({
         setPhase("playing");
       })
       .catch(() => {
-        if (!cancelled) onComplete();
+        if (!cancelled) onCompleteRef.current();
       });
 
     return () => {
       cancelled = true;
     };
-  }, [onComplete]);
+  }, []);
 
   const finishSplash = useCallback(() => {
     setPhase("exiting");
-    window.setTimeout(onComplete, EXIT_FADE_MS);
-  }, [onComplete]);
+    window.setTimeout(() => onCompleteRef.current(), EXIT_FADE_MS);
+  }, []);
 
   const handleAnimationComplete = useCallback(() => {
     if (!showWordmark) {

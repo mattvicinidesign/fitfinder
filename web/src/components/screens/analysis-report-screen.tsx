@@ -19,6 +19,12 @@ import {
 } from "@/lib/analysis-report-cache";
 import type { Compensation } from "@/lib/types";
 import { SkeletonAnalysisReport } from "@/components/ui/skeletons";
+import {
+  screenShellClass,
+  StickyBottomCta,
+  StickyScreenBody,
+  StickyScreenHeader,
+} from "@/components/ui/sticky-bottom-cta";
 
 export function AnalysisReportScreen() {
   const searchParams = useSearchParams();
@@ -124,8 +130,8 @@ function ReportShell({
   footer?: React.ReactNode;
 }) {
   return (
-    <div className="relative flex h-full min-h-0 flex-col">
-      <header className="sticky top-0 z-10 shrink-0 border-b border-border/60 bg-background px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
+    <div className={screenShellClass}>
+      <StickyScreenHeader className="border-b border-border/60 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
         <Link
           href="/analyze"
           aria-label="Back to Analyze"
@@ -133,21 +139,9 @@ function ReportShell({
         >
           <ChevronLeft className="size-5 shrink-0" aria-hidden />
         </Link>
-      </header>
-      <div
-        className={
-          footer
-            ? "min-h-0 flex-1 overflow-y-auto pb-24"
-            : "min-h-0 flex-1 overflow-y-auto"
-        }
-      >
-        {children}
-      </div>
-      {footer ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="pointer-events-auto">{footer}</div>
-        </div>
-      ) : null}
+      </StickyScreenHeader>
+      <StickyScreenBody>{children}</StickyScreenBody>
+      {footer ? <StickyBottomCta>{footer}</StickyBottomCta> : null}
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IosGroupedRow, IosGroupedSection } from "@/components/ui/ios-grouped-section";
 import { markLaunchFlowComplete, markAppSessionActive } from "@/lib/app-session";
+import { getAuthCallbackRedirectUrl } from "@/lib/auth-redirect";
+import { markAuthDeepLinkPending } from "@/lib/app-session";
 import { isNativePlatform } from "@/lib/platform";
 import { toast } from "sonner";
 
@@ -24,14 +26,12 @@ export function LoginForm() {
     e.preventDefault();
     setSending(true);
 
+    markAuthDeepLinkPending();
     const supabase = createClient();
-    const redirectBase = isNativePlatform()
-      ? "fitfinder://auth-callback"
-      : `${window.location.origin}/auth/callback`;
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${redirectBase}?next=${encodeURIComponent(next)}`,
+        emailRedirectTo: getAuthCallbackRedirectUrl(next),
       },
     });
     setSending(false);

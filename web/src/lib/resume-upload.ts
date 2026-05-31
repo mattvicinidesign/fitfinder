@@ -2,12 +2,21 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { parseResume } from "@/lib/api";
+import { extractResumeTextFromFile } from "@/lib/extract-resume-text";
 import {
   trackResumeParse,
   waitForResumeParse,
 } from "@/lib/resume-parse-tracker";
 
 export { waitForResumeParse };
+
+async function extractTextForParse(file: File): Promise<string> {
+  try {
+    return (await extractResumeTextFromFile(file)).trim();
+  } catch {
+    return "";
+  }
+}
 
 /**
  * Upload resume to Storage and create a DB row. Returns quickly; parsing runs
@@ -43,8 +52,15 @@ export async function uploadResume(file: File): Promise<{
     .single();
   if (insertError) throw new Error(insertError.message);
 
-  // Parse on the server from Storage — client PDF/DOCX extraction can hang in Next.js.
-  trackResumeParse(row.id, parseResume({ resumeId: row.id }));
+  const resumeText = await extractTextForParse(file);
+  trackResumeParse(
+    row.id,
+    parseResume(
+      resumeText
+        ? { resumeId: row.id, resumeText }
+        : { resumeId: row.id },
+    ),
+  );
 
   return {
     resumeId: row.id,

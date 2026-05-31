@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { APP_NAV } from "@/lib/navigation";
+import { triggerNavHaptic } from "@/lib/haptics";
 import { NavTab } from "@/components/app-shell/nav-tab";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +44,7 @@ export function AppTabBar() {
             <Link
               href={ANALYZE_HREF}
               aria-label="Analyze Fit"
+              onClick={() => triggerNavHaptic()}
               className="absolute left-1/2 -top-6 -translate-x-1/2"
             >
               <span

@@ -47,6 +47,23 @@ function toStringArray(value: unknown): string[] {
     : [];
 }
 
+function nameFromAuthMetadata(user: {
+  user_metadata?: Record<string, unknown>;
+}): string | null {
+  const raw = user.user_metadata?.full_name;
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  return trimmed || null;
+}
+
+function resolveFullName(
+  stored: unknown,
+  user: { user_metadata?: Record<string, unknown> },
+): string | null {
+  if (typeof stored === "string" && stored.trim()) return stored.trim();
+  return nameFromAuthMetadata(user);
+}
+
 /** Load the signed-in user's profile, or null when not authenticated. */
 export async function fetchUserProfile(): Promise<UserProfile | null> {
   const supabase = createClient();
@@ -61,10 +78,15 @@ export async function fetchUserProfile(): Promise<UserProfile | null> {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!data) return emptyUserProfile();
+  if (!data) {
+    const metaName = nameFromAuthMetadata(user);
+    return metaName
+      ? { ...emptyUserProfile(), fullName: metaName }
+      : emptyUserProfile();
+  }
 
   return {
-    fullName: typeof data.full_name === "string" ? data.full_name : null,
+    fullName: resolveFullName(data.full_name, user),
     professionalTitle:
       typeof data.professional_title === "string"
         ? data.professional_title
@@ -119,8 +141,26 @@ export async function saveUserProfile(
     row.onboarding_completed_at = new Date().toISOString();
   }
 
-  const { error } = await supabase.from("profiles").upsert(row);
+  const { error } = await supabase
+    .from("profiles")
+    .upsert(row, { onConflict: "user_id" });
   return { error: error?.message ?? null };
+}
+
+/** First non-empty display name from profile row, auth metadata, or local signup draft. */
+export async function fetchUserDisplayName(): Promise<string | null> {
+  const profile = await fetchUserProfile();
+  if (profile?.fullName?.trim()) return profile.fullName.trim();
+
+  const { loadPendingSignup } = await import("@/lib/pending-signup");
+  const pending = loadPendingSignup();
+  if (pending?.profile.fullName?.trim()) return pending.profile.fullName.trim();
+
+  const { loadOnboardingProgress } = await import("@/lib/onboarding-progress");
+  const progress = loadOnboardingProgress();
+  if (progress?.profile.fullName?.trim()) return progress.profile.fullName.trim();
+
+  return null;
 }
 
 /** Reset all onboarding preference fields to empty. */

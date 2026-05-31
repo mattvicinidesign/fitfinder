@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ChevronRight, ScanSearch } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { IosGroupedSection } from "@/components/ui/ios-grouped-section";
 import { IosAnalysisListRow } from "@/components/ui/ios-list-row";
@@ -20,7 +21,7 @@ import {
   reportHrefForAnalysis,
   type RecentActivityItem,
 } from "@/lib/recent-activity";
-import { fetchUserProfile } from "@/lib/profile";
+import { fetchUserDisplayName } from "@/lib/profile";
 import type { AnalysisRecord } from "@/lib/types";
 
 const RECENT_LIMIT = 5;
@@ -61,11 +62,27 @@ export function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    void fetchUserProfile().then((profile) => {
-      const name = profile?.fullName?.trim();
-      setDisplayName(name || null);
+    const supabase = createClient();
+
+    async function loadDisplayName() {
+      const name = await fetchUserDisplayName();
+      setDisplayName(name);
       setProfileLoading(false);
+    }
+
+    void loadDisplayName();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        setDisplayName(null);
+        return;
+      }
+      void loadDisplayName();
     });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -99,7 +116,7 @@ export function HomeScreen() {
             <SkeletonPrimitive className="h-3.5 w-36 bg-primary-foreground/20" />
           ) : (
             <p className="text-[13px] font-medium text-primary-foreground/80">
-              {displayName ? `Welcome back, ${displayName}` : "Welcome back"}
+              {displayName ? `Welcome, ${displayName}` : "Welcome"}
             </p>
           )}
           <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-tight">
@@ -115,11 +132,15 @@ export function HomeScreen() {
           href="/analyze"
           className="flex items-center gap-3 rounded-2xl bg-card px-4 py-4 shadow-lg ring-1 ring-border transition-colors hover:bg-muted/40"
         >
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <ScanSearch className="size-5" aria-hidden />
-          </span>
+          <Image
+            src="/only-fit-wordmark.png"
+            alt="OnlyFit"
+            width={331}
+            height={148}
+            className="h-6 w-auto shrink-0 object-contain"
+          />
           <span className="flex-1 text-[16px] font-medium text-muted-foreground">
-            Paste a job to analyze…
+            Search Reports
           </span>
           <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden />
         </Link>

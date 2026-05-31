@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PROTECTED_PREFIXES } from "@/lib/navigation";
+import { hasCompletedWelcome } from "@/lib/app-session";
 import { AppFrame } from "@/components/app-shell/app-frame";
 import { AppTabBar } from "@/components/app-shell/app-tab-bar";
+import { ProfileSheet } from "@/components/app-shell/profile-sheet";
 import { SkeletonAppShell } from "@/components/ui/skeletons";
 import { navigateApp } from "@/lib/navigate-app";
 import { isNativePlatform } from "@/lib/platform";
@@ -18,12 +20,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const underlyingRef = useRef<React.ReactNode>(null);
 
+  const isProfile = pathname === "/profile";
   const isPreview = pathname === "/preview";
   const isAnalyzeFlow =
     pathname === "/analyze" || pathname.startsWith("/analyze/report");
-  const hideTabBar = isAnalyzeFlow || pathname === "/profile";
-  const lockMainScroll = isAnalyzeFlow || pathname === "/profile";
+  const hideTabBar = isAnalyzeFlow || isProfile;
+  const lockMainScroll = isAnalyzeFlow || isProfile;
+
+  if (!isProfile) {
+    underlyingRef.current = children;
+  }
   const needsAuth =
     !isPreview &&
     PROTECTED_PREFIXES.some(
@@ -49,6 +57,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!ready || !needsAuth || signedIn) return;
+    // Launch overlay handles onboarding before sign-in on native.
+    if (isNativePlatform() && !hasCompletedWelcome()) return;
 
     let cancelled = false;
     const supabase = createClient();
@@ -72,11 +82,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, [ready, needsAuth, signedIn, pathname, router]);
 
+  const launchGateActive =
+    isNativePlatform() && !hasCompletedWelcome();
+
+  if (launchGateActive) {
+    return null;
+  }
+
   if (!ready) {
     const hideTabBar =
       pathname === "/analyze" ||
       pathname.startsWith("/analyze/report") ||
-      pathname === "/profile";
+      isProfile;
     return (
       <AppFrame>
         <SkeletonAppShell showTabBar={!hideTabBar} />
@@ -88,7 +105,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const hideTabBar =
       pathname === "/analyze" ||
       pathname.startsWith("/analyze/report") ||
-      pathname === "/profile";
+      isProfile;
     return (
       <AppFrame>
         <SkeletonAppShell showTabBar={!hideTabBar} />
@@ -102,11 +119,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main
           className={
             lockMainScroll
-              ? "min-h-0 flex-1 overflow-hidden"
+              ? "relative min-h-0 flex-1 overflow-hidden"
               : "min-h-0 flex-1 overflow-y-auto overscroll-contain"
           }
         >
-          {children}
+          {isProfile && underlyingRef.current ? (
+            <div className="absolute inset-0 overflow-hidden" aria-hidden>
+              {underlyingRef.current}
+            </div>
+          ) : null}
+          {isProfile ? <ProfileSheet>{children}</ProfileSheet> : children}
         </main>
         {hideTabBar ? null : <AppTabBar />}
       </div>

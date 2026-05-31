@@ -58,16 +58,12 @@ function uint8ToBase64(bytes: Uint8Array): string {
 
 function mimeForFilename(filename: string): string {
   if (filename.endsWith(".pdf")) return "application/pdf";
-  if (filename.endsWith(".docx")) {
-    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-  }
-  if (filename.endsWith(".doc")) return "application/msword";
   return "application/octet-stream";
 }
 
 const MAX_RESUME_BYTES = 5 * 1024 * 1024;
 
-/** Extract plain text from a resume file (PDF, Word, etc.) via OpenAI. */
+/** Extract plain text from a PDF resume via OpenAI (PDF file input only). */
 export async function extractDocumentText(
   filename: string,
   bytes: Uint8Array,
@@ -80,7 +76,14 @@ export async function extractDocumentText(
     throw new Error("Resume file must be under 5MB.");
   }
 
-  const mime = mimeForFilename(filename.toLowerCase());
+  const lower = filename.toLowerCase();
+  if (!lower.endsWith(".pdf")) {
+    throw new Error(
+      "Only PDF files use document extraction. Word resumes are parsed as text.",
+    );
+  }
+
+  const mime = mimeForFilename(lower);
   const base64 = uint8ToBase64(bytes);
 
   const res = await fetch(OPENAI_URL, {

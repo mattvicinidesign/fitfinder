@@ -7,22 +7,27 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { LaunchOverlayFrame } from "@/components/launch-overlay-frame";
 import { WelcomeHeroIllustration } from "@/components/welcome-hero-illustration";
-import { markWelcomeComplete, markLaunchFlowComplete, markAppSessionActive } from "@/lib/app-session";
-import { isNativePlatform } from "@/lib/platform";
+import {
+  markWelcomeComplete,
+  markLaunchFlowComplete,
+  markAppSessionActive,
+} from "@/lib/app-session";
+import { clearOnboardingProgress } from "@/lib/onboarding-progress";
+import { navigateApp } from "@/lib/navigate-app";
 
 interface WelcomeScreenProps {
   onExit: (target: string) => void;
+  onSignUp: () => void;
 }
 
-export function WelcomeScreen({ onExit }: WelcomeScreenProps) {
+export function WelcomeScreen({ onExit, onSignUp }: WelcomeScreenProps) {
   const router = useRouter();
   const [busy, setBusy] = useState<"guest" | "account" | null>(null);
 
-  async function handleCreateAccount() {
+  function handleCreateAccount() {
     setBusy("account");
-    markWelcomeComplete();
-    onExit("/signup");
-    router.push("/signup");
+    onSignUp();
+    setBusy(null);
   }
 
   async function handleContinueAsGuest() {
@@ -46,16 +51,10 @@ export function WelcomeScreen({ onExit }: WelcomeScreenProps) {
 
     markWelcomeComplete();
     markLaunchFlowComplete();
+    clearOnboardingProgress();
     markAppSessionActive();
     onExit("/home");
-
-    if (isNativePlatform()) {
-      router.push("/home");
-      return;
-    }
-
-    router.push("/home");
-    router.refresh();
+    navigateApp("/home", router, "push");
   }
 
   return (
@@ -81,7 +80,7 @@ export function WelcomeScreen({ onExit }: WelcomeScreenProps) {
               type="button"
               className="h-12 w-full rounded-xl text-[17px]"
               disabled={busy !== null}
-              onClick={() => void handleCreateAccount()}
+              onClick={handleCreateAccount}
             >
               {busy === "account" ? "Opening…" : "Sign up"}
             </Button>

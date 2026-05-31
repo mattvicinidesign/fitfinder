@@ -5,15 +5,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { applyPendingSignupProfile } from "@/lib/pending-signup";
 import {
+  clearAuthDeepLinkPending,
+  DEFAULT_APP_ROUTE,
   markAppSessionActive,
   markLaunchFlowComplete,
 } from "@/lib/app-session";
-import { navigateApp } from "@/lib/navigate-app";
+import { isNativePlatform } from "@/lib/platform";
 
 export function AuthCallbackClient() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") ?? "/analyze";
+  const next = params.get("next") ?? DEFAULT_APP_ROUTE;
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,7 +26,13 @@ export function AuthCallbackClient() {
         markLaunchFlowComplete();
         markAppSessionActive();
         await applyPendingSignupProfile();
-        navigateApp(next, router, "replace");
+        clearAuthDeepLinkPending();
+        if (isNativePlatform()) {
+          router.replace(next);
+          return;
+        }
+        router.replace(next);
+        router.refresh();
       }
 
       const code = params.get("code");

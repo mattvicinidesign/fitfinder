@@ -1,9 +1,16 @@
+import { clearOnboardingProgress } from "@/lib/onboarding-progress";
+
 export const SPLASH_STORAGE_KEY = "fitfinder-splash-seen";
 export const WELCOME_STORAGE_KEY = "fitfinder-welcome-seen";
 export const APP_SESSION_ACTIVE_KEY = "fitfinder-app-session-active";
 export const LAST_ROUTE_KEY = "fitfinder-last-route";
 export const QA_RETURNING_SPLASH_KEY = "fitfinder-qa-returning-splash";
+export const SIGNUP_LAUNCH_KEY = "fitfinder-signup-launch";
+export const AUTH_DEEP_LINK_KEY = "fitfinder-auth-deep-link";
 export const DEFAULT_APP_ROUTE = "/home";
+
+/** @deprecated Signup is in the launch overlay — use requestSignupFlow() instead. */
+export const SIGNUP_PATH = "/home?signup=1";
 
 /** @deprecated Use SPLASH_STORAGE_KEY — kept for existing imports. */
 export const SPLASH_SESSION_KEY = SPLASH_STORAGE_KEY;
@@ -99,6 +106,7 @@ export function clearOnboardingState(): void {
     localStorage.removeItem(SPLASH_STORAGE_KEY);
     localStorage.removeItem(WELCOME_STORAGE_KEY);
   }
+  clearOnboardingProgress();
   clearAppSessionActive();
 }
 
@@ -106,4 +114,37 @@ export function markReturningUserState(): void {
   markSplashComplete();
   markWelcomeComplete();
   clearAppSessionActive();
+}
+
+export function requestSignupFlow(): void {
+  if (!canUseSessionStorage()) return;
+  sessionStorage.setItem(SIGNUP_LAUNCH_KEY, "true");
+}
+
+export function isSignupLaunchRequested(): boolean {
+  if (!canUseSessionStorage()) return false;
+  return sessionStorage.getItem(SIGNUP_LAUNCH_KEY) === "true";
+}
+
+export function consumeSignupLaunch(): boolean {
+  if (!canUseSessionStorage()) return false;
+  if (sessionStorage.getItem(SIGNUP_LAUNCH_KEY) !== "true") return false;
+  sessionStorage.removeItem(SIGNUP_LAUNCH_KEY);
+  return true;
+}
+
+/** Set before sending a magic link — skip launch splash when the link reopens the app. */
+export function markAuthDeepLinkPending(): void {
+  if (!canUseSessionStorage()) return;
+  sessionStorage.setItem(AUTH_DEEP_LINK_KEY, "true");
+}
+
+export function isAuthDeepLinkPending(): boolean {
+  if (!canUseSessionStorage()) return false;
+  return sessionStorage.getItem(AUTH_DEEP_LINK_KEY) === "true";
+}
+
+export function clearAuthDeepLinkPending(): void {
+  if (!canUseSessionStorage()) return;
+  sessionStorage.removeItem(AUTH_DEEP_LINK_KEY);
 }

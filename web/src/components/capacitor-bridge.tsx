@@ -1,16 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
+import { nativeAuthCallbackPath } from "@/lib/auth-redirect";
+import { markAuthDeepLinkPending } from "@/lib/app-session";
 import { isNativePlatform } from "@/lib/platform";
 
 /**
  * Maps fitfinder:// deep links into in-app routes (e.g. magic-link auth).
+ * Uses client-side routing only — full page loads break the launch overlay.
  */
 export function CapacitorBridge() {
   const router = useRouter();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isNativePlatform()) return;
 
     let remove: (() => void) | undefined;
@@ -20,10 +23,9 @@ export function CapacitorBridge() {
         const { App } = await import("@capacitor/app");
 
         const handleUrl = (url: string) => {
-          if (!url.includes("auth-callback")) return;
-          const normalized = url.replace(/^fitfinder:\/\//, "https://local/");
-          const parsed = new URL(normalized);
-          const path = `/auth/callback${parsed.search}${parsed.hash}`;
+          const path = nativeAuthCallbackPath(url);
+          if (!path) return;
+          markAuthDeepLinkPending();
           router.replace(path);
         };
 

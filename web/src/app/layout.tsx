@@ -43,7 +43,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="bg-background text-foreground min-h-dvh">
+      <body className="h-dvh overflow-hidden bg-background text-foreground">
         <CapacitorBridge />
         <AppSessionBridge />
         <SplashGate>{children}</SplashGate>

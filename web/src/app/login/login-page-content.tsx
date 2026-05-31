@@ -4,7 +4,12 @@ import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoginForm } from "@/app/login/login-form";
 import { IosLargeTitle } from "@/components/ui/ios-large-title";
-import { SIGNUP_PATH } from "@/lib/pending-signup";
+import {
+  screenShellClass,
+  StickyScreenBody,
+  StickyScreenHeader,
+} from "@/components/ui/sticky-bottom-cta";
+import { SIGNUP_PATH } from "@/lib/app-session";
 
 function LoginOnboardingRedirect() {
   const router = useRouter();
@@ -29,11 +34,13 @@ export function LoginPageContent() {
       }
     >
       <LoginOnboardingRedirect />
-      <div className="flex h-full min-h-0 flex-col overflow-y-auto">
-        <IosLargeTitle title="Sign in" subtitle="Magic link or guest session." />
-        <div className="flex-1 px-4 py-6">
+      <div className={screenShellClass}>
+        <StickyScreenHeader>
+          <IosLargeTitle title="Sign in" subtitle="Magic link or guest session." />
+        </StickyScreenHeader>
+        <StickyScreenBody className="px-4 py-6">
           <LoginForm />
-        </div>
+        </StickyScreenBody>
       </div>
     </Suspense>
   );

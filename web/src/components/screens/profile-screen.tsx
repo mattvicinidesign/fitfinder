@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { toast } from "sonner";
+import { useProfileSheetClose } from "@/components/app-shell/profile-sheet-context";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,12 @@ import {
   SkeletonAnalysisList,
   SkeletonProfileScreen,
 } from "@/components/ui/skeletons";
+import {
+  screenShellClass,
+  StickyBottomCta,
+  StickyScreenBody,
+  StickyScreenHeader,
+} from "@/components/ui/sticky-bottom-cta";
 
 type ProfileTab = "general" | "skills" | "documents" | "settings";
 
@@ -44,6 +51,7 @@ const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
 ];
 
 export function ProfileScreen() {
+  const closeProfile = useProfileSheetClose();
   const [profileLoading, setProfileLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
@@ -123,29 +131,24 @@ export function ProfileScreen() {
   }
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col">
-      <header className="sticky top-0 z-10 shrink-0 border-b border-border/60 bg-background px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-3">
+    <div className={screenShellClass}>
+      <StickyScreenHeader className="px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-3">
         <div className="relative flex items-start justify-between gap-3">
           <h1 className="text-[34px] font-bold leading-tight tracking-tight">
             Profile
           </h1>
-          <Link
-            href="/home"
+          <button
+            type="button"
+            onClick={() => closeProfile?.()}
             aria-label="Close profile"
             className="-mr-1 mt-1 inline-flex shrink-0 items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
           >
             <X className="size-5 shrink-0" aria-hidden />
-          </Link>
+          </button>
         </div>
-      </header>
+      </StickyScreenHeader>
 
-      <div
-        ref={scrollRef}
-        className={cn(
-          "min-h-0 flex-1 overflow-y-auto py-4",
-          showFloatingActions ? "pb-28" : "pb-8",
-        )}
-      >
+      <StickyScreenBody ref={scrollRef} className="py-4">
         <div key={activeTab} className="space-y-7">
         <nav
           className="mx-4 flex border-b border-border/60 overflow-x-auto"
@@ -374,21 +377,19 @@ export function ProfileScreen() {
           </div>
         )}
         </div>
-      </div>
+      </StickyScreenBody>
 
       {showFloatingActions ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="pointer-events-auto">
-            <Button
-              type="button"
-              className="w-full h-12 rounded-xl"
-              disabled={busy}
-              onClick={save}
-            >
-              {busy ? "Saving…" : "Save profile"}
-            </Button>
-          </div>
-        </div>
+        <StickyBottomCta>
+          <Button
+            type="button"
+            className="w-full h-12 rounded-xl"
+            disabled={busy}
+            onClick={save}
+          >
+            {busy ? "Saving…" : "Save profile"}
+          </Button>
+        </StickyBottomCta>
       ) : null}
 
       {deleteConfirmOpen ? (

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { requestSignupFlow } from "@/lib/app-session";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -12,13 +13,13 @@ const COPY = {
     title: "Save this analysis",
     body: "Create a profile to save analyses and get recommendations tuned to you.",
     cta: "Create a Profile",
-    href: "/signup",
+    href: "/home?signup=1",
   },
   history: {
     title: "View your analysis history",
     body: "Create a free account to keep a history of every job you analyze.",
     cta: "Create a Free Account",
-    href: "/signup",
+    href: "/home?signup=1",
   },
 } as const;
 
@@ -63,7 +64,8 @@ export function GuestUpgradePrompt({
             {copy.body}
           </p>
           <Link
-            href={copy.href}
+            href="/home?signup=1"
+            onClick={() => requestSignupFlow()}
             className={buttonVariants({
               size: "sm",
               className: "mt-1 rounded-lg",

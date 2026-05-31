@@ -8,7 +8,22 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
+import { isNativePlatform } from "@/lib/platform";
 import type { AnalysisResult, ParsedJob, ParsedResume } from "@/lib/types";
+
+const ANALYZE_TIMEOUT_MS = 120_000;
+const DEFAULT_TIMEOUT_MS = 90_000;
+
+function functionsUrl(name: string): string {
+  if (isNativePlatform()) {
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!base) {
+      throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL.");
+    }
+    return `${base}/functions/v1/${name}`;
+  }
+  return `/api/functions/${name}`;
+}
 
 async function invoke<T>(
   name: string,
@@ -23,14 +38,44 @@ async function invoke<T>(
     /* best-effort */
   });
 
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const accessToken = session?.access_token;
+  if (!accessToken) {
+    throw new Error("Session expired. Sign in again (guest or email).");
+  }
+
+  const timeoutMs = name === "analyze" ? ANALYZE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (isNativePlatform()) {
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!anonKey) {
+      throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+    }
+    headers.Authorization = `Bearer ${accessToken}`;
+    headers.apikey = anonKey;
+  }
+
   let res: Response;
   try {
-    res = await fetch(`/api/functions/${name}`, {
+    res = await fetch(functionsUrl(name), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
     });
-  } catch {
+  } catch (e) {
+    if (e instanceof Error && e.name === "TimeoutError") {
+      throw new Error(
+        name === "analyze"
+          ? "Analysis timed out. Shorten the job description and try again."
+          : "Request timed out. Try again.",
+      );
+    }
     throw new Error(
       "Could not reach the analysis service. Check your connection and try again.",
     );
@@ -53,7 +98,13 @@ async function invoke<T>(
     if (res.status === 401) {
       throw new Error("Session expired. Sign in again (guest or email).");
     }
-    throw new Error(err || "Request failed");
+    throw new Error(
+      typeof err === "string" && err.trim() ? err : "Request failed",
+    );
+  }
+
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Invalid response from the analysis service.");
   }
 
   return payload as T;
@@ -90,7 +141,7 @@ export async function analyze(
     { ...args } as unknown as Record<string, unknown>,
   );
   return {
-    analysisId: data.analysisId,
+    analysisId: data.analysisId ?? null,
     result: normalizeAnalysisResult(data.result),
   };
 }
