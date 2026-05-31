@@ -8,6 +8,7 @@ import {
   markAppSessionActive,
   markLaunchFlowComplete,
 } from "@/lib/app-session";
+import { navigateApp } from "@/lib/navigate-app";
 
 export function AuthCallbackClient() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export function AuthCallbackClient() {
         markLaunchFlowComplete();
         markAppSessionActive();
         await applyPendingSignupProfile();
-        router.replace(next);
+        navigateApp(next, router, "replace");
       }
 
       const code = params.get("code");

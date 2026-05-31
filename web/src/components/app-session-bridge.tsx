@@ -9,6 +9,7 @@ import {
   saveLastRoute,
   shouldPersistRoute,
 } from "@/lib/app-session";
+import { navigateApp } from "@/lib/navigate-app";
 
 /**
  * Keeps the in-app route while the app stays alive in memory, and restores it
@@ -23,7 +24,7 @@ export function AppSessionBridge() {
 
     const lastRoute = getLastRoute();
     if (lastRoute && pathname === "/" && shouldPersistRoute(lastRoute)) {
-      router.replace(lastRoute);
+      navigateApp(lastRoute, router, "replace");
     }
   }, [pathname, router]);
 

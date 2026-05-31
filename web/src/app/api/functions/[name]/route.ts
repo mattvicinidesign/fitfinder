@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 
 const ALLOWED = new Set(["analyze", "parse-resume", "parse-job"]);
 
+/** Satisfies static export (Capacitor); handlers are not served from the iOS bundle. */
+export function generateStaticParams() {
+  return [...ALLOWED].map((name) => ({ name }));
+}
+
 const ANALYZE_TIMEOUT_MS = 120_000;
 const DEFAULT_TIMEOUT_MS = 90_000;
 

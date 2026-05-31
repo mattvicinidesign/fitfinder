@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IosGroupedRow, IosGroupedSection } from "@/components/ui/ios-grouped-section";
+import { markLaunchFlowComplete, markAppSessionActive } from "@/lib/app-session";
 import { isNativePlatform } from "@/lib/platform";
 import { toast } from "sonner";
 
@@ -17,6 +18,7 @@ export function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
+  const [guestBusy, setGuestBusy] = useState(false);
 
   async function sendMagicLink(e: React.FormEvent) {
     e.preventDefault();
@@ -38,12 +40,33 @@ export function LoginForm() {
   }
 
   async function continueAsGuest() {
+    setGuestBusy(true);
     const supabase = createClient();
     const { error } = await supabase.auth.signInAnonymously();
     if (error) {
       toast.error(error.message);
+      setGuestBusy(false);
       return;
     }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Could not start guest session. Try again.");
+      setGuestBusy(false);
+      return;
+    }
+
+    markLaunchFlowComplete();
+    markAppSessionActive();
+
+    // Stay in the WebView — a full reload after auth causes splash/auth loops on iOS.
+    if (isNativePlatform()) {
+      router.push(next);
+      return;
+    }
+
     router.push(next);
     router.refresh();
   }
@@ -76,8 +99,13 @@ export function LoginForm() {
         </div>
       </form>
 
-      <Button variant="outline" className="w-full h-11 rounded-xl" onClick={continueAsGuest}>
-        Continue as guest
+      <Button
+        variant="outline"
+        className="w-full h-11 rounded-xl"
+        disabled={guestBusy || sending}
+        onClick={() => void continueAsGuest()}
+      >
+        {guestBusy ? "Starting…" : "Continue as guest"}
       </Button>
       <p className="text-center text-[13px] text-muted-foreground">
         Guest analyses use a temporary anonymous session.

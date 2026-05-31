@@ -7,6 +7,8 @@ import { PROTECTED_PREFIXES } from "@/lib/navigation";
 import { AppFrame } from "@/components/app-shell/app-frame";
 import { AppTabBar } from "@/components/app-shell/app-tab-bar";
 import { SkeletonAppShell } from "@/components/ui/skeletons";
+import { navigateApp } from "@/lib/navigate-app";
+import { isNativePlatform } from "@/lib/platform";
 
 /**
  * Canonical app chrome: centered phone-width frame + iOS tab bar on every platform.
@@ -30,23 +32,44 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setSignedIn(!!data.user);
+
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      setSignedIn(!!session?.user);
       setReady(true);
     });
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSignedIn(!!session?.user);
+      setReady(true);
     });
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
-    if (needsAuth && !signedIn) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-    }
+    if (!ready || !needsAuth || signedIn) return;
+
+    let cancelled = false;
+    const supabase = createClient();
+
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      if (session?.user) {
+        setSignedIn(true);
+        return;
+      }
+      const loginUrl = `/login?next=${encodeURIComponent(pathname)}`;
+      if (isNativePlatform()) {
+        navigateApp(loginUrl, router, "replace");
+        return;
+      }
+      router.replace(loginUrl);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [ready, needsAuth, signedIn, pathname, router]);
 
   if (!ready) {
@@ -62,7 +85,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (needsAuth && !signedIn) {
-    return null;
+    const hideTabBar =
+      pathname === "/analyze" ||
+      pathname.startsWith("/analyze/report") ||
+      pathname === "/profile";
+    return (
+      <AppFrame>
+        <SkeletonAppShell showTabBar={!hideTabBar} />
+      </AppFrame>
+    );
   }
 
   return (

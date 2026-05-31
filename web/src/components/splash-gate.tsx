@@ -121,6 +121,14 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
 
       if (forceReturningSplash) {
         sessionStorage.removeItem(QA_RETURNING_SPLASH_KEY);
+        setShowWordmark(false);
+        setPhase("splash");
+        return;
+      }
+
+      if (launchComplete) {
+        setPhase("ready");
+        return;
       }
 
       setShowWordmark(false);
@@ -142,9 +150,15 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
       }
 
       setPhase("ready");
-      router.replace(DEFAULT_APP_ROUTE);
+
+      const onHome =
+        pathname === DEFAULT_APP_ROUTE ||
+        pathname.startsWith(`${DEFAULT_APP_ROUTE}/`);
+      if (!onHome) {
+        router.replace(DEFAULT_APP_ROUTE);
+      }
     },
-    [router],
+    [pathname, router],
   );
 
   const replaySplash = useCallback(() => {

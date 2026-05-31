@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { LaunchOverlayFrame } from "@/components/launch-overlay-frame";
 import { WelcomeHeroIllustration } from "@/components/welcome-hero-illustration";
-import { markWelcomeComplete } from "@/lib/app-session";
+import { markWelcomeComplete, markLaunchFlowComplete, markAppSessionActive } from "@/lib/app-session";
+import { isNativePlatform } from "@/lib/platform";
 
 interface WelcomeScreenProps {
   onExit: (target: string) => void;
@@ -33,8 +34,26 @@ export function WelcomeScreen({ onExit }: WelcomeScreenProps) {
       setBusy(null);
       return;
     }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Could not start guest session. Try again.");
+      setBusy(null);
+      return;
+    }
+
     markWelcomeComplete();
+    markLaunchFlowComplete();
+    markAppSessionActive();
     onExit("/home");
+
+    if (isNativePlatform()) {
+      router.push("/home");
+      return;
+    }
+
     router.push("/home");
     router.refresh();
   }
