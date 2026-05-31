@@ -28,7 +28,11 @@ export function SummaryScoredField({
       aria-label={scoringItemAriaLabel(f.title, f.badgeLabel)}
     >
       <SummaryFieldLabel>{f.title}</SummaryFieldLabel>
-      {!f.identified || f.state === "unknown" ? (
+      {!f.identified ? (
+        <span className="text-[11px] font-medium text-muted-foreground">
+          {f.badgeLabel}
+        </span>
+      ) : f.state === "unknown" ? (
         <SummaryMatchBadge label={f.badgeLabel} state="unknown" />
       ) : f.state === "match" ? (
         <SummaryInfoBadge label={f.badgeLabel} icon={icon} positive />

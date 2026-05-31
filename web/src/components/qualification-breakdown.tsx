@@ -16,6 +16,10 @@ import { QualificationSummarySection } from "@/components/qualification-summary-
 import { SectionScoreSubtotal } from "@/components/section-score-subtotal";
 import { SummarySectionCard } from "@/components/summary-section-card";
 import { buildReportRollupOptions } from "@/lib/report-rollup-context";
+import {
+  buildQualificationsFields,
+  sectionFieldFraction,
+} from "@/lib/section-field-scoring";
 import { sectionRollupScore } from "@/lib/section-score-rollups";
 import { TimezoneBreakdownRow } from "@/components/timezone-breakdown-row";
 import {
@@ -144,14 +148,11 @@ function CoverageBreakdownRow({
               {matched}/{total}
             </span>
           ) : null}
-          <span className={cn("text-[15px] font-medium", scoreColor(pct))}>
-            {pct}%
-          </span>
         </div>
       </div>
       <Progress value={pct} className="w-full gap-0">
         <ProgressTrack
-          className={cn("h-1.5 bg-transparent", scoreProgressTrackClass(pct))}
+          className={cn("h-0.5 bg-transparent", scoreProgressTrackClass(pct))}
         >
           <ProgressIndicator className={scoreProgressClass(pct)} />
         </ProgressTrack>
@@ -274,6 +275,9 @@ export function QualificationBreakdown({
     isGuest,
     "categoryMatching",
     rollupOptions,
+  );
+  const qualificationsFraction = sectionFieldFraction(
+    buildQualificationsFields(rollupOptions.fieldContext),
   );
 
   return (
@@ -416,7 +420,11 @@ export function QualificationBreakdown({
               {guestLabel}
             </p>
           ) : null}
-          <SectionScoreSubtotal score={qualificationsSubtotal} />
+          <SectionScoreSubtotal
+            score={qualificationsSubtotal}
+            label="Total Matching Items"
+            fraction={qualificationsFraction}
+          />
         </div>
       </SummarySectionCard>
     </div>

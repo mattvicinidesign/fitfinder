@@ -49,13 +49,17 @@ export function AnalysisResultView({
               <p className="font-[Georgia,'Times_New_Roman',serif] text-[22px] font-normal leading-tight tracking-tight text-foreground">
                 {result.jobTitle ?? result.parsedJob.roleTitle ?? "Job"}
               </p>
-              {result.companyName ? (
-                <p className="text-[14px] text-muted-foreground">{result.companyName}</p>
+              {result.companyName?.trim() ? (
+                <p className="text-[14px] text-muted-foreground">
+                  {result.companyName}
+                </p>
               ) : null}
               <PostingHeaderMetaFields
                 parsedJob={parsedJob}
                 jobDescription={jobDescription}
                 jobTitle={result.jobTitle}
+                companyName={result.companyName}
+                postingContext={postingContext}
               />
             </div>
             <SaveJobButton analysisId={analysisId} />

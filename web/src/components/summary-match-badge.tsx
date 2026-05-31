@@ -23,7 +23,7 @@ export function SummaryMatchBadge({
         state === "mismatch" &&
           "border-rose-500/45 bg-rose-500/15 text-rose-800 dark:text-rose-300",
         state === "unknown" &&
-          "border-border/80 bg-muted/50 text-muted-foreground font-medium",
+          "border-border bg-muted text-foreground font-medium",
         className,
       )}
     >

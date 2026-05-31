@@ -9,6 +9,7 @@ import {
   buildClientProfileFields,
   buildClientPreferencesFields,
   buildRoleDetailsFields,
+  sectionFieldFraction,
 } from "@/lib/section-field-scoring";
 import { scoringCategoryTitle } from "@/lib/scoring-terminology";
 import { sectionRollupScore } from "@/lib/section-score-rollups";
@@ -120,6 +121,10 @@ export function QualificationSummarySection({
     rollupOptions,
   );
 
+  const clientProfileFraction = sectionFieldFraction(clientFields);
+  const clientPreferencesFraction = sectionFieldFraction(preferencesFields);
+  const roleDetailsFraction = sectionFieldFraction(roleFields);
+
   const locationField = fieldByKey(clientFields, "clientOrigin");
   const timezoneField = fieldByKey(clientFields, "timezone");
   const ratingField = fieldByKey(clientFields, "clientRating");
@@ -179,7 +184,10 @@ export function QualificationSummarySection({
               </div>
             ) : null}
           </div>
-          <SectionScoreSubtotal score={clientProfileSubtotal} />
+          <SectionScoreSubtotal
+            score={clientProfileSubtotal}
+            fraction={clientProfileFraction}
+          />
         </SummarySectionCard>
       ) : null}
 
@@ -215,7 +223,10 @@ export function QualificationSummarySection({
               </div>
             ) : null}
           </div>
-          <SectionScoreSubtotal score={clientPreferencesSubtotal} />
+          <SectionScoreSubtotal
+            score={clientPreferencesSubtotal}
+            fraction={clientPreferencesFraction}
+          />
         </SummarySectionCard>
       ) : null}
 
@@ -262,7 +273,10 @@ export function QualificationSummarySection({
               </div>
             ) : null}
           </div>
-          <SectionScoreSubtotal score={roleDetailsSubtotal} />
+          <SectionScoreSubtotal
+            score={roleDetailsSubtotal}
+            fraction={roleDetailsFraction}
+          />
         </SummarySectionCard>
       ) : null}
     </div>

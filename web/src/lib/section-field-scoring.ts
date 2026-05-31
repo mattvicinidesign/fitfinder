@@ -195,10 +195,11 @@ export function buildClientProfileFields(
   });
 
   const timezoneIdentified = tzFromPosting && !isNotSpecifiedDisplay(tzSummary.label);
+  // Green / matched only on an exact timezone match with the user's timezone.
+  // Same country, different timezone (e.g. PST client vs CST user) does not count.
   const timezoneMatched =
     timezoneIdentified &&
-    (clientOriginTimezoneToneToSummaryState(tzSummary.tone) === "match" ||
-      clientOriginTimezoneToneToSummaryState(tzSummary.tone) === "same_country");
+    clientOriginTimezoneToneToSummaryState(tzSummary.tone) === "match";
 
   const fields: SectionFieldScore[] = [
     postingRowIdentified(originRow)
@@ -209,7 +210,7 @@ export function buildClientProfileFields(
       "Timezone",
       timezoneIdentified,
       tzSummary.label,
-      clientOriginTimezoneToneToSummaryState(tzSummary.tone),
+      timezoneMatched ? "match" : "unknown",
       timezoneIdentified ? (timezoneMatched ? 100 : 0) : null,
     ),
   ];
@@ -554,6 +555,21 @@ export function equalWeightSectionSubtotal(
 
 /** @alias equalWeightSectionSubtotal */
 export const scoringCategorySubtotal = equalWeightSectionSubtotal;
+
+/**
+ * Matched / identified item count for a category (e.g. 4/4).
+ * A matched item is an identified field with a full (green) match.
+ */
+export function sectionFieldFraction(
+  fields: SectionFieldScore[],
+): { matched: number; total: number } | null {
+  const active = fields.filter((f) => f.identified && f.points != null);
+  if (active.length === 0) return null;
+  const matched = active.filter(
+    (f) => f.state === "match" || (f.points ?? 0) >= 100,
+  ).length;
+  return { matched, total: active.length };
+}
 
 export function buildSectionFields(
   sectionId: ReportSectionId,

@@ -10,6 +10,7 @@ import type { PostingDetailRow } from "@/lib/posting-details";
 import {
   buildSectionFields,
   equalWeightSectionSubtotal,
+  sectionFieldFraction,
   type SectionFieldScoreContext,
 } from "@/lib/section-field-scoring";
 import {
@@ -30,6 +31,8 @@ export interface ReportSectionRollup {
   title: string;
   /** 0–100 partial score, or null when no identified items in this category. */
   score: number | null;
+  /** Matched / identified item count (e.g. 3/4), or null when none identified. */
+  fraction: { matched: number; total: number } | null;
 }
 
 const REGISTERED_SECTION_IDS: ReportSectionId[] = [
@@ -51,17 +54,20 @@ export interface ReportRollupOptions {
   highlightCtx: PostingDetailHighlightContext;
 }
 
-function rollupScoreForCategory(
+function rollupForCategory(
   sectionId: ReportSectionId,
   options: ReportRollupOptions,
-): number | null {
+): { score: number | null; fraction: { matched: number; total: number } | null } {
   const fields = buildSectionFields(
     sectionId,
     options.fieldContext,
     options.postingRows,
     options.highlightCtx,
   );
-  return equalWeightSectionSubtotal(fields);
+  return {
+    score: equalWeightSectionSubtotal(fields),
+    fraction: sectionFieldFraction(fields),
+  };
 }
 
 export function computeReportSectionRollups(
@@ -71,11 +77,15 @@ export function computeReportSectionRollups(
 ): ReportSectionRollup[] {
   const sectionIds = isGuest ? GUEST_SECTION_IDS : REGISTERED_SECTION_IDS;
 
-  return sectionIds.map((id) => ({
-    id,
-    title: SCORING_CATEGORY_LABELS[id],
-    score: rollupScoreForCategory(id, options),
-  }));
+  return sectionIds.map((id) => {
+    const { score, fraction } = rollupForCategory(id, options);
+    return {
+      id,
+      title: SCORING_CATEGORY_LABELS[id],
+      score,
+      fraction,
+    };
+  });
 }
 
 /** Partial score for one scoring category (equal-weight identified items). */
@@ -85,7 +95,7 @@ export function sectionRollupScore(
   sectionId: ReportSectionId,
   options: ReportRollupOptions,
 ): number | null {
-  return rollupScoreForCategory(sectionId, options);
+  return rollupForCategory(sectionId, options).score;
 }
 
 /**

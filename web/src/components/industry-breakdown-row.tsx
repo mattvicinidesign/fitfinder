@@ -50,7 +50,9 @@ export function IndustrySummaryContent({
           )}
         </div>
       ) : isUnknown ? (
-        <SummaryMatchBadge label={NOT_SPECIFIED_LABEL} state="unknown" />
+        <span className="text-[11px] font-medium text-muted-foreground">
+          {NOT_SPECIFIED_LABEL}
+        </span>
       ) : detail && detail.resumeIndustries.length > 0 ? (
         <p className="text-[11px] text-muted-foreground leading-snug">
           No industries in posting. Resume: {detail.resumeIndustries.join(", ")}.

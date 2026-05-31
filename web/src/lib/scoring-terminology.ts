@@ -18,17 +18,17 @@ export type ScoringCategoryId =
 /** @alias ScoringCategoryId */
 export type ReportSectionId = ScoringCategoryId;
 
-export const GLOBAL_SCORE_LABEL = "Global Score";
+export const GLOBAL_SCORE_LABEL = "Profile Fit";
 
 /** Footer row on a scoring category card (equal-weight item average). */
-export const SCORING_CATEGORY_SUBTOTAL_LABEL = "Subtotal";
+export const SCORING_CATEGORY_SUBTOTAL_LABEL = "Matching Items";
 
 /** Display titles for each scoring category card and global-score rollup row. */
 export const SCORING_CATEGORY_LABELS: Record<ScoringCategoryId, string> = {
-  clientProfile: "Client Profile",
-  clientPreferences: "Client Preferences",
-  roleDetails: "Role Details",
-  categoryMatching: "Qualifications",
+  clientProfile: "Client",
+  clientPreferences: "Preference",
+  roleDetails: "Role",
+  categoryMatching: "Qualification",
 };
 
 /** Share of global score per scoring category (sums to 100). */
@@ -41,6 +41,17 @@ export const SCORING_CATEGORY_WEIGHTS: Record<ScoringCategoryId, number> = {
 
 export function scoringCategoryTitle(id: ScoringCategoryId): string {
   return SCORING_CATEGORY_LABELS[id];
+}
+
+/**
+ * Display-only category score on a 0–10 scale: (matchedItems / totalItems) * 10.
+ * Not used by the recommendation engine — presentation only.
+ */
+export function categoryScoreOutOfTen(
+  fraction: { matched: number; total: number } | null | undefined,
+): string | null {
+  if (!fraction || fraction.total <= 0) return null;
+  return ((fraction.matched / fraction.total) * 10).toFixed(1);
 }
 
 /** Accessible label for a scoring item (title + value pill). */

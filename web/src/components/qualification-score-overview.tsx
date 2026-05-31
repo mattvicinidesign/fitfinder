@@ -10,9 +10,8 @@ import {
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
 import {
   GLOBAL_SCORE_LABEL,
-  SCORING_CATEGORY_WEIGHTS,
+  categoryScoreOutOfTen,
 } from "@/lib/scoring-terminology";
-import type { ScoringCategoryId } from "@/lib/scoring-terminology";
 import {
   scoreColor,
   scoreProgressClass,
@@ -24,25 +23,23 @@ import { cn } from "@/lib/utils";
 
 function ScoringCategoryRollupRow({
   title,
-  weightPercent,
   score,
+  fraction,
 }: {
   title: string;
-  weightPercent: number;
   score: number | null;
+  fraction: { matched: number; total: number } | null;
 }) {
   const hasScore = score != null;
   const pct = hasScore ? Math.round(score) : 0;
+  const scoreOutOfTen = categoryScoreOutOfTen(fraction);
+  const valueText = scoreOutOfTen ?? (hasScore ? `${pct}%` : "—");
 
   return (
     <div className="space-y-1.5 min-w-0">
       <div className="flex items-baseline justify-between gap-3">
         <span className="font-[Georgia,'Times_New_Roman',serif] text-[14px] text-foreground leading-snug">
           {title}
-          <span className="text-muted-foreground font-normal">
-            {" "}
-            ({weightPercent}%)
-          </span>
         </span>
         <span
           className={cn(
@@ -50,7 +47,7 @@ function ScoringCategoryRollupRow({
             hasScore ? scoreColor(pct) : "text-muted-foreground",
           )}
         >
-          {hasScore ? `${pct}%` : "—"}
+          {valueText}
         </span>
       </div>
       <Progress value={hasScore ? pct : 0} className="w-full gap-0">
@@ -101,8 +98,8 @@ export function QualificationScoreOverview({
             <ScoringCategoryRollupRow
               key={section.id}
               title={section.title}
-              weightPercent={SCORING_CATEGORY_WEIGHTS[section.id as ScoringCategoryId]}
               score={section.score}
+              fraction={section.fraction}
             />
           ))}
         </div>
