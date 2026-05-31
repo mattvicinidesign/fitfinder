@@ -15,7 +15,7 @@ export function NavTab({ item }: { item: NavItem }) {
     <Link
       href={item.href}
       className={cn(
-        "flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0",
+        "flex flex-1 flex-col items-center justify-end gap-0.5 min-w-0 pb-1",
         active ? "text-primary" : "text-muted-foreground",
       )}
     >

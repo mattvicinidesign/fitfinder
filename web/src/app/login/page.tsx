@@ -1,19 +1,21 @@
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { AppFrame } from "@/components/app-shell/app-frame";
-import { LoginForm } from "@/app/login/login-form";
-import { IosLargeTitle } from "@/components/ui/ios-large-title";
+import { LoginPageContent } from "@/app/login/login-page-content";
+import { SIGNUP_PATH } from "@/lib/pending-signup";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const params = await searchParams;
+  if (params.next === "/onboarding") {
+    redirect(SIGNUP_PATH);
+  }
+
   return (
     <AppFrame>
-      <div className="flex min-h-dvh flex-col">
-        <IosLargeTitle title="Sign in" subtitle="Magic link or guest session." />
-        <div className="flex-1 px-4 py-6">
-          <Suspense fallback={<p className="text-sm text-muted-foreground">Loading…</p>}>
-            <LoginForm />
-          </Suspense>
-        </div>
-      </div>
+      <LoginPageContent />
     </AppFrame>
   );
 }

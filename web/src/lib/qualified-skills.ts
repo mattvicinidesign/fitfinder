@@ -1,6 +1,8 @@
 /**
- * Profile qualified skills — not used for scoring/UI (resume skills only).
- * Kept for a possible future onboarding flow.
+ * Profile qualified skills. Collected during onboarding (core skills) and
+ * stored in profiles.qualified_skills. skillsMatchPoolForScoring already
+ * accepts a profileQualified pool, so these can be threaded into skills
+ * coverage as an additive matching signal.
  */
 
 export const PROFILE_QUALIFIED_SKILL_LABELS = [

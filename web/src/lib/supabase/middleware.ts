@@ -35,11 +35,14 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const protectedPrefixes = [
+    "/home",
     "/analyze",
     "/saved",
     "/history",
     "/compare",
     "/profile",
+    "/onboarding",
+    "/settings",
   ];
   const needsAuth =
     path !== "/preview" &&

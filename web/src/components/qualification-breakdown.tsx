@@ -13,6 +13,7 @@ import { CountryBreakdownRow } from "@/components/country-breakdown-row";
 import { breakdownCategoryCardClass } from "@/components/breakdown-accordion";
 import { QualificationScoreOverview } from "@/components/qualification-score-overview";
 import { QualificationSummarySection } from "@/components/qualification-summary-section";
+import { ReportRevealSection } from "@/components/report-reveal-section";
 import { SectionScoreSubtotal } from "@/components/section-score-subtotal";
 import { SummarySectionCard } from "@/components/summary-section-card";
 import { buildReportRollupOptions } from "@/lib/report-rollup-context";
@@ -30,12 +31,12 @@ import {
 import {
   scoreColor,
   scoreProgressClass,
+  SCORE_PROGRESS_BAR_HEIGHT_CLASS,
   scoreProgressTrackClass,
 } from "@/lib/score";
 import { NOT_SPECIFIED_LABEL } from "@/lib/not-specified";
 import {
   SCORING_CATEGORY_INFO,
-  categoryScoreOutOfTen,
   scoringCategoryTitle,
 } from "@/lib/scoring-terminology";
 import { GUEST_WEIGHT_ROWS, REGISTERED_WEIGHT_ROWS } from "@/lib/scoring-weights";
@@ -51,6 +52,12 @@ import type {
 import { cn } from "@/lib/utils";
 
 const GUEST_SCORED_KEYS = new Set(GUEST_WEIGHT_ROWS.map((r) => r.key));
+
+/** Guest analyses omit some server weights, but tool matching is still shown in Qualifications. */
+const GUEST_QUALIFICATION_ROW_KEYS = new Set<CategoryKey>([
+  ...GUEST_SCORED_KEYS,
+  "tools",
+]);
 
 /** Shown in scoring category cards — omitted from the qualifications table. */
 const SUMMARY_ONLY_KEYS = new Set<CategoryKey>([
@@ -118,7 +125,6 @@ function CoverageBreakdownRow({
   jobDescription?: string | null;
 }) {
   const ui = COVERAGE_UI[coverageKey];
-  const pct = Math.round(category.score);
 
   const computed: CoverageResult | null = parsedJob
     ? coverageDetailForCategory(
@@ -139,7 +145,11 @@ function CoverageBreakdownRow({
   const total = category.totalCount ?? detail.length;
   const matched =
     category.matchedCount ?? detail.filter((i) => i.matched).length;
-  const score = categoryScoreOutOfTen({ matched, total });
+  const ratioText = total > 0 ? `${matched}/${total}` : null;
+  const pct =
+    total > 0
+      ? Math.round((matched / total) * 100)
+      : Math.round(category.score);
   const hasDetail = detail.length > 0;
 
   const body = (
@@ -147,16 +157,19 @@ function CoverageBreakdownRow({
       <div className="flex items-center justify-between gap-4">
         <span className="text-[15px] flex-1 min-w-0">{label}</span>
         <div className="flex items-baseline gap-2 shrink-0 tabular-nums">
-          {score ? (
-            <span className="text-[15px] font-medium text-foreground">
-              {score}
+          {ratioText ? (
+            <span className={cn("text-[15px] font-medium", scoreColor(pct))}>
+              {ratioText}
             </span>
           ) : null}
         </div>
       </div>
       <Progress value={pct} className="w-full gap-0">
         <ProgressTrack
-          className={cn("h-0.5 bg-transparent", scoreProgressTrackClass(pct))}
+          className={cn(
+            SCORE_PROGRESS_BAR_HEIGHT_CLASS,
+            scoreProgressTrackClass(pct),
+          )}
         >
           <ProgressIndicator className={scoreProgressClass(pct)} />
         </ProgressTrack>
@@ -258,10 +271,6 @@ export function QualificationBreakdown({
   const industryCategory = lookupCategory(breakdown, "industry");
   const industryLabel =
     rows.find(({ key }) => key === "industry")?.label ?? "Industry";
-  const guestLabel =
-    isGuest && process.env.NEXT_PUBLIC_QA_REGISTERED_SCORING === "true"
-      ? "Guest account (re-run analyze after QA refresh for full breakdown)"
-      : null;
   const rollupOptions = buildReportRollupOptions({
     score,
     parsedJob,
@@ -286,7 +295,9 @@ export function QualificationBreakdown({
 
   return (
     <div className="w-full space-y-3">
-      <QualificationScoreOverview score={score} rollupOptions={rollupOptions} />
+      <ReportRevealSection>
+        <QualificationScoreOverview score={score} rollupOptions={rollupOptions} />
+      </ReportRevealSection>
       <QualificationSummarySection
         score={score}
         industryLabel={industryLabel}
@@ -309,13 +320,14 @@ export function QualificationBreakdown({
         jobTitle={analysisJobTitle}
       />
 
-      <SummarySectionCard
-        title={scoringCategoryTitle("categoryMatching")}
-        info={SCORING_CATEGORY_INFO.categoryMatching}
-      >
+      <ReportRevealSection>
+        <SummarySectionCard
+          title={scoringCategoryTitle("categoryMatching")}
+          info={SCORING_CATEGORY_INFO.categoryMatching}
+        >
         <div className="space-y-3">
           {categoryRows.map(({ key, label }) => {
-          if (isGuest && !GUEST_SCORED_KEYS.has(key)) {
+          if (isGuest && !GUEST_QUALIFICATION_ROW_KEYS.has(key)) {
             return (
               <BreakdownRow
                 key={key}
@@ -422,18 +434,14 @@ export function QualificationBreakdown({
           );
         })}
 
-          {guestLabel ? (
-            <p className="text-[12px] text-amber-700 dark:text-amber-500 mt-2 leading-snug">
-              {guestLabel}
-            </p>
-          ) : null}
           <SectionScoreSubtotal
             score={qualificationsSubtotal}
-            label="Total Category Score"
             fraction={qualificationsFraction}
+            animateDelay={650}
           />
         </div>
       </SummarySectionCard>
+      </ReportRevealSection>
     </div>
   );
 }

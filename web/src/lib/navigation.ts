@@ -1,13 +1,13 @@
 import {
   Bookmark,
-  Columns2,
   Clock,
+  Home,
   ScanSearch,
   User,
   type LucideIcon,
 } from "lucide-react";
 
-/** Single source of truth for app navigation (sidebar + bottom tabs). */
+/** Single source of truth for app navigation (bottom tabs). */
 export interface NavItem {
   href: string;
   label: string;
@@ -15,10 +15,10 @@ export interface NavItem {
 }
 
 export const APP_NAV: NavItem[] = [
-  { href: "/analyze", label: "Analyze", icon: ScanSearch },
+  { href: "/home", label: "Home", icon: Home },
   { href: "/saved", label: "Saved", icon: Bookmark },
+  { href: "/analyze", label: "Analyze", icon: ScanSearch },
   { href: "/history", label: "History", icon: Clock },
-  { href: "/compare", label: "Compare", icon: Columns2 },
   { href: "/profile", label: "Profile", icon: User },
 ];
 

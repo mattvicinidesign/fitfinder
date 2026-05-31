@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-export function SaveJobButton({ analysisId }: { analysisId: string | null }) {
+function useSaveJob(analysisId: string | null) {
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [checked, setChecked] = useState(false);
@@ -102,6 +102,12 @@ export function SaveJobButton({ analysisId }: { analysisId: string | null }) {
     toast.success("Saved to your list.");
   }, [analysisId, busy, saved]);
 
+  return { saved, busy, checked, toggle };
+}
+
+export function SaveJobButton({ analysisId }: { analysisId: string | null }) {
+  const { saved, busy, checked, toggle } = useSaveJob(analysisId);
+
   if (!analysisId) return null;
 
   return (
@@ -124,6 +130,22 @@ export function SaveJobButton({ analysisId }: { analysisId: string | null }) {
           busy && "opacity-50",
         )}
       />
+    </Button>
+  );
+}
+
+/** Full-width bottom CTA for the analysis report screen. */
+export function SaveReportButton({ analysisId }: { analysisId: string | null }) {
+  const { saved, busy, checked, toggle } = useSaveJob(analysisId);
+
+  return (
+    <Button
+      type="button"
+      className="w-full h-12 text-[17px] rounded-xl"
+      disabled={!analysisId || busy || !checked}
+      onClick={() => void toggle()}
+    >
+      {busy ? "Saving…" : saved ? "Saved" : "Save Report"}
     </Button>
   );
 }

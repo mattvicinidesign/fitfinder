@@ -2,25 +2,21 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { parseResume } from "@/lib/api";
+import {
+  trackResumeParse,
+  waitForResumeParse,
+} from "@/lib/resume-parse-tracker";
 
-const TEXT_TYPES = new Set(["text/plain"]);
-const TEXT_EXTENSIONS = /\.(txt)$/i;
-
-/** Read plain-text content from a user-selected file when possible. */
-export async function readResumeTextFromFile(file: File): Promise<string> {
-  if (TEXT_TYPES.has(file.type) || TEXT_EXTENSIONS.test(file.name)) {
-    return file.text();
-  }
-  return "";
-}
+export { waitForResumeParse };
 
 /**
- * Upload resume to Supabase Storage (private `resumes` bucket, user folder),
- * parse via the shared Edge Function, and return resume id.
+ * Upload resume to Storage and create a DB row. Returns quickly; parsing runs
+ * in the background so the user can keep filling the form.
  */
-export async function uploadAndParseResume(file: File): Promise<{
+export async function uploadResume(file: File): Promise<{
   resumeId: string;
   fileUrl: string;
+  fileName: string;
 }> {
   const supabase = createClient();
   const {
@@ -39,24 +35,30 @@ export async function uploadAndParseResume(file: File): Promise<{
   const {
     data: { publicUrl },
   } = supabase.storage.from("resumes").getPublicUrl(path);
-  const fileRef = path;
 
   const { data: row, error: insertError } = await supabase
     .from("resumes")
-    .insert({ user_id: user.id, file_url: fileRef })
+    .insert({ user_id: user.id, file_url: path })
     .select("id")
     .single();
   if (insertError) throw new Error(insertError.message);
 
-  const resumeText = await readResumeTextFromFile(file);
-  if (resumeText.trim()) {
-    await parseResume({ resumeText, resumeId: row.id });
-  } else {
-    await parseResume({ resumeId: row.id });
-  }
+  // Parse on the server from Storage — client PDF/DOCX extraction can hang in Next.js.
+  trackResumeParse(row.id, parseResume({ resumeId: row.id }));
 
   return {
     resumeId: row.id,
     fileUrl: publicUrl,
+    fileName: file.name,
   };
+}
+
+/** @deprecated Use uploadResume — kept for any external callers. */
+export async function uploadAndParseResume(file: File): Promise<{
+  resumeId: string;
+  fileUrl: string;
+}> {
+  const uploaded = await uploadResume(file);
+  await waitForResumeParse(uploaded.resumeId);
+  return { resumeId: uploaded.resumeId, fileUrl: uploaded.fileUrl };
 }

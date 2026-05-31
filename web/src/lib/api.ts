@@ -80,8 +80,6 @@ export interface AnalyzeArgs {
   resumeId?: string;
   parsedResume?: ParsedResume;
   persist?: boolean;
-  /** Dev/QA: force full 10-category weights on the server. */
-  scoringMode?: "registered";
 }
 
 export async function analyze(

@@ -7,6 +7,7 @@ import { IosLargeTitle } from "@/components/ui/ios-large-title";
 import { IosGroupedSection } from "@/components/ui/ios-grouped-section";
 import { IosAnalysisListRow } from "@/components/ui/ios-list-row";
 import { buttonVariants } from "@/components/ui/button";
+import { GuestUpgradePrompt } from "@/components/guest-upgrade-prompt";
 import type { AnalysisRecord } from "@/lib/types";
 
 export function SavedScreen() {
@@ -48,6 +49,8 @@ export function SavedScreen() {
             New analysis
           </Link>
         </div>
+
+        <GuestUpgradePrompt variant="history" />
 
         {loading ? (
           <p className="px-4 text-[15px] text-muted-foreground">Loading…</p>

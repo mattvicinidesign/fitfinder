@@ -154,9 +154,14 @@ Deno.serve(async (req: Request) => {
 
     const postingContext = resolvePostingContext(parsedJob, jobText);
 
+    const resolvedJobTitle =
+      typeof jobTitle === "string" && jobTitle.trim()
+        ? jobTitle.trim()
+        : parsedJob.roleTitle?.trim() || null;
+
     const result: AnalysisResult = {
       companyName,
-      jobTitle,
+      jobTitle: resolvedJobTitle,
       parsedJob,
       parsedResume: resume,
       jobDescription: jobText,
@@ -174,7 +179,7 @@ Deno.serve(async (req: Request) => {
           user_id: userId,
           resume_id: typeof resumeId === "string" ? resumeId : null,
           company_name: companyName,
-          job_title: jobTitle,
+          job_title: resolvedJobTitle,
           job_description: jobText,
           parsed_job_json: parsedJob,
           qualification_score: score.qualificationScore,

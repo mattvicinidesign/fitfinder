@@ -21,15 +21,10 @@ export function SummaryInfoBadge({
   return (
     <span
       className={cn(
-        "inline-flex max-w-full items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium break-words whitespace-normal text-left leading-snug",
-        positive &&
-          "border-primary/45 bg-primary/15 text-primary font-semibold",
-        !positive &&
-          muted &&
-          "border-border/60 bg-muted/40 text-muted-foreground",
-        !positive &&
-          !muted &&
-          "border-border/80 bg-background/90 text-foreground",
+        "inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium break-words whitespace-normal text-left leading-snug",
+        positive && "bg-primary/25 text-primary font-semibold",
+        !positive && muted && "bg-muted/60 text-muted-foreground",
+        !positive && !muted && "bg-muted text-foreground",
         className,
       )}
       title={label}

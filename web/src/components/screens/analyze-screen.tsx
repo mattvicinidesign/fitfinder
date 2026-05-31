@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { analyze } from "@/lib/api";
-import { saveAnalysisReport } from "@/lib/analysis-report-cache";
+import {
+  getLastAnalysisReport,
+  saveAnalysisReport,
+} from "@/lib/analysis-report-cache";
 import { sanitizeJobText } from "@/lib/sanitize-job-text";
 import {
   fetchProfileDesiredCompensation,
@@ -11,26 +16,20 @@ import {
   fetchProfileCountry,
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
-import { ensureProfileQualifications } from "@/lib/qa";
-import {
-  ensureQaRegisteredAccount,
-  getQaPreloadedResumeLocal,
-  isQaRegisteredScoring,
-  preloadQaResume,
-  QA_PRELOAD_RESUME_NAME,
-  refreshQaResume,
-} from "@/lib/qa";
 import type { AnalysisResult, Compensation } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { IosLargeTitle } from "@/components/ui/ios-large-title";
-import {
-  IosGroupedRow,
-  IosGroupedSection,
-} from "@/components/ui/ios-grouped-section";
 import { AnalysisResultView } from "@/components/analysis-result";
 import { ResumeFilePicker } from "@/components/resume-file-picker";
+import {
+  ANALYZE_FIELD_CLASS,
+  ANALYZE_SECTION_CLASS,
+  ANALYZE_SECTION_LABEL_CLASS,
+} from "@/components/analyze-form-styles";
+import { waitForResumeParse } from "@/lib/resume-upload";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const DEMO_RESULT: AnalysisResult = {
@@ -101,20 +100,12 @@ const DEMO_RESULT: AnalysisResult = {
 
 export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   const router = useRouter();
-  const qaRegistered = isQaRegisteredScoring();
-  const qaCached = !demo && qaRegistered ? getQaPreloadedResumeLocal() : null;
 
-  const [resumeId, setResumeId] = useState<string | undefined>(
-    () => qaCached?.resumeId,
-  );
-  const [resumeFileName, setResumeFileName] = useState<string | null>(
-    () => qaCached?.fileName ?? null,
-  );
-  const [resumePreloading, setResumePreloading] = useState(
-    () => qaRegistered && !qaCached?.resumeId,
-  );
-  const [qaRefreshing, setQaRefreshing] = useState(false);
+  const [resumeId, setResumeId] = useState<string | undefined>(undefined);
+  const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const [jobText, setJobText] = useState("");
+  const [jobLink, setJobLink] = useState("");
+  const [jobExpanded, setJobExpanded] = useState(false);
 
   const [status, setStatus] = useState<string | null>(null);
   const [profileDesiredCompensation, setProfileDesiredCompensation] =
@@ -124,8 +115,17 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   >([]);
   const [profileCountry, setProfileCountry] = useState<string | null>(null);
   const [profileTimezone, setProfileTimezone] = useState<string | null>(null);
+  const [lastReport, setLastReport] = useState<{
+    reportId: string;
+    roleTitle: string;
+  } | null>(null);
 
   const busy = status !== null;
+
+  useEffect(() => {
+    if (demo) return;
+    setLastReport(getLastAnalysisReport());
+  }, [demo]);
 
   useEffect(() => {
     if (demo) return;
@@ -142,55 +142,6 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
     });
   }, [demo]);
 
-  useEffect(() => {
-    if (demo || !qaRegistered) return;
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const loaded = await preloadQaResume();
-        if (cancelled || !loaded) return;
-        setResumeId(loaded.resumeId);
-        setResumeFileName(loaded.fileName);
-      } catch (err) {
-        if (!cancelled) {
-          toast.error(
-            err instanceof Error ? err.message : "QA resume preload failed.",
-          );
-        }
-      } finally {
-        if (!cancelled) setResumePreloading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [demo, qaRegistered]);
-
-  async function handleQaRefreshResume() {
-    setQaRefreshing(true);
-    setResumePreloading(true);
-    try {
-      const loaded = await refreshQaResume();
-      if (!loaded) {
-        toast.error("Sign in required to refresh QA resume.");
-        return;
-      }
-      setResumeId(loaded.resumeId);
-      setResumeFileName(loaded.fileName);
-      toast.success("QA resume re-uploaded and parsed.");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "QA resume refresh failed.",
-      );
-    } finally {
-      setQaRefreshing(false);
-      setResumePreloading(false);
-    }
-  }
-
   async function run(e: React.FormEvent) {
     e.preventDefault();
     if (demo) return;
@@ -198,8 +149,9 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
       toast.error("Upload your resume to continue.");
       return;
     }
-    if (!jobText.trim()) {
-      toast.error("Paste a job description to analyze.");
+    const trimmedLink = jobLink.trim();
+    if (!jobText.trim() && !trimmedLink) {
+      toast.error("Paste a job description or link to analyze.");
       return;
     }
     try {
@@ -212,23 +164,24 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
             : "Trimmed job text to analysis limit.",
         );
       }
-      if (qaRegistered) {
-        await ensureQaRegisteredAccount();
-        await ensureProfileQualifications();
-        const industries = await fetchProfileQualifiedIndustries();
-        setProfileQualifiedIndustries(industries);
-      }
+      const jobContent = [
+        cleaned.text,
+        trimmedLink ? `Job posting link: ${trimmedLink}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+      setStatus("Parsing resume…");
+      await waitForResumeParse(resumeId);
       setStatus("Scoring fit…");
       const { analysisId, result } = await analyze({
-        jobText: cleaned.text,
+        jobText: jobContent,
         resumeId,
-        ...(qaRegistered ? { scoringMode: "registered" as const } : {}),
       });
       const reportId = analysisId ?? crypto.randomUUID();
       saveAnalysisReport(reportId, {
         result: {
           ...result,
-          jobDescription: result.jobDescription ?? cleaned.text,
+          jobDescription: result.jobDescription ?? jobContent,
         },
         analysisId,
         profileDesiredCompensation,
@@ -246,89 +199,145 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   }
 
   return (
-    <>
+    <div className="flex h-full min-h-0 flex-col">
       {demo ? (
         <p className="mx-4 mt-2 text-center text-[13px] font-medium text-primary">
           Fit Finder Preview — canonical UI (sample data)
         </p>
-      ) : null}
-      {qaRegistered && !demo ? (
-        <div className="mx-4 mt-2 flex flex-col items-center gap-2 text-center text-[13px] font-medium text-amber-700 dark:text-amber-500">
-          <p>
-            QA mode — registered scoring · resume preloads as{" "}
-            {QA_PRELOAD_RESUME_NAME}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 text-[12px] rounded-lg border-amber-600/40 text-amber-800 dark:text-amber-400"
-            disabled={busy || resumePreloading || qaRefreshing}
-            onClick={() => void handleQaRefreshResume()}
-          >
-            {qaRefreshing || resumePreloading
-              ? "Re-uploading QA resume…"
-              : "Re-upload QA resume (refresh cache)"}
-          </Button>
-        </div>
-      ) : null}
+      ) : (
+        <header className="sticky top-0 z-10 shrink-0 bg-background px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <Link
+              href="/home"
+              aria-label="Back to Home"
+              className="-ml-1.5 inline-flex items-center rounded-md p-1 text-primary transition-colors hover:bg-primary/10"
+            >
+              <ChevronLeft className="size-5 shrink-0" aria-hidden />
+            </Link>
+            {lastReport ? (
+              <Link
+                href={`/analyze/report?id=${encodeURIComponent(lastReport.reportId)}`}
+                aria-label={`${lastReport.roleTitle} report`}
+                className="-mr-1.5 inline-flex min-w-0 max-w-[58%] items-center gap-0.5 rounded-md py-1 pr-1 pl-2 text-[15px] font-medium text-primary transition-colors hover:bg-primary/10"
+              >
+                <span className="truncate">{lastReport.roleTitle}</span>
+                <span className="shrink-0">Report</span>
+                <ChevronRight className="size-5 shrink-0" aria-hidden />
+              </Link>
+            ) : null}
+          </div>
+        </header>
+      )}
       <IosLargeTitle
         title="Analyze"
-        subtitle="Upload your resume, paste a job description, and get a global score."
+        subtitle="Upload your resume and paste a job to score your fit."
       />
 
-      <form onSubmit={run} className="py-4 space-y-6">
-        <IosGroupedSection
-          title="Resume"
-          footer="PDF, Word (.doc, .docx), or plain text (.txt)."
+      <form onSubmit={run} className="flex min-h-0 flex-1 flex-col overflow-hidden py-4">
+        <section
+          className={cn(
+            ANALYZE_SECTION_CLASS,
+            jobExpanded ? "hidden" : "flex-1",
+          )}
         >
-          <IosGroupedRow className="space-y-3">
-            {!demo ? (
+          <h2 className={ANALYZE_SECTION_LABEL_CLASS}>Resume</h2>
+          {!demo ? (
+            <ResumeFilePicker
+              className="min-h-0 flex-1"
+              disabled={busy}
+              fileName={resumeFileName}
+              onParsed={({ resumeId, fileName }) => {
+                setResumeId(resumeId);
+                setResumeFileName(fileName);
+              }}
+            />
+          ) : (
+            <div
+              className={cn(
+                ANALYZE_FIELD_CLASS,
+                "flex min-h-0 flex-1 flex-col items-center justify-center py-8 text-center",
+              )}
+            >
+              Sample resume (preview mode)
+            </div>
+          )}
+        </section>
+
+        <section
+          className={cn(
+            ANALYZE_SECTION_CLASS,
+            "mt-4",
+            jobExpanded ? "flex-1" : "flex-[1.15]",
+          )}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h2 className={ANALYZE_SECTION_LABEL_CLASS}>Job description</h2>
+            <button
+              type="button"
+              onClick={() => setJobExpanded((v) => !v)}
+              className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[13px] font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              {jobExpanded ? (
+                <>
+                  <Minimize2 className="size-3.5" aria-hidden />
+                  Collapse
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="size-3.5" aria-hidden />
+                  Expand
+                </>
+              )}
+            </button>
+          </div>
+          <Label htmlFor="job" className="sr-only">
+            Job description
+          </Label>
+          <Textarea
+            id="job"
+            placeholder="Paste the job description…"
+            value={jobText}
+            onChange={(e) => setJobText(e.target.value)}
+            className={cn(
+              ANALYZE_FIELD_CLASS,
+              "min-h-[140px] resize-none overflow-y-auto dark:bg-muted/40",
+              jobExpanded
+                ? "field-sizing-content"
+                : "field-sizing-fixed flex-1",
+            )}
+          />
+        </section>
+
+        <section className={cn(ANALYZE_SECTION_CLASS, "mt-4")}>
+          <h2 className={ANALYZE_SECTION_LABEL_CLASS}>Job link</h2>
+          <Label htmlFor="job-link" className="sr-only">
+            Job link (optional)
+          </Label>
+          <input
+            id="job-link"
+            type="url"
+            inputMode="url"
+            placeholder="Paste a job link (optional)"
+            value={jobLink}
+            onChange={(e) => setJobLink(e.target.value)}
+            className={ANALYZE_FIELD_CLASS}
+          />
+        </section>
+
+        <div className="px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <Button
+            type="submit"
+            className="w-full h-12 gap-2 text-[17px] rounded-xl"
+            disabled={busy || demo}
+          >
+            {busy ? (
               <>
-                <ResumeFilePicker
-                  disabled={busy || resumePreloading || qaRefreshing}
-                  fileName={resumeFileName}
-                  onParsed={({ resumeId, fileName }) => {
-                    setResumeId(resumeId);
-                    setResumeFileName(fileName);
-                  }}
-                />
-                {resumePreloading ? (
-                  <p className="text-[13px] text-muted-foreground">
-                    Loading QA resume…
-                  </p>
-                ) : null}
+                <Loader2 className="size-5 animate-spin" aria-hidden />
+                {status}
               </>
             ) : (
-              <p className="text-[15px] text-muted-foreground">
-                Sample resume (preview mode)
-              </p>
+              "Analyze fit"
             )}
-          </IosGroupedRow>
-        </IosGroupedSection>
-
-        <IosGroupedSection title="Job description">
-          <IosGroupedRow>
-            <div className="space-y-2 w-full">
-              <Label htmlFor="job" className="sr-only">
-                Job description
-              </Label>
-              <Textarea
-                id="job"
-                rows={8}
-                placeholder="Paste the job description…"
-                value={jobText}
-                onChange={(e) => setJobText(e.target.value)}
-                required={!demo}
-                className="text-[17px] bg-transparent border-0 shadow-none px-0 resize-none focus-visible:ring-0 min-h-[180px]"
-              />
-            </div>
-          </IosGroupedRow>
-        </IosGroupedSection>
-
-        <div className="px-4">
-          <Button type="submit" className="w-full h-12 text-[17px] rounded-xl" disabled={busy || demo}>
-            {status ?? "Analyze fit"}
           </Button>
         </div>
       </form>
@@ -354,6 +363,6 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           </p>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }

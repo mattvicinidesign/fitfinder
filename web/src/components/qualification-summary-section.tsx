@@ -4,6 +4,7 @@ import { IndustrySummaryContent } from "@/components/industry-breakdown-row";
 import { SummaryScoredField } from "@/components/summary-scored-field";
 import { SectionScoreSubtotal } from "@/components/section-score-subtotal";
 import { SummarySectionCard } from "@/components/summary-section-card";
+import { ReportRevealSection } from "@/components/report-reveal-section";
 import { buildReportRollupOptions } from "@/lib/report-rollup-context";
 import {
   buildClientProfileFields,
@@ -96,7 +97,7 @@ export function QualificationSummarySection({
   const preferencesFields = buildClientPreferencesFields(fieldCtx);
   const roleFields = buildRoleDetailsFields(fieldCtx, postingRows, highlightCtx);
 
-  const showClientCard = !isGuest && clientFields.length > 0;
+  const showClientCard = clientFields.length > 0;
   const showPreferencesCard = preferencesFields.length > 0;
   const showRoleCard =
     roleFields.length > 0 || Boolean(industryCategory || parsedJob);
@@ -145,6 +146,7 @@ export function QualificationSummarySection({
   return (
     <div className="space-y-3 w-full" role="region" aria-label="Scoring categories">
       {showClientCard ? (
+        <ReportRevealSection>
         <SummarySectionCard
           title={scoringCategoryTitle("clientProfile")}
           info={SCORING_CATEGORY_INFO.clientProfile}
@@ -193,11 +195,14 @@ export function QualificationSummarySection({
           <SectionScoreSubtotal
             score={clientProfileSubtotal}
             fraction={clientProfileFraction}
+            animateDelay={350}
           />
         </SummarySectionCard>
+        </ReportRevealSection>
       ) : null}
 
       {showPreferencesCard ? (
+        <ReportRevealSection>
         <SummarySectionCard
           title={scoringCategoryTitle("clientPreferences")}
           info={SCORING_CATEGORY_INFO.clientPreferences}
@@ -235,11 +240,14 @@ export function QualificationSummarySection({
           <SectionScoreSubtotal
             score={clientPreferencesSubtotal}
             fraction={clientPreferencesFraction}
+            animateDelay={450}
           />
         </SummarySectionCard>
+        </ReportRevealSection>
       ) : null}
 
       {showRoleCard ? (
+        <ReportRevealSection>
         <SummarySectionCard
           title={scoringCategoryTitle("roleDetails")}
           info={SCORING_CATEGORY_INFO.roleDetails}
@@ -288,8 +296,10 @@ export function QualificationSummarySection({
           <SectionScoreSubtotal
             score={roleDetailsSubtotal}
             fraction={roleDetailsFraction}
+            animateDelay={550}
           />
         </SummarySectionCard>
+        </ReportRevealSection>
       ) : null}
     </div>
   );

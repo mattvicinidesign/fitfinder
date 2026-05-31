@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import { GuestUpgradePrompt } from "@/components/guest-upgrade-prompt";
 import { useSearchParams } from "next/navigation";
 import { AnalysisResultView } from "@/components/analysis-result";
+import { SaveReportButton } from "@/components/save-job-button";
 import {
   fetchProfileDesiredCompensation,
   fetchProfileQualifiedIndustries,
@@ -77,8 +79,10 @@ export function AnalysisReportScreen() {
   }
 
   return (
-    <ReportShell>
-      <div className="px-4 pb-8">
+    <ReportShell
+      footer={<SaveReportButton analysisId={entry.analysisId} />}
+    >
+      <div className="px-4 pb-6">
         <AnalysisResultView
           result={entry.result}
           analysisId={entry.analysisId}
@@ -92,23 +96,45 @@ export function AnalysisReportScreen() {
           profileTimezone={entry.profileTimezone ?? profileTimezone}
         />
       </div>
+      <div className="pb-6">
+        <GuestUpgradePrompt variant="save" />
+      </div>
     </ReportShell>
   );
 }
 
-function ReportShell({ children }: { children: React.ReactNode }) {
+function ReportShell({
+  children,
+  footer,
+}: {
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
   return (
-    <>
+    <div className="relative flex h-full min-h-0 flex-col">
       <header className="sticky top-0 z-10 shrink-0 border-b border-border/60 bg-background px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
         <Link
           href="/analyze"
-          className="-ml-1.5 inline-flex items-center gap-0.5 rounded-md py-1 pr-2 pl-1 text-[15px] font-medium text-primary transition-colors hover:bg-primary/10"
+          aria-label="Back to Analyze"
+          className="-ml-1.5 inline-flex items-center rounded-md p-1 text-primary transition-colors hover:bg-primary/10"
         >
           <ChevronLeft className="size-5 shrink-0" aria-hidden />
-          Analyze
         </Link>
       </header>
-      {children}
-    </>
+      <div
+        className={
+          footer
+            ? "min-h-0 flex-1 overflow-y-auto pb-24"
+            : "min-h-0 flex-1 overflow-y-auto"
+        }
+      >
+        {children}
+      </div>
+      {footer ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="pointer-events-auto">{footer}</div>
+        </div>
+      ) : null}
+    </div>
   );
 }

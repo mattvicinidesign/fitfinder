@@ -1,8 +1,8 @@
 "use client";
 
+import { AnimatedScoreProgress } from "@/components/animated-score-progress";
 import { QualificationScoreCircle } from "@/components/qualification-score-circle";
 import { SummarySectionCard } from "@/components/summary-section-card";
-import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import {
   computeReportSectionRollups,
   computeWeightedReportScore,
@@ -11,13 +11,17 @@ import { recommendFromFitScore } from "@/lib/recommendation-bands";
 import {
   GLOBAL_SCORE_INFO,
   GLOBAL_SCORE_LABEL,
-  categoryScoreOutOfTen,
 } from "@/lib/scoring-terminology";
 import {
   scoreColor,
   scoreProgressClass,
-  scoreProgressTrackClass,
+  SCORE_PROGRESS_BAR_HEIGHT_CLASS,
+  SCORE_PROGRESS_TRACK_CLASS,
 } from "@/lib/score";
+import {
+  formatScoreOnTen,
+  useAnimatedNumber,
+} from "@/lib/use-score-reveal";
 import type { ReportRollupOptions } from "@/lib/section-score-rollups";
 import type { ScoreResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -26,20 +30,34 @@ function ScoringCategoryRollupRow({
   title,
   score,
   fraction,
+  animateDelay = 0,
 }: {
   title: string;
   score: number | null;
   fraction: { matched: number; total: number } | null;
+  animateDelay?: number;
 }) {
   const hasScore = score != null;
   const pct = hasScore ? Math.round(score) : 0;
-  const scoreOutOfTen = categoryScoreOutOfTen(fraction);
-  const valueText = scoreOutOfTen ?? (hasScore ? `${pct}%` : "—");
+  const fractionTarget =
+    fraction && fraction.total > 0
+      ? (fraction.matched / fraction.total) * 10
+      : null;
+  const animatedValue = useAnimatedNumber(fractionTarget ?? pct, {
+    disabled: !hasScore,
+    delay: animateDelay,
+  });
+  const valueText =
+    fractionTarget != null
+      ? formatScoreOnTen(animatedValue)
+      : hasScore
+        ? `${Math.round(animatedValue)}%`
+        : "—";
 
   return (
     <div className="space-y-1.5 min-w-0">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="font-[Georgia,'Times_New_Roman',serif] text-[14px] text-foreground leading-snug">
+        <span className="text-[14px] font-medium text-foreground leading-snug">
           {title}
         </span>
         <span
@@ -51,18 +69,15 @@ function ScoringCategoryRollupRow({
           {valueText}
         </span>
       </div>
-      <Progress value={hasScore ? pct : 0} className="w-full gap-0">
-        <ProgressTrack
-          className={cn(
-            "h-0.5",
-            hasScore ? scoreProgressTrackClass(pct) : "bg-muted/50",
-          )}
-        >
-          <ProgressIndicator
-            className={hasScore ? scoreProgressClass(pct) : "bg-muted-foreground/30"}
-          />
-        </ProgressTrack>
-      </Progress>
+      <AnimatedScoreProgress
+        value={hasScore ? pct : 0}
+        delay={animateDelay}
+        trackClassName={cn(
+          SCORE_PROGRESS_BAR_HEIGHT_CLASS,
+          SCORE_PROGRESS_TRACK_CLASS,
+        )}
+        indicatorClassName={hasScore ? scoreProgressClass(pct) : "bg-transparent"}
+      />
     </div>
   );
 }
@@ -95,12 +110,13 @@ export function QualificationScoreOverview({
         aria-label={GLOBAL_SCORE_LABEL}
       >
         <div className="space-y-3 min-w-0" role="list" aria-label="Scoring categories">
-          {rollups.map((section) => (
+          {rollups.map((section, index) => (
             <ScoringCategoryRollupRow
               key={section.id}
               title={section.title}
               score={section.score}
               fraction={section.fraction}
+              animateDelay={index * 80}
             />
           ))}
         </div>

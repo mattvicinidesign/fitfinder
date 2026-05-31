@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { applyPendingSignupProfile } from "@/lib/pending-signup";
 
 export function AuthCallbackClient() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export function AuthCallbackClient() {
           setError(error.message);
           return;
         }
+        await applyPendingSignupProfile();
         router.replace(next);
         return;
       }
@@ -39,6 +41,7 @@ export function AuthCallbackClient() {
             setError(error.message);
             return;
           }
+          await applyPendingSignupProfile();
           router.replace(next);
           return;
         }
@@ -48,6 +51,7 @@ export function AuthCallbackClient() {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
+        await applyPendingSignupProfile();
         router.replace(next);
         return;
       }

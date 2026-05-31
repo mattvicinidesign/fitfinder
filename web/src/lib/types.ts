@@ -176,5 +176,6 @@ export interface AnalysisRecord {
   recommendation_label: string | null;
   narrative_json: Narrative | null;
   parsed_job_json: ParsedJob | null;
+  job_description?: string | null;
   created_at: string;
 }

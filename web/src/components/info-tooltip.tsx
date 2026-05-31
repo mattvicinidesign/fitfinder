@@ -55,7 +55,7 @@ export function InfoTooltip({
         <span
           id={panelId}
           role="tooltip"
-          className="absolute left-0 top-6 z-20 w-60 rounded-lg border border-border bg-popover px-3 py-2 text-[12px] font-normal normal-case leading-snug tracking-normal text-popover-foreground shadow-md"
+          className="absolute left-0 top-6 z-20 w-60 rounded-lg bg-white px-3 py-2 text-[12px] font-normal normal-case leading-snug tracking-normal text-zinc-900 shadow-xl ring-1 ring-black/10"
         >
           {text}
         </span>

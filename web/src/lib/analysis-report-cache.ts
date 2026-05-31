@@ -1,4 +1,5 @@
 import type { AnalysisResult, Compensation } from "@/lib/types";
+import { recordRecentActivityFromReport } from "@/lib/recent-activity";
 
 export type AnalysisReportCacheEntry = {
   result: AnalysisResult;
@@ -10,6 +11,7 @@ export type AnalysisReportCacheEntry = {
 };
 
 const STORAGE_PREFIX = "fitfinder:analysis-report:";
+const LAST_REPORT_ID_KEY = "fitfinder:last-analysis-report-id";
 
 export function saveAnalysisReport(
   reportId: string,
@@ -20,6 +22,34 @@ export function saveAnalysisReport(
     `${STORAGE_PREFIX}${reportId}`,
     JSON.stringify(entry),
   );
+  sessionStorage.setItem(LAST_REPORT_ID_KEY, reportId);
+  recordRecentActivityFromReport(reportId, entry);
+}
+
+export function reportRoleTitle(result: AnalysisResult): string {
+  return (
+    result.jobTitle?.trim() ||
+    result.parsedJob.roleTitle?.trim() ||
+    "Job"
+  );
+}
+
+export function getLastAnalysisReport(): {
+  reportId: string;
+  roleTitle: string;
+} | null {
+  const reportId = getLastAnalysisReportId();
+  if (!reportId) return null;
+  const entry = loadAnalysisReport(reportId);
+  if (!entry) return null;
+  return { reportId, roleTitle: reportRoleTitle(entry.result) };
+}
+
+export function getLastAnalysisReportId(): string | null {
+  if (typeof sessionStorage === "undefined") return null;
+  const reportId = sessionStorage.getItem(LAST_REPORT_ID_KEY);
+  if (!reportId) return null;
+  return loadAnalysisReport(reportId) ? reportId : null;
 }
 
 export function loadAnalysisReport(

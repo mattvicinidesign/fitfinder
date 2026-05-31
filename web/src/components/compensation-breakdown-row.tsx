@@ -115,7 +115,7 @@ export function CompensationBreakdownRow({
           <p className="text-[15px] font-medium text-foreground">{askLabel}</p>
           {askFromProfile ? (
             <p className="text-[11px] text-muted-foreground">
-              From your Profile (onboarding / QA seed)
+              From your Profile
             </p>
           ) : null}
           {detail.annualAsk != null ? (

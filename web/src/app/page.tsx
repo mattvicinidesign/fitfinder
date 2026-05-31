@@ -7,7 +7,7 @@ import { IosGroupedRow, IosGroupedSection } from "@/components/ui/ios-grouped-se
 export default function Home() {
   return (
     <AppFrame>
-      <div className="flex min-h-dvh flex-col">
+      <div className="flex h-full min-h-0 flex-col overflow-y-auto">
         <IosLargeTitle
           title="Fit Finder"
           subtitle="Know if you fit the job before you apply."
@@ -16,20 +16,30 @@ export default function Home() {
           <IosGroupedSection>
             <IosGroupedRow className="space-y-4 text-[17px] leading-snug">
               <p>
-                One app on iPhone, desktop, and web — same layout, same tab bar,
-                same scores from the shared backend.
+                Paste a job description and get an instant fit report — no
+                account required. Create a profile when you want sharper,
+                personalized recommendations.
               </p>
             </IosGroupedRow>
           </IosGroupedSection>
           <div className="px-4 space-y-3">
-            <Link href="/analyze" className={buttonVariants({ className: "w-full h-12 rounded-xl text-[17px]" })}>
-              Open app
+            <Link
+              href="/analyze"
+              className={buttonVariants({ className: "w-full h-12 rounded-xl text-[17px]" })}
+            >
+              Analyze a Job
+            </Link>
+            <Link
+              href="/signup"
+              className={buttonVariants({ variant: "outline", className: "w-full h-12 rounded-xl text-[17px]" })}
+            >
+              Create a Profile
             </Link>
             <Link
               href="/preview"
-              className={buttonVariants({ variant: "outline", className: "w-full h-11 rounded-xl" })}
+              className={buttonVariants({ variant: "ghost", className: "w-full h-11 rounded-xl" })}
             >
-              Fit Finder Preview
+              See a sample report
             </Link>
             <Link
               href="/login"

@@ -4,8 +4,8 @@
  */
 export function AppFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-dvh flex justify-center bg-[var(--ios-chrome-bg)]">
-      <div className="relative flex w-full max-w-[480px] min-h-dvh flex-col bg-background shadow-[0_0_0_1px_var(--border)]">
+    <div className="flex h-dvh justify-center overflow-hidden bg-[var(--ios-chrome-bg)]">
+      <div className="relative flex h-full w-full max-w-[480px] flex-col overflow-hidden bg-background shadow-[0_0_0_1px_var(--border)]">
         {children}
       </div>
     </div>

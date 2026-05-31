@@ -13,7 +13,7 @@ export function SummaryFieldLabel({
   return (
     <p
       className={cn(
-        "font-[Georgia,'Times_New_Roman',serif] text-[15px] font-normal leading-snug text-foreground",
+        "text-[15px] font-medium leading-snug text-foreground",
         className,
       )}
     >

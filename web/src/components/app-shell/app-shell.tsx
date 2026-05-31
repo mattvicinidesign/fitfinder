@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import { PROTECTED_PREFIXES } from "@/lib/navigation";
 import { AppFrame } from "@/components/app-shell/app-frame";
 import { AppTabBar } from "@/components/app-shell/app-tab-bar";
-import { QaResumeWarmup } from "@/components/qa-resume-warmup";
 
 /**
  * Canonical app chrome: centered phone-width frame + iOS tab bar on every platform.
@@ -18,6 +17,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [signedIn, setSignedIn] = useState(false);
 
   const isPreview = pathname === "/preview";
+  const isAnalyzeFlow =
+    pathname === "/analyze" || pathname.startsWith("/analyze/report");
+  const hideTabBar = isAnalyzeFlow || pathname === "/profile";
+  const lockMainScroll = isAnalyzeFlow || pathname === "/profile";
   const needsAuth =
     !isPreview &&
     PROTECTED_PREFIXES.some(
@@ -61,12 +64,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AppFrame>
-      <QaResumeWarmup signedIn={signedIn} />
-      <div className="flex min-h-dvh flex-1 flex-col">
-        <main className="flex-1 overflow-y-auto overscroll-contain">
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        <main
+          className={
+            lockMainScroll
+              ? "min-h-0 flex-1 overflow-hidden"
+              : "min-h-0 flex-1 overflow-y-auto overscroll-contain"
+          }
+        >
           {children}
         </main>
-        <AppTabBar />
+        {hideTabBar ? null : <AppTabBar />}
       </div>
     </AppFrame>
   );

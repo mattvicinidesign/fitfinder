@@ -4,12 +4,12 @@ import type { Recommendation } from "@/lib/types";
 export type ScoreShadeTier = "positive" | "caution" | "negative";
 
 /**
- * All score tiers share the single brand accent (primary blue). The unfilled
- * track stays neutral grey; only the fill/text/ring carry the brand color.
+ * All score tiers share the single brand accent (primary blue). Progress tracks
+ * use bg-border (same as the score ring track); fill, text, and ring use primary.
  */
 const PRIMARY_SHADE = {
   text: "text-primary",
-  track: "bg-zinc-200 dark:bg-zinc-800",
+  track: "bg-border",
   fill: "bg-primary",
   ring: "stroke-primary",
 } as const;
@@ -44,10 +44,13 @@ export function scoreProgressClass(score: number): string {
   return scoreShadeClasses(score).fill;
 }
 
-/** Neutral grey track for the unfilled portion of any progress bar. */
-export const SCORE_PROGRESS_TRACK_CLASS = "bg-zinc-200 dark:bg-zinc-800";
+/** Shared height for score progress bars (track + fill). */
+export const SCORE_PROGRESS_BAR_HEIGHT_CLASS = "h-0.5";
 
-/** Track background for a 0–100 progress bar (neutral grey, not a color tint). */
+/** Unfilled track — matches QualificationScoreCircle background ring (stroke-border). */
+export const SCORE_PROGRESS_TRACK_CLASS = "bg-border";
+
+/** Track background for a 0–100 progress bar. */
 export function scoreProgressTrackClass(_score?: number): string {
   return SCORE_PROGRESS_TRACK_CLASS;
 }

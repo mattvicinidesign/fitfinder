@@ -13,7 +13,7 @@ import { toast } from "sonner";
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") ?? "/analyze";
+  const next = params.get("next") ?? "/home";
 
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
@@ -21,6 +21,7 @@ export function LoginForm() {
   async function sendMagicLink(e: React.FormEvent) {
     e.preventDefault();
     setSending(true);
+
     const supabase = createClient();
     const redirectBase = isNativePlatform()
       ? "fitfinder://auth-callback"

@@ -2,6 +2,12 @@
 
 import { recommendationRingClass } from "@/lib/recommendation-bands";
 import { globalScoreAriaLabel } from "@/lib/scoring-terminology";
+import {
+  SCORE_RING_REVEAL_CLASS,
+  formatScoreOnTen,
+  useAnimatedNumber,
+  useRevealOnMount,
+} from "@/lib/use-score-reveal";
 import type { Recommendation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -27,23 +33,30 @@ export function QualificationScoreCircle({
   recommendationLabel,
   recommendation,
   size = "default",
+  animate = true,
   className,
 }: {
   fitScore: number;
   recommendationLabel: string;
   recommendation?: Recommendation;
   size?: keyof typeof RING_SIZES;
+  animate?: boolean;
   className?: string;
 }) {
   const ringSize = RING_SIZES[size];
   const scoreOnTen = fitScoreValueOnTen(fitScore);
-  const display = scoreOnTen.toFixed(1);
+  const revealed = useRevealOnMount(0, !animate);
+  const animatedScore = useAnimatedNumber(scoreOnTen, {
+    disabled: !animate,
+  });
+  const display = formatScoreOnTen(animatedScore);
   const progress = scoreOnTen / 10;
+  const animatedProgress = revealed ? progress : 0;
   const ringClass = recommendationRingClass(recommendation);
 
   const radius = (ringSize - STROKE_WIDTH) / 2;
   const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference * (1 - progress);
+  const dashOffset = circumference * (1 - animatedProgress);
   const center = ringSize / 2;
   const scoreFont = size === "large" ? "text-[42px]" : "text-[36px]";
 
@@ -82,7 +95,7 @@ export function QualificationScoreCircle({
             fill="none"
             className={cn(
               ringClass,
-              "transition-[stroke-dashoffset] duration-500 ease-out",
+              animate ? SCORE_RING_REVEAL_CLASS : undefined,
             )}
             strokeWidth={STROKE_WIDTH}
             strokeLinecap="round"
@@ -92,7 +105,7 @@ export function QualificationScoreCircle({
         </svg>
         <span
           className={cn(
-            "absolute inset-0 flex items-center justify-center font-[Georgia,'Times_New_Roman',serif] font-semibold leading-none tabular-nums tracking-tight text-foreground",
+            "absolute inset-0 flex items-center justify-center font-semibold leading-none tabular-nums tracking-tight text-foreground",
             scoreFont,
           )}
         >
@@ -100,7 +113,7 @@ export function QualificationScoreCircle({
         </span>
       </div>
       {recommendationLabel ? (
-        <p className="mt-3 max-w-[12rem] text-center font-[Georgia,'Times_New_Roman',serif] text-[10px] font-normal leading-tight tracking-wide text-muted-foreground">
+        <p className="mt-3 max-w-[12rem] text-center text-[10px] font-medium leading-tight tracking-wide text-muted-foreground">
           {recommendationLabel}
         </p>
       ) : null}

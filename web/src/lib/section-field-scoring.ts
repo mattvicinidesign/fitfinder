@@ -177,8 +177,6 @@ export function buildClientProfileFields(
   rows: PostingDetailRow[],
   highlightCtx: PostingDetailHighlightContext,
 ): SectionFieldScore[] {
-  if (ctx.isGuest) return [];
-
   const originRow = postingRowByKey(rows, "clientOrigin");
   const ratingRow = postingRowByKey(rows, "clientRating");
   const avgRow = postingRowByKey(rows, "clientAverageHourlyRate");
@@ -527,15 +525,13 @@ export function buildQualificationsFields(
   );
   fields.push(...qualificationKeywordFields("skills", skillsCoverage));
 
-  if (!ctx.isGuest) {
-    const toolsCoverage = coverageDetailForCategory(
-      "tools",
-      job,
-      ctx.parsedResume,
-      ctx.jobDescription,
-    );
-    fields.push(...qualificationKeywordFields("tools", toolsCoverage));
-  }
+  const toolsCoverage = coverageDetailForCategory(
+    "tools",
+    job,
+    ctx.parsedResume,
+    ctx.jobDescription,
+  );
+  fields.push(...qualificationKeywordFields("tools", toolsCoverage));
 
   return fields;
 }

@@ -37,8 +37,27 @@ create table if not exists public.profiles (
   work_authorization     text,
   qualified_industries   text[] not null default '{}',
   qualified_skills       text[] not null default '{}',
+  preferred_engagement_types text[] not null default '{}',
+  preferred_regions          text[] not null default '{}',
+  preferred_company_types    text[] not null default '{}',
+  red_flags                  text[] not null default '{}',
+  onboarding_completed_at    timestamptz,
+  full_name                  text,
+  professional_title         text,
   updated_at             timestamptz not null default now()
 );
+
+-- Onboarding preference columns (idempotent for existing installs)
+alter table public.profiles
+  add column if not exists preferred_engagement_types text[] not null default '{}',
+  add column if not exists preferred_regions text[] not null default '{}',
+  add column if not exists preferred_company_types text[] not null default '{}',
+  add column if not exists red_flags text[] not null default '{}',
+  add column if not exists onboarding_completed_at timestamptz;
+
+alter table public.profiles
+  add column if not exists full_name text,
+  add column if not exists professional_title text;
 
 create table if not exists public.resumes (
   id                 uuid primary key default gen_random_uuid(),
