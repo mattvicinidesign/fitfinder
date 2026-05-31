@@ -21,7 +21,7 @@ export type ReportSectionId = ScoringCategoryId;
 export const GLOBAL_SCORE_LABEL = "Profile Fit";
 
 /** Footer row on a scoring category card (equal-weight item average). */
-export const SCORING_CATEGORY_SUBTOTAL_LABEL = "Matching Items";
+export const SCORING_CATEGORY_SUBTOTAL_LABEL = "Category Score";
 
 /** Display titles for each scoring category card and global-score rollup row. */
 export const SCORING_CATEGORY_LABELS: Record<ScoringCategoryId, string> = {
@@ -29,6 +29,21 @@ export const SCORING_CATEGORY_LABELS: Record<ScoringCategoryId, string> = {
   clientPreferences: "Preference",
   roleDetails: "Role",
   categoryMatching: "Qualification",
+};
+
+/** Explanatory tooltip copy for the Profile Fit card and each scoring category. */
+export const GLOBAL_SCORE_INFO =
+  "Your overall fit for this job. Each category is scored out of 10 based on how many scoring items you match, then combined using fixed weights (Qualification 50%, Role 25%, Client 15%, Preference 10%) to produce the recommendation.";
+
+export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
+  clientProfile:
+    "How well you match the client profile — location, timezone, rating, and average pay rate. Each item found in the posting counts equally.",
+  clientPreferences:
+    "How well you match the client preferences — location, timezone, talent type, and AI emphasis stated in the posting.",
+  roleDetails:
+    "How well the role itself fits — role type, pay, industry, hours, and duration. Each item found in the posting counts equally.",
+  categoryMatching:
+    "How many of the posting's required skills and tools you match. Every keyword is weighted equally.",
 };
 
 /** Share of global score per scoring category (sums to 100). */
@@ -51,7 +66,8 @@ export function categoryScoreOutOfTen(
   fraction: { matched: number; total: number } | null | undefined,
 ): string | null {
   if (!fraction || fraction.total <= 0) return null;
-  return ((fraction.matched / fraction.total) * 10).toFixed(1);
+  const score = (fraction.matched / fraction.total) * 10;
+  return Number.isInteger(score) ? String(score) : score.toFixed(1);
 }
 
 /** Accessible label for a scoring item (title + value pill). */

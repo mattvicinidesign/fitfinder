@@ -7,7 +7,7 @@ import { NOT_SPECIFIED_LABEL } from "@/lib/not-specified";
 import { buildIndustryDetail } from "@/lib/industry-match";
 import type { CategoryScore, ParsedJob, ParsedResume } from "@/lib/types";
 
-/** Industry scoring item pills (match = green, no match = rose). */
+/** Industry scoring item pills (match = primary, no match = neutral). */
 export function IndustrySummaryContent({
   label,
   category,

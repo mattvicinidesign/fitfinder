@@ -442,7 +442,7 @@ function buildCompensationField(ctx: SectionFieldScoreContext): SectionFieldScor
     Boolean(compDetail.jobOfferLabel);
 
   if (!jobHasComp) {
-    return field("compensation", "Compensation", false, "", "unknown", null);
+    return field("compensation", "Pay", false, "", "unknown", null);
   }
 
   const withinProfileRange = isHourlyCompensationWithinProfileRange(
@@ -455,14 +455,14 @@ function buildCompensationField(ctx: SectionFieldScoreContext): SectionFieldScor
     "—";
 
   if (withinProfileRange) {
-    return field("compensation", "Compensation", true, jobOfferLabel, "match", 100);
+    return field("compensation", "Pay", true, jobOfferLabel, "match", 100);
   }
 
   const cat = categoryPoints(compCategory);
   if (cat.identified) {
     return field(
       "compensation",
-      "Compensation",
+      "Pay",
       true,
       jobOfferLabel,
       cat.state,
@@ -473,7 +473,7 @@ function buildCompensationField(ctx: SectionFieldScoreContext): SectionFieldScor
   const matched = compDetail.alignment === "within_range";
   return field(
     "compensation",
-    "Compensation",
+    "Pay",
     true,
     jobOfferLabel,
     matched ? "match" : "mismatch",

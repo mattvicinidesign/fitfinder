@@ -23,7 +23,7 @@ export function SummaryInfoBadge({
       className={cn(
         "inline-flex max-w-full items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium break-words whitespace-normal text-left leading-snug",
         positive &&
-          "border-emerald-500/45 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-semibold",
+          "border-primary/45 bg-primary/15 text-primary font-semibold",
         !positive &&
           muted &&
           "border-border/60 bg-muted/40 text-muted-foreground",

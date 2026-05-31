@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { AnalysisResultView } from "@/components/analysis-result";
 import {
@@ -101,9 +102,10 @@ function ReportShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-10 shrink-0 border-b border-border/60 bg-background px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
         <Link
           href="/analyze"
-          className="inline-flex items-center text-[15px] text-primary hover:underline underline-offset-2"
+          className="-ml-1.5 inline-flex items-center gap-0.5 rounded-md py-1 pr-2 pl-1 text-[15px] font-medium text-primary transition-colors hover:bg-primary/10"
         >
-          ‹ Analyze
+          <ChevronLeft className="size-5 shrink-0" aria-hidden />
+          Analyze
         </Link>
       </header>
       {children}

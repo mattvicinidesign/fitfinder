@@ -74,7 +74,7 @@ export function PostingContextLine({
             <Badge
               key={badge}
               variant="outline"
-              className="rounded-full border-emerald-500/40 bg-emerald-500/12 px-2 py-0 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300"
+              className="rounded-full border-primary/40 bg-primary/12 px-2 py-0 text-[10px] font-semibold text-primary"
             >
               {badge}
             </Badge>

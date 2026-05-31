@@ -11,7 +11,10 @@ import {
   buildRoleDetailsFields,
   sectionFieldFraction,
 } from "@/lib/section-field-scoring";
-import { scoringCategoryTitle } from "@/lib/scoring-terminology";
+import {
+  SCORING_CATEGORY_INFO,
+  scoringCategoryTitle,
+} from "@/lib/scoring-terminology";
 import { sectionRollupScore } from "@/lib/section-score-rollups";
 import { cn } from "@/lib/utils";
 import type {
@@ -142,7 +145,10 @@ export function QualificationSummarySection({
   return (
     <div className="space-y-3 w-full" role="region" aria-label="Scoring categories">
       {showClientCard ? (
-        <SummarySectionCard title={scoringCategoryTitle("clientProfile")}>
+        <SummarySectionCard
+          title={scoringCategoryTitle("clientProfile")}
+          info={SCORING_CATEGORY_INFO.clientProfile}
+        >
           <div className="space-y-3">
             {locationField || timezoneField ? (
               <div
@@ -192,7 +198,10 @@ export function QualificationSummarySection({
       ) : null}
 
       {showPreferencesCard ? (
-        <SummarySectionCard title={scoringCategoryTitle("clientPreferences")}>
+        <SummarySectionCard
+          title={scoringCategoryTitle("clientPreferences")}
+          info={SCORING_CATEGORY_INFO.clientPreferences}
+        >
           <div className="space-y-3">
             {countryField || timezonePrefField ? (
               <div
@@ -231,7 +240,10 @@ export function QualificationSummarySection({
       ) : null}
 
       {showRoleCard ? (
-        <SummarySectionCard title={scoringCategoryTitle("roleDetails")}>
+        <SummarySectionCard
+          title={scoringCategoryTitle("roleDetails")}
+          info={SCORING_CATEGORY_INFO.roleDetails}
+        >
           <div className="space-y-3">
             {roleField ? <SummaryScoredField field={roleField} postingDetailKey="role" /> : null}
             <div

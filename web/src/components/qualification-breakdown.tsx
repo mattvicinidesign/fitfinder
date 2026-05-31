@@ -33,7 +33,11 @@ import {
   scoreProgressTrackClass,
 } from "@/lib/score";
 import { NOT_SPECIFIED_LABEL } from "@/lib/not-specified";
-import { scoringCategoryTitle } from "@/lib/scoring-terminology";
+import {
+  SCORING_CATEGORY_INFO,
+  categoryScoreOutOfTen,
+  scoringCategoryTitle,
+} from "@/lib/scoring-terminology";
 import { GUEST_WEIGHT_ROWS, REGISTERED_WEIGHT_ROWS } from "@/lib/scoring-weights";
 import type {
   CategoryKey,
@@ -135,7 +139,7 @@ function CoverageBreakdownRow({
   const total = category.totalCount ?? detail.length;
   const matched =
     category.matchedCount ?? detail.filter((i) => i.matched).length;
-  const showFraction = total > 0;
+  const score = categoryScoreOutOfTen({ matched, total });
   const hasDetail = detail.length > 0;
 
   const body = (
@@ -143,9 +147,9 @@ function CoverageBreakdownRow({
       <div className="flex items-center justify-between gap-4">
         <span className="text-[15px] flex-1 min-w-0">{label}</span>
         <div className="flex items-baseline gap-2 shrink-0 tabular-nums">
-          {showFraction ? (
+          {score ? (
             <span className="text-[15px] font-medium text-foreground">
-              {matched}/{total}
+              {score}
             </span>
           ) : null}
         </div>
@@ -305,7 +309,10 @@ export function QualificationBreakdown({
         jobTitle={analysisJobTitle}
       />
 
-      <SummarySectionCard title={scoringCategoryTitle("categoryMatching")}>
+      <SummarySectionCard
+        title={scoringCategoryTitle("categoryMatching")}
+        info={SCORING_CATEGORY_INFO.categoryMatching}
+      >
         <div className="space-y-3">
           {categoryRows.map(({ key, label }) => {
           if (isGuest && !GUEST_SCORED_KEYS.has(key)) {
@@ -422,7 +429,7 @@ export function QualificationBreakdown({
           ) : null}
           <SectionScoreSubtotal
             score={qualificationsSubtotal}
-            label="Total Matching Items"
+            label="Total Category Score"
             fraction={qualificationsFraction}
           />
         </div>

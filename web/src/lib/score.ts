@@ -3,29 +3,24 @@ import type { Recommendation } from "@/lib/types";
 /** Matches SummaryMatchBadge / SummaryInfoBadge pill tints. */
 export type ScoreShadeTier = "positive" | "caution" | "negative";
 
-/** Opaque tints aligned with SummaryMatchBadge (no layered alpha / gradient look). */
+/**
+ * All score tiers share the single brand accent (primary blue). The unfilled
+ * track stays neutral grey; only the fill/text/ring carry the brand color.
+ */
+const PRIMARY_SHADE = {
+  text: "text-primary",
+  track: "bg-zinc-200 dark:bg-zinc-800",
+  fill: "bg-primary",
+  ring: "stroke-primary",
+} as const;
+
 const SCORE_SHADE_CLASSES: Record<
   ScoreShadeTier,
   { text: string; track: string; fill: string; ring: string }
 > = {
-  positive: {
-    text: "text-emerald-800 dark:text-emerald-300",
-    track: "bg-emerald-100 dark:bg-emerald-950/60",
-    fill: "bg-emerald-500 dark:bg-emerald-400",
-    ring: "stroke-emerald-500 dark:stroke-emerald-400",
-  },
-  caution: {
-    text: "text-amber-800 dark:text-amber-300",
-    track: "bg-amber-100 dark:bg-amber-950/60",
-    fill: "bg-amber-500 dark:bg-amber-400",
-    ring: "stroke-amber-500 dark:stroke-amber-400",
-  },
-  negative: {
-    text: "text-rose-800 dark:text-rose-300",
-    track: "bg-rose-100 dark:bg-rose-950/60",
-    fill: "bg-rose-500 dark:bg-rose-400",
-    ring: "stroke-rose-500 dark:stroke-rose-400",
-  },
+  positive: PRIMARY_SHADE,
+  caution: PRIMARY_SHADE,
+  negative: PRIMARY_SHADE,
 };
 
 /** Map a 0–100 score to pill-aligned shade tier. */
@@ -49,9 +44,12 @@ export function scoreProgressClass(score: number): string {
   return scoreShadeClasses(score).fill;
 }
 
-/** Track background for a 0–100 progress bar (pill background tint). */
-export function scoreProgressTrackClass(score: number): string {
-  return scoreShadeClasses(score).track;
+/** Neutral grey track for the unfilled portion of any progress bar. */
+export const SCORE_PROGRESS_TRACK_CLASS = "bg-zinc-200 dark:bg-zinc-800";
+
+/** Track background for a 0–100 progress bar (neutral grey, not a color tint). */
+export function scoreProgressTrackClass(_score?: number): string {
+  return SCORE_PROGRESS_TRACK_CLASS;
 }
 
 /** Ring stroke for recommendation band (pill-aligned). */

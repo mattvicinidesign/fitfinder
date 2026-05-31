@@ -38,7 +38,7 @@ export function BreakdownMatchList({
             className="flex items-start gap-2 text-[13px] leading-snug"
           >
             {variant === "matched" ? (
-              <Check className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+              <Check className="size-3.5 shrink-0 text-primary mt-0.5" />
             ) : (
               <X className="size-3.5 shrink-0 text-muted-foreground/70 mt-0.5" />
             )}
@@ -56,7 +56,7 @@ export function BreakdownMatchList({
                 {showBonusBadge && item.listedInBonus ? (
                   <Badge
                     variant="outline"
-                    className="h-4 px-1.5 text-[10px] font-medium border-amber-500/60 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                    className="h-4 px-1.5 text-[10px] font-medium border-primary/60 bg-primary/10 text-primary"
                   >
                     Bonus
                   </Badge>

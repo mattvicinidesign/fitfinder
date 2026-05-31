@@ -46,6 +46,9 @@ export function AnalysisResultView({
         <IosGroupedRow className="space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 space-y-2">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Job Fit Report Summary
+              </p>
               <p className="font-[Georgia,'Times_New_Roman',serif] text-[22px] font-normal leading-tight tracking-tight text-foreground">
                 {result.jobTitle ?? result.parsedJob.roleTitle ?? "Job"}
               </p>

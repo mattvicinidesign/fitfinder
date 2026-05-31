@@ -9,6 +9,7 @@ import {
 } from "@/lib/section-score-rollups";
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
 import {
+  GLOBAL_SCORE_INFO,
   GLOBAL_SCORE_LABEL,
   categoryScoreOutOfTen,
 } from "@/lib/scoring-terminology";
@@ -87,7 +88,7 @@ export function QualificationScoreOverview({
     recommendFromFitScore(reportFitScore);
 
   return (
-    <SummarySectionCard title={GLOBAL_SCORE_LABEL}>
+    <SummarySectionCard title={GLOBAL_SCORE_LABEL} info={GLOBAL_SCORE_INFO}>
       <div
         className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:items-center pt-0.5"
         role="region"
