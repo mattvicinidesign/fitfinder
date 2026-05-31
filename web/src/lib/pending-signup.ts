@@ -10,18 +10,28 @@ export interface PendingSignup {
   profile: UserProfile;
 }
 
+function canUseLocalStorage(): boolean {
+  return typeof localStorage !== "undefined";
+}
+
 function canUseSessionStorage(): boolean {
   return typeof sessionStorage !== "undefined";
 }
 
 export function savePendingSignup(data: PendingSignup): void {
-  if (!canUseSessionStorage()) return;
-  sessionStorage.setItem(PENDING_SIGNUP_KEY, JSON.stringify(data));
+  const json = JSON.stringify(data);
+  if (canUseLocalStorage()) {
+    localStorage.setItem(PENDING_SIGNUP_KEY, json);
+  }
+  if (canUseSessionStorage()) {
+    sessionStorage.setItem(PENDING_SIGNUP_KEY, json);
+  }
 }
 
 export function loadPendingSignup(): PendingSignup | null {
-  if (!canUseSessionStorage()) return null;
-  const raw = sessionStorage.getItem(PENDING_SIGNUP_KEY);
+  const raw =
+    (canUseLocalStorage() ? localStorage.getItem(PENDING_SIGNUP_KEY) : null) ??
+    (canUseSessionStorage() ? sessionStorage.getItem(PENDING_SIGNUP_KEY) : null);
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as Partial<PendingSignup>;
@@ -33,8 +43,8 @@ export function loadPendingSignup(): PendingSignup | null {
 }
 
 export function clearPendingSignup(): void {
-  if (!canUseSessionStorage()) return;
-  sessionStorage.removeItem(PENDING_SIGNUP_KEY);
+  if (canUseLocalStorage()) localStorage.removeItem(PENDING_SIGNUP_KEY);
+  if (canUseSessionStorage()) sessionStorage.removeItem(PENDING_SIGNUP_KEY);
 }
 
 /** Apply sign-up profile collected before auth, including onboarding preferences. */

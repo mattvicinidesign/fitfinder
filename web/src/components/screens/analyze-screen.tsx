@@ -31,6 +31,7 @@ import {
 import { waitForResumeParse } from "@/lib/resume-upload";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { SkeletonAnalysisReport, SkeletonPrimitive } from "@/components/ui/skeletons";
 
 const DEMO_RESULT: AnalysisResult = {
   companyName: null,
@@ -199,7 +200,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="relative flex h-full min-h-0 flex-col">
       {demo ? (
         <p className="mx-4 mt-2 text-center text-[13px] font-medium text-primary">
           Fit Finder Preview — canonical UI (sample data)
@@ -361,6 +362,20 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
               View sample report
             </button>
           </p>
+        </div>
+      ) : null}
+
+      {busy ? (
+        <div
+          className="absolute inset-0 z-20 flex flex-col overflow-y-auto bg-background"
+          aria-busy="true"
+          aria-label="Generating analysis report"
+        >
+          <div className="sticky top-0 z-10 shrink-0 border-b border-border/60 bg-background px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-3">
+            <SkeletonPrimitive className="h-4 w-40" />
+            <p className="mt-2 text-[13px] text-muted-foreground">{status}</p>
+          </div>
+          <SkeletonAnalysisReport />
         </div>
       ) : null}
     </div>

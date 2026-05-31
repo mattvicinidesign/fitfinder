@@ -1,6 +1,7 @@
 import {
   clearOnboardingState,
   markReturningUserState,
+  QA_RETURNING_SPLASH_KEY,
 } from "@/lib/app-session";
 
 export {
@@ -22,5 +23,8 @@ export function simulateFirstLaunch(): void {
 export function simulateReturningUser(): void {
   console.log("QA: Returning User Simulation");
   markReturningUserState();
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.setItem(QA_RETURNING_SPLASH_KEY, "true");
+  }
   window.location.reload();
 }

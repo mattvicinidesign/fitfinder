@@ -12,13 +12,16 @@ import { LaunchOverlayFrame } from "@/components/launch-overlay-frame";
 import { SplashQaProvider } from "@/components/splash-qa-context";
 import { SplashQaPanel } from "@/components/splash-qa-panel";
 import { WelcomeScreen } from "@/components/welcome-screen";
+import { createClient } from "@/lib/supabase/client";
 import {
   DEFAULT_APP_ROUTE,
   hasCompletedSplash,
   hasCompletedWelcome,
   isWarmAppSession,
   markAppSessionActive,
+  markLaunchFlowComplete,
   markSplashComplete,
+  QA_RETURNING_SPLASH_KEY,
 } from "@/lib/app-session";
 import { isSplashQaEnabled } from "@/lib/splash-qa";
 import { cn } from "@/lib/utils";
@@ -74,6 +77,11 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
   }, [pathname, welcomeExitTarget, welcomeRouteMatches]);
 
   useLayoutEffect(() => {
+    if (pathname.startsWith("/auth/callback")) {
+      setPhase("ready");
+      return;
+    }
+
     if (isWarmAppSession()) {
       setPhase("ready");
       return;
@@ -81,23 +89,44 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
 
     markAppSessionActive();
 
-    const splashSeen = hasCompletedSplash();
-    const welcomeSeen = hasCompletedWelcome();
+    const supabase = createClient();
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      const splashSeen = hasCompletedSplash();
+      const welcomeSeen = hasCompletedWelcome();
+      const launchComplete = splashSeen && welcomeSeen;
+      const forceReturningSplash =
+        isSplashQaEnabled() &&
+        typeof sessionStorage !== "undefined" &&
+        sessionStorage.getItem(QA_RETURNING_SPLASH_KEY) === "true";
 
-    if (!splashSeen) {
-      setShowWordmark(true);
+      const user = session?.user;
+      const isRegistered = !!(user && !user.is_anonymous);
+
+      if (isRegistered && launchComplete && !forceReturningSplash) {
+        markLaunchFlowComplete();
+        setPhase("ready");
+        return;
+      }
+
+      if (!splashSeen) {
+        setShowWordmark(true);
+        setPhase("splash");
+        return;
+      }
+
+      if (!welcomeSeen) {
+        setPhase("welcome");
+        return;
+      }
+
+      if (forceReturningSplash) {
+        sessionStorage.removeItem(QA_RETURNING_SPLASH_KEY);
+      }
+
+      setShowWordmark(false);
       setPhase("splash");
-      return;
-    }
-
-    if (!welcomeSeen) {
-      setPhase("welcome");
-      return;
-    }
-
-    setShowWordmark(false);
-    setPhase("splash");
-  }, []);
+    });
+  }, [pathname]);
 
   const handleSplashComplete = useCallback(
     (mode: SplashCompleteMode) => {

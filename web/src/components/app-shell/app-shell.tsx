@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PROTECTED_PREFIXES } from "@/lib/navigation";
 import { AppFrame } from "@/components/app-shell/app-frame";
 import { AppTabBar } from "@/components/app-shell/app-tab-bar";
+import { SkeletonAppShell } from "@/components/ui/skeletons";
 
 /**
  * Canonical app chrome: centered phone-width frame + iOS tab bar on every platform.
@@ -49,11 +50,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [ready, needsAuth, signedIn, pathname, router]);
 
   if (!ready) {
+    const hideTabBar =
+      pathname === "/analyze" ||
+      pathname.startsWith("/analyze/report") ||
+      pathname === "/profile";
     return (
       <AppFrame>
-        <div className="flex flex-1 items-center justify-center text-muted-foreground text-sm">
-          Loading…
-        </div>
+        <SkeletonAppShell showTabBar={!hideTabBar} />
       </AppFrame>
     );
   }

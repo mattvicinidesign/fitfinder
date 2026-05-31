@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label";
 import { IosGroupedRow, IosGroupedSection } from "@/components/ui/ios-grouped-section";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 import { createPreferenceSteps } from "@/components/onboarding/preference-steps";
+import { CheckEmailIllustration } from "@/components/check-email-illustration";
 import { createClient } from "@/lib/supabase/client";
 import { isNativePlatform } from "@/lib/platform";
 import { emptyUserProfile, type UserProfile } from "@/lib/profile";
 import { savePendingSignup, SIGNUP_COMPLETE_ROUTE } from "@/lib/pending-signup";
+import { markLaunchFlowComplete } from "@/lib/app-session";
 import { getSignupQaDefaults } from "@/lib/signup-qa";
 import { toast } from "sonner";
 
@@ -53,6 +55,10 @@ function EmailSentState({ email }: { email: string }) {
   return (
     <div className="flex h-full min-h-0 flex-col px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
       <div className="flex flex-1 flex-col items-center justify-center text-center">
+        <div className="mb-8 flex h-[160px] w-[260px] max-w-full items-center justify-center sm:h-[180px]">
+          <CheckEmailIllustration />
+        </div>
+
         <h1 className="text-[28px] font-bold leading-tight tracking-tight">
           Check your email
         </h1>
@@ -173,6 +179,7 @@ export function SignUpScreen() {
     };
 
     setBusy(true);
+    markLaunchFlowComplete();
     savePendingSignup({ email: trimmedEmail, profile: signupProfile });
 
     const supabase = createClient();

@@ -8,6 +8,10 @@ import { createClient } from "@/lib/supabase/client";
 import { IosGroupedSection } from "@/components/ui/ios-grouped-section";
 import { IosAnalysisListRow } from "@/components/ui/ios-list-row";
 import { GuestUpgradePrompt } from "@/components/guest-upgrade-prompt";
+import {
+  SkeletonAnalysisList,
+  SkeletonPrimitive,
+} from "@/components/ui/skeletons";
 import { cn } from "@/lib/utils";
 import {
   activityMetaLine,
@@ -16,6 +20,7 @@ import {
   reportHrefForAnalysis,
   type RecentActivityItem,
 } from "@/lib/recent-activity";
+import { fetchUserProfile } from "@/lib/profile";
 import type { AnalysisRecord } from "@/lib/types";
 
 const RECENT_LIMIT = 5;
@@ -24,7 +29,9 @@ export function HomeScreen() {
   const pathname = usePathname();
   const [analyses, setAnalyses] = useState<RecentActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [headerEntered, setHeaderEntered] = useState(false);
+  const [displayName, setDisplayName] = useState<string | null>(null);
 
   useEffect(() => {
     if (pathname !== "/home") {
@@ -54,6 +61,14 @@ export function HomeScreen() {
   }, []);
 
   useEffect(() => {
+    void fetchUserProfile().then((profile) => {
+      const name = profile?.fullName?.trim();
+      setDisplayName(name || null);
+      setProfileLoading(false);
+    });
+  }, []);
+
+  useEffect(() => {
     void loadActivity();
   }, [loadActivity]);
 
@@ -80,9 +95,13 @@ export function HomeScreen() {
             headerEntered && "home-header-enter",
           )}
         >
-          <p className="text-[13px] font-medium text-primary-foreground/80">
-            Welcome back
-          </p>
+          {profileLoading ? (
+            <SkeletonPrimitive className="h-3.5 w-36 bg-primary-foreground/20" />
+          ) : (
+            <p className="text-[13px] font-medium text-primary-foreground/80">
+              {displayName ? `Welcome back, ${displayName}` : "Welcome back"}
+            </p>
+          )}
           <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-tight">
             Know if you fit, before you apply.
           </h1>
@@ -125,7 +144,7 @@ export function HomeScreen() {
             </div>
 
             {loading ? (
-              <p className="px-4 text-[15px] text-muted-foreground">Loading…</p>
+              <SkeletonAnalysisList count={5} />
             ) : analyses.length === 0 ? (
               <p className="px-4 py-10 text-center text-[15px] text-muted-foreground leading-snug">
                 No activity yet. Tap{" "}

@@ -2,6 +2,7 @@ export const SPLASH_STORAGE_KEY = "fitfinder-splash-seen";
 export const WELCOME_STORAGE_KEY = "fitfinder-welcome-seen";
 export const APP_SESSION_ACTIVE_KEY = "fitfinder-app-session-active";
 export const LAST_ROUTE_KEY = "fitfinder-last-route";
+export const QA_RETURNING_SPLASH_KEY = "fitfinder-qa-returning-splash";
 export const DEFAULT_APP_ROUTE = "/home";
 
 /** @deprecated Use SPLASH_STORAGE_KEY — kept for existing imports. */
@@ -48,6 +49,11 @@ export function markSplashComplete(): void {
 export function markWelcomeComplete(): void {
   if (!canUseLocalStorage()) return;
   localStorage.setItem(WELCOME_STORAGE_KEY, "true");
+}
+
+export function markLaunchFlowComplete(): void {
+  markSplashComplete();
+  markWelcomeComplete();
 }
 
 export function isWarmAppSession(): boolean {

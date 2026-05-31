@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { applyPendingSignupProfile } from "@/lib/pending-signup";
+import {
+  markAppSessionActive,
+  markLaunchFlowComplete,
+} from "@/lib/app-session";
 
 export function AuthCallbackClient() {
   const router = useRouter();
@@ -15,6 +19,13 @@ export function AuthCallbackClient() {
     const supabase = createClient();
 
     async function finish() {
+      async function completeAuth() {
+        markLaunchFlowComplete();
+        markAppSessionActive();
+        await applyPendingSignupProfile();
+        router.replace(next);
+      }
+
       const code = params.get("code");
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -22,8 +33,7 @@ export function AuthCallbackClient() {
           setError(error.message);
           return;
         }
-        await applyPendingSignupProfile();
-        router.replace(next);
+        await completeAuth();
         return;
       }
 
@@ -41,8 +51,7 @@ export function AuthCallbackClient() {
             setError(error.message);
             return;
           }
-          await applyPendingSignupProfile();
-          router.replace(next);
+          await completeAuth();
           return;
         }
       }
@@ -51,8 +60,7 @@ export function AuthCallbackClient() {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
-        await applyPendingSignupProfile();
-        router.replace(next);
+        await completeAuth();
         return;
       }
 

@@ -8,6 +8,7 @@ import { IosGroupedSection } from "@/components/ui/ios-grouped-section";
 import { IosAnalysisListRow } from "@/components/ui/ios-list-row";
 import { buttonVariants } from "@/components/ui/button";
 import { GuestUpgradePrompt } from "@/components/guest-upgrade-prompt";
+import { SkeletonAnalysisList } from "@/components/ui/skeletons";
 import type { AnalysisRecord } from "@/lib/types";
 
 export function SavedScreen() {
@@ -53,7 +54,7 @@ export function SavedScreen() {
         <GuestUpgradePrompt variant="history" />
 
         {loading ? (
-          <p className="px-4 text-[15px] text-muted-foreground">Loading…</p>
+          <SkeletonAnalysisList count={5} />
         ) : analyses.length === 0 ? (
           <p className="px-4 text-[15px] text-muted-foreground text-center py-12">
             No saved jobs yet. Save one from an analysis result.

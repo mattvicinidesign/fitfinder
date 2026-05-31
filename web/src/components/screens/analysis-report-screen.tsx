@@ -18,12 +18,14 @@ import {
   type AnalysisReportCacheEntry,
 } from "@/lib/analysis-report-cache";
 import type { Compensation } from "@/lib/types";
+import { SkeletonAnalysisReport } from "@/components/ui/skeletons";
 
 export function AnalysisReportScreen() {
   const searchParams = useSearchParams();
   const reportId = searchParams.get("id");
 
   const [entry, setEntry] = useState<AnalysisReportCacheEntry | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [profileDesiredCompensation, setProfileDesiredCompensation] =
     useState<Compensation | null>(null);
   const [profileQualifiedIndustries, setProfileQualifiedIndustries] = useState<
@@ -33,9 +35,12 @@ export function AnalysisReportScreen() {
   const [profileTimezone, setProfileTimezone] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!reportId) return;
-    const cached = loadAnalysisReport(reportId);
-    setEntry(cached);
+    if (!reportId) {
+      setLoaded(true);
+      return;
+    }
+    setEntry(loadAnalysisReport(reportId));
+    setLoaded(true);
   }, [reportId]);
 
   useEffect(() => {
@@ -51,6 +56,14 @@ export function AnalysisReportScreen() {
       setProfileTimezone(timezone);
     });
   }, []);
+
+  if (!loaded) {
+    return (
+      <ReportShell>
+        <SkeletonAnalysisReport />
+      </ReportShell>
+    );
+  }
 
   if (!reportId) {
     return (

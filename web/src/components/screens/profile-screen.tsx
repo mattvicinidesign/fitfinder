@@ -29,6 +29,10 @@ import {
 } from "@/lib/resume-documents";
 import { deleteAccount } from "@/lib/delete-account";
 import { cn } from "@/lib/utils";
+import {
+  SkeletonAnalysisList,
+  SkeletonProfileScreen,
+} from "@/components/ui/skeletons";
 
 type ProfileTab = "general" | "skills" | "documents" | "settings";
 
@@ -40,6 +44,7 @@ const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
 ];
 
 export function ProfileScreen() {
+  const [profileLoading, setProfileLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [profile, setProfile] = useState<UserProfile>(emptyUserProfile());
@@ -68,7 +73,10 @@ export function ProfileScreen() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setProfileLoading(false);
+        return;
+      }
       setEmail(user.email ?? null);
       setIsGuest(user.is_anonymous ?? false);
       const existing = await fetchUserProfile();
@@ -76,6 +84,7 @@ export function ProfileScreen() {
         setProfile(existing);
         setSavedProfile(existing);
       }
+      setProfileLoading(false);
       void loadDocuments();
     })();
   }, []);
@@ -173,7 +182,9 @@ export function ProfileScreen() {
           })}
         </nav>
 
-        {activeTab === "general" ? (
+        {profileLoading ? (
+          <SkeletonProfileScreen />
+        ) : activeTab === "general" ? (
           <div className="space-y-7">
             <FakeAdvertisement />
 
@@ -296,7 +307,7 @@ export function ProfileScreen() {
 
             <Section title="Your documents">
               {documentsLoading ? (
-                <p className="text-[15px] text-muted-foreground">Loading…</p>
+                <SkeletonAnalysisList count={2} className="mx-0" />
               ) : documents.length === 0 ? (
                 <p className="text-[15px] text-muted-foreground leading-snug">
                   No documents yet. Upload a resume above to get started.
