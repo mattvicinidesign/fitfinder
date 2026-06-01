@@ -14,13 +14,20 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
+export const ANALYZE_ROUTE = "/analyze";
+
 export const APP_NAV: NavItem[] = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/saved", label: "Saved", icon: Bookmark },
-  { href: "/analyze", label: "Analyze", icon: ScanSearch },
+  { href: ANALYZE_ROUTE, label: "Analyze", icon: ScanSearch },
   { href: "/history", label: "History", icon: Clock },
   { href: "/profile", label: "Profile", icon: User },
 ];
+
+/** Bottom tab bar — Analyze is a home-screen CTA, not a tab. */
+export const BOTTOM_TAB_NAV: NavItem[] = APP_NAV.filter(
+  (item) => item.href !== ANALYZE_ROUTE,
+);
 
 export const PROTECTED_PREFIXES = APP_NAV.map((n) => n.href);
 

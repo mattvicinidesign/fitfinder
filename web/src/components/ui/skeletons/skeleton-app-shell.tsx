@@ -19,7 +19,7 @@ export function SkeletonAppShell({ showTabBar = true }: { showTabBar?: boolean }
       {showTabBar ? (
         <div className={`shrink-0 border-t border-border/60 bg-background/95 px-2 pt-2 ${safeBottomTabBar}`}>
           <div className="flex items-end justify-between gap-1">
-            {Array.from({ length: 5 }).map((_, index) => (
+            {Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="flex flex-1 flex-col items-center gap-1 py-1">
                 <SkeletonPrimitive className="size-6 rounded-md" />
                 <SkeletonPrimitive className="h-2 w-8" />

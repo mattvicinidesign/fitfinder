@@ -5,6 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  screenShellClass,
+  StickyBottomCta,
+} from "@/components/ui/sticky-bottom-cta";
 import { createClient } from "@/lib/supabase/client";
 import { IosGroupedSection } from "@/components/ui/ios-grouped-section";
 import { IosAnalysisListRow } from "@/components/ui/ios-list-row";
@@ -110,7 +115,8 @@ export function HomeScreen() {
   }, [loadActivity]);
 
   return (
-    <div className="min-h-full bg-background">
+    <div className={cn(screenShellClass, "bg-background")}>
+      <div className="relative z-0 min-h-0 flex-1 overflow-y-auto overscroll-contain">
       <div className="relative z-0 overflow-hidden">
         <header
           className={cn(
@@ -176,7 +182,7 @@ export function HomeScreen() {
             ) : analyses.length === 0 ? (
               <p className="px-4 py-10 text-center text-[15px] text-muted-foreground leading-snug">
                 No activity yet. Tap{" "}
-                <span className="font-medium text-foreground">Analyze a Job</span>{" "}
+                <span className="font-medium text-foreground">Analyze Fit</span>{" "}
                 to run your first fit report.
               </p>
             ) : (
@@ -199,6 +205,19 @@ export function HomeScreen() {
           </section>
         </div>
       </div>
+      </div>
+
+      <StickyBottomCta>
+        <Link
+          href="/analyze"
+          className={cn(
+            buttonVariants({ variant: "default", size: "lg" }),
+            "h-12 w-full rounded-xl text-[17px] font-semibold",
+          )}
+        >
+          Analyze Fit
+        </Link>
+      </StickyBottomCta>
     </div>
   );
 }
