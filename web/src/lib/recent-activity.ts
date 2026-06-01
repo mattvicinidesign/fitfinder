@@ -18,6 +18,8 @@ export type RecentActivityEntry = {
 
 export type RecentActivityItem = AnalysisRecord & {
   activity_meta_line?: string | null;
+  /** Key in sessionStorage report cache (always use for report links). */
+  report_id: string;
 };
 
 const STORAGE_KEY = "fitfinder:recent-activity";
@@ -86,6 +88,7 @@ export function loadRecentActivity(): RecentActivityEntry[] {
 function recentEntryToAnalysisRecord(entry: RecentActivityEntry): RecentActivityItem {
   return {
     id: entry.analysisId ?? entry.reportId,
+    report_id: entry.reportId,
     company_name: entry.company_name,
     job_title: entry.job_title,
     qualification_score: entry.qualification_score,
@@ -123,7 +126,7 @@ export function mergeRecentActivity(
   const merged = new Map<string, RecentActivityItem>();
 
   for (const row of dbRows) {
-    merged.set(row.id, { ...row });
+    merged.set(row.id, { ...row, report_id: row.id });
   }
 
   for (const local of localRows) {
@@ -134,6 +137,7 @@ export function mergeRecentActivity(
     if (existing) {
       merged.set(id, {
         ...existing,
+        report_id: local.reportId,
         job_title: existing.job_title?.trim() || fromLocal.job_title,
         company_name: existing.company_name?.trim() || fromLocal.company_name,
         activity_meta_line:
@@ -160,6 +164,4 @@ export function mergeRecentActivity(
     .slice(0, limit);
 }
 
-export function reportHrefForAnalysis(analysis: Pick<AnalysisRecord, "id">): string {
-  return `/analyze/report?id=${encodeURIComponent(analysis.id)}`;
-}
+export { reportHrefForAnalysis } from "@/lib/report-navigation";

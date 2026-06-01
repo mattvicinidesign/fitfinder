@@ -7,6 +7,7 @@ import {
   simulateFirstLaunch,
   simulateReturningUser,
 } from "@/lib/splash-qa";
+import { safeBottomTabBar } from "@/lib/safe-area";
 import { cn } from "@/lib/utils";
 import { useSplashQa } from "@/components/splash-qa-context";
 
@@ -23,7 +24,7 @@ export function SplashQaPanel() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-[110] flex flex-col items-end gap-2 pb-[env(safe-area-inset-bottom)]">
+    <div className={`fixed bottom-4 right-4 z-[110] flex flex-col items-end gap-2 ${safeBottomTabBar}`}>
       {open ? (
         <div className="w-64 rounded-xl border border-border/60 bg-card p-3 shadow-lg">
           <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">

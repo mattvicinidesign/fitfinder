@@ -9,6 +9,16 @@ import { IosAnalysisListRow } from "@/components/ui/ios-list-row";
 import { buttonVariants } from "@/components/ui/button";
 import { GuestUpgradePrompt } from "@/components/guest-upgrade-prompt";
 import { SkeletonAnalysisList } from "@/components/ui/skeletons";
+import {
+  ensureSampleAnalysisDataSeeded,
+  getSampleAnalyses,
+  pickAnalysisListWithSamples,
+} from "@/lib/sample-analyses";
+import {
+  activityMetaLine,
+  type RecentActivityItem,
+} from "@/lib/recent-activity";
+import { ReportLink } from "@/components/report-link";
 import type { AnalysisRecord } from "@/lib/types";
 
 export function HistoryScreen() {
@@ -16,6 +26,7 @@ export function HistoryScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    ensureSampleAnalysisDataSeeded();
     const supabase = createClient();
     void supabase
       .from("analyses")
@@ -24,7 +35,11 @@ export function HistoryScreen() {
       )
       .order("created_at", { ascending: false })
       .then(({ data }) => {
-        setAnalyses((data ?? []) as AnalysisRecord[]);
+        const rows = ((data ?? []) as AnalysisRecord[]).map((row) => ({
+          ...row,
+          report_id: row.id,
+        })) as RecentActivityItem[];
+        setAnalyses(pickAnalysisListWithSamples(rows, getSampleAnalyses()));
         setLoading(false);
       });
   }, []);
@@ -51,7 +66,17 @@ export function HistoryScreen() {
         ) : (
           <IosGroupedSection>
             {analyses.map((a) => (
-              <IosAnalysisListRow key={a.id} analysis={a} />
+              <ReportLink
+                key={a.id}
+                analysis={a}
+                from="/history"
+                className="block transition-colors hover:bg-muted/30 active:bg-muted/40"
+              >
+                <IosAnalysisListRow
+                  analysis={a}
+                  subtitle={activityMetaLine(a as RecentActivityItem)}
+                />
+              </ReportLink>
             ))}
           </IosGroupedSection>
         )}

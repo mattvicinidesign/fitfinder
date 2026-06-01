@@ -18,10 +18,15 @@ import {
   activityMetaLine,
   loadRecentActivity,
   mergeRecentActivity,
-  reportHrefForAnalysis,
   type RecentActivityItem,
 } from "@/lib/recent-activity";
+import { ReportLink } from "@/components/report-link";
+import {
+  ensureSampleAnalysisDataSeeded,
+  pickRecentActivityList,
+} from "@/lib/sample-analyses";
 import { fetchUserDisplayName } from "@/lib/profile";
+import { safeTopHomeHero } from "@/lib/safe-area";
 import type { AnalysisRecord } from "@/lib/types";
 
 const RECENT_LIMIT = 5;
@@ -46,6 +51,7 @@ export function HomeScreen() {
   }, [pathname]);
 
   const loadActivity = useCallback(async () => {
+    ensureSampleAnalysisDataSeeded();
     const supabase = createClient();
     const { data } = await supabase
       .from("analyses")
@@ -57,7 +63,8 @@ export function HomeScreen() {
 
     const dbRows = (data ?? []) as AnalysisRecord[];
     const localRows = loadRecentActivity();
-    setAnalyses(mergeRecentActivity(dbRows, localRows, RECENT_LIMIT));
+    const merged = mergeRecentActivity(dbRows, localRows, RECENT_LIMIT);
+    setAnalyses(pickRecentActivityList(merged, RECENT_LIMIT));
     setLoading(false);
   }, []);
 
@@ -107,7 +114,7 @@ export function HomeScreen() {
       <div className="relative z-0 overflow-hidden">
         <header
           className={cn(
-            "rounded-b-[29px] bg-primary px-5 pt-[max(2rem,env(safe-area-inset-top))] pb-32 text-primary-foreground",
+            `rounded-b-[29px] bg-primary px-5 pb-32 text-primary-foreground ${safeTopHomeHero}`,
             !headerEntered && "home-header-pending",
             headerEntered && "home-header-enter",
           )}
@@ -175,16 +182,17 @@ export function HomeScreen() {
             ) : (
               <IosGroupedSection>
                 {analyses.map((a) => (
-                  <Link
+                  <ReportLink
                     key={a.id}
-                    href={reportHrefForAnalysis(a)}
+                    analysis={a}
+                    from="/home"
                     className="block transition-colors hover:bg-muted/30 active:bg-muted/40"
                   >
                     <IosAnalysisListRow
                       analysis={a}
                       subtitle={activityMetaLine(a)}
                     />
-                  </Link>
+                  </ReportLink>
                 ))}
               </IosGroupedSection>
             )}

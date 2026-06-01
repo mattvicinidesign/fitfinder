@@ -1,4 +1,6 @@
 import { forwardRef } from "react";
+import { safeBottomCta } from "@/lib/safe-area";
+import { screenGutterX } from "@/lib/screen-gutter";
 import { cn } from "@/lib/utils";
 
 /** Full-height screen — locks layout so only the body region scrolls. */
@@ -57,7 +59,9 @@ export function StickyBottomCta({
       className={cn(
         "sticky bottom-0 z-20 shrink-0",
         "border-t border-border/50 bg-background/95 backdrop-blur-md",
-        "px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]",
+        screenGutterX,
+        "pt-3",
+        safeBottomCta,
         "shadow-[0_-8px_32px_rgba(0,0,0,0.35)]",
         className,
       )}

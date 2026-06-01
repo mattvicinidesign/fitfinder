@@ -9,6 +9,16 @@ import { IosAnalysisListRow } from "@/components/ui/ios-list-row";
 import { buttonVariants } from "@/components/ui/button";
 import { GuestUpgradePrompt } from "@/components/guest-upgrade-prompt";
 import { SkeletonAnalysisList } from "@/components/ui/skeletons";
+import {
+  ensureSampleAnalysisDataSeeded,
+  getSampleSavedAnalyses,
+  pickAnalysisListWithSamples,
+} from "@/lib/sample-analyses";
+import {
+  activityMetaLine,
+  type RecentActivityItem,
+} from "@/lib/recent-activity";
+import { ReportLink } from "@/components/report-link";
 import type { AnalysisRecord } from "@/lib/types";
 
 export function SavedScreen() {
@@ -16,6 +26,7 @@ export function SavedScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    ensureSampleAnalysisDataSeeded();
     const supabase = createClient();
     void supabase
       .from("saved_jobs")
@@ -30,8 +41,16 @@ export function SavedScreen() {
               const a = row.analyses;
               return Array.isArray(a) ? a[0] : a;
             })
-            .filter(Boolean) as AnalysisRecord[];
-          setAnalyses(rows);
+            .filter(Boolean)
+            .map((row) => ({
+              ...(row as AnalysisRecord),
+              report_id: (row as AnalysisRecord).id,
+            })) as RecentActivityItem[];
+          setAnalyses(
+            pickAnalysisListWithSamples(rows, getSampleSavedAnalyses()),
+          );
+        } else {
+          setAnalyses(getSampleSavedAnalyses());
         }
         setLoading(false);
       });
@@ -62,7 +81,17 @@ export function SavedScreen() {
         ) : (
           <IosGroupedSection>
             {analyses.map((a) => (
-              <IosAnalysisListRow key={a.id} analysis={a} />
+              <ReportLink
+                key={a.id}
+                analysis={a}
+                from="/saved"
+                className="block transition-colors hover:bg-muted/30 active:bg-muted/40"
+              >
+                <IosAnalysisListRow
+                  analysis={a}
+                  subtitle={activityMetaLine(a as RecentActivityItem)}
+                />
+              </ReportLink>
             ))}
           </IosGroupedSection>
         )}

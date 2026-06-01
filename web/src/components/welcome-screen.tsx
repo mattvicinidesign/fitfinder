@@ -14,6 +14,7 @@ import {
 } from "@/lib/app-session";
 import { clearOnboardingProgress } from "@/lib/onboarding-progress";
 import { navigateApp } from "@/lib/navigate-app";
+import { safeBottomOverlay, safeTopHero } from "@/lib/safe-area";
 
 interface WelcomeScreenProps {
   onExit: (target: string) => void;
@@ -58,7 +59,7 @@ export function WelcomeScreen({ onExit, onSignUp }: WelcomeScreenProps) {
   }
 
   return (
-    <LaunchOverlayFrame className="px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
+    <LaunchOverlayFrame className={`px-6 ${safeBottomOverlay} ${safeTopHero}`}>
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
         <div className="flex w-full max-w-sm flex-col items-center">
           <div className="mb-10 flex h-[180px] w-[280px] max-w-full items-center justify-center sm:h-[200px]">

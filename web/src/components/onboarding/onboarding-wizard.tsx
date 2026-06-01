@@ -7,6 +7,7 @@ import {
   StickyScreenBody,
   StickyScreenHeader,
 } from "@/components/ui/sticky-bottom-cta";
+import { safeTopTitle } from "@/lib/safe-area";
 
 export interface OnboardingStep {
   title: string;
@@ -52,7 +53,7 @@ export function OnboardingWizard({
 
   return (
     <div className={screenShellClass}>
-      <StickyScreenHeader className="px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
+      <StickyScreenHeader className={`px-4 pb-3 ${safeTopTitle}`}>
         <div className="flex items-center justify-between gap-3">
           {step === 0 && onBackFromStart ? (
             <button

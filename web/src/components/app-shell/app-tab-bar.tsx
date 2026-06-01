@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { APP_NAV } from "@/lib/navigation";
 import { triggerNavHaptic } from "@/lib/haptics";
 import { NavTab } from "@/components/app-shell/nav-tab";
+import { safeBottomTabBar } from "@/lib/safe-area";
 import { cn } from "@/lib/utils";
 
 const ANALYZE_HREF = "/analyze";
@@ -30,7 +31,7 @@ export function AppTabBar() {
 
   return (
     <nav
-      className="shrink-0 border-t bg-background/95 backdrop-blur z-40 pb-[max(0px,env(safe-area-inset-bottom))]"
+      className={`shrink-0 border-t bg-background/95 backdrop-blur z-40 ${safeBottomTabBar}`}
       aria-label="Main"
     >
       <div className="relative flex h-[49px] items-stretch">

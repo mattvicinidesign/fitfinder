@@ -40,6 +40,7 @@ import {
   StickyScreenBody,
   StickyScreenHeader,
 } from "@/components/ui/sticky-bottom-cta";
+import { safeBottomOverlay, safeTopCompact } from "@/lib/safe-area";
 
 type ProfileTab = "general" | "skills" | "documents" | "settings";
 
@@ -132,7 +133,7 @@ export function ProfileScreen() {
 
   return (
     <div className={screenShellClass}>
-      <StickyScreenHeader className="px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-3">
+      <StickyScreenHeader className={`px-4 pb-3 ${safeTopCompact}`}>
         <div className="relative flex items-start justify-between gap-3">
           <h1 className="text-[34px] font-bold leading-tight tracking-tight">
             Profile
@@ -394,7 +395,7 @@ export function ProfileScreen() {
 
       {deleteConfirmOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:items-center"
+          className={`fixed inset-0 z-50 flex items-end justify-center px-4 sm:items-center ${safeBottomOverlay}`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-account-title"

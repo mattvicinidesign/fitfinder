@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { ChevronRight, Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { CircleBackLink } from "@/components/ui/circle-back-button";
 import { analyze } from "@/lib/api";
 import {
   getLastAnalysisReport,
@@ -20,7 +21,6 @@ import type { AnalysisResult, Compensation } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { IosLargeTitle } from "@/components/ui/ios-large-title";
 import { AnalysisResultView } from "@/components/analysis-result";
 import { ResumeFilePicker } from "@/components/resume-file-picker";
 import {
@@ -29,6 +29,8 @@ import {
   ANALYZE_SECTION_LABEL_CLASS,
 } from "@/components/analyze-form-styles";
 import { waitForResumeParse } from "@/lib/resume-upload";
+import { ReportLink } from "@/components/report-link";
+import { openAnalysisReport } from "@/lib/report-return";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { SkeletonAnalysisReport, SkeletonPrimitive } from "@/components/ui/skeletons";
@@ -38,6 +40,7 @@ import {
   StickyScreenBody,
   StickyScreenHeader,
 } from "@/components/ui/sticky-bottom-cta";
+import { safeTopCompact } from "@/lib/safe-area";
 
 const DEMO_RESULT: AnalysisResult = {
   companyName: null,
@@ -197,7 +200,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         profileTimezone,
       });
       toast.success("Analysis complete and saved.");
-      router.push(`/analyze/report?id=${encodeURIComponent(reportId)}`);
+      openAnalysisReport(reportId, "/analyze", router);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Analysis failed.");
     } finally {
@@ -212,27 +215,28 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           Fit Finder Preview — canonical UI (sample data)
         </p>
       ) : (
-        <StickyScreenHeader className="px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
-          <div className="flex items-center justify-between gap-3">
-            <Link
-              href="/home"
-              aria-label="Back to Home"
-              className="-ml-1.5 inline-flex items-center rounded-md p-1 text-primary transition-colors hover:bg-primary/10"
-            >
-              <ChevronLeft className="size-5 shrink-0" aria-hidden />
-            </Link>
+        <StickyScreenHeader className={`px-4 pb-3 ${safeTopCompact}`}>
+          <div className="flex items-center justify-between gap-3 pb-2">
+            <CircleBackLink href="/home" aria-label="Back to Home" />
             {lastReport ? (
-              <Link
-                href={`/analyze/report?id=${encodeURIComponent(lastReport.reportId)}`}
+              <ReportLink
+                reportId={lastReport.reportId}
+                from="/analyze"
                 aria-label={`${lastReport.roleTitle} report`}
                 className="-mr-1.5 inline-flex min-w-0 max-w-[58%] items-center gap-0.5 rounded-md py-1 pr-1 pl-2 text-[15px] font-medium text-primary transition-colors hover:bg-primary/10"
               >
                 <span className="truncate">{lastReport.roleTitle}</span>
                 <span className="shrink-0">Report</span>
                 <ChevronRight className="size-5 shrink-0" aria-hidden />
-              </Link>
+              </ReportLink>
             ) : null}
           </div>
+          <h1 className="text-[34px] font-bold leading-tight tracking-tight">
+            Analyze
+          </h1>
+          <p className="mt-1 text-[15px] text-muted-foreground leading-snug">
+            Upload your resume and paste a job to score your fit.
+          </p>
         </StickyScreenHeader>
       )}
 
@@ -241,10 +245,6 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
         <StickyScreenBody className="py-4">
-          <IosLargeTitle
-            title="Analyze"
-            subtitle="Upload your resume and paste a job to score your fit."
-          />
         <section
           className={cn(
             ANALYZE_SECTION_CLASS,
@@ -348,7 +348,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
                       result: DEMO_RESULT,
                       analysisId: null,
                     });
-                    router.push("/analyze/report?id=demo");
+                    openAnalysisReport("demo", "/analyze", router);
                   }}
                 >
                   View sample report
@@ -382,7 +382,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           aria-busy="true"
           aria-label="Generating analysis report"
         >
-          <div className="sticky top-0 z-10 shrink-0 border-b border-border/60 bg-background px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-3">
+          <div className={`sticky top-0 z-10 shrink-0 border-b border-border/60 bg-background px-4 pb-3 ${safeTopCompact}`}>
             <SkeletonPrimitive className="h-4 w-40" />
             <p className="mt-2 text-[13px] text-muted-foreground">{status}</p>
           </div>

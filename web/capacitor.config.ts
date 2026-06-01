@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: "Fit Finder",
   webDir: "out",
   ios: {
-    contentInset: "automatic",
+    // Let CSS env(safe-area-inset-*) handle insets — "automatic" double-counts with our headers.
+    contentInset: "never",
     scheme: "Fit Finder",
   },
   server: {

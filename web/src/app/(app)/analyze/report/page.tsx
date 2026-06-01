@@ -1,12 +1,20 @@
 import { Suspense } from "react";
 import { AnalysisReportScreen } from "@/components/screens/analysis-report-screen";
 import { SkeletonAnalysisReport } from "@/components/ui/skeletons";
+import { circleBackButtonClass } from "@/components/ui/circle-back-button";
+import { safeTopCompact } from "@/lib/safe-area";
+import { cn } from "@/lib/utils";
 
 function ReportPageFallback() {
   return (
     <div className="relative flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b border-border/60 bg-background px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
-        <div className="h-5 w-5" />
+      <div className={`shrink-0 bg-background px-4 pb-2.5 ${safeTopCompact}`}>
+        <div
+          className={cn(circleBackButtonClass, "pointer-events-none opacity-50")}
+          aria-hidden
+        >
+          <span className="size-5" />
+        </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <SkeletonAnalysisReport />

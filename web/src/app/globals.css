@@ -101,6 +101,12 @@
     height: 0;
   }
 
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -210,4 +216,37 @@
     animation: none;
     opacity: 0;
   }
+}
+
+/* Circular back control — explicit CSS so iOS WKWebView renders the shape. */
+@layer components {
+:is(button, a).circle-back-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border-radius: 9999px;
+  border: 2px solid var(--border);
+  background-color: var(--secondary);
+  color: var(--primary);
+  line-height: 0;
+  text-decoration: none;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+:is(button, a).circle-back-btn:active {
+  background-color: color-mix(in srgb, var(--secondary) 80%, var(--foreground) 20%);
+}
+
+@media (hover: hover) {
+  :is(button, a).circle-back-btn:hover {
+    background-color: color-mix(in srgb, var(--secondary) 70%, var(--muted) 30%);
+  }
+}
 }

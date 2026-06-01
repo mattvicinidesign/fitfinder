@@ -24,6 +24,7 @@ import {
   saveOnboardingProgress,
 } from "@/lib/onboarding-progress";
 import { getSignupQaDefaults } from "@/lib/signup-qa";
+import { safeBottomOverlay, safeTopHomeHero } from "@/lib/safe-area";
 import { toast } from "sonner";
 
 const fieldInputClassName =
@@ -63,7 +64,7 @@ function AccountField({
 
 function EmailSentState({ email }: { email: string }) {
   return (
-    <div className="flex h-full min-h-0 flex-col px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
+    <div className={`flex h-full min-h-0 flex-col px-6 ${safeBottomOverlay} ${safeTopHomeHero}`}>
       <div className="flex flex-1 flex-col items-center justify-center text-center">
         <div className="mb-8 flex h-[160px] w-[260px] max-w-full items-center justify-center sm:h-[180px]">
           <CheckEmailIllustration />

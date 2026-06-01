@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ReportBackButton } from "@/components/report-back-button";
 import { GuestUpgradePrompt } from "@/components/guest-upgrade-prompt";
 import { useSearchParams } from "next/navigation";
 import { AnalysisResultView } from "@/components/analysis-result";
@@ -13,10 +13,8 @@ import {
   fetchProfileCountry,
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
-import {
-  loadAnalysisReport,
-  type AnalysisReportCacheEntry,
-} from "@/lib/analysis-report-cache";
+import type { AnalysisReportCacheEntry } from "@/lib/analysis-report-cache";
+import { resolveReportEntry } from "@/lib/sample-analyses";
 import type { Compensation } from "@/lib/types";
 import { SkeletonAnalysisReport } from "@/components/ui/skeletons";
 import {
@@ -25,6 +23,8 @@ import {
   StickyScreenBody,
   StickyScreenHeader,
 } from "@/components/ui/sticky-bottom-cta";
+import { safeTopCompact } from "@/lib/safe-area";
+import { screenGutterX } from "@/lib/screen-gutter";
 
 export function AnalysisReportScreen() {
   const searchParams = useSearchParams();
@@ -45,7 +45,7 @@ export function AnalysisReportScreen() {
       setLoaded(true);
       return;
     }
-    setEntry(loadAnalysisReport(reportId));
+    setEntry(resolveReportEntry(reportId));
     setLoaded(true);
   }, [reportId]);
 
@@ -87,7 +87,7 @@ export function AnalysisReportScreen() {
   if (!entry) {
     return (
       <ReportShell>
-        <p className="px-4 py-12 text-center text-[15px] text-muted-foreground">
+        <p className="py-12 text-center text-[15px] text-muted-foreground">
           This report is no longer available in your session.{" "}
           <Link href="/analyze" className="text-primary underline-offset-2 hover:underline">
             Analyze again
@@ -101,7 +101,7 @@ export function AnalysisReportScreen() {
     <ReportShell
       footer={<SaveReportButton analysisId={entry.analysisId} />}
     >
-      <div className="px-4 pb-6">
+      <div className="pb-6">
         <AnalysisResultView
           result={entry.result}
           analysisId={entry.analysisId}
@@ -116,7 +116,7 @@ export function AnalysisReportScreen() {
         />
       </div>
       <div className="pb-6">
-        <GuestUpgradePrompt variant="save" />
+        <GuestUpgradePrompt variant="save" className="mx-0 w-full" />
       </div>
     </ReportShell>
   );
@@ -131,16 +131,10 @@ function ReportShell({
 }) {
   return (
     <div className={screenShellClass}>
-      <StickyScreenHeader className="border-b border-border/60 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
-        <Link
-          href="/analyze"
-          aria-label="Back to Analyze"
-          className="-ml-1.5 inline-flex items-center rounded-md p-1 text-primary transition-colors hover:bg-primary/10"
-        >
-          <ChevronLeft className="size-5 shrink-0" aria-hidden />
-        </Link>
+      <StickyScreenHeader className={`px-4 pb-2.5 ${safeTopCompact}`}>
+        <ReportBackButton />
       </StickyScreenHeader>
-      <StickyScreenBody>{children}</StickyScreenBody>
+      <StickyScreenBody className={screenGutterX}>{children}</StickyScreenBody>
       {footer ? <StickyBottomCta>{footer}</StickyBottomCta> : null}
     </div>
   );

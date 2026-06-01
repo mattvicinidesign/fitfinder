@@ -1,9 +1,5 @@
 "use client";
 
-import {
-  IosGroupedRow,
-  IosGroupedSection,
-} from "@/components/ui/ios-grouped-section";
 import { PostingHeaderMetaFields } from "@/components/posting-header-meta";
 import { QualificationBreakdown } from "@/components/qualification-breakdown";
 import {
@@ -41,44 +37,42 @@ export function AnalysisResultView({
   return (
     <ReportRevealProvider>
       <div className="space-y-6">
-        <IosGroupedSection>
-          <IosGroupedRow className="space-y-4">
-            <ReportRevealSection>
-              <div className="space-y-2">
-                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                  Job Fit Report Summary
+        <div className="space-y-4">
+          <ReportRevealSection>
+            <div className="space-y-2">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Job Fit Report Summary
+              </p>
+              <p className="text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+                {result.jobTitle ?? result.parsedJob.roleTitle ?? "Job"}
+              </p>
+              {result.companyName?.trim() ? (
+                <p className="text-[14px] text-muted-foreground">
+                  {result.companyName}
                 </p>
-                <p className="text-[22px] font-semibold leading-tight tracking-tight text-foreground">
-                  {result.jobTitle ?? result.parsedJob.roleTitle ?? "Job"}
-                </p>
-                {result.companyName?.trim() ? (
-                  <p className="text-[14px] text-muted-foreground">
-                    {result.companyName}
-                  </p>
-                ) : null}
-                <PostingHeaderMetaFields
-                  parsedJob={parsedJob}
-                  jobDescription={jobDescription}
-                  jobTitle={result.jobTitle}
-                  companyName={result.companyName}
-                  postingContext={postingContext}
-                />
-              </div>
-            </ReportRevealSection>
-            <QualificationBreakdown
-              score={score}
-              postingContext={postingContext}
-              jobDescription={jobDescription}
-              parsedJob={parsedJob}
-              parsedResume={parsedResume}
-              jobTitle={result.jobTitle}
-              profileDesiredCompensation={profileDesiredCompensation}
-              profileQualifiedIndustries={profileQualifiedIndustries}
-              profileCountry={profileCountry}
-              profileTimezone={profileTimezone}
-            />
-          </IosGroupedRow>
-        </IosGroupedSection>
+              ) : null}
+              <PostingHeaderMetaFields
+                parsedJob={parsedJob}
+                jobDescription={jobDescription}
+                jobTitle={result.jobTitle}
+                companyName={result.companyName}
+                postingContext={postingContext}
+              />
+            </div>
+          </ReportRevealSection>
+          <QualificationBreakdown
+            score={score}
+            postingContext={postingContext}
+            jobDescription={jobDescription}
+            parsedJob={parsedJob}
+            parsedResume={parsedResume}
+            jobTitle={result.jobTitle}
+            profileDesiredCompensation={profileDesiredCompensation}
+            profileQualifiedIndustries={profileQualifiedIndustries}
+            profileCountry={profileCountry}
+            profileTimezone={profileTimezone}
+          />
+        </div>
       </div>
     </ReportRevealProvider>
   );

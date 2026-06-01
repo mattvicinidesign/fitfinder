@@ -6,11 +6,14 @@ export function IosGroupedSection({
   footer,
   children,
   className,
+  /** When true, card spans the content width (no mx-4); row px-4 aligns with screen px-4 CTAs. */
+  fullWidth = false,
 }: {
   title?: string;
   footer?: string;
   children: React.ReactNode;
   className?: string;
+  fullWidth?: boolean;
 }) {
   return (
     <section className={cn("space-y-2", className)}>
@@ -19,7 +22,12 @@ export function IosGroupedSection({
           {title}
         </h2>
       ) : null}
-      <div className="mx-4 overflow-hidden rounded-xl bg-muted/40 divide-y divide-border/80">
+      <div
+        className={cn(
+          "overflow-hidden rounded-xl bg-muted/40 divide-y divide-border/80",
+          fullWidth ? "mx-0" : "mx-4",
+        )}
+      >
         {children}
       </div>
       {footer ? (

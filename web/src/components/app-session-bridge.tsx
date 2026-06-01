@@ -10,6 +10,7 @@ import {
   shouldPersistRoute,
 } from "@/lib/app-session";
 import { navigateApp } from "@/lib/navigate-app";
+import { ensureSampleAnalysisDataSeeded } from "@/lib/sample-analyses";
 
 /**
  * Keeps the in-app route while the app stays alive in memory, and restores it
@@ -18,6 +19,10 @@ import { navigateApp } from "@/lib/navigate-app";
 export function AppSessionBridge() {
   const pathname = usePathname();
   const router = useRouter();
+
+  useLayoutEffect(() => {
+    ensureSampleAnalysisDataSeeded();
+  }, []);
 
   useLayoutEffect(() => {
     if (!isWarmAppSession()) return;
