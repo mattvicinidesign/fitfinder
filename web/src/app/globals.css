@@ -153,36 +153,6 @@
   .home-header-enter {
     animation: none;
   }
-
-  .profile-sheet-pending {
-    transform: none;
-  }
-
-  .profile-sheet-enter,
-  .profile-sheet-exit {
-    animation: none;
-  }
-}
-
-@keyframes profile-sheet-enter {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-.profile-sheet-pending {
-  transform: translateY(100%);
-}
-
-.profile-sheet-enter {
-  animation: profile-sheet-enter 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-
-.profile-sheet-exit {
-  animation: profile-sheet-enter 320ms cubic-bezier(0.32, 0.72, 0, 1) reverse both;
 }
 
 @keyframes skeleton-shimmer {

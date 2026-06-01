@@ -7,7 +7,10 @@ import { PROTECTED_PREFIXES } from "@/lib/navigation";
 import { hasCompletedWelcome } from "@/lib/app-session";
 import { AppFrame } from "@/components/app-shell/app-frame";
 import { AppTabBar } from "@/components/app-shell/app-tab-bar";
-import { ProfileSheet } from "@/components/app-shell/profile-sheet";
+import {
+  ProfileOverlayProvider,
+  useProfileOverlay,
+} from "@/components/app-shell/profile-overlay";
 import { SkeletonAppShell } from "@/components/ui/skeletons";
 import { navigateApp } from "@/lib/navigate-app";
 import { isNativePlatform } from "@/lib/platform";
@@ -21,17 +24,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const underlyingRef = useRef<React.ReactNode>(null);
+  const profileContentRef = useRef<React.ReactNode>(null);
 
   const isProfile = pathname === "/profile";
   const isPreview = pathname === "/preview";
-  const isAnalyzeFlow =
-    pathname === "/analyze" || pathname.startsWith("/analyze/report");
-  const hideTabBar = isAnalyzeFlow || isProfile;
-  const lockMainScroll = isAnalyzeFlow || isProfile;
 
-  if (!isProfile) {
+  if (isProfile) {
+    profileContentRef.current = children;
+  } else {
     underlyingRef.current = children;
   }
+
   const needsAuth =
     !isPreview &&
     PROTECTED_PREFIXES.some(
@@ -57,7 +60,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!ready || !needsAuth || signedIn) return;
-    // Launch overlay handles onboarding before sign-in on native.
     if (isNativePlatform() && !hasCompletedWelcome()) return;
 
     let cancelled = false;
@@ -115,23 +117,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AppFrame>
-      <div className="flex h-full min-h-0 flex-1 flex-col">
-        <main
-          className={
-            lockMainScroll
-              ? "relative min-h-0 flex-1 overflow-hidden"
-              : "min-h-0 flex-1 overflow-y-auto overscroll-contain"
-          }
-        >
-          {isProfile && underlyingRef.current ? (
-            <div className="absolute inset-0 overflow-hidden" aria-hidden>
-              {underlyingRef.current}
-            </div>
-          ) : null}
-          {isProfile ? <ProfileSheet>{children}</ProfileSheet> : children}
-        </main>
-        {hideTabBar ? null : <AppTabBar />}
-      </div>
+      <ProfileOverlayProvider
+        underlay={underlyingRef.current}
+        profileContent={
+          isProfile ? (profileContentRef.current ?? children) : null
+        }
+      >
+        <AppShellChrome>{children}</AppShellChrome>
+      </ProfileOverlayProvider>
     </AppFrame>
+  );
+}
+
+function AppShellChrome({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { showSheet, overlay } = useProfileOverlay();
+  const isAnalyzeFlow =
+    pathname === "/analyze" || pathname.startsWith("/analyze/report");
+  const hideTabBar = isAnalyzeFlow || showSheet;
+  const lockMainScroll = isAnalyzeFlow || showSheet;
+
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      <main
+        className={
+          lockMainScroll
+            ? "relative min-h-0 flex-1 overflow-hidden"
+            : "min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        }
+      >
+        {overlay}
+        {showSheet ? null : children}
+      </main>
+      {hideTabBar ? null : <AppTabBar />}
+    </div>
   );
 }

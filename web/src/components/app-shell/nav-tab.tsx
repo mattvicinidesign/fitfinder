@@ -2,21 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useProfileOverlay } from "@/components/app-shell/profile-overlay";
 import { triggerNavHaptic } from "@/lib/haptics";
-import { markProfileSheetEnter } from "@/lib/profile-sheet";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/lib/navigation";
 
 export function NavTab({ item }: { item: NavItem }) {
   const pathname = usePathname();
+  const { openProfile } = useProfileOverlay();
   const prefix = item.href + "/";
   const active = pathname === item.href || pathname.startsWith(prefix);
   const Icon = item.icon;
+  const isProfileTab = item.href === "/profile";
 
-  function handleClick() {
+  function handleClick(event: React.MouseEvent<HTMLAnchorElement>) {
     triggerNavHaptic();
-    if (item.href === "/profile" && pathname !== "/profile") {
-      markProfileSheetEnter(pathname);
+
+    if (isProfileTab && pathname !== "/profile") {
+      event.preventDefault();
+      openProfile(pathname);
     }
   }
 
