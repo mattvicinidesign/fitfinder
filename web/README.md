@@ -57,7 +57,7 @@ deep links.
 ## Setup
 
 ```bash
-cp .env.local.example .env.local
+# Create .env.local with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
 npm install
 npm run dev
 ```

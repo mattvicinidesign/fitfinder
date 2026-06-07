@@ -45,7 +45,7 @@ See [`supabase/README.md`](./supabase/README.md).
 
 ```bash
 cd web
-cp .env.local.example .env.local   # Supabase URL + anon key
+# Create .env.local with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
 npm install
 npm run dev                        # http://localhost:3000
 ```
@@ -102,7 +102,7 @@ Repo: [github.com/mattvicinidesign/fitfinder](https://github.com/mattvicinidesig
 6. Do **not** set `CAPACITOR_BUILD` on Vercel — that flag is for iOS static export only.
 7. Push to `main` — each commit triggers a production deploy. Confirm the latest deployment shows **Ready** in the Vercel dashboard before testing the URL.
 
-**OpenAI** (`OPENAI_API_KEY`) is a Supabase Edge Function secret, not a Vercel env var. Copy `supabase/.env.example` to `supabase/.env`, then:
+**OpenAI** (`OPENAI_API_KEY`) is a Supabase Edge Function secret, not a Vercel env var. Put it in `supabase/.env`, then:
 
 ```bash
 supabase secrets set --env-file ./supabase/.env

@@ -32,7 +32,7 @@ Requires the [Supabase CLI](https://supabase.com/docs/guides/cli) and Docker.
 ```bash
 supabase start                 # boots Postgres, Auth, Storage, Edge runtime
 supabase db reset              # applies migrations
-cp .env.example .env           # add your OPENAI_API_KEY
+# Create .env with OPENAI_API_KEY
 supabase functions serve --env-file ./.env
 ```
 
