@@ -95,7 +95,7 @@ Repo: [github.com/mattvicinidesign/fitfinder](https://github.com/mattvicinidesig
 
 Quick summary:
 
-1. Import repo in Vercel with **Root Directory** = `web`, **Framework Preset** = **Next.js**.
+1. Import repo in Vercel with **Root Directory** = `web` (not `./`), **Framework Preset** = **Next.js**.
 2. Add env vars from your local `web/.env.local` (`NEXT_PUBLIC_SUPABASE_*`, optional `SUPABASE_SERVICE_ROLE_KEY`).
 3. Do **not** set `CAPACITOR_BUILD` on Vercel.
 4. Deploy, then add your production URL to Supabase Auth redirect URLs (`/auth/callback`).
