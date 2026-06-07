@@ -19,6 +19,7 @@ export function buildReportRollupOptions({
   parsedResume,
   profileDesiredCompensation,
   profileQualifiedIndustries,
+  profileQualifiedSkills,
   profileCountry,
   profileTimezone,
   jobDescription,
@@ -29,6 +30,7 @@ export function buildReportRollupOptions({
   parsedResume?: ParsedResume | null;
   profileDesiredCompensation?: Compensation | null;
   profileQualifiedIndustries?: string[] | null;
+  profileQualifiedSkills?: string[] | null;
   profileCountry?: string | null;
   profileTimezone?: string | null;
   jobDescription?: string | null;
@@ -54,6 +56,7 @@ export function buildReportRollupOptions({
     parsedResume,
     profileDesiredCompensation,
     profileQualifiedIndustries,
+    profileQualifiedSkills,
     profileCountry,
     profileTimezone,
     jobDescription,

@@ -126,6 +126,42 @@ export type Recommendation =
   | "stretch"
   | "not_recommended";
 
+export type OpportunityCategoryKey =
+  | "roleAlignment"
+  | "qualificationsMatch"
+  | "industryAlignment"
+  | "preferenceAlignment"
+  | "clientQuality";
+
+export interface OpportunityCategoryScore {
+  category: OpportunityCategoryKey;
+  label: string;
+  /** Category score 0–100. */
+  score: number;
+  /** Weight percent toward overall fit (e.g. 35). */
+  weight: number;
+  contribution: number;
+  matchedCount?: number;
+  totalCount?: number;
+  matchedLabels?: string[];
+  missingLabels?: string[];
+  details?: string[];
+}
+
+export interface OpportunityEngineDebug {
+  detectedRoleArchetype: string | null;
+  roleArchetypeTier: "positive" | "negative" | "neutral" | "unknown";
+  detectedIndustries: string[];
+  matchedQualifications: string[];
+  missingQualifications: string[];
+  preferencesApplied: string[];
+  redFlagsTriggered: string[];
+  categoryScores: OpportunityCategoryScore[];
+  weightingCalculation: string;
+  finalReasoning: string;
+  parsedJobMetadata: Record<string, unknown>;
+}
+
 export interface ScoreResult {
   qualificationScore: number;
   confidenceScore: number;
@@ -134,7 +170,11 @@ export interface ScoreResult {
   recommendation: Recommendation;
   recommendationLabel: string;
   scoringMode: "guest" | "registered";
+  /** Legacy V1 breakdown — empty when opportunityCategories is populated. */
   categoryBreakdown: CategoryScore[];
+  /** Opportunity Engine category scores (primary). */
+  opportunityCategories?: OpportunityCategoryScore[];
+  opportunityDebug?: OpportunityEngineDebug;
   unknownCategories: string[];
   explanation: string;
   strengths: string[];
@@ -172,7 +212,7 @@ export interface AnalysisRecord {
   confidence_score: number | null;
   career_fit_adjustment: number | null;
   recommendation: Recommendation | null;
-  /** Canonical label from the scoring engine (e.g. "Highly Recommended"). */
+  /** Canonical label from the scoring engine (e.g. "Strong Pursuit"). */
   recommendation_label: string | null;
   narrative_json: Narrative | null;
   parsed_job_json: ParsedJob | null;

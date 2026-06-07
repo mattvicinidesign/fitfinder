@@ -1,8 +1,7 @@
-import { REGISTERED_WEIGHT_ROWS } from "@/lib/scoring-weights";
+import { OPPORTUNITY_CATEGORY_WEIGHTS } from "@/lib/scoring-terminology";
 import type {
   AnalysisResult,
-  CategoryKey,
-  CategoryScore,
+  OpportunityCategoryScore,
   ParsedJob,
   ParsedResume,
   Recommendation,
@@ -88,56 +87,58 @@ function buildParsedJob(title: string, hireArea: string): ParsedJob {
   };
 }
 
-function categoryRow(
-  category: CategoryKey,
-  label: string,
-  weight: number,
-  score: number,
-  matchedCount?: number,
-  totalCount?: number,
-): CategoryScore {
-  const clamped = Math.min(100, Math.max(0, Math.round(score)));
-  return {
-    category,
-    label,
-    status: clamped >= 50 ? "match" : "mismatch",
-    score: clamped,
-    weight,
-    contribution: Math.round((clamped * weight) / 10) / 10,
-    matchedCount,
-    totalCount,
-  };
-}
-
-/** Registered category breakdown tuned to the target fit score (0–100). */
-function buildCategoryBreakdown(targetFit: number): CategoryScore[] {
+/** Opportunity Engine categories tuned to the target fit score (0–100). */
+function buildOpportunityCategories(targetFit: number): OpportunityCategoryScore[] {
   const scale = targetFit / 89;
   const scaled = (base: number) => Math.min(100, Math.round(base * scale));
+  const contrib = (weight: number, score: number) =>
+    Math.round(weight * (score / 100) * 10) / 10;
 
-  return REGISTERED_WEIGHT_ROWS.map((row) => {
-    const baseByKey: Partial<Record<CategoryKey, number>> = {
-      skills: 90,
-      tools: 85,
-      industry: 88,
-      timezone: 80,
-      aiEmphasis: 75,
-      compensation: 82,
-      country: 95,
-    };
-    const matchedByKey: Partial<Record<CategoryKey, { matched: number; total: number }>> = {
-      skills: { matched: 8, total: 10 },
-      tools: { matched: 2, total: 3 },
-    };
-    const counts = matchedByKey[row.key];
-    return categoryRow(
-      row.key,
-      row.label,
-      row.weight,
-      scaled(baseByKey[row.key] ?? 70),
-      counts?.matched,
-      counts?.total,
-    );
-  });
+  const roleScore = scaled(92);
+  const qualScore = scaled(88);
+  const industryScore = scaled(85);
+  const prefScore = scaled(72);
+  const clientScore = scaled(78);
+
+  return [
+    {
+      category: "roleAlignment",
+      label: "Role Alignment",
+      score: roleScore,
+      weight: OPPORTUNITY_CATEGORY_WEIGHTS.roleAlignment,
+      contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.roleAlignment, roleScore),
+    },
+    {
+      category: "qualificationsMatch",
+      label: "Qualifications",
+      score: qualScore,
+      weight: OPPORTUNITY_CATEGORY_WEIGHTS.qualificationsMatch,
+      contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.qualificationsMatch, qualScore),
+      matchedCount: 8,
+      totalCount: 10,
+    },
+    {
+      category: "industryAlignment",
+      label: "Industry Alignment",
+      score: industryScore,
+      weight: OPPORTUNITY_CATEGORY_WEIGHTS.industryAlignment,
+      contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.industryAlignment, industryScore),
+    },
+    {
+      category: "preferenceAlignment",
+      label: "Preference Alignment",
+      score: prefScore,
+      weight: OPPORTUNITY_CATEGORY_WEIGHTS.preferenceAlignment,
+      contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.preferenceAlignment, prefScore),
+    },
+    {
+      category: "clientQuality",
+      label: "Client Quality",
+      score: clientScore,
+      weight: OPPORTUNITY_CATEGORY_WEIGHTS.clientQuality,
+      contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.clientQuality, clientScore),
+    },
+  ];
 }
 
 /** Full analysis payload — same shape as a live analyze response (web source of truth). */
@@ -163,7 +164,8 @@ export function buildSampleAnalysisResult(input: SampleReportInput): AnalysisRes
       recommendation: input.recommendation,
       recommendationLabel: input.recommendationLabel,
       scoringMode: "registered",
-      categoryBreakdown: buildCategoryBreakdown(input.fitScore),
+      categoryBreakdown: [],
+      opportunityCategories: buildOpportunityCategories(input.fitScore),
       unknownCategories: [],
       explanation: "Sample fit report for UI preview.",
       strengths: ["Strong alignment on core skills and tools."],

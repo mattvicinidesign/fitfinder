@@ -70,6 +70,7 @@ export interface SectionFieldScoreContext {
   parsedResume?: ParsedResume | null;
   profileDesiredCompensation?: Compensation | null;
   profileQualifiedIndustries?: string[] | null;
+  profileQualifiedSkills?: string[] | null;
   profileCountry?: string | null;
   profileTimezone?: string | null;
   jobDescription?: string | null;
@@ -374,17 +375,13 @@ export function buildRoleDetailsFields(
     roleIdentified
       ? binaryField(
           "role",
-          "Role",
+          "Title",
           true,
           roleRow!.value,
           isRoleArchetypeMatch(roleRow!.value, highlightCtx),
         )
-      : field("role", "Role", false, "", "unknown", null),
+      : field("role", "Title", false, "", "unknown", null),
   );
-
-  if (!ctx.isGuest) {
-    fields.push(buildCompensationField(ctx));
-  }
 
   const industryLabel =
     industryDetail?.jobIndustries.join(", ") ??
@@ -400,29 +397,33 @@ export function buildRoleDetailsFields(
     ),
   );
 
-  fields.push(
-    postingRowIdentified(hoursRow)
-      ? binaryField(
-          "hoursNeeded",
-          "Hours",
-          true,
-          hoursRow!.value,
-          isHoursNeededAtLeast30PerWeek(hoursRow!.value),
-        )
-      : field("hoursNeeded", "Hours", false, "", "unknown", null),
-  );
+  if (!ctx.isGuest) {
+    fields.push(buildCompensationField(ctx));
 
-  fields.push(
-    postingRowIdentified(durationRow)
-      ? binaryField(
-          "duration",
-          "Duration",
-          true,
-          durationRow!.value,
-          isDurationMoreThan1Month(durationRow!.value),
-        )
-      : field("duration", "Duration", false, "", "unknown", null),
-  );
+    fields.push(
+      postingRowIdentified(hoursRow)
+        ? binaryField(
+            "hoursNeeded",
+            "Hours",
+            true,
+            hoursRow!.value,
+            isHoursNeededAtLeast30PerWeek(hoursRow!.value),
+          )
+        : field("hoursNeeded", "Hours", false, "", "unknown", null),
+    );
+
+    fields.push(
+      postingRowIdentified(durationRow)
+        ? binaryField(
+            "duration",
+            "Duration",
+            true,
+            durationRow!.value,
+            isDurationMoreThan1Month(durationRow!.value),
+          )
+        : field("duration", "Duration", false, "", "unknown", null),
+    );
+  }
 
   return fields;
 }
@@ -522,6 +523,7 @@ export function buildQualificationsFields(
     job,
     ctx.parsedResume,
     ctx.jobDescription,
+    ctx.profileQualifiedSkills,
   );
   fields.push(...qualificationKeywordFields("skills", skillsCoverage));
 

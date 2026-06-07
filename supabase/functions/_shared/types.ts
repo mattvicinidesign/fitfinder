@@ -115,17 +115,57 @@ export type Recommendation =
   | "stretch"
   | "not_recommended";
 
-/** Output of the V1 Qualification Engine. All scores are 0–100 unless noted. */
+export type OpportunityCategoryKey =
+  | "roleAlignment"
+  | "qualificationsMatch"
+  | "industryAlignment"
+  | "preferenceAlignment"
+  | "clientQuality";
+
+export interface OpportunityCategoryScore {
+  category: OpportunityCategoryKey;
+  label: string;
+  /** Category score 0–100. */
+  score: number;
+  /** Weight percent toward overall fit (e.g. 35). */
+  weight: number;
+  contribution: number;
+  matchedCount?: number;
+  totalCount?: number;
+  matchedLabels?: string[];
+  missingLabels?: string[];
+  details?: string[];
+}
+
+export interface OpportunityEngineDebug {
+  detectedRoleArchetype: string | null;
+  roleArchetypeTier: "positive" | "negative" | "neutral" | "unknown";
+  detectedIndustries: string[];
+  matchedQualifications: string[];
+  missingQualifications: string[];
+  preferencesApplied: string[];
+  redFlagsTriggered: string[];
+  categoryScores: OpportunityCategoryScore[];
+  weightingCalculation: string;
+  finalReasoning: string;
+  parsedJobMetadata: Record<string, unknown>;
+}
+
+/** Output of the Opportunity Engine. fitScore is 0–100 (display ÷10 for 0–10 ring). */
 export interface ScoreResult {
   qualificationScore: number;
   confidenceScore: number;
-  /** Signed adjustment applied after qualification; roughly -25..+15. */
+  /** Signed preference adjustment (informational). */
   careerFitAdjustment: number;
   fitScore: number;
   recommendation: Recommendation;
   recommendationLabel: string;
   scoringMode: "guest" | "registered";
+  /** Legacy V1 breakdown — empty when opportunityCategories is populated. */
   categoryBreakdown: CategoryScore[];
+  /** Opportunity Engine category scores (primary). */
+  opportunityCategories?: OpportunityCategoryScore[];
+  opportunityDebug?: OpportunityEngineDebug;
   unknownCategories: string[];
   explanation: string;
   strengths: string[];

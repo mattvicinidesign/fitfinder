@@ -10,7 +10,7 @@ import {
 import { buildSampleAnalysisResult } from "@/lib/sample-report-fixtures";
 import type { AnalysisRecord, AnalysisResult, Recommendation } from "@/lib/types";
 
-const SEED_VERSION = "v3";
+const SEED_VERSION = "v4";
 const SEED_KEY = `fitfinder-sample-data-${SEED_VERSION}`;
 const RECENT_ACTIVITY_KEY = "fitfinder:recent-activity";
 
@@ -53,7 +53,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 82,
     confidence_score: 74,
     recommendation: "strong_apply",
-    recommendation_label: "Highly Recommended",
+    recommendation_label: "Strong Pursuit",
     daysAgo: 2,
   },
   {
@@ -66,7 +66,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 71,
     confidence_score: 68,
     recommendation: "apply",
-    recommendation_label: "Good Fit",
+    recommendation_label: "Good Opportunity",
     daysAgo: 5,
   },
   {
@@ -79,7 +79,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 58,
     confidence_score: 55,
     recommendation: "stretch",
-    recommendation_label: "Stretch Role",
+    recommendation_label: "Proceed With Caution",
     daysAgo: 7,
   },
   {
@@ -92,7 +92,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 79,
     confidence_score: 70,
     recommendation: "strong_apply",
-    recommendation_label: "Highly Recommended",
+    recommendation_label: "Strong Pursuit",
     daysAgo: 3,
   },
   {
@@ -105,7 +105,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 67,
     confidence_score: 64,
     recommendation: "apply",
-    recommendation_label: "Good Fit",
+    recommendation_label: "Good Opportunity",
     daysAgo: 14,
   },
 ];

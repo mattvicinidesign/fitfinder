@@ -251,7 +251,7 @@ export function normalizePostingDetails(
 
   return {
     datePosted: mergeDetail(raw?.datePosted, fromText.datePosted),
-    hireArea: mergeDetail(raw?.hireArea, fromText.hireArea, fromJob.hireArea),
+    hireArea: mergeDetail(raw?.hireArea, fromText.hireArea),
     clientRating: mergeDetail(raw?.clientRating, fromText.clientRating),
     clientOrigin: mergeDetail(raw?.clientOrigin, fromText.clientOrigin),
     clientCity: mergeDetail(raw?.clientCity, fromText.clientCity),
@@ -265,7 +265,7 @@ export function normalizePostingDetails(
   };
 }
 
-export type PostingDetailSection = "client" | "role";
+export type PostingDetailSection = "client" | "role" | "global";
 
 export interface PostingDetailRow {
   key: string;
@@ -283,11 +283,11 @@ const ROW_DEFS: {
   { key: "clientOrigin", title: "Location", section: "client" },
   { key: "clientRating", title: "Rating", section: "client" },
   { key: "clientAverageHourlyRate", title: "Avg. Rate", section: "client" },
-  { key: "hireArea", title: "Who Can Apply", section: "role" },
-  { key: "role", title: "Role", section: "role" },
-  { key: "datePosted", title: "Date posted", section: "role" },
+  { key: "role", title: "Title", section: "role" },
   { key: "hoursNeeded", title: "Hours", section: "role" },
   { key: "duration", title: "Duration", section: "role" },
+  { key: "hireArea", title: "Who Can Apply", section: "global" },
+  { key: "datePosted", title: "Date posted", section: "global" },
 ];
 
 export interface ResolvePostingDetailsOptions {

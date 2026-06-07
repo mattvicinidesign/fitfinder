@@ -10,6 +10,7 @@ import { SaveReportButton } from "@/components/save-job-button";
 import {
   fetchProfileDesiredCompensation,
   fetchProfileQualifiedIndustries,
+  fetchProfileQualifiedSkills,
   fetchProfileCountry,
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
@@ -37,6 +38,9 @@ export function AnalysisReportScreen() {
   const [profileQualifiedIndustries, setProfileQualifiedIndustries] = useState<
     string[]
   >([]);
+  const [profileQualifiedSkills, setProfileQualifiedSkills] = useState<
+    string[]
+  >([]);
   const [profileCountry, setProfileCountry] = useState<string | null>(null);
   const [profileTimezone, setProfileTimezone] = useState<string | null>(null);
 
@@ -53,11 +57,13 @@ export function AnalysisReportScreen() {
     void Promise.all([
       fetchProfileDesiredCompensation(),
       fetchProfileQualifiedIndustries(),
+      fetchProfileQualifiedSkills(),
       fetchProfileCountry(),
       fetchProfileTimezone(),
-    ]).then(([pay, industries, country, timezone]) => {
+    ]).then(([pay, industries, skills, country, timezone]) => {
       setProfileDesiredCompensation(pay);
       setProfileQualifiedIndustries(industries);
+      setProfileQualifiedSkills(skills);
       setProfileCountry(country);
       setProfileTimezone(timezone);
     });
@@ -110,6 +116,9 @@ export function AnalysisReportScreen() {
           }
           profileQualifiedIndustries={
             entry.profileQualifiedIndustries ?? profileQualifiedIndustries
+          }
+          profileQualifiedSkills={
+            entry.profileQualifiedSkills ?? profileQualifiedSkills
           }
           profileCountry={entry.profileCountry ?? profileCountry}
           profileTimezone={entry.profileTimezone ?? profileTimezone}

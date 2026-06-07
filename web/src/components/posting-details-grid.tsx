@@ -3,6 +3,10 @@
 import { SummaryFieldLabel } from "@/components/summary-field-label";
 import { SummaryInfoBadge } from "@/components/summary-info-badge";
 import {
+  formatGlobalPostingDisplayValue,
+  isGlobalPostingFieldKey,
+} from "@/lib/global-posting-category";
+import {
   getPostingDetailBadgeIcon,
   isPostingDetailHighlightPositive,
   type PostingDetailHighlightContext,
@@ -28,24 +32,34 @@ export function PostingDetailFields({
           : "grid grid-cols-2 gap-x-4 gap-y-3 min-w-0"
       }
     >
-      {rows.map((row) => (
-        <div key={row.key} className="space-y-1.5 min-w-0">
-          <SummaryFieldLabel>{row.title}</SummaryFieldLabel>
-          <SummaryInfoBadge
-            label={row.missing ? NOT_SPECIFIED_LABEL : row.value}
-            icon={
-              !row.missing
-                ? getPostingDetailBadgeIcon(row.key, row.value)
-                : undefined
-            }
-            muted={row.missing}
-            positive={
-              !row.missing &&
-              isPostingDetailHighlightPositive(row.key, row.value, highlightCtx)
-            }
-          />
-        </div>
-      ))}
+      {rows.map((row) => {
+        const isGlobal = isGlobalPostingFieldKey(row.key);
+        const label = isGlobal
+          ? formatGlobalPostingDisplayValue(row)
+          : row.missing
+            ? NOT_SPECIFIED_LABEL
+            : row.value;
+
+        return (
+          <div key={row.key} className="space-y-1.5 min-w-0">
+            <SummaryFieldLabel>{row.title}</SummaryFieldLabel>
+            <SummaryInfoBadge
+              label={label}
+              icon={
+                !row.missing && !isGlobal
+                  ? getPostingDetailBadgeIcon(row.key, row.value)
+                  : undefined
+              }
+              muted={row.missing}
+              positive={
+                !isGlobal &&
+                !row.missing &&
+                isPostingDetailHighlightPositive(row.key, row.value, highlightCtx)
+              }
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

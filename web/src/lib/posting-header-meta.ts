@@ -4,7 +4,8 @@
 
 import {
   POSTING_DETAIL_MISSING,
-  resolvePostingDetailSections,
+  findPostingDetailRow,
+  resolvePostingDetailRows,
 } from "@/lib/posting-details";
 import type { ParsedJob, PostingContext } from "@/lib/types";
 
@@ -95,12 +96,8 @@ function headerHireAreaLabel(
 ): string | null {
   if (!parsedJob) return null;
 
-  const hireArea = resolvePostingDetailSections(parsedJob, {
-    jobDescription,
-    jobTitle,
-  })
-    .find((s) => s.id === "role")
-    ?.rows.find((r) => r.key === "hireArea");
+  const rows = resolvePostingDetailRows(parsedJob, { jobDescription, jobTitle });
+  const hireArea = findPostingDetailRow(rows, "hireArea");
 
   const raw = hireArea?.value?.trim() ?? "";
   if (!raw || raw === POSTING_DETAIL_MISSING || hireArea?.missing) return null;
@@ -118,13 +115,11 @@ export function buildPostingHeaderMetaLine(
   const employerType =
     postingContext?.employerType ?? parsedJob?.employerType ?? "unknown";
 
-  const roleRows = parsedJob
-    ? resolvePostingDetailSections(parsedJob, { jobDescription, jobTitle }).find(
-        (s) => s.id === "role",
-      )?.rows
-    : undefined;
+  const rows = parsedJob
+    ? resolvePostingDetailRows(parsedJob, { jobDescription, jobTitle })
+    : [];
 
-  const datePostedRaw = roleRows?.find((r) => r.key === "datePosted")?.value;
+  const datePostedRaw = findPostingDetailRow(rows, "datePosted")?.value;
 
   const segments = [
     headerPlatformLabel(companyName),

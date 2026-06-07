@@ -1,14 +1,12 @@
 /**
  * Canonical qualification report terminology:
  *
- * - **Global score** — 0–10 ring + recommendation (e.g. 9.4/10 Highly Recommended)
- * - **Scoring category** — card sections (Client Profile, Role Details, …)
- * - **Scoring item** — one row inside a category (e.g. Timezone → America/Los Angeles).
- *   Identified items in a category are weighted equally toward that category’s subtotal.
- *   In Qualifications, each skill/tool keyword from the posting is one item (equal weight).
+ * - **Overall Match** — 0–10 ring + recommendation (e.g. 8.7 Strong Pursuit)
+ * - **Opportunity category** — Role Alignment, Qualifications, Industry, …
+ * - **Scoring item** — one row inside a legacy category card (V1 UI only).
  */
 
-/** Scoring category id (Client Profile, Role Details, …). */
+/** Legacy scoring category id (Client Profile, Role Details, …). */
 export type ScoringCategoryId =
   | "clientProfile"
   | "clientPreferences"
@@ -18,12 +16,12 @@ export type ScoringCategoryId =
 /** @alias ScoringCategoryId */
 export type ReportSectionId = ScoringCategoryId;
 
-export const GLOBAL_SCORE_LABEL = "Profile Fit";
+export const GLOBAL_SCORE_LABEL = "Overall Match";
 
 /** Footer row on a scoring category card (equal-weight item average). */
 export const SCORING_CATEGORY_SUBTOTAL_LABEL = "Category Score";
 
-/** Display titles for each scoring category card and global-score rollup row. */
+/** Display titles for legacy V1 scoring category cards. */
 export const SCORING_CATEGORY_LABELS: Record<ScoringCategoryId, string> = {
   clientProfile: "Client",
   clientPreferences: "Preference",
@@ -31,9 +29,26 @@ export const SCORING_CATEGORY_LABELS: Record<ScoringCategoryId, string> = {
   categoryMatching: "Qualification",
 };
 
-/** Explanatory tooltip copy for the Profile Fit card and each scoring category. */
+/** Opportunity Engine category labels (primary). */
+export const OPPORTUNITY_CATEGORY_LABELS = {
+  roleAlignment: "Role Alignment",
+  qualificationsMatch: "Qualifications",
+  industryAlignment: "Industry",
+  preferenceAlignment: "Preferences",
+  clientQuality: "Client Quality",
+} as const;
+
+/** Opportunity Engine weights (sum = 100). */
+export const OPPORTUNITY_CATEGORY_WEIGHTS = {
+  roleAlignment: 35,
+  qualificationsMatch: 30,
+  industryAlignment: 15,
+  preferenceAlignment: 10,
+  clientQuality: 10,
+} as const;
+
 export const GLOBAL_SCORE_INFO =
-  "Your overall fit for this job. Each category is scored out of 10 based on how many scoring items you match, then combined using fixed weights (Qualification 50%, Role 25%, Client 15%, Preference 10%) to produce the recommendation.";
+  "Your overall career fit for this role. Role alignment and qualifications drive the score; industry, preferences, and client quality fine-tune the result (Role 35%, Qualifications 30%, Industry 15%, Preferences 10%, Client 10%).";
 
 export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
   clientProfile:
@@ -41,12 +56,12 @@ export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
   clientPreferences:
     "How well you match the client preferences — location, timezone, talent type, and AI emphasis stated in the posting.",
   roleDetails:
-    "How well the role itself fits — role type, pay, industry, hours, and duration. Each item found in the posting counts equally.",
+    "How well the role fits — title and industry for guest users; title, industry, pay, hours, and duration when signed in.",
   categoryMatching:
     "How many of the posting's required skills and tools you match. Every keyword is weighted equally.",
 };
 
-/** Share of global score per scoring category (sums to 100). */
+/** Legacy V1 weights — used only when opportunityCategories is absent. */
 export const SCORING_CATEGORY_WEIGHTS: Record<ScoringCategoryId, number> = {
   categoryMatching: 50,
   roleDetails: 25,
@@ -77,6 +92,6 @@ export function scoringItemAriaLabel(title: string, badgeLabel: string): string 
 
 /** Accessible label for the 0–10 global score ring. */
 export function globalScoreAriaLabel(displayOnTen: string, recommendation?: string): string {
-  const base = `Global score ${displayOnTen} out of 10`;
+  const base = `Overall match ${displayOnTen} out of 10`;
   return recommendation?.trim() ? `${base}, ${recommendation}` : base;
 }

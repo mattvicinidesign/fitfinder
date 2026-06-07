@@ -15,9 +15,12 @@ import type {
   Compensation,
   CoverageMatchDetail,
   Narrative,
+  OpportunityCategoryScore,
+  OpportunityEngineDebug,
   ParsedJob,
   ParsedResume,
   PostingContext,
+  Recommendation,
   ScoreResult,
 } from "@/lib/types";
 
@@ -81,6 +84,7 @@ function enrichCoverageCategories(
   job: ParsedJob,
   resume?: ParsedResume | null,
   jobDescription?: string | null,
+  profileQualifiedSkills?: string[] | null,
 ): ScoreResult {
   const categoryBreakdown = score.categoryBreakdown.map((c) => {
     if (!COVERAGE_CATEGORIES.includes(c.category) || c.status === "unknown") {
@@ -92,6 +96,7 @@ function enrichCoverageCategories(
       job,
       resume,
       jobDescription,
+      c.category === "skills" ? profileQualifiedSkills : undefined,
     );
     if (coverage.total === 0) return c;
 
@@ -125,6 +130,65 @@ function enrichCoverageCategories(
   return { ...score, categoryBreakdown };
 }
 
+function normalizeOpportunityCategory(raw: unknown): OpportunityCategoryScore {
+  const c = (raw ?? {}) as Partial<OpportunityCategoryScore> & Record<string, unknown>;
+  return {
+    category:
+      (c.category as OpportunityCategoryScore["category"]) ?? "roleAlignment",
+    label: typeof c.label === "string" ? c.label : "",
+    score: Number(c.score) || 0,
+    weight: Number(c.weight) || 0,
+    contribution: Number(c.contribution) || 0,
+    matchedCount:
+      typeof c.matchedCount === "number" ? c.matchedCount : undefined,
+    totalCount: typeof c.totalCount === "number" ? c.totalCount : undefined,
+    matchedLabels: asArray<string>(c.matchedLabels),
+    missingLabels: asArray<string>(c.missingLabels),
+    details: asArray<string>(c.details),
+  };
+}
+
+function normalizeOpportunityDebug(raw: unknown): OpportunityEngineDebug | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const d = raw as Partial<OpportunityEngineDebug> & Record<string, unknown>;
+  return {
+    detectedRoleArchetype:
+      typeof d.detectedRoleArchetype === "string" ? d.detectedRoleArchetype : null,
+    roleArchetypeTier:
+      d.roleArchetypeTier === "positive" ||
+      d.roleArchetypeTier === "negative" ||
+      d.roleArchetypeTier === "neutral" ||
+      d.roleArchetypeTier === "unknown"
+        ? d.roleArchetypeTier
+        : "unknown",
+    detectedIndustries: asArray<string>(d.detectedIndustries),
+    matchedQualifications: asArray<string>(d.matchedQualifications),
+    missingQualifications: asArray<string>(d.missingQualifications),
+    preferencesApplied: asArray<string>(d.preferencesApplied),
+    redFlagsTriggered: asArray<string>(d.redFlagsTriggered),
+    categoryScores: asArray<unknown>(d.categoryScores).map(normalizeOpportunityCategory),
+    weightingCalculation:
+      typeof d.weightingCalculation === "string" ? d.weightingCalculation : "",
+    finalReasoning: typeof d.finalReasoning === "string" ? d.finalReasoning : "",
+    parsedJobMetadata:
+      d.parsedJobMetadata && typeof d.parsedJobMetadata === "object"
+        ? (d.parsedJobMetadata as Record<string, unknown>)
+        : {},
+  };
+}
+
+function normalizeRecommendation(value: unknown): Recommendation {
+  if (
+    value === "strong_apply" ||
+    value === "apply" ||
+    value === "stretch" ||
+    value === "not_recommended"
+  ) {
+    return value;
+  }
+  return "not_recommended";
+}
+
 /** Coerce API payloads (including pre-V1 analyze responses) into a full ScoreResult. */
 export function normalizeScoreResult(
   score: unknown,
@@ -135,6 +199,7 @@ export function normalizeScoreResult(
     jobTitle?: string | null;
     profileDesiredCompensation?: Compensation | null;
     profileQualifiedIndustries?: string[] | null;
+    profileQualifiedSkills?: string[] | null;
     profileCountry?: string | null;
     profileTimezone?: string | null;
   },
@@ -145,15 +210,24 @@ export function normalizeScoreResult(
   const categoryBreakdown = asArray<unknown>(s.categoryBreakdown).map(
     normalizeCategoryScore,
   );
+  const opportunityCategories = asArray<unknown>(s.opportunityCategories).map(
+    normalizeOpportunityCategory,
+  );
+  const opportunityDebug = normalizeOpportunityDebug(s.opportunityDebug);
+  const usesOpportunityEngine = opportunityCategories.length > 0;
+
   const baseScore: ScoreResult = {
     qualificationScore: Number(s.qualificationScore) || 0,
     confidenceScore: Number(s.confidenceScore) || 0,
     careerFitAdjustment: Number(s.careerFitAdjustment) || 0,
     fitScore: Number(s.fitScore) || 0,
-    recommendation: "not_recommended",
-    recommendationLabel: "",
+    recommendation: normalizeRecommendation(s.recommendation),
+    recommendationLabel:
+      typeof s.recommendationLabel === "string" ? s.recommendationLabel : "",
     scoringMode,
     categoryBreakdown,
+    ...(opportunityCategories.length ? { opportunityCategories } : {}),
+    ...(opportunityDebug ? { opportunityDebug } : {}),
     unknownCategories: asArray<string>(s.unknownCategories),
     explanation: typeof s.explanation === "string" ? s.explanation : "",
     strengths: asArray<string>(s.strengths),
@@ -162,12 +236,42 @@ export function normalizeScoreResult(
     negativeSignalsFound: asArray<string>(s.negativeSignalsFound),
   };
 
+  if (usesOpportunityEngine) {
+    const fitScore = Number(s.fitScore) || 0;
+    const { recommendation, label: recommendationLabel } =
+      s.recommendation && s.recommendationLabel
+        ? {
+            recommendation: normalizeRecommendation(s.recommendation),
+            label: String(s.recommendationLabel),
+          }
+        : recommendFromFitScore(fitScore);
+
+    const normalized: ScoreResult = {
+      ...baseScore,
+      fitScore,
+      recommendation,
+      recommendationLabel,
+    };
+
+    if (options?.parsedJob) {
+      return enrichCoverageCategories(
+        normalized,
+        options.parsedJob,
+        options.parsedResume,
+        options.jobDescription,
+        options.profileQualifiedSkills,
+      );
+    }
+    return normalized;
+  }
+
   const rollupOptions = buildReportRollupOptions({
     score: baseScore,
     parsedJob: options?.parsedJob,
     parsedResume: options?.parsedResume,
     profileDesiredCompensation: options?.profileDesiredCompensation,
     profileQualifiedIndustries: options?.profileQualifiedIndustries,
+    profileQualifiedSkills: options?.profileQualifiedSkills,
     profileCountry: options?.profileCountry,
     profileTimezone: options?.profileTimezone,
     jobDescription: options?.jobDescription,
@@ -196,6 +300,7 @@ export function normalizeScoreResult(
       options.parsedJob,
       options.parsedResume,
       options.jobDescription,
+      options.profileQualifiedSkills,
     );
   }
   return normalized;
@@ -272,6 +377,7 @@ export function normalizeAnalysisResult(
   profile?: {
     profileDesiredCompensation?: Compensation | null;
     profileQualifiedIndustries?: string[] | null;
+    profileQualifiedSkills?: string[] | null;
     profileCountry?: string | null;
     profileTimezone?: string | null;
   },
@@ -299,6 +405,7 @@ export function normalizeAnalysisResult(
       jobTitle,
       profileDesiredCompensation: profile?.profileDesiredCompensation,
       profileQualifiedIndustries: profile?.profileQualifiedIndustries,
+      profileQualifiedSkills: profile?.profileQualifiedSkills,
       profileCountry: profile?.profileCountry,
       profileTimezone: profile?.profileTimezone,
     }),

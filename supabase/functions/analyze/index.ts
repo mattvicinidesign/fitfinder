@@ -15,8 +15,10 @@
 import { completeJSON } from "../_shared/openai.ts";
 import { normalizeParsedJob } from "../_shared/normalize_parsed_job.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
-import { resumeWithQualifiedIndustries } from "../_shared/qualified_industries.ts";
-import { compensationFromProfileRow } from "../_shared/profile_compensation.ts";
+import {
+  mergeProfileIntoResumeForScoring,
+  type ProfileScoringRow,
+} from "../_shared/profile_scoring.ts";
 import { JOB_PARSE_SYSTEM, narrativeSystemPrompt, narrativeUserPayload } from "../_shared/prompts.ts";
 import { resolvePostingContext } from "../_shared/posting_context.ts";
 import { scoreFit } from "../_shared/scoring.ts";
@@ -94,19 +96,17 @@ Deno.serve(async (req: Request) => {
     ]);
     const parsedJob = normalizeParsedJob(parsedJobRaw, jobText);
 
-    // Profile desired pay fills in when resume parse omits desiredCompensation.
+    // Profile fills compensation, location, qualified signals, and onboarding prefs.
     const { data: profileRow } = await supabase
       .from("profiles")
       .select(
-        "desired_compensation, desired_compensation_min, desired_compensation_max, desired_compensation_currency, desired_compensation_period, qualified_industries, country, timezone",
+        "desired_compensation, desired_compensation_min, desired_compensation_max, desired_compensation_currency, desired_compensation_period, qualified_industries, qualified_skills, country, timezone, preferred_engagement_types, preferred_regions, preferred_company_types, red_flags",
       )
       .eq("user_id", userId)
       .maybeSingle();
 
-    const profileDesired = compensationFromProfileRow(profileRow ?? undefined);
-    if (profileDesired && !resume.desiredCompensation) {
-      resume = { ...resume, desiredCompensation: profileDesired };
-    }
+    const profile = (profileRow ?? undefined) as ProfileScoringRow | undefined;
+    resume = mergeProfileIntoResumeForScoring(resume, profile);
 
     // 3. Deterministic V1 qualification engine (guest vs registered weights).
     const { data: userRow } = await supabase
@@ -122,28 +122,16 @@ Deno.serve(async (req: Request) => {
       scoringMode = "registered";
     }
 
-    const profileCountry =
-      typeof profileRow?.country === "string" && profileRow.country.trim()
-        ? profileRow.country.trim()
-        : null;
-    const profileTimezone =
-      typeof profileRow?.timezone === "string" && profileRow.timezone.trim()
-        ? profileRow.timezone.trim()
-        : null;
+    const resumeForScoring = resume;
 
-    const resumeForScoring = {
-      ...resume,
-      country: resume.country?.trim() || profileCountry || resume.country,
-      timezone: resume.timezone?.trim() || profileTimezone || resume.timezone,
-      industries: resumeWithQualifiedIndustries(
-        resume.industries,
-        profileRow?.qualified_industries as string[] | null | undefined,
-      ),
-    };
+    const postingContextPreview = resolvePostingContext(parsedJob, jobText);
 
     const score = scoreFit(resumeForScoring, parsedJob, {
       mode: scoringMode,
       jobTitle,
+      jobText,
+      posting: postingContextPreview,
+      profile,
     });
 
     // 4. Narrative analysis layered on top of the computed scores.
@@ -152,7 +140,7 @@ Deno.serve(async (req: Request) => {
       { role: "user", content: narrativeUserPayload(resume, parsedJob, score) },
     ]);
 
-    const postingContext = resolvePostingContext(parsedJob, jobText);
+    const postingContext = postingContextPreview;
 
     const resolvedJobTitle =
       typeof jobTitle === "string" && jobTitle.trim()

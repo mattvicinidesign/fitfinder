@@ -14,6 +14,7 @@ import { sanitizeJobText } from "@/lib/sanitize-job-text";
 import {
   fetchProfileDesiredCompensation,
   fetchProfileQualifiedIndustries,
+  fetchProfileQualifiedSkills,
   fetchProfileCountry,
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
@@ -59,26 +60,46 @@ const DEMO_RESULT: AnalysisResult = {
     careerFitAdjustment: 7,
     fitScore: 89,
     recommendation: "strong_apply",
-    recommendationLabel: "Highly Recommended",
+    recommendationLabel: "Strong Pursuit",
     scoringMode: "registered",
-    categoryBreakdown: [
+    categoryBreakdown: [],
+    opportunityCategories: [
       {
-        category: "skills",
-        label: "Skills",
-        status: "match",
-        score: 90,
-        weight: 25,
-        contribution: 22.5,
+        category: "roleAlignment",
+        label: "Role Alignment",
+        score: 92,
+        weight: 35,
+        contribution: 32.2,
+      },
+      {
+        category: "qualificationsMatch",
+        label: "Qualifications",
+        score: 88,
+        weight: 30,
+        contribution: 26.4,
         matchedCount: 9,
         totalCount: 10,
       },
       {
-        category: "industry",
-        label: "Industry",
-        status: "match",
+        category: "industryAlignment",
+        label: "Industry Alignment",
         score: 85,
-        weight: 18,
-        contribution: 15.3,
+        weight: 15,
+        contribution: 12.8,
+      },
+      {
+        category: "preferenceAlignment",
+        label: "Preference Alignment",
+        score: 72,
+        weight: 10,
+        contribution: 7.2,
+      },
+      {
+        category: "clientQuality",
+        label: "Client Quality",
+        score: 78,
+        weight: 10,
+        contribution: 7.8,
       },
     ],
     unknownCategories: ["Tools", "Compensation"],
@@ -123,6 +144,9 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   const [profileQualifiedIndustries, setProfileQualifiedIndustries] = useState<
     string[]
   >([]);
+  const [profileQualifiedSkills, setProfileQualifiedSkills] = useState<
+    string[]
+  >([]);
   const [profileCountry, setProfileCountry] = useState<string | null>(null);
   const [profileTimezone, setProfileTimezone] = useState<string | null>(null);
   const [lastReport, setLastReport] = useState<{
@@ -142,11 +166,13 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
     void Promise.all([
       fetchProfileDesiredCompensation(),
       fetchProfileQualifiedIndustries(),
+      fetchProfileQualifiedSkills(),
       fetchProfileCountry(),
       fetchProfileTimezone(),
-    ]).then(([pay, industries, country, timezone]) => {
+    ]).then(([pay, industries, skills, country, timezone]) => {
       setProfileDesiredCompensation(pay);
       setProfileQualifiedIndustries(industries);
+      setProfileQualifiedSkills(skills);
       setProfileCountry(country);
       setProfileTimezone(timezone);
     });
@@ -196,6 +222,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         analysisId,
         profileDesiredCompensation,
         profileQualifiedIndustries,
+        profileQualifiedSkills,
         profileCountry,
         profileTimezone,
       });

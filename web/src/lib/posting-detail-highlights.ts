@@ -192,9 +192,8 @@ export function isPostingDetailHighlightPositive(
     case "role":
       return isRoleArchetypeMatch(value, ctx);
     case "datePosted":
-      return isDatePostedWithin3Days(value);
     case "hireArea":
-      return isUnitedStatesHireArea(value);
+      return false;
     case "clientRating":
       return isClientRatingAtLeast3(value);
     case "clientOrigin":

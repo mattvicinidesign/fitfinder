@@ -116,6 +116,7 @@ function CoverageBreakdownRow({
   parsedJob,
   parsedResume,
   jobDescription,
+  profileQualifiedSkills,
 }: {
   label: string;
   category: CategoryScore;
@@ -123,6 +124,7 @@ function CoverageBreakdownRow({
   parsedJob?: ParsedJob;
   parsedResume?: ParsedResume | null;
   jobDescription?: string | null;
+  profileQualifiedSkills?: string[] | null;
 }) {
   const ui = COVERAGE_UI[coverageKey];
 
@@ -132,6 +134,7 @@ function CoverageBreakdownRow({
         parsedJob,
         parsedResume,
         jobDescription,
+        coverageKey === "skills" ? profileQualifiedSkills : undefined,
       )
     : null;
 
@@ -250,6 +253,7 @@ export function QualificationBreakdown({
   jobTitle: analysisJobTitle,
   profileDesiredCompensation,
   profileQualifiedIndustries,
+  profileQualifiedSkills,
   profileCountry,
   profileTimezone,
 }: {
@@ -261,6 +265,7 @@ export function QualificationBreakdown({
   jobTitle?: string | null;
   profileDesiredCompensation?: Compensation | null;
   profileQualifiedIndustries?: string[] | null;
+  profileQualifiedSkills?: string[] | null;
   profileCountry?: string | null;
   profileTimezone?: string | null;
 }) {
@@ -277,6 +282,7 @@ export function QualificationBreakdown({
     parsedResume,
     profileDesiredCompensation,
     profileQualifiedIndustries,
+    profileQualifiedSkills,
     profileCountry,
     profileTimezone,
     jobDescription,
@@ -363,6 +369,7 @@ export function QualificationBreakdown({
                   parsedJob={parsedJob}
                   parsedResume={parsedResume}
                   jobDescription={jobDescription}
+                  profileQualifiedSkills={profileQualifiedSkills}
                 />
               );
             }

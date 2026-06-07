@@ -179,12 +179,12 @@ export const ARCHETYPE_SIMILARITY: Record<string, Record<string, number>> = {
 };
 
 /**
- * Canonical recommendation bands (fitScore 0–100; display ÷10 for 0–10 ring).
- * 8.5–10.0 Highly Recommended | 7.0–8.4 Recommended | 5.0–6.9 Somewhat Recommended | 0.0–4.9 Not Recommended
+ * Legacy recommendation bands — prefer OPPORTUNITY_RECOMMENDATION_BANDS for new scoring.
+ * Display ÷10 for 0–10 ring.
  */
 export const RECOMMENDATION_BANDS = [
-  { min: 85, recommendation: "strong_apply" as const, label: "Highly Recommended" },
-  { min: 70, recommendation: "apply" as const, label: "Recommended" },
-  { min: 50, recommendation: "stretch" as const, label: "Somewhat Recommended" },
+  { min: 85, recommendation: "strong_apply" as const, label: "Strong Pursuit" },
+  { min: 70, recommendation: "apply" as const, label: "Good Opportunity" },
+  { min: 50, recommendation: "stretch" as const, label: "Proceed With Caution" },
   { min: 0, recommendation: "not_recommended" as const, label: "Not Recommended" },
 ];

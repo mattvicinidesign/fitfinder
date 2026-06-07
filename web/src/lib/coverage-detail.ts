@@ -80,8 +80,12 @@ function coverageDetailFromRequired(
 export function skillsCoverageDetail(
   job: ParsedJob,
   resume?: ParsedResume | null,
+  profileQualifiedSkills?: string[] | null,
 ): CoverageResult {
-  const matchPool = skillsMatchPoolForScoring(resume?.skills, null);
+  const matchPool = skillsMatchPoolForScoring(
+    resume?.skills,
+    profileQualifiedSkills,
+  );
   return coverageDetailFromRequired(job.skills ?? [], matchPool);
 }
 
@@ -124,10 +128,11 @@ export function coverageDetailForCategory(
   job: ParsedJob,
   resume?: ParsedResume | null,
   jobDescription?: string | null,
+  profileQualifiedSkills?: string[] | null,
 ): CoverageResult {
   switch (category) {
     case "skills":
-      return skillsCoverageDetail(job, resume);
+      return skillsCoverageDetail(job, resume, profileQualifiedSkills);
     case "workflow":
       return workflowCoverageDetail(job, resume);
     case "tools":

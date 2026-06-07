@@ -2,6 +2,7 @@
 
 import { recommendationRingClass } from "@/lib/recommendation-bands";
 import { globalScoreAriaLabel } from "@/lib/scoring-terminology";
+import { formatStarRating } from "@/lib/star-rating";
 import {
   SCORE_RING_REVEAL_CLASS,
   formatScoreOnTen,
@@ -113,9 +114,14 @@ export function QualificationScoreCircle({
         </span>
       </div>
       {recommendationLabel ? (
-        <p className="mt-3 max-w-[12rem] text-center text-[10px] font-medium leading-tight tracking-wide text-muted-foreground">
-          {recommendationLabel}
-        </p>
+        <div className="mt-3 max-w-[12rem] text-center">
+          <p className="text-[10px] font-medium leading-tight tracking-wide text-muted-foreground">
+            {recommendationLabel}
+          </p>
+          <p className="mt-1 text-[12px] leading-none tracking-tight" aria-hidden>
+            {formatStarRating(scoreOnTen, "ten")}
+          </p>
+        </div>
       ) : null}
     </div>
   );

@@ -132,3 +132,16 @@ export function resumeSkillsForScoring(
 
   return expandSkillMatchPool(merged);
 }
+
+/** Profile qualified labels evidenced by parsed resume skills (for profile sync). */
+export function qualifiedSkillLabelsFromResume(
+  resumeSkills: string[] | undefined | null,
+): string[] {
+  const poolNorm = new Set(
+    resumeSkillsForScoring(resumeSkills, []).map(normalizeSkillToken),
+  );
+  return PROFILE_QUALIFIED_SKILL_LABELS.filter((label) => {
+    const aliases = expandSkillMatchPool([label]).map(normalizeSkillToken);
+    return aliases.some((token) => poolNorm.has(token));
+  });
+}

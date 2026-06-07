@@ -1,8 +1,8 @@
 /**
  * Global score recommendation bands — keep in sync with
- * supabase/functions/_shared/scoring_constants.ts RECOMMENDATION_BANDS
+ * supabase/functions/_shared/opportunity_engine_constants.ts OPPORTUNITY_RECOMMENDATION_BANDS
  *
- * Display scale 0–10 = fitScore ÷ 100.
+ * Display scale 0–10 = fitScore ÷ 10 (stored fitScore 0–100).
  */
 
 import {
@@ -16,9 +16,9 @@ export const RECOMMENDATION_BANDS: {
   recommendation: Recommendation;
   label: string;
 }[] = [
-  { min: 85, recommendation: "strong_apply", label: "Highly Recommended" },
-  { min: 70, recommendation: "apply", label: "Recommended" },
-  { min: 50, recommendation: "stretch", label: "Somewhat Recommended" },
+  { min: 85, recommendation: "strong_apply", label: "Strong Pursuit" },
+  { min: 70, recommendation: "apply", label: "Good Opportunity" },
+  { min: 50, recommendation: "stretch", label: "Proceed With Caution" },
   { min: 0, recommendation: "not_recommended", label: "Not Recommended" },
 ];
 

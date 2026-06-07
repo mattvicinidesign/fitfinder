@@ -7,6 +7,7 @@
 import { extractResumeTextFromStorage } from "../_shared/extractResumeText.ts";
 import { completeJSON } from "../_shared/openai.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
+import { mergeProfileQualifiedFromParsed } from "../_shared/sync_profile_qualified.ts";
 import { RESUME_PARSE_SYSTEM } from "../_shared/prompts.ts";
 import { createUserClient, requireUser } from "../_shared/supabaseClient.ts";
 import { error, handlePreflight, json } from "../_shared/cors.ts";
@@ -60,6 +61,26 @@ Deno.serve(async (req: Request) => {
         .eq("id", resumeId)
         .eq("user_id", userId);
       if (dbError) return error(`Failed to persist parsed resume: ${dbError.message}`, 500);
+
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("qualified_industries, qualified_skills")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const qualified = mergeProfileQualifiedFromParsed(profileRow ?? undefined, parsed);
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          qualified_industries: qualified.qualified_industries,
+          qualified_skills: qualified.qualified_skills,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId);
+
+      if (profileError) {
+        return error(`Failed to sync profile qualifications: ${profileError.message}`, 500);
+      }
     }
 
     return json({ parsedResume: parsed });

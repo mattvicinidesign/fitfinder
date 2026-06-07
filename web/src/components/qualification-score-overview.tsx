@@ -11,7 +11,9 @@ import { recommendFromFitScore } from "@/lib/recommendation-bands";
 import {
   GLOBAL_SCORE_INFO,
   GLOBAL_SCORE_LABEL,
+  OPPORTUNITY_CATEGORY_LABELS,
 } from "@/lib/scoring-terminology";
+import { formatStarRating } from "@/lib/star-rating";
 import {
   scoreColor,
   scoreProgressClass,
@@ -23,7 +25,7 @@ import {
   useAnimatedNumber,
 } from "@/lib/use-score-reveal";
 import type { ReportRollupOptions } from "@/lib/section-score-rollups";
-import type { ScoreResult } from "@/lib/types";
+import type { OpportunityCategoryScore, ScoreResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function ScoringCategoryRollupRow({
@@ -31,28 +33,41 @@ function ScoringCategoryRollupRow({
   score,
   fraction,
   animateDelay = 0,
+  displayMode = "percent",
 }: {
   title: string;
   score: number | null;
   fraction: { matched: number; total: number } | null;
   animateDelay?: number;
+  displayMode?: "percent" | "qualifications";
 }) {
   const hasScore = score != null;
   const pct = hasScore ? Math.round(score) : 0;
   const fractionTarget =
     fraction && fraction.total > 0
-      ? (fraction.matched / fraction.total) * 10
+      ? (fraction.matched / fraction.total) * 100
       : null;
-  const animatedValue = useAnimatedNumber(fractionTarget ?? pct, {
-    disabled: !hasScore,
-    delay: animateDelay,
-  });
+  const animatedValue = useAnimatedNumber(
+    displayMode === "qualifications" && fractionTarget != null
+      ? fractionTarget
+      : pct,
+    {
+      disabled: !hasScore,
+      delay: animateDelay,
+    },
+  );
   const valueText =
-    fractionTarget != null
-      ? formatScoreOnTen(animatedValue)
+    displayMode === "qualifications" && fractionTarget != null
+      ? `${Math.round(animatedValue)}%`
       : hasScore
         ? `${Math.round(animatedValue)}%`
         : "—";
+  const stars =
+    hasScore && displayMode === "qualifications" && fractionTarget != null
+      ? formatStarRating(animatedValue, "percent")
+      : hasScore
+        ? formatStarRating(pct, "percent")
+        : null;
 
   return (
     <div className="space-y-1.5 min-w-0">
@@ -60,17 +75,24 @@ function ScoringCategoryRollupRow({
         <span className="text-[14px] font-medium text-foreground leading-snug">
           {title}
         </span>
-        <span
-          className={cn(
-            "text-[14px] font-medium tabular-nums shrink-0",
-            hasScore ? scoreColor(pct) : "text-muted-foreground",
-          )}
-        >
-          {valueText}
-        </span>
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          <span
+            className={cn(
+              "text-[14px] font-medium tabular-nums",
+              hasScore ? scoreColor(pct) : "text-muted-foreground",
+            )}
+          >
+            {valueText}
+          </span>
+          {stars ? (
+            <span className="text-[11px] leading-none tracking-tight" aria-hidden>
+              {stars}
+            </span>
+          ) : null}
+        </div>
       </div>
       <AnimatedScoreProgress
-        value={hasScore ? pct : 0}
+        value={hasScore ? (fractionTarget ?? pct) : 0}
         delay={animateDelay}
         trackClassName={cn(
           SCORE_PROGRESS_BAR_HEIGHT_CLASS,
@@ -82,6 +104,24 @@ function ScoringCategoryRollupRow({
   );
 }
 
+function opportunityRollups(categories: OpportunityCategoryScore[]) {
+  return categories.map((c) => ({
+    id: c.category,
+    title:
+      OPPORTUNITY_CATEGORY_LABELS[c.category] ??
+      c.label,
+    score: c.score,
+    fraction:
+      c.matchedCount != null && c.totalCount != null && c.totalCount > 0
+        ? { matched: c.matchedCount, total: c.totalCount }
+        : null,
+    displayMode:
+      c.category === "qualificationsMatch"
+        ? ("qualifications" as const)
+        : ("percent" as const),
+  }));
+}
+
 /** Global score card: scoring category rollups (left) and 0–10 ring (right). */
 export function QualificationScoreOverview({
   score,
@@ -91,16 +131,36 @@ export function QualificationScoreOverview({
   rollupOptions: ReportRollupOptions;
 }) {
   const isGuest = score.scoringMode === "guest";
-  const rollups = computeReportSectionRollups(
-    score.categoryBreakdown,
-    isGuest,
-    rollupOptions,
-  );
-  const reportFitScore =
-    computeWeightedReportScore(score.categoryBreakdown, isGuest, rollupOptions) ??
-    score.fitScore;
-  const { recommendation, label: recommendationLabel } =
-    recommendFromFitScore(reportFitScore);
+  const usesOpportunityEngine = (score.opportunityCategories?.length ?? 0) > 0;
+
+  const rollups = usesOpportunityEngine
+    ? opportunityRollups(score.opportunityCategories!)
+    : computeReportSectionRollups(
+        score.categoryBreakdown,
+        isGuest,
+        rollupOptions,
+      ).map((section) => ({
+        id: section.id,
+        title: section.title,
+        score: section.score,
+        fraction: section.fraction,
+        displayMode: "percent" as const,
+      }));
+
+  const reportFitScore = usesOpportunityEngine
+    ? score.fitScore
+    : (computeWeightedReportScore(
+        score.categoryBreakdown,
+        isGuest,
+        rollupOptions,
+      ) ?? score.fitScore);
+
+  const recommendation = usesOpportunityEngine
+    ? score.recommendation
+    : recommendFromFitScore(reportFitScore).recommendation;
+  const recommendationLabel = usesOpportunityEngine
+    ? score.recommendationLabel
+    : recommendFromFitScore(reportFitScore).label;
 
   return (
     <SummarySectionCard title={GLOBAL_SCORE_LABEL} info={GLOBAL_SCORE_INFO}>
@@ -117,6 +177,7 @@ export function QualificationScoreOverview({
               score={section.score}
               fraction={section.fraction}
               animateDelay={index * 80}
+              displayMode={section.displayMode}
             />
           ))}
         </div>

@@ -68,4 +68,6 @@ Deno.test("Upwork paste extracts all posting detail fields", () => {
   assertEquals(rows.every((r) => !r.missing), true);
   assertEquals(rows.find((r) => r.key === "clientRating")?.section, "client");
   assertEquals(rows.find((r) => r.key === "role")?.section, "role");
+  assertEquals(rows.find((r) => r.key === "hireArea")?.section, "global");
+  assertEquals(rows.find((r) => r.key === "datePosted")?.section, "global");
 });

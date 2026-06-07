@@ -2,18 +2,21 @@
 
 import { PostingHeaderMetaFields } from "@/components/posting-header-meta";
 import { QualificationBreakdown } from "@/components/qualification-breakdown";
+import { ScoringDebugPanel } from "@/components/scoring-debug-panel";
 import {
   ReportRevealProvider,
   ReportRevealSection,
 } from "@/components/report-reveal-section";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import type { AnalysisResult, Compensation } from "@/lib/types";
+import { useSearchParams } from "next/navigation";
 
 export function AnalysisResultView({
   result,
   analysisId = null,
   profileDesiredCompensation = null,
   profileQualifiedIndustries = null,
+  profileQualifiedSkills = null,
   profileCountry = null,
   profileTimezone = null,
 }: {
@@ -21,12 +24,19 @@ export function AnalysisResultView({
   analysisId?: string | null;
   profileDesiredCompensation?: Compensation | null;
   profileQualifiedIndustries?: string[] | null;
+  profileQualifiedSkills?: string[] | null;
   profileCountry?: string | null;
   profileTimezone?: string | null;
 }) {
+  const searchParams = useSearchParams();
+  const showScoringDebug =
+    process.env.NODE_ENV === "development" ||
+    searchParams.get("debug") === "scoring";
+
   const normalized = normalizeAnalysisResult(result, {
     profileDesiredCompensation,
     profileQualifiedIndustries,
+    profileQualifiedSkills,
     profileCountry,
     profileTimezone,
   });
@@ -69,9 +79,15 @@ export function AnalysisResultView({
             jobTitle={result.jobTitle}
             profileDesiredCompensation={profileDesiredCompensation}
             profileQualifiedIndustries={profileQualifiedIndustries}
+            profileQualifiedSkills={profileQualifiedSkills}
             profileCountry={profileCountry}
             profileTimezone={profileTimezone}
           />
+          {showScoringDebug && score.opportunityDebug ? (
+            <ReportRevealSection>
+              <ScoringDebugPanel debug={score.opportunityDebug} />
+            </ReportRevealSection>
+          ) : null}
         </div>
       </div>
     </ReportRevealProvider>

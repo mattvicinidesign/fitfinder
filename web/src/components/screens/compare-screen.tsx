@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import {
   fetchProfileDesiredCompensation,
   fetchProfileQualifiedIndustries,
+  fetchProfileQualifiedSkills,
   fetchProfileCountry,
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
@@ -62,6 +63,9 @@ export function CompareScreen() {
   const [profileQualifiedIndustries, setProfileQualifiedIndustries] = useState<
     string[]
   >([]);
+  const [profileQualifiedSkills, setProfileQualifiedSkills] = useState<
+    string[]
+  >([]);
   const [profileCountry, setProfileCountry] = useState<string | null>(null);
   const [profileTimezone, setProfileTimezone] = useState<string | null>(null);
 
@@ -69,11 +73,13 @@ export function CompareScreen() {
     void Promise.all([
       fetchProfileDesiredCompensation(),
       fetchProfileQualifiedIndustries(),
+      fetchProfileQualifiedSkills(),
       fetchProfileCountry(),
       fetchProfileTimezone(),
-    ]).then(([pay, industries, country, timezone]) => {
+    ]).then(([pay, industries, skills, country, timezone]) => {
       setProfileDesiredCompensation(pay);
       setProfileQualifiedIndustries(industries);
+      setProfileQualifiedSkills(skills);
       setProfileCountry(country);
       setProfileTimezone(timezone);
     });
@@ -183,6 +189,7 @@ export function CompareScreen() {
               result={resultA}
               profileDesiredCompensation={profileDesiredCompensation}
               profileQualifiedIndustries={profileQualifiedIndustries}
+              profileQualifiedSkills={profileQualifiedSkills}
               profileCountry={profileCountry}
               profileTimezone={profileTimezone}
             />
@@ -197,6 +204,7 @@ export function CompareScreen() {
               result={resultB}
               profileDesiredCompensation={profileDesiredCompensation}
               profileQualifiedIndustries={profileQualifiedIndustries}
+              profileQualifiedSkills={profileQualifiedSkills}
               profileCountry={profileCountry}
               profileTimezone={profileTimezone}
             />

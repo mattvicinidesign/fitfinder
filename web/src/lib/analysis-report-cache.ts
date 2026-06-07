@@ -6,6 +6,7 @@ export type AnalysisReportCacheEntry = {
   analysisId: string | null;
   profileDesiredCompensation?: Compensation | null;
   profileQualifiedIndustries?: string[] | null;
+  profileQualifiedSkills?: string[] | null;
   profileCountry?: string | null;
   profileTimezone?: string | null;
 };
