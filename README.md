@@ -89,6 +89,8 @@ Same routes everywhere: `/home`, `/analyze`, `/saved`, `/history`, `/profile`.
 
 ### Vercel (web)
 
+Repo: [github.com/mattvicinidesign/fitfinder](https://github.com/mattvicinidesign/fitfinder)
+
 1. Connect the GitHub repo in Vercel.
 2. Set **Root Directory** to `web` (required — the Next.js app is not at the repo root).
 3. Set **Framework Preset** to **Next.js** (not “Other”).
