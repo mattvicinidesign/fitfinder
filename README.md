@@ -115,3 +115,5 @@ If the deploy shows “Ready” but every URL returns Vercel’s `404: NOT_FOUND
 - Confirm **Root Directory** = `web` and **Framework Preset** = **Next.js**, then redeploy (clear build cache).
 - Open the URL from the latest deployment in the Vercel dashboard, not an old or deleted link.
 - If the build log lists routes (`/`, `/home`, `/analyze`, …) but production still 404s, delete and re-import the Vercel project with the same settings.
+
+The app ships `web/vercel.json` and uses `middleware.ts` (not `proxy.ts`) for Supabase session refresh so Vercel’s Next.js builder generates the routing manifest correctly.
