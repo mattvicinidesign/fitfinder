@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { requestSignupFlow } from "@/lib/app-session";
+import { ensureGuestSession } from "@/lib/ensure-guest-session";
 
 interface Props {
   layout?: "header" | "sidebar";
@@ -38,16 +39,18 @@ export function AuthMenu({
   async function signOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    await ensureGuestSession();
     router.refresh();
-    router.push("/login");
+    router.push("/home");
+  }
+
+  function openSignup() {
+    requestSignupFlow();
+    router.push("/home?signup=1");
   }
 
   if (!signedIn) {
-    return (
-      <Link href="/login" className={buttonVariants({ size: "sm", className: layout === "header" ? "ml-2" : "w-full justify-center" })}>
-        Sign in
-      </Link>
-    );
+    return null;
   }
 
   if (layout === "sidebar") {
@@ -57,9 +60,9 @@ export function AuthMenu({
           {isGuest ? "Guest session" : email}
         </p>
         {isGuest ? (
-          <Link href="/login" className={buttonVariants({ variant: "outline", size: "sm", className: "w-full" })}>
+          <Button size="sm" variant="outline" className="w-full" onClick={openSignup}>
             Save account
-          </Link>
+          </Button>
         ) : (
           <Button size="sm" variant="ghost" className="w-full" onClick={signOut}>
             Sign out
@@ -75,9 +78,9 @@ export function AuthMenu({
         {isGuest ? "Guest" : email}
       </span>
       {isGuest ? (
-        <Link href="/login" className={buttonVariants({ size: "sm", variant: "outline" })}>
+        <Button size="sm" variant="outline" onClick={openSignup}>
           Save account
-        </Link>
+        </Button>
       ) : (
         <Button size="sm" variant="ghost" onClick={signOut}>
           Sign out

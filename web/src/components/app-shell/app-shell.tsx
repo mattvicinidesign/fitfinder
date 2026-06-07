@@ -12,8 +12,9 @@ import {
   useProfileOverlay,
 } from "@/components/app-shell/profile-overlay";
 import { SkeletonAppShell } from "@/components/ui/skeletons";
-import { navigateApp } from "@/lib/navigate-app";
+import { ensureGuestSession } from "@/lib/ensure-guest-session";
 import { isNativePlatform } from "@/lib/platform";
+import { toast } from "sonner";
 
 /**
  * Canonical app chrome: centered phone-width frame + iOS tab bar on every platform.
@@ -63,20 +64,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (isNativePlatform() && !hasCompletedWelcome()) return;
 
     let cancelled = false;
-    const supabase = createClient();
 
-    void supabase.auth.getSession().then(({ data: { session } }) => {
+    void ensureGuestSession().then(({ error }) => {
       if (cancelled) return;
-      if (session?.user) {
-        setSignedIn(true);
+      if (error) {
+        toast.error(error);
         return;
       }
-      const loginUrl = `/login?next=${encodeURIComponent(pathname)}`;
-      if (isNativePlatform()) {
-        navigateApp(loginUrl, router, "replace");
-        return;
-      }
-      router.replace(loginUrl);
+
+      setSignedIn(true);
     });
 
     return () => {

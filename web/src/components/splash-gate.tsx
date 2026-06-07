@@ -86,7 +86,6 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
 
   const welcomeRouteMatches = useCallback(
     (target: string, path: string) => {
-      if (target === "/login") return path.startsWith("/login");
       return path === target || path.startsWith(`${target}/`);
     },
     [],

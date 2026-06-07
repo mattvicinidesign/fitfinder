@@ -128,7 +128,7 @@ export function ProfileScreen() {
       return;
     }
 
-    window.location.href = "/login";
+    window.location.href = "/home";
   }
 
   return (

@@ -2,8 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Refreshes the Supabase auth session on every request and gates the
- * authenticated areas of the app.
+ * Refreshes the Supabase auth session on every request.
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -29,31 +28,7 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const path = request.nextUrl.pathname;
-  const protectedPrefixes = [
-    "/home",
-    "/analyze",
-    "/saved",
-    "/history",
-    "/compare",
-    "/profile",
-    "/onboarding",
-    "/settings",
-  ];
-  const needsAuth =
-    path !== "/preview" &&
-    protectedPrefixes.some((p) => path === p || path.startsWith(`${p}/`));
-
-  if (!user && needsAuth) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
-  }
+  await supabase.auth.getUser();
 
   return response;
 }
