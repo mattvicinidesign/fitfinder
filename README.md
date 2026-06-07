@@ -98,7 +98,7 @@ Same routes everywhere: `/home`, `/analyze`, `/saved`, `/history`, `/profile`.
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY` (optional; needed for Settings → Delete account)
 6. Do **not** set `CAPACITOR_BUILD` on Vercel — that flag is for iOS static export only.
-7. Push to `main` — each commit triggers a production deploy.
+7. Push to `main` — each commit triggers a production deploy. Confirm the latest deployment shows **Ready** in the Vercel dashboard before testing the URL.
 
 **OpenAI** (`OPENAI_API_KEY`) is a Supabase Edge Function secret, not a Vercel env var. Copy `supabase/.env.example` to `supabase/.env`, then:
 
