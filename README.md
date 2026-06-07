@@ -90,6 +90,22 @@ Same routes everywhere: `/home`, `/analyze`, `/saved`, `/history`, `/profile`.
 ### Vercel (web)
 
 1. Connect the GitHub repo in Vercel.
-2. Set **Root Directory** to `web/`.
-3. Add env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-4. Push to `main` — each commit triggers a production deploy.
+2. Set **Root Directory** to `web` (required — the Next.js app is not at the repo root).
+3. Set **Framework Preset** to **Next.js** (not “Other”).
+4. Leave **Output Directory** empty (Vercel auto-detects `.next` for Next.js).
+5. Add Production env vars:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (optional; needed for Settings → Delete account)
+6. Do **not** set `CAPACITOR_BUILD` on Vercel — that flag is for iOS static export only.
+7. Push to `main` — each commit triggers a production deploy.
+
+**OpenAI** (`OPENAI_API_KEY`) is a Supabase Edge Function secret, not a Vercel env var. See `supabase/.env.example`.
+
+#### Vercel 404 (`NOT_FOUND` on every route)
+
+If the deploy shows “Ready” but every URL returns Vercel’s `404: NOT_FOUND` box:
+
+- Confirm **Root Directory** = `web` and **Framework Preset** = **Next.js**, then redeploy (clear build cache).
+- Open the URL from the latest deployment in the Vercel dashboard, not an old or deleted link.
+- If the build log lists routes (`/`, `/home`, `/analyze`, …) but production still 404s, delete and re-import the Vercel project with the same settings.
