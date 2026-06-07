@@ -72,15 +72,24 @@ After `cap sync`, confirm `fitfinder` URL scheme in `web/ios/App/App/Info.plist`
 
 | Viewport | Navigation |
 | -------- | ---------- |
-| Desktop  | Left sidebar |
-| Mobile / iOS | Bottom tab bar |
+| Desktop  | Centered phone-width column + bottom tab bar |
+| Mobile / iOS | Bottom tab bar (Home, Saved, History, Profile) |
 
-Same routes everywhere: `/analyze`, `/saved`, `/history`, `/compare`, `/profile`.
+**Analyze Fit** is the primary CTA on Home (`/analyze`), not a tab.
+
+Same routes everywhere: `/home`, `/analyze`, `/saved`, `/history`, `/profile`.
 
 ## Deploy
 
 | Target | Command / platform |
 | ------ | ------------------ |
-| Web    | Vercel — root directory `web/`, standard `next build` |
+| Web    | **Vercel** — root directory `web/`, `next build`. Pushes to `main` auto-deploy production. |
 | iOS    | Xcode archive from `web/ios/` after `npm run cap:sync` |
 | API    | Supabase Cloud — `supabase db push` + `functions deploy` |
+
+### Vercel (web)
+
+1. Connect the GitHub repo in Vercel.
+2. Set **Root Directory** to `web/`.
+3. Add env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+4. Push to `main` — each commit triggers a production deploy.
