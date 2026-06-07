@@ -178,6 +178,8 @@ export function buildClientProfileFields(
   rows: PostingDetailRow[],
   highlightCtx: PostingDetailHighlightContext,
 ): SectionFieldScore[] {
+  if (ctx.isGuest) return [];
+
   const originRow = postingRowByKey(rows, "clientOrigin");
   const ratingRow = postingRowByKey(rows, "clientRating");
   const avgRow = postingRowByKey(rows, "clientAverageHourlyRate");

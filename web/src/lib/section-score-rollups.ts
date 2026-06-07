@@ -43,7 +43,6 @@ const REGISTERED_SECTION_IDS: ReportSectionId[] = [
 ];
 
 const GUEST_SECTION_IDS: ReportSectionId[] = [
-  "clientProfile",
   "clientPreferences",
   "roleDetails",
   "categoryMatching",

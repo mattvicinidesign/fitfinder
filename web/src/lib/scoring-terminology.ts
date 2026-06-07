@@ -52,7 +52,7 @@ export const GLOBAL_SCORE_INFO =
 
 export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
   clientProfile:
-    "How well you match the client profile — location, timezone, rating, and average pay rate. Each item found in the posting counts equally.",
+    "How well you match the client profile — location, timezone, rating, and average pay rate. Registered users only; each item found in the posting counts equally.",
   clientPreferences:
     "How well you match the client preferences — location, timezone, talent type, and AI emphasis stated in the posting.",
   roleDetails:
