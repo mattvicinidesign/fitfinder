@@ -9,8 +9,7 @@ with Next.js 16, TypeScript, Tailwind v4, and shadcn/ui. Wrapped for iOS with
 ```
 src/
 ├── app/
-│   ├── page.tsx              # marketing landing
-│   ├── login/
+│   ├── page.tsx              # entry redirect → /home
 │   ├── auth/callback/        # magic link + deep link (web + fitfinder://)
 │   └── (app)/                # authenticated shell
 │       ├── layout.tsx        # AppShell (sidebar + bottom tabs)
@@ -77,7 +76,10 @@ for **Files** and **camera roll** (`accept` for documents and `image/*`).
 
 ## Deploy web (Vercel)
 
-Root directory: `web/`. Environment variables:
+See **[VERCEL.md](./VERCEL.md)** for the full import checklist.
+
+Root directory: `web/`. Required env vars:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (optional; delete account)

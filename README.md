@@ -89,33 +89,20 @@ Same routes everywhere: `/home`, `/analyze`, `/saved`, `/history`, `/profile`.
 
 ### Vercel (web)
 
+**Step-by-step setup:** [`web/VERCEL.md`](./web/VERCEL.md)
+
 Repo: [github.com/mattvicinidesign/fitfinder](https://github.com/mattvicinidesign/fitfinder)
 
-1. Connect the GitHub repo in Vercel.
-2. Set **Root Directory** to `web` (required — the Next.js app is not at the repo root).
-3. Set **Framework Preset** to **Next.js** (not “Other”).
-4. Leave **Output Directory** empty (Vercel auto-detects `.next` for Next.js).
-5. Add Production env vars:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY` (optional; needed for Settings → Delete account)
-6. Do **not** set `CAPACITOR_BUILD` on Vercel — that flag is for iOS static export only.
-7. Push to `main` — each commit triggers a production deploy. Confirm the latest deployment shows **Ready** in the Vercel dashboard before testing the URL.
+Quick summary:
 
-**OpenAI** (`OPENAI_API_KEY`) is a Supabase Edge Function secret, not a Vercel env var. Put it in `supabase/.env`, then:
+1. Import repo in Vercel with **Root Directory** = `web`, **Framework Preset** = **Next.js**.
+2. Add env vars from your local `web/.env.local` (`NEXT_PUBLIC_SUPABASE_*`, optional `SUPABASE_SERVICE_ROLE_KEY`).
+3. Do **not** set `CAPACITOR_BUILD` on Vercel.
+4. Deploy, then add your production URL to Supabase Auth redirect URLs (`/auth/callback`).
+5. Push to `main` for auto-deploys after the project is connected.
+
+**OpenAI** (`OPENAI_API_KEY`) is a Supabase Edge Function secret, not a Vercel env var:
 
 ```bash
 supabase secrets set --env-file ./supabase/.env
 ```
-
-Add your Vercel production URL to Supabase Auth redirect URLs (e.g. `https://your-app.vercel.app/auth/callback`).
-
-#### Vercel 404 (`NOT_FOUND` on every route)
-
-If the deploy shows “Ready” but every URL returns Vercel’s `404: NOT_FOUND` box:
-
-- Confirm **Root Directory** = `web` and **Framework Preset** = **Next.js**, then redeploy (clear build cache).
-- Open the URL from the latest deployment in the Vercel dashboard, not an old or deleted link.
-- If the build log lists routes (`/`, `/home`, `/analyze`, …) but production still 404s, delete and re-import the Vercel project with the same settings.
-
-The app ships `web/vercel.json` and uses `src/proxy.ts` for Supabase session refresh (Next.js 16 convention).

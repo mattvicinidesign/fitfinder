@@ -1,0 +1,5 @@
+ios/
+out/
+.capacitor/
+*.xcuserstate
+xcuserdata/
