@@ -9,9 +9,15 @@ export {
   WELCOME_STORAGE_KEY as WELCOME_SESSION_KEY,
 } from "@/lib/app-session";
 
-/** True in local/dev builds only — never enabled in production. */
+/**
+ * Splash QA panel (simulate first launch, returning user, replay splash).
+ * - Local: always on
+ * - Vercel Preview: on by default (see next.config.ts)
+ * - Vercel Production: set NEXT_PUBLIC_ENABLE_SPLASH_QA=true to enable
+ */
 export function isSplashQaEnabled(): boolean {
-  return process.env.NODE_ENV === "development";
+  if (process.env.NODE_ENV === "development") return true;
+  return process.env.NEXT_PUBLIC_ENABLE_SPLASH_QA === "true";
 }
 
 export function simulateFirstLaunch(): void {

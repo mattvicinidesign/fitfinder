@@ -32,6 +32,12 @@ Copy values from your local `web/.env.local`.
 
 Apply to **Production**, **Preview**, and **Development** so preview deploys work.
 
+**Optional (QA on deployed builds):**
+
+| Variable | When to set |
+| -------- | ----------- |
+| `NEXT_PUBLIC_ENABLE_SPLASH_QA` | `true` on **Production** to show the Splash QA floater (simulate first launch, returning user, replay splash). **Preview** deploys enable this automatically. |
+
 **Do not add** these to Vercel:
 
 - `CAPACITOR_BUILD` — breaks the web build (forces static export)
@@ -77,6 +83,16 @@ supabase functions deploy
 - Guest session starts automatically (no login screen)
 - Analyze flow calls Edge Functions via `/api/functions/*`
 - Magic-link sign-in completes at `/auth/callback`
+
+### Splash QA on Vercel
+
+Local dev always shows the **QA** floater (bottom-right) for first-launch simulation.
+On Vercel:
+
+- **Preview** URLs — QA is on automatically after deploy (no env var needed).
+- **Production** — add `NEXT_PUBLIC_ENABLE_SPLASH_QA=true`, redeploy, then use **Simulate first launch** / **Simulate returning user** / **Replay splash now**.
+
+Without QA, clear site data or use a private window to approximate a first visit.
 
 ## Local parity check
 

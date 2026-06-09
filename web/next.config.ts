@@ -20,7 +20,15 @@ function assertProductionEnv() {
 
 assertProductionEnv();
 
+/** Splash QA on Vercel Preview deploys; override with NEXT_PUBLIC_ENABLE_SPLASH_QA. */
+const splashQaPublicFlag =
+  process.env.NEXT_PUBLIC_ENABLE_SPLASH_QA ??
+  (process.env.VERCEL_ENV === "preview" ? "true" : "");
+
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_ENABLE_SPLASH_QA: splashQaPublicFlag,
+  },
   // Static export for Capacitor iOS; standard build for Vercel (SSR + proxy).
   output: isCapacitor ? "export" : undefined,
   images: {
