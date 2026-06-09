@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { CapacitorBridge } from "@/components/capacitor-bridge";
 import { AppSessionBridge } from "@/components/app-session-bridge";
+import { CapacitorBridge } from "@/components/capacitor-bridge";
+import { FirstLaunchReset } from "@/components/first-launch-reset";
 import { SplashGate } from "@/components/splash-gate";
 
 const inter = Inter({
@@ -44,6 +45,7 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="h-dvh overflow-hidden bg-background text-foreground">
+        <FirstLaunchReset />
         <CapacitorBridge />
         <AppSessionBridge />
         <SplashGate>{children}</SplashGate>

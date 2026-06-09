@@ -56,6 +56,15 @@ If every URL returns Vercel’s `404: NOT_FOUND` box but the build succeeded:
 - Redeploy with “Clear build cache”
 - As a last resort, delete and re-import the project with the same settings
 
+## Reset first-time launch (web QA)
+
+Open your deployment with `?firstLaunch=1` to clear Fit Finder browser storage and
+sign out, then reload without the query param (splash → welcome flow runs again).
+
+Example: `https://your-app.vercel.app/?firstLaunch=1`
+
+Web only — does not apply to the iOS app.
+
 ## 4. Supabase Auth (after first deploy)
 
 Auth redirect URLs are defined in `supabase/config.toml` and applied to the hosted
