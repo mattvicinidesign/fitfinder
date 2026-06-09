@@ -67,8 +67,9 @@ supabase config push --yes
 
 Enable **Anonymous sign-ins** for guest mode.
 
-After `cap sync`, confirm `fitfinder` URL scheme in `web/ios/App/App/Info.plist`
-(under `CFBundleURLTypes`).
+After `cap sync`, open **`web/ios/App/App.xcworkspace`** in Xcode (not
+`App.xcodeproj`), then confirm the `fitfinder` URL scheme in
+`web/ios/App/App/Info.plist` (under `CFBundleURLTypes`).
 
 ## Navigation (one app, responsive chrome)
 
