@@ -25,8 +25,14 @@ const splashQaPublicFlag =
   process.env.NEXT_PUBLIC_ENABLE_SPLASH_QA ??
   (process.env.VERCEL_ENV === "preview" ? "true" : "");
 
+/** Baked into client bundle for auth emailRedirectTo (see auth-redirect.ts). */
+const publicAppUrl =
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+
 const nextConfig: NextConfig = {
   env: {
+    NEXT_PUBLIC_APP_URL: publicAppUrl,
     NEXT_PUBLIC_ENABLE_SPLASH_QA: splashQaPublicFlag,
   },
   // Static export for Capacitor iOS; standard build for Vercel (SSR + proxy).

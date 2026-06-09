@@ -70,9 +70,13 @@ Guest Mode uses anonymous sign-in, which still yields a valid JWT.
 ```bash
 supabase link --project-ref <ref>
 supabase db push                         # apply migrations to the cloud DB
+supabase config push --yes               # auth redirect URLs (Vercel + localhost)
 supabase functions deploy parse-resume parse-job analyze
 supabase secrets set --env-file ./.env   # push OPENAI_API_KEY
 ```
+
+After changing `config.toml` `[auth]` URLs, run `config push` so magic links from
+Vercel preview/production stop falling back to `localhost`.
 
 ### Hosted DB setup via Dashboard
 

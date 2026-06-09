@@ -58,10 +58,12 @@ npm install
 npm run cap:run                    # build static export, sync, open Xcode
 ```
 
-In Supabase Dashboard → Authentication → URL Configuration, add redirect URLs:
+Auth redirect URLs (localhost, Vercel `*.vercel.app`, iOS deep link) live in
+`supabase/config.toml`. After cloning or editing them, push to the hosted project:
 
-- `http://localhost:3000/auth/callback`
-- `fitfinder://auth-callback`
+```bash
+supabase config push --yes
+```
 
 Enable **Anonymous sign-ins** for guest mode.
 

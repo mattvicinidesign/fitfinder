@@ -29,6 +29,7 @@ Copy values from your local `web/.env.local`.
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase → Project Settings → API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Same page (`anon` / publishable key) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Recommended | Needed for Profile → Delete account |
+| `NEXT_PUBLIC_APP_URL` | Optional | Custom domain only (e.g. `https://fitfinder.vercel.app`). Preview/production URLs are set automatically from `VERCEL_URL` at build time. |
 
 Apply to **Production**, **Preview**, and **Development** so preview deploys work.
 
@@ -57,13 +58,18 @@ If every URL returns Vercel’s `404: NOT_FOUND` box but the build succeeded:
 
 ## 4. Supabase Auth (after first deploy)
 
-In Supabase Dashboard → **Authentication** → **URL Configuration**:
+Auth redirect URLs are defined in `supabase/config.toml` and applied to the hosted
+project with:
 
-1. **Site URL** — your production URL (e.g. `https://fitfinder.vercel.app`)
-2. **Redirect URLs** — add:
-   - `https://<your-vercel-domain>/auth/callback`
-   - `http://localhost:3000/auth/callback` (local dev)
-   - `fitfinder://auth-callback` (iOS)
+```bash
+supabase config push --yes
+```
+
+That sets **Site URL** to `https://fitfinder.vercel.app` and allow-lists localhost,
+all `*.vercel.app` preview URLs, and `fitfinder://` for iOS.
+
+If magic links still open `localhost`, re-run `config push` and request a **new**
+email (old links keep the old redirect).
 
 Enable **Anonymous sign-ins** (Authentication → Providers) for guest mode.
 
