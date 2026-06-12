@@ -1,5 +1,6 @@
 // Post-process parsed job JSON — keep in sync with supabase/functions/_shared/normalize_parsed_job.ts
 
+import { sanitizeEmployerType } from "@/lib/employer-type-validate";
 import { normalizePostingDetails } from "@/lib/posting-details";
 import { enrichAiEmphasisFromJobText } from "@/lib/ai-emphasis-match";
 import { sanitizeCountryRequirement } from "@/lib/preferred-qualifications-parse";
@@ -319,6 +320,7 @@ function partitionSkills(skills: string[]): {
 export function normalizeParsedJob(
   parsed: ParsedJob,
   jobText: string,
+  jobTitle?: string | null,
 ): ParsedJob {
   const toolsFromText = extractToolsFromJobText(jobText);
   const taggedSkills = extractUpworkTaggedSkills(jobText);
@@ -376,5 +378,6 @@ export function normalizeParsedJob(
     countryRequirement,
     aiRequirements: aiEmphasis.aiRequirements,
     aiMaturityLevel: aiEmphasis.aiMaturityLevel,
+    employerType: sanitizeEmployerType(jobText, parsed, jobTitle),
   };
 }

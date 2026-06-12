@@ -5,7 +5,6 @@ import {
   ENGAGEMENT_TYPE_OPTIONS,
   HOURLY_RATE_PRESETS,
   REGION_OPTIONS,
-  RED_FLAG_OPTIONS,
 } from "@/lib/onboarding-options";
 import type { UserProfile } from "@/lib/profile";
 import type { OnboardingStep } from "@/components/onboarding/onboarding-wizard";
@@ -82,17 +81,6 @@ export function createPreferenceSteps(
           options={REGION_OPTIONS}
           value={profile.preferredRegions}
           onChange={(v) => patch({ preferredRegions: v })}
-        />
-      ),
-    },
-    {
-      title: "Automatically flag these opportunity types?",
-      subtitle: "Matching jobs get a visible warning and a small penalty.",
-      content: (
-        <ChipMultiSelect
-          options={RED_FLAG_OPTIONS}
-          value={profile.redFlags}
-          onChange={(v) => patch({ redFlags: v })}
         />
       ),
     },

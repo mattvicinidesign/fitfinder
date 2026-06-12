@@ -230,26 +230,40 @@ export function buildClientProfileFields(
     ctx.parsedJob?.employerType ??
     "unknown";
   const employerPoints = clientQualityEmployerPoints(employerType);
-  const employerIdentified = employerPoints != null;
-  fields.push(
-    employerIdentified
-      ? field(
-          "employerType",
-          CLIENT_QUALITY_FIELD_LABELS.employerType,
-          true,
-          headerEmployerKindLabel(employerType),
-          employerPoints >= 50 ? "match" : "mismatch",
-          employerPoints,
-        )
-      : field(
-          "employerType",
-          CLIENT_QUALITY_FIELD_LABELS.employerType,
-          false,
-          "",
-          "unknown",
-          null,
-        ),
-  );
+  if (employerType === "unknown") {
+    fields.push(
+      field(
+        "employerType",
+        CLIENT_QUALITY_FIELD_LABELS.employerType,
+        true,
+        "Unknown",
+        "unknown",
+        null,
+      ),
+    );
+  } else if (employerPoints != null) {
+    fields.push(
+      field(
+        "employerType",
+        CLIENT_QUALITY_FIELD_LABELS.employerType,
+        true,
+        headerEmployerKindLabel(employerType),
+        employerPoints >= 50 ? "match" : "mismatch",
+        employerPoints,
+      ),
+    );
+  } else {
+    fields.push(
+      field(
+        "employerType",
+        CLIENT_QUALITY_FIELD_LABELS.employerType,
+        false,
+        "Unknown",
+        "unknown",
+        null,
+      ),
+    );
+  }
 
   const datePostedValue =
     details?.datePosted?.trim() || datePostedRow?.value || "";

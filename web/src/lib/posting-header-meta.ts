@@ -68,7 +68,7 @@ export function headerEmployerKindLabel(
 ): string {
   if (employerType === "agency") return "Agency";
   if (employerType === "product_company") return "Company";
-  return "Not Found";
+  return "Unknown";
 }
 
 /** e.g. "Posted 4 days ago" → "4 Days Ago". */

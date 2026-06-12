@@ -1,6 +1,7 @@
 // Post-process parsed job JSON so toolRequirements reflect the full posting
 // (including bonus / nice-to-have sections the model often skips).
 
+import { sanitizeEmployerType } from "./employer_type_validate.ts";
 import { normalizePostingDetails } from "./posting_details.ts";
 import { enrichAiEmphasisFromJobText } from "./ai_emphasis_match.ts";
 import { sanitizeCountryRequirement } from "./preferred_qualifications_parse.ts";
@@ -323,6 +324,7 @@ function partitionSkills(skills: string[]): {
 export function normalizeParsedJob(
   parsed: ParsedJob,
   jobText: string,
+  jobTitle?: string | null,
 ): ParsedJob {
   const toolsFromText = extractToolsFromJobText(jobText);
   const taggedSkills = extractUpworkTaggedSkills(jobText);
@@ -388,5 +390,6 @@ export function normalizeParsedJob(
     countryRequirement,
     aiRequirements: aiEmphasis.aiRequirements,
     aiMaturityLevel: aiEmphasis.aiMaturityLevel,
+    employerType: sanitizeEmployerType(jobText, parsed, jobTitle),
   };
 }

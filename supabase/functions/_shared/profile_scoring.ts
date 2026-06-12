@@ -25,7 +25,6 @@ export interface ProfileScoringRow {
   preferred_engagement_types?: string[] | null;
   preferred_regions?: string[] | null;
   preferred_company_types?: string[] | null;
-  red_flags?: string[] | null;
 }
 
 export interface OnboardingAdjustment {
@@ -90,35 +89,6 @@ export function mergeProfileIntoResumeForScoring(
 
   return merged;
 }
-
-type RedFlagContext = {
-  blob: string;
-  job: ParsedJob;
-  jobTitle: string | null;
-  posting: PostingContext | null;
-};
-
-const RED_FLAG_DETECTORS: Record<string, (ctx: RedFlagContext) => boolean> = {
-  "Agency Hiring": (ctx) =>
-    ctx.job.employerType === "agency" ||
-    /\bagency\b|\bagencies\b|\bstaffing firm\b/.test(ctx.blob),
-  "Marketing Designer Roles": (ctx) =>
-    /\bmarketing designer\b|\bemail marketing designer\b|\bcampaign designer\b/.test(
-      ctx.blob,
-    ),
-  "Brand Designer Roles": (ctx) => /\bbrand designer\b|\bbrand design\b/.test(ctx.blob),
-  "Graphic Design Roles": (ctx) =>
-    /\bgraphic designer\b|\bgraphic design\b/.test(ctx.blob),
-  "Visual Designer Roles": (ctx) =>
-    /\bvisual designer\b|\bvisual design specialist\b/.test(ctx.blob),
-  "Shopify/E-Commerce Roles": (ctx) =>
-    /\bshopify\b|\be[- ]?commerce designer\b|\becommerce designer\b/.test(ctx.blob),
-  "WordPress Roles": (ctx) => /\bwordpress\b|\bwp designer\b/.test(ctx.blob),
-  "Consumer Mobile Roles": (ctx) =>
-    /\bconsumer mobile\b|\bdating app\b|\blifestyle app\b|\bcreator economy\b/.test(
-      ctx.blob,
-    ),
-};
 
 function inferJobEngagementTypes(
   job: ParsedJob,
@@ -205,7 +175,7 @@ function preferenceOverlap(selected: string[], inferred: string[]): string[] {
   return selected.filter((label) => inferredNorm.has(normalizeText(label)));
 }
 
-/** User-selected red flags and preferences adjust career fit (additive). */
+/** User onboarding preferences adjust career fit (additive). */
 export function computeOnboardingCareerFitAdjustment(
   resume: ParsedResume,
   job: ParsedJob,
@@ -237,24 +207,9 @@ export function computeOnboardingCareerFitAdjustment(
     ].join(" "),
   );
 
-  const ctx: RedFlagContext = {
-    blob,
-    job,
-    jobTitle: options.jobTitle ?? null,
-    posting: options.posting ?? null,
-  };
-
   let delta = 0;
   const negativeSignalsFound: string[] = [];
   const positiveSignalsFound: string[] = [];
-
-  for (const flag of stringArray(profile.red_flags)) {
-    const detect = RED_FLAG_DETECTORS[flag];
-    if (detect?.(ctx)) {
-      delta -= 8;
-      negativeSignalsFound.push(`Your red flag: ${flag}`);
-    }
-  }
 
   const engagementPrefs = stringArray(profile.preferred_engagement_types);
   const engagementInJob = inferJobEngagementTypes(job, options.posting ?? null, blob);

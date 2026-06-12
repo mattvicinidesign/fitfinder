@@ -15,7 +15,6 @@ import {
   ENGAGEMENT_TYPE_OPTIONS,
   HOURLY_RATE_PRESETS,
   REGION_OPTIONS,
-  RED_FLAG_OPTIONS,
 } from "@/lib/onboarding-options";
 import {
   emptyUserProfile,
@@ -286,17 +285,6 @@ export function ProfileScreen() {
                 options={COMPANY_TYPE_OPTIONS}
                 value={profile.preferredCompanyTypes}
                 onChange={(v) => patch({ preferredCompanyTypes: v })}
-              />
-            </Section>
-
-            <Section
-              title="Penalize these opportunity types"
-              subtitle="Matching roles are flagged as low alignment."
-            >
-              <ChipMultiSelect
-                options={RED_FLAG_OPTIONS}
-                value={profile.redFlags}
-                onChange={(v) => patch({ redFlags: v })}
               />
             </Section>
           </div>

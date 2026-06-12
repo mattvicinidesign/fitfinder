@@ -17,7 +17,6 @@ export interface UserProfile {
   preferredEngagementTypes: string[];
   preferredCompanyTypes: string[];
   preferredRegions: string[];
-  redFlags: string[];
   country: string | null;
   timezone: string | null;
   onboardingCompletedAt: string | null;
@@ -31,7 +30,6 @@ export function emptyUserProfile(): UserProfile {
     preferredEngagementTypes: [],
     preferredCompanyTypes: [],
     preferredRegions: [],
-    redFlags: [],
     country: null,
     timezone: null,
     onboardingCompletedAt: null,
@@ -39,7 +37,7 @@ export function emptyUserProfile(): UserProfile {
 }
 
 const PROFILE_SELECT =
-  "full_name, professional_title, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, red_flags, onboarding_completed_at";
+  "full_name, professional_title, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, onboarding_completed_at";
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -98,7 +96,6 @@ export async function fetchUserProfile(): Promise<UserProfile | null> {
     preferredEngagementTypes: toStringArray(data.preferred_engagement_types),
     preferredCompanyTypes: toStringArray(data.preferred_company_types),
     preferredRegions: toStringArray(data.preferred_regions),
-    redFlags: toStringArray(data.red_flags),
     country: typeof data.country === "string" ? data.country : null,
     timezone: typeof data.timezone === "string" ? data.timezone : null,
     onboardingCompletedAt:
@@ -131,7 +128,6 @@ export async function saveUserProfile(
     preferred_engagement_types: profile.preferredEngagementTypes,
     preferred_regions: profile.preferredRegions,
     preferred_company_types: profile.preferredCompanyTypes,
-    red_flags: profile.redFlags,
     desired_compensation_min: rate != null && rate > 0 ? rate : null,
     desired_compensation_period: rate != null && rate > 0 ? "hour" : null,
     desired_compensation_currency: "USD",
@@ -189,8 +185,7 @@ export function profilesEqual(a: UserProfile, b: UserProfile): boolean {
     a.minimumHourlyRate === b.minimumHourlyRate &&
     arraysEqual(a.preferredEngagementTypes, b.preferredEngagementTypes) &&
     arraysEqual(a.preferredCompanyTypes, b.preferredCompanyTypes) &&
-    arraysEqual(a.preferredRegions, b.preferredRegions) &&
-    arraysEqual(a.redFlags, b.redFlags)
+    arraysEqual(a.preferredRegions, b.preferredRegions)
   );
 }
 
@@ -200,7 +195,6 @@ const COMPLETION_FIELDS: (keyof UserProfile)[] = [
   "preferredEngagementTypes",
   "preferredCompanyTypes",
   "preferredRegions",
-  "redFlags",
 ];
 
 function isFieldFilled(profile: UserProfile, key: keyof UserProfile): boolean {

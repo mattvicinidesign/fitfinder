@@ -94,13 +94,13 @@ Deno.serve(async (req: Request) => {
       { role: "system", content: JOB_PARSE_SYSTEM },
       { role: "user", content: jobText },
     ]);
-    const parsedJob = normalizeParsedJob(parsedJobRaw, jobText);
+    const parsedJob = normalizeParsedJob(parsedJobRaw, jobText, jobTitle);
 
     // Profile fills compensation, location, qualified signals, and onboarding prefs.
     const { data: profileRow } = await supabase
       .from("profiles")
       .select(
-        "desired_compensation, desired_compensation_min, desired_compensation_max, desired_compensation_currency, desired_compensation_period, qualified_industries, qualified_skills, country, timezone, preferred_engagement_types, preferred_regions, preferred_company_types, red_flags",
+        "desired_compensation, desired_compensation_min, desired_compensation_max, desired_compensation_currency, desired_compensation_period, qualified_industries, qualified_skills, country, timezone, preferred_engagement_types, preferred_regions, preferred_company_types",
       )
       .eq("user_id", userId)
       .maybeSingle();

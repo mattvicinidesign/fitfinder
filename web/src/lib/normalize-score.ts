@@ -168,7 +168,9 @@ function normalizeOpportunityDebug(raw: unknown): OpportunityEngineDebug | undef
     matchedQualifications: asArray<string>(d.matchedQualifications),
     missingQualifications: asArray<string>(d.missingQualifications),
     preferencesApplied: asArray<string>(d.preferencesApplied),
-    redFlagsTriggered: asArray<string>(d.redFlagsTriggered),
+    preferenceMismatches: asArray<string>(
+      d.preferenceMismatches ?? d.redFlagsTriggered,
+    ),
     categoryScores: asArray<unknown>(d.categoryScores).map(normalizeOpportunityCategory),
     weightingCalculation:
       typeof d.weightingCalculation === "string" ? d.weightingCalculation : "",
@@ -340,6 +342,7 @@ function enrichParsedJob(
       ...(compensation ? { compensation } : { compensation: null }),
     },
     text,
+    jobTitle,
   );
 }
 

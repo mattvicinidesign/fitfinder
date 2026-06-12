@@ -272,7 +272,6 @@ function scorePreferenceAlignment(
     profile?.preferred_engagement_types?.length ||
       profile?.preferred_company_types?.length ||
       profile?.preferred_regions?.length ||
-      profile?.red_flags?.length ||
       profile?.desired_compensation_min,
   );
 
@@ -412,7 +411,7 @@ export function scoreOpportunity(
     matchedQualifications: qual.matchedLabels ?? [],
     missingQualifications: qual.missingLabels ?? [],
     preferencesApplied: onboarding.positiveSignalsFound,
-    redFlagsTriggered: onboarding.negativeSignalsFound,
+    preferenceMismatches: onboarding.negativeSignalsFound,
     categoryScores: categories,
     weightingCalculation: weightParts.join(" | "),
     finalReasoning,

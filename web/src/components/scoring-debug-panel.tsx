@@ -90,8 +90,8 @@ export function ScoringDebugPanel({ debug }: { debug: OpportunityEngineDebug }) 
         <DebugSection title="Profile preferences applied">
           <DebugList items={debug.preferencesApplied} />
         </DebugSection>
-        <DebugSection title="Red flags triggered">
-          <DebugList items={debug.redFlagsTriggered} />
+        <DebugSection title="Preference mismatches">
+          <DebugList items={debug.preferenceMismatches} />
         </DebugSection>
       </div>
 

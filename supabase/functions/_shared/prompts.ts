@@ -63,8 +63,10 @@ You extract structured data from job descriptions. Return ONLY valid JSON matchi
 }
 
 Posting context (informational only):
-- employerType "agency": creative/marketing/dev studio, consultancy, firm serving multiple clients.
-- employerType "product_company": one product/SaaS/startup hiring for their own product.
+- employerType "agency": ONLY when the posting explicitly indicates a creative/marketing/dev agency, studio, or consultancy serving clients (e.g. "we are an agency", "our clients", "design studio", "consultancy"). Upwork/freelance hire alone is NOT agency evidence.
+- employerType "product_company": when the poster is building or operating their own product/platform/app/SaaS (e.g. "our product", "web-based product in development", "training platform", "our users", "end users" of their product).
+- Do NOT infer agency from design/UX role titles, "collaborate with stakeholders", or generic client work on a single product.
+- Use employerType "unknown" when the posting does not clearly state agency vs in-house product company. Prefer "unknown" over guessing.
 - hireTarget "freelancer": contract, freelance, 1099, consultant, Upwork, project-based, hourly contractor.
 - hireTarget "agency": vendor, subcontract, creative partner, agency of record, RFP to agency.
 - hireTarget "direct_hire": full-time, FTE, employee, W2, join our team (not freelance, not hiring an agency).

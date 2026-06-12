@@ -155,7 +155,7 @@ export interface OpportunityEngineDebug {
   matchedQualifications: string[];
   missingQualifications: string[];
   preferencesApplied: string[];
-  redFlagsTriggered: string[];
+  preferenceMismatches: string[];
   categoryScores: OpportunityCategoryScore[];
   weightingCalculation: string;
   finalReasoning: string;
