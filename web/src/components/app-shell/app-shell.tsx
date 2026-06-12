@@ -24,6 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const underlyingRef = useRef<React.ReactNode>(null);
   const profileContentRef = useRef<React.ReactNode>(null);
 
@@ -68,10 +69,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     void ensureGuestSession().then(({ error }) => {
       if (cancelled) return;
       if (error) {
+        setAuthError(error);
         toast.error(error);
         return;
       }
 
+      setAuthError(null);
       setSignedIn(true);
     });
 
@@ -100,6 +103,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (needsAuth && !signedIn) {
+    if (authError) {
+      return (
+        <AppFrame>
+          <main className="flex min-h-full flex-col items-center justify-center gap-3 px-6 text-center">
+            <p className="text-base font-medium text-foreground">
+              Cannot connect to Fit Finder
+            </p>
+            <p className="text-sm text-muted-foreground">{authError}</p>
+            <p className="text-xs text-muted-foreground">
+              Check `NEXT_PUBLIC_SUPABASE_URL` in `web/.env.local` and restart
+              the dev server.
+            </p>
+          </main>
+        </AppFrame>
+      );
+    }
+
     const hideTabBar =
       pathname === "/analyze" ||
       pathname.startsWith("/analyze/report") ||
