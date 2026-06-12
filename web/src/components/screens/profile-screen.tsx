@@ -202,11 +202,6 @@ export function ProfileScreen() {
                   value={profile.fullName ?? ""}
                   onChange={(v) => patch({ fullName: v })}
                 />
-              </div>
-            </Section>
-
-            <Section title="Location">
-              <div className="space-y-4">
                 <LabeledInput
                   label="Country"
                   value={profile.country ?? ""}
