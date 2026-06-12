@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/client";
 import { loadOnboardingProgress } from "@/lib/onboarding-progress";
 import {
   emptyUserProfile,
+  fetchUserProfileFromDatabase,
+  mergeUserProfileLayers,
+  normalizeUserProfile,
   saveUserProfile,
   type UserProfile,
 } from "@/lib/profile";
@@ -92,11 +95,29 @@ export async function applyPendingSignupProfile(): Promise<void> {
   if (!user) return;
 
   const pending = resolvePendingSignupProfile();
-  const profile =
-    pending?.profile ??
-    profileFromAuthMetadata(user.user_metadata as Record<string, unknown>);
-  if (!profile) return;
+  if (pending) {
+    const stored =
+      (await fetchUserProfileFromDatabase()) ?? emptyUserProfile();
+    const merged = normalizeUserProfile(
+      mergeUserProfileLayers(stored, pending.profile),
+    );
+    const { error } = await saveUserProfile(merged, { markComplete: true });
+    if (!error) clearPendingSignup();
+    return;
+  }
 
-  const { error } = await saveUserProfile(profile, { markComplete: true });
-  if (!error) clearPendingSignup();
+  const metaProfile = profileFromAuthMetadata(
+    user.user_metadata as Record<string, unknown>,
+  );
+  if (!metaProfile) return;
+
+  const stored = (await fetchUserProfileFromDatabase()) ?? emptyUserProfile();
+  if (stored.fullName?.trim() && stored.country?.trim()) return;
+
+  const merged = normalizeUserProfile(
+    mergeUserProfileLayers(stored, metaProfile),
+  );
+  await saveUserProfile(merged, {
+    markComplete: Boolean(stored.onboardingCompletedAt),
+  });
 }

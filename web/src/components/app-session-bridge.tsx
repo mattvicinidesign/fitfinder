@@ -2,6 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { applyPendingSignupProfile } from "@/lib/pending-signup";
 import {
   DEFAULT_APP_ROUTE,
   getLastRoute,
@@ -32,6 +34,17 @@ export function AppSessionBridge() {
       navigateApp(lastRoute, router, "replace");
     }
   }, [pathname, router]);
+
+  useEffect(() => {
+    void (async () => {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) return;
+      await applyPendingSignupProfile();
+    })();
+  }, []);
 
   useEffect(() => {
     if (!isWarmAppSession()) return;

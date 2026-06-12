@@ -1,4 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
+import {
+  COMPANY_TYPE_OPTIONS,
+  ENGAGEMENT_TYPE_OPTIONS,
+  REGION_OPTIONS,
+} from "@/lib/onboarding-options";
 
 /**
  * Onboarding/profile PREFERENCE model.
@@ -60,8 +65,155 @@ function resolveFullName(
   return nameFromAuthMetadata(user);
 }
 
-/** Load the signed-in user's profile, or null when not authenticated. */
-export async function fetchUserProfile(): Promise<UserProfile | null> {
+function rowToUserProfile(
+  data: Record<string, unknown>,
+  user: { user_metadata?: Record<string, unknown> },
+): UserProfile {
+  return {
+    fullName: resolveFullName(data.full_name, user),
+    minimumHourlyRate:
+      typeof data.desired_compensation_min === "number"
+        ? data.desired_compensation_min
+        : null,
+    preferredEngagementTypes: toStringArray(data.preferred_engagement_types),
+    preferredCompanyTypes: toStringArray(data.preferred_company_types),
+    preferredRegions: toStringArray(data.preferred_regions),
+    country: typeof data.country === "string" ? data.country : null,
+    timezone: typeof data.timezone === "string" ? data.timezone : null,
+    onboardingCompletedAt:
+      typeof data.onboarding_completed_at === "string"
+        ? data.onboarding_completed_at
+        : null,
+  };
+}
+
+const LEGACY_ENGAGEMENT_LABELS: Record<string, string> = {
+  Fractional: "Part Time",
+  "Part-Time": "Part Time",
+};
+
+const LEGACY_COMPANY_LABELS: Record<string, string> = {
+  "Scale-Up": "Startup",
+  "Founder-Led": "Startup",
+};
+
+function normalizePreferenceArray(
+  values: string[],
+  allowed: readonly string[],
+  legacy?: Record<string, string>,
+): string[] {
+  const allowedSet = new Set<string>(allowed);
+  const out: string[] = [];
+  for (const raw of values) {
+    const mapped = legacy?.[raw] ?? raw;
+    if (allowedSet.has(mapped) && !out.includes(mapped)) {
+      out.push(mapped);
+    }
+  }
+  return out;
+}
+
+/** Map stored onboarding labels to current chip options. */
+export function normalizeUserProfile(profile: UserProfile): UserProfile {
+  return {
+    ...profile,
+    preferredEngagementTypes: normalizePreferenceArray(
+      profile.preferredEngagementTypes,
+      ENGAGEMENT_TYPE_OPTIONS,
+      LEGACY_ENGAGEMENT_LABELS,
+    ),
+    preferredCompanyTypes: normalizePreferenceArray(
+      profile.preferredCompanyTypes,
+      COMPANY_TYPE_OPTIONS,
+      LEGACY_COMPANY_LABELS,
+    ),
+    preferredRegions: normalizePreferenceArray(
+      profile.preferredRegions,
+      REGION_OPTIONS,
+    ),
+  };
+}
+
+function pickString(
+  current: string | null,
+  next: string | null | undefined,
+): string | null {
+  if (current?.trim()) return current.trim();
+  if (typeof next === "string" && next.trim()) return next.trim();
+  return current;
+}
+
+function pickNumber(
+  current: number | null,
+  next: number | null | undefined,
+): number | null {
+  if (current != null && current > 0) return current;
+  if (next != null && next > 0) return next;
+  return current;
+}
+
+function pickArray(current: string[], next: string[] | undefined): string[] {
+  if (current.length > 0) return current;
+  if (next && next.length > 0) return [...next];
+  return current;
+}
+
+/** Fill empty profile fields from onboarding drafts (DB values win when set). */
+export function mergeUserProfileLayers(
+  base: UserProfile,
+  ...overlays: Partial<UserProfile>[]
+): UserProfile {
+  let merged = { ...base };
+  for (const overlay of overlays) {
+    merged = {
+      ...merged,
+      fullName: pickString(merged.fullName, overlay.fullName),
+      country: pickString(merged.country, overlay.country),
+      timezone: pickString(merged.timezone, overlay.timezone),
+      minimumHourlyRate: pickNumber(
+        merged.minimumHourlyRate,
+        overlay.minimumHourlyRate,
+      ),
+      preferredEngagementTypes: pickArray(
+        merged.preferredEngagementTypes,
+        overlay.preferredEngagementTypes,
+      ),
+      preferredCompanyTypes: pickArray(
+        merged.preferredCompanyTypes,
+        overlay.preferredCompanyTypes,
+      ),
+      preferredRegions: pickArray(
+        merged.preferredRegions,
+        overlay.preferredRegions,
+      ),
+      onboardingCompletedAt:
+        merged.onboardingCompletedAt ?? overlay.onboardingCompletedAt ?? null,
+    };
+  }
+  return merged;
+}
+
+async function loadLocalProfileDrafts(): Promise<Partial<UserProfile>[]> {
+  const { loadPendingSignup } = await import("@/lib/pending-signup");
+  const { loadOnboardingProgress } = await import("@/lib/onboarding-progress");
+
+  const drafts: Partial<UserProfile>[] = [];
+  const pending = loadPendingSignup()?.profile;
+  if (pending) drafts.push(pending);
+  const progress = loadOnboardingProgress()?.profile;
+  if (progress) drafts.push(progress);
+  return drafts;
+}
+
+function profileNeedsPreferenceSync(
+  stored: UserProfile,
+  resolved: UserProfile,
+): boolean {
+  return !profilesEqual(stored, resolved);
+}
+
+/** Raw profile row from Postgres (no local draft merge). */
+export async function fetchUserProfileFromDatabase(): Promise<UserProfile | null> {
   const supabase = createClient();
   const {
     data: { user },
@@ -81,22 +233,28 @@ export async function fetchUserProfile(): Promise<UserProfile | null> {
       : emptyUserProfile();
   }
 
-  return {
-    fullName: resolveFullName(data.full_name, user),
-    minimumHourlyRate:
-      typeof data.desired_compensation_min === "number"
-        ? data.desired_compensation_min
-        : null,
-    preferredEngagementTypes: toStringArray(data.preferred_engagement_types),
-    preferredCompanyTypes: toStringArray(data.preferred_company_types),
-    preferredRegions: toStringArray(data.preferred_regions),
-    country: typeof data.country === "string" ? data.country : null,
-    timezone: typeof data.timezone === "string" ? data.timezone : null,
-    onboardingCompletedAt:
-      typeof data.onboarding_completed_at === "string"
-        ? data.onboarding_completed_at
-        : null,
-  };
+  return rowToUserProfile(data, user);
+}
+
+/** Load the signed-in user's profile, or null when not authenticated. */
+export async function fetchUserProfile(): Promise<UserProfile | null> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const stored = (await fetchUserProfileFromDatabase()) ?? emptyUserProfile();
+  const drafts = await loadLocalProfileDrafts();
+  const resolved = normalizeUserProfile(
+    mergeUserProfileLayers(stored, ...drafts),
+  );
+
+  if (profileNeedsPreferenceSync(stored, resolved)) {
+    void saveUserProfile(resolved);
+  }
+
+  return resolved;
 }
 
 /** Persist the profile. Set `markComplete` when finishing onboarding. */
