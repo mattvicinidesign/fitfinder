@@ -12,7 +12,6 @@ import { createClient } from "@/lib/supabase/client";
  */
 export interface UserProfile {
   fullName: string | null;
-  professionalTitle: string | null;
   minimumHourlyRate: number | null;
   preferredEngagementTypes: string[];
   preferredCompanyTypes: string[];
@@ -25,7 +24,6 @@ export interface UserProfile {
 export function emptyUserProfile(): UserProfile {
   return {
     fullName: null,
-    professionalTitle: null,
     minimumHourlyRate: null,
     preferredEngagementTypes: [],
     preferredCompanyTypes: [],
@@ -37,7 +35,7 @@ export function emptyUserProfile(): UserProfile {
 }
 
 const PROFILE_SELECT =
-  "full_name, professional_title, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, onboarding_completed_at";
+  "full_name, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, onboarding_completed_at";
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -85,10 +83,6 @@ export async function fetchUserProfile(): Promise<UserProfile | null> {
 
   return {
     fullName: resolveFullName(data.full_name, user),
-    professionalTitle:
-      typeof data.professional_title === "string"
-        ? data.professional_title
-        : null,
     minimumHourlyRate:
       typeof data.desired_compensation_min === "number"
         ? data.desired_compensation_min
@@ -122,7 +116,6 @@ export async function saveUserProfile(
   const row: Record<string, unknown> = {
     user_id: user.id,
     full_name: profile.fullName?.trim() || null,
-    professional_title: profile.professionalTitle?.trim() || null,
     country: profile.country?.trim() || null,
     timezone: profile.timezone?.trim() || null,
     preferred_engagement_types: profile.preferredEngagementTypes,
@@ -179,7 +172,6 @@ export function profilesEqual(a: UserProfile, b: UserProfile): boolean {
 
   return (
     a.fullName === b.fullName &&
-    a.professionalTitle === b.professionalTitle &&
     a.country === b.country &&
     a.timezone === b.timezone &&
     a.minimumHourlyRate === b.minimumHourlyRate &&

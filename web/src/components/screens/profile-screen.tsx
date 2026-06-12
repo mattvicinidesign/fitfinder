@@ -202,12 +202,6 @@ export function ProfileScreen() {
                   value={profile.fullName ?? ""}
                   onChange={(v) => patch({ fullName: v })}
                 />
-                <LabeledInput
-                  label="Title"
-                  placeholder="e.g. Senior Product Designer"
-                  value={profile.professionalTitle ?? ""}
-                  onChange={(v) => patch({ professionalTitle: v })}
-                />
               </div>
             </Section>
 
