@@ -6,7 +6,7 @@ export function SkeletonChart({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-6 sm:grid-cols-2 sm:items-center",
+        "grid grid-cols-2 gap-4 items-center min-w-0",
         className,
       )}
     >

@@ -213,7 +213,7 @@ export function QualificationSummarySection({
                 className={cn(
                   "grid min-w-0 gap-x-4 gap-y-3",
                   countryField && timezonePrefField
-                    ? "grid-cols-1 sm:grid-cols-2"
+                    ? "grid-cols-2"
                     : "grid-cols-1",
                 )}
               >
@@ -228,7 +228,7 @@ export function QualificationSummarySection({
                 className={cn(
                   "grid min-w-0 gap-x-4 gap-y-3",
                   talentField && aiField
-                    ? "grid-cols-1 sm:grid-cols-2"
+                    ? "grid-cols-2"
                     : "grid-cols-1",
                 )}
               >

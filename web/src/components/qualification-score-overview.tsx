@@ -165,7 +165,7 @@ export function QualificationScoreOverview({
   return (
     <SummarySectionCard title={GLOBAL_SCORE_LABEL} info={GLOBAL_SCORE_INFO}>
       <div
-        className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:items-center pt-0.5"
+        className="grid grid-cols-2 gap-4 items-center pt-0.5 min-w-0"
         role="region"
         aria-label={GLOBAL_SCORE_LABEL}
       >
@@ -181,7 +181,7 @@ export function QualificationScoreOverview({
             />
           ))}
         </div>
-        <div className="flex justify-center sm:justify-center">
+        <div className="flex justify-center shrink-0 min-w-0">
           <QualificationScoreCircle
             fitScore={reportFitScore}
             recommendationLabel={recommendationLabel}

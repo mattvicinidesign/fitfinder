@@ -44,7 +44,7 @@ export function JobPostingRequirementFields({
   const timezone = jobTimezoneRequirementDisplay(parsedJob, options);
 
   return (
-    <div className="grid grid-cols-1 gap-3 min-w-0 sm:grid-cols-2">
+    <div className="grid grid-cols-2 gap-3 min-w-0">
       <SummaryScoredField field={requirementField("locationPreferred", "Location", country)} />
       <SummaryScoredField field={requirementField("timezonePreferred", "Timezone", timezone)} />
     </div>
