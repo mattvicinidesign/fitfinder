@@ -22,7 +22,8 @@ supabase/
     │   └── supabaseClient.ts   # RLS-scoped client per request
     ├── parse-resume/           # POST /functions/v1/parse-resume
     ├── parse-job/              # POST /functions/v1/parse-job
-    └── analyze/                # POST /functions/v1/analyze  (orchestrator)
+    ├── analyze/                # POST /functions/v1/analyze  (orchestrator)
+    └── delete-account/         # POST /functions/v1/delete-account
 ```
 
 ## Local development
@@ -46,6 +47,7 @@ Guest Mode uses anonymous sign-in, which still yields a valid JWT.
 | `POST /parse-resume`  | `{ resumeText, resumeId? }`                                       | `{ parsedResume }`               |
 | `POST /parse-job`     | `{ jobText }`                                                     | `{ parsedJob }`                  |
 | `POST /analyze`       | `{ jobText, companyName?, jobTitle?, resumeId?, parsedResume?, persist? }` | `{ analysisId, result }` |
+| `POST /delete-account`| *(empty body)*                                                    | `{ ok: true }`                   |
 
 `result` is an `AnalysisResult` (`functions/_shared/types.ts`):
 `{ companyName, jobTitle, parsedJob, score, narrative }`.
@@ -71,7 +73,7 @@ Guest Mode uses anonymous sign-in, which still yields a valid JWT.
 supabase link --project-ref <ref>
 supabase db push                         # apply migrations to the cloud DB
 supabase config push --yes               # auth redirect URLs (Vercel + localhost)
-supabase functions deploy parse-resume parse-job analyze
+supabase functions deploy parse-resume parse-job analyze delete-account
 supabase secrets set --env-file ./.env   # push OPENAI_API_KEY
 ```
 

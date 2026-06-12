@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const ALLOWED = new Set(["analyze", "parse-resume", "parse-job"]);
+const ALLOWED = new Set(["analyze", "parse-resume", "parse-job", "delete-account"]);
 
 /** Satisfies static export (Capacitor); handlers are not served from the iOS bundle. */
 export function generateStaticParams() {

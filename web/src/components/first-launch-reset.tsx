@@ -2,16 +2,16 @@
 
 import { useLayoutEffect } from "react";
 import {
-  canResetWebFirstLaunch,
+  canResetAppFirstLaunch,
   isFirstLaunchResetRequested,
-  resetWebFirstLaunch,
+  resetAppFirstLaunch,
 } from "@/lib/reset-first-launch";
 
-/** `?firstLaunch=1` — wipe browser state and replay first-time launch (web only). */
+/** `?firstLaunch=1` — wipe app state and replay first-time launch (web + native). */
 export function FirstLaunchReset() {
   useLayoutEffect(() => {
-    if (!canResetWebFirstLaunch() || !isFirstLaunchResetRequested()) return;
-    void resetWebFirstLaunch();
+    if (!canResetAppFirstLaunch() || !isFirstLaunchResetRequested()) return;
+    void resetAppFirstLaunch();
   }, []);
 
   return null;

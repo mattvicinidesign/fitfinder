@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   isSplashQaEnabled,
+  resetFirstLaunchFromQa,
   simulateFirstLaunch,
   simulateReturningUser,
 } from "@/lib/splash-qa";
@@ -54,6 +55,17 @@ export function SplashQaPanel() {
               onClick={handleReplaySplash}
             >
               Replay splash now
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-9 w-full justify-start rounded-lg text-[13px]"
+              onClick={() => {
+                setOpen(false);
+                resetFirstLaunchFromQa();
+              }}
+            >
+              Reset first launch (full)
             </Button>
           </div>
         </div>

@@ -82,6 +82,29 @@ After `cap sync`, open **`web/ios/App/App.xcworkspace`** in Xcode (not
 
 Same routes everywhere: `/home`, `/analyze`, `/saved`, `/history`, `/profile`.
 
+## Platform parity (web + iOS + Cursor preview)
+
+One codebase in `web/src/` powers every client. Cursor preview and `npm run dev`
+behave as **web** (`isNativePlatform()` is false). iOS uses the same bundle after
+`npm run cap:sync`.
+
+| Concern | Web / preview / Vercel | iOS (Capacitor) |
+| ------- | ---------------------- | --------------- |
+| Edge Functions | `/api/functions/*` proxy | Direct Supabase URL |
+| Auth session | Cookies + server PKCE callback | localStorage + client callback + `fitfinder://` |
+| Backend calls | `web/src/lib/invoke-function.ts` | Same module |
+
+After **any** `web/` UI change, run `npm run cap:sync` before testing in Xcode.
+After **backend** changes, deploy Edge Functions (`supabase functions deploy`).
+
+Verify both build targets:
+
+```bash
+cd web && npm run build:verify
+```
+
+See `.cursor/rules/platform-parity.mdc` for the full checklist agents follow.
+
 ## Deploy
 
 | Target | Command / platform |

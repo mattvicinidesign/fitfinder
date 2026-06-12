@@ -3,6 +3,7 @@ import {
   markReturningUserState,
   QA_RETURNING_SPLASH_KEY,
 } from "@/lib/app-session";
+import { resetAppFirstLaunch } from "@/lib/reset-first-launch";
 
 export {
   SPLASH_STORAGE_KEY as SPLASH_SESSION_KEY,
@@ -33,4 +34,10 @@ export function simulateReturningUser(): void {
     sessionStorage.setItem(QA_RETURNING_SPLASH_KEY, "true");
   }
   window.location.reload();
+}
+
+/** Full reset: storage, sign-out, splash replay (web + native when QA is on). */
+export function resetFirstLaunchFromQa(): void {
+  console.log("QA: Reset first launch");
+  void resetAppFirstLaunch();
 }

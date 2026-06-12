@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useProfileSheetClose } from "@/components/app-shell/profile-sheet-context";
@@ -29,6 +30,7 @@ import {
   type ResumeDocument,
 } from "@/lib/resume-documents";
 import { deleteAccount } from "@/lib/delete-account";
+import { navigateApp } from "@/lib/navigate-app";
 import { cn } from "@/lib/utils";
 import {
   SkeletonAnalysisList,
@@ -52,6 +54,7 @@ const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
 ];
 
 export function ProfileScreen() {
+  const router = useRouter();
   const closeProfile = useProfileSheetClose();
   const [profileLoading, setProfileLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
@@ -128,7 +131,7 @@ export function ProfileScreen() {
       return;
     }
 
-    window.location.href = "/home";
+    navigateApp("/home", router, "replace");
   }
 
   return (

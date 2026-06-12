@@ -1,15 +1,17 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { invokeFunction } from "@/lib/invoke-function";
 
 const RECENT_ACTIVITY_KEY = "fitfinder:recent-activity";
 
 export async function deleteAccount(): Promise<{ error?: string }> {
-  const response = await fetch("/api/account/delete", { method: "DELETE" });
-  const body = (await response.json().catch(() => ({}))) as { error?: string };
-
-  if (!response.ok) {
-    return { error: body.error ?? "Could not delete account." };
+  try {
+    await invokeFunction<{ ok: boolean }>("delete-account", {}, 60_000);
+  } catch (e) {
+    return {
+      error: e instanceof Error ? e.message : "Could not delete account.",
+    };
   }
 
   if (typeof localStorage !== "undefined") {

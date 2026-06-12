@@ -28,7 +28,7 @@ Copy values from your local `web/.env.local`.
 | -------- | -------- | ----- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase → Project Settings → API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Same page (`anon` / publishable key) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Recommended | Needed for Profile → Delete account |
+| `SUPABASE_SERVICE_ROLE_KEY` | Optional on Vercel | Account delete runs via Supabase Edge Function (`delete-account`); service role lives in Supabase secrets |
 | `NEXT_PUBLIC_APP_URL` | Optional | Custom domain only (e.g. `https://fitfinder.vercel.app`). Preview/production URLs are set automatically from `VERCEL_URL` at build time. |
 
 Apply to **Production**, **Preview**, and **Development** so preview deploys work.
@@ -63,7 +63,7 @@ sign out, then reload without the query param (splash → welcome flow runs agai
 
 Example: `https://your-app.vercel.app/?firstLaunch=1`
 
-Web only — does not apply to the iOS app.
+Works on web and iOS (same query param). On iOS, use Splash QA → “Reset first launch (full)” when QA is enabled.
 
 ## 4. Supabase Auth (after first deploy)
 
@@ -97,6 +97,7 @@ supabase functions deploy
 - `/` redirects into the app (`/home`)
 - Guest session starts automatically (no login screen)
 - Analyze flow calls Edge Functions via `/api/functions/*`
+- Profile → Delete account calls `/api/functions/delete-account` (same Edge Function as iOS)
 - Magic-link sign-in completes at `/auth/callback`
 
 ### Splash QA on Vercel
@@ -111,11 +112,12 @@ Without QA, clear site data or use a private window to approximate a first visit
 
 ## Local parity check
 
-Before connecting Vercel, confirm the production build works locally:
+Before connecting Vercel, confirm **both** build targets work locally:
 
 ```bash
 cd web
-npm run build
+npm run build:verify
 ```
 
-Missing Supabase env vars fail the build with a clear error.
+This runs the Vercel SSR build and the Capacitor static export. Missing Supabase
+env vars fail the web build with a clear error.

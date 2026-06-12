@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
 import { clearOnboardingState } from "@/lib/app-session";
-import { isNativePlatform } from "@/lib/platform";
 
 const FITFINDER_KEY_PREFIX = "fitfinder";
 
@@ -18,8 +17,8 @@ export function isFirstLaunchResetRequested(): boolean {
   return new URLSearchParams(window.location.search).get("firstLaunch") === "1";
 }
 
-/** Clear local app state and auth so splash / welcome run again (web testing). */
-export async function resetWebFirstLaunch(): Promise<void> {
+/** Clear local app state and auth so splash / welcome run again (web + native QA). */
+export async function resetAppFirstLaunch(): Promise<void> {
   clearOnboardingState();
 
   if (typeof localStorage !== "undefined") {
@@ -42,6 +41,12 @@ export async function resetWebFirstLaunch(): Promise<void> {
   window.location.replace(target);
 }
 
-export function canResetWebFirstLaunch(): boolean {
-  return !isNativePlatform();
+export function canResetAppFirstLaunch(): boolean {
+  return typeof window !== "undefined";
 }
+
+/** @deprecated Use resetAppFirstLaunch */
+export const resetWebFirstLaunch = resetAppFirstLaunch;
+
+/** @deprecated Use canResetAppFirstLaunch */
+export const canResetWebFirstLaunch = canResetAppFirstLaunch;

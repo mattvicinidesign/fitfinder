@@ -1,0 +1,72 @@
+---
+description: Keep web, Cursor preview, Vercel, and Capacitor iOS in sync
+alwaysApply: true
+---
+
+# Platform parity (web + native + preview)
+
+Fit Finder has **one UI** in `web/src/` and **one backend** in `supabase/`. Three runtimes share the same code:
+
+| Runtime | How it runs | `isNativePlatform()` |
+| ------- | ----------- | -------------------- |
+| Cursor preview / `npm run dev` | Next.js dev server | `false` (web) |
+| Vercel | `npm run build` (SSR + API proxy) | `false` (web) |
+| iOS | `CAPACITOR_BUILD=true` static export in WKWebView | `true` (native) |
+
+**Cursor preview is web, not iOS.** After UI changes, run `cap:sync` and smoke-test the simulator for native-only paths (deep links, localStorage auth, direct Supabase calls).
+
+## Backend calls — always use shared invokers
+
+| Use case | Module | Never |
+| -------- | ------ | ----- |
+| Edge Functions (analyze, parse, delete account, …) | `web/src/lib/invoke-function.ts` | Raw `fetch("/api/…")` or direct Supabase URL in components |
+| Product API (analyze, parse) | `web/src/lib/api.ts` (wraps invoke-function) | Reimplement scoring in UI |
+
+- **Web / preview / Vercel:** `invokeFunction` → `/api/functions/<name>` (session from cookies).
+- **Native iOS:** `invokeFunction` → `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/<name>` with JWT + apikey headers.
+
+When adding a new privileged backend operation:
+
+1. Add a Supabase Edge Function under `supabase/functions/`.
+2. Register it in `supabase/config.toml` (`verify_jwt = true`).
+3. Add the name to `ALLOWED` in `web/src/app/api/functions/[name]/route.ts`.
+4. Call it via `invokeFunction()` from client code.
+
+## Auth — dual path by design (do not collapse without testing both)
+
+| | Web / preview | Native iOS |
+| - | ------------- | ---------- |
+| Client | `@supabase/ssr` cookies (`supabase/client.ts`) | `@supabase/supabase-js` + localStorage |
+| Magic link PKCE | Server `/api/auth/callback` | Client `/auth/callback` + `fitfinder://` deep link |
+| Session refresh | `proxy.ts` middleware | Client auto-refresh |
+
+Auth changes must be tested on **web magic link** and **iOS simulator magic link** separately. Guard native-only code with `isNativePlatform()`; guard web-only PKCE redirect with `!isNativePlatform()`.
+
+## Navigation
+
+| Situation | Use |
+| --------- | --- |
+| Normal in-app navigation (web) | Next `router.push` / `replace` |
+| Cross-route recovery on iOS static export | `navigateApp()` from `navigate-app.ts` |
+| Auth deep links on iOS | `router.replace` in `capacitor-bridge.tsx` (not full page load) |
+
+## Environment variables
+
+Use **`NEXT_PUBLIC_*`** only (no `VITE_*`). Same `web/.env.local` values for dev, Vercel, and `cap:sync` (inlined at build time).
+
+## QA parity
+
+- Splash QA: on in dev; Vercel Preview by default; native when `NEXT_PUBLIC_ENABLE_SPLASH_QA=true` at `cap:sync` time.
+- First-launch reset: `?firstLaunch=1` on any platform; Splash QA → “Reset first launch (full)” when QA is enabled.
+
+## Checklist after changes
+
+**UI / `web/src/`:** run `cd web && npm run cap:sync` (see `capacitor-ios-sync.mdc`).
+
+**Backend / `supabase/functions/`:** deploy functions; no cap:sync unless UI also changed.
+
+**Verify both builds:**
+
+```bash
+cd web && npm run build:verify
+```

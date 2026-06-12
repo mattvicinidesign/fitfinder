@@ -12,6 +12,7 @@
     "postbuild:capacitor": "npx cap sync ios",
     "start": "next start",
     "lint": "eslint",
+    "build:verify": "npm run build && CAPACITOR_BUILD=true npm run build",
     "cap:sync": "npm run build:capacitor",
     "cap:open": "npx cap open ios",
     "cap:run": "npm run cap:sync && npm run cap:open"
