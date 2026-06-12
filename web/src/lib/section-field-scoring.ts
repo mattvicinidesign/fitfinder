@@ -14,10 +14,20 @@ import {
 import {
   CLIENT_QUALITY_FIELD_LABELS,
   clientQualityAvgPayPoints,
+  clientQualityDatePostedPoints,
+  clientQualityEmployerPoints,
+  clientQualityHireAreaPoints,
   clientQualityLocationPoints,
+  clientQualityPlatformPoints,
   clientQualityRatingPoints,
+  formatClientQualityLocationLabel,
   isExplicitClientAvgPayRate,
 } from "@/lib/client-quality-scoring";
+import { detectJobPlatform } from "@/lib/job-platform";
+import {
+  formatHeaderDatePosted,
+  headerEmployerKindLabel,
+} from "@/lib/posting-header-meta";
 import { preferredLocationMatchesCandidate } from "@/lib/country-match";
 import {
   jobPreferredLocationDisplay,
@@ -41,13 +51,13 @@ import {
   type CoverageResult,
 } from "@/lib/coverage-detail";
 import { buildIndustryDetail } from "@/lib/industry-match";
-import { talentTypeDisplay } from "@/lib/talent-type-display";
 import type { SummaryMatchState } from "@/lib/summary-criteria";
 import type {
   CategoryScore,
   Compensation,
   ParsedJob,
   ParsedResume,
+  PostingContext,
 } from "@/lib/types";
 import type { ReportSectionId } from "@/lib/section-score-rollups";
 
@@ -75,6 +85,8 @@ export interface SectionFieldScoreContext {
   profileTimezone?: string | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
+  companyName?: string | null;
+  postingContext?: PostingContext | null;
   breakdown: CategoryScore[];
   isGuest: boolean;
 }
@@ -175,15 +187,129 @@ export function buildClientProfileFields(
   const originRow = postingRowByKey(rows, "clientOrigin");
   const ratingRow = postingRowByKey(rows, "clientRating");
   const avgRow = postingRowByKey(rows, "clientAverageHourlyRate");
+  const datePostedRow = postingRowByKey(rows, "datePosted");
+  const hireAreaRow = postingRowByKey(rows, "hireArea");
   const profileComp =
     ctx.parsedResume?.desiredCompensation ?? ctx.profileDesiredCompensation ?? null;
 
   const fields: SectionFieldScore[] = [];
 
-  const locationValue = details?.clientOrigin?.trim() || originRow?.value || "";
-  const locationIdentified =
-    postingRowIdentified(originRow) || Boolean(details?.clientOrigin?.trim());
-  const locationPoints = clientQualityLocationPoints(details?.clientOrigin);
+  const platform = detectJobPlatform(ctx.jobDescription);
+  const platformPoints = clientQualityPlatformPoints(platform);
+  fields.push(
+    platformPoints != null
+      ? field(
+          "platform",
+          CLIENT_QUALITY_FIELD_LABELS.platform,
+          true,
+          platform!,
+          "match",
+          platformPoints,
+        )
+      : field(
+          "platform",
+          CLIENT_QUALITY_FIELD_LABELS.platform,
+          false,
+          "",
+          "unknown",
+          null,
+        ),
+  );
+
+  const employerType =
+    ctx.postingContext?.employerType ??
+    ctx.parsedJob?.employerType ??
+    "unknown";
+  const employerPoints = clientQualityEmployerPoints(employerType);
+  const employerIdentified = employerPoints != null;
+  fields.push(
+    employerIdentified
+      ? field(
+          "employerType",
+          CLIENT_QUALITY_FIELD_LABELS.employerType,
+          true,
+          headerEmployerKindLabel(employerType),
+          employerPoints >= 50 ? "match" : "mismatch",
+          employerPoints,
+        )
+      : field(
+          "employerType",
+          CLIENT_QUALITY_FIELD_LABELS.employerType,
+          false,
+          "",
+          "unknown",
+          null,
+        ),
+  );
+
+  const datePostedValue =
+    details?.datePosted?.trim() || datePostedRow?.value || "";
+  const datePostedIdentified =
+    postingRowIdentified(datePostedRow) || Boolean(details?.datePosted?.trim());
+  const datePostedPoints = clientQualityDatePostedPoints(
+    details?.datePosted ?? (datePostedIdentified ? datePostedValue : null),
+  );
+  const postedBadge =
+    formatHeaderDatePosted(datePostedValue) ?? datePostedValue;
+  fields.push(
+    datePostedIdentified && datePostedPoints != null
+      ? field(
+          "datePosted",
+          CLIENT_QUALITY_FIELD_LABELS.posted,
+          true,
+          postedBadge,
+          datePostedPoints >= 50 ? "match" : "mismatch",
+          datePostedPoints,
+        )
+      : field(
+          "datePosted",
+          CLIENT_QUALITY_FIELD_LABELS.posted,
+          false,
+          "",
+          "unknown",
+          null,
+        ),
+  );
+
+  const hireAreaValue = details?.hireArea?.trim() || hireAreaRow?.value || "";
+  const hireAreaIdentified =
+    postingRowIdentified(hireAreaRow) || Boolean(details?.hireArea?.trim());
+  const hireAreaPoints = clientQualityHireAreaPoints(
+    details?.hireArea ?? (hireAreaIdentified ? hireAreaValue : null),
+  );
+  fields.push(
+    hireAreaIdentified && hireAreaPoints != null
+      ? field(
+          "hireArea",
+          CLIENT_QUALITY_FIELD_LABELS.applicants,
+          true,
+          hireAreaValue,
+          hireAreaPoints >= 50 ? "match" : "mismatch",
+          hireAreaPoints,
+        )
+      : field(
+          "hireArea",
+          CLIENT_QUALITY_FIELD_LABELS.applicants,
+          false,
+          "",
+          "unknown",
+          null,
+        ),
+  );
+
+  const locationCountry =
+    details?.clientOrigin?.trim() || originRow?.value || "";
+  const locationCity = details?.clientCity?.trim() || null;
+  const locationValue =
+    formatClientQualityLocationLabel({
+      clientCity: locationCity,
+      clientOrigin: locationCountry || null,
+    }) ?? "";
+  const locationIdentified = Boolean(locationValue.trim());
+  const locationPoints = clientQualityLocationPoints(
+    details?.clientOrigin ?? (locationCountry || null),
+    details?.clientCity,
+  );
   fields.push(
     locationIdentified && locationPoints != null
       ? field(
@@ -275,7 +401,6 @@ export function buildClientPreferencesFields(
   const timezoneDisplay = jobTimezoneRequirementDisplay(ctx.parsedJob, {
     jobDescription: ctx.jobDescription,
   });
-  const talent = talentTypeDisplay(ctx.jobDescription);
   const pqLocation = resolveJobPreferredLocation(
     ctx.parsedJob,
     ctx.jobDescription,
@@ -345,13 +470,6 @@ export function buildClientPreferencesFields(
       timezoneDisplay.badgeLabel,
       tzReqMatched ? "match" : "mismatch",
       tzReqIdentified ? (tzReqMatched ? 100 : tzCat.points ?? 0) : null,
-    ),
-    binaryField(
-      "talentType",
-      "Type",
-      talent.hasExplicitRequirement,
-      talent.badgeLabel,
-      talent.positive,
     ),
     field("aiEmphasis", "AI", aiIdentified, aiLabel, aiState, aiPoints),
   ];

@@ -16,7 +16,7 @@ export const OPPORTUNITY_CATEGORY_LABELS: Record<OpportunityCategoryKey, string>
   qualificationsMatch: "Qualifications",
   industryAlignment: "Industry",
   preferenceAlignment: "Preferences",
-  clientQuality: "Client Quality",
+  clientQuality: "About Client",
 };
 
 /** Strong product/design role positioning. */

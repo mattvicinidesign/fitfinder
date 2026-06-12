@@ -224,6 +224,7 @@ export function extractPostingDetailsFromText(
     hireArea: extractHireArea(text, lines) ?? undefined,
     clientRating: extractClientRating(text, clientBlock) ?? undefined,
     clientOrigin: extractClientOrigin(clientBlock, lines) ?? undefined,
+    clientCity: extractClientCityFromAboutClient(text) ?? undefined,
     clientAverageHourlyRate:
       extractClientAvgHourly(text, clientBlock) ?? undefined,
     hoursNeeded: extractHoursNeeded(text, lines) ?? undefined,

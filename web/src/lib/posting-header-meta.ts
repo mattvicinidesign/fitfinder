@@ -1,6 +1,4 @@
-/**
- * Job title subtitle: Upwork | Agency | 4 Days Ago | Worldwide
- */
+import { parseUpworkClientCityLine } from "@/lib/client-location-parse";
 
 import {
   POSTING_DETAIL_MISSING,
@@ -47,6 +45,7 @@ export function extractClientNameFromJobDescription(
     if (line.length < 2 || line.length > 100) continue;
     if (SKIP_CLIENT_NAME_LINE.test(line)) continue;
     if (COUNTRY_OR_REGION_LINE.test(line)) continue;
+    if (parseUpworkClientCityLine(raw)) continue;
     if (/^\d/.test(line)) continue;
     if (!/[A-Za-z]{2,}/.test(line)) continue;
     return line;

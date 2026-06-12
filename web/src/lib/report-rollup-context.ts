@@ -10,6 +10,7 @@ import type {
   Compensation,
   ParsedJob,
   ParsedResume,
+  PostingContext,
   ScoreResult,
 } from "@/lib/types";
 
@@ -24,6 +25,8 @@ export function buildReportRollupOptions({
   profileTimezone,
   jobDescription,
   jobTitle,
+  companyName,
+  postingContext,
 }: {
   score: ScoreResult;
   parsedJob?: ParsedJob;
@@ -35,6 +38,8 @@ export function buildReportRollupOptions({
   profileTimezone?: string | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
+  companyName?: string | null;
+  postingContext?: PostingContext | null;
 }): ReportRollupOptions {
   const highlightCtx: PostingDetailHighlightContext = {
     profileDesiredCompensation,
@@ -61,6 +66,8 @@ export function buildReportRollupOptions({
     profileTimezone,
     jobDescription,
     jobTitle,
+    companyName,
+    postingContext,
     breakdown: score.categoryBreakdown,
     isGuest: score.scoringMode === "guest",
   };

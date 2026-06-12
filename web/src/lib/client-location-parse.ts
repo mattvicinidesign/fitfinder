@@ -138,3 +138,14 @@ export function resolveCanonicalTimezoneFromClientCity(
   if (!city?.trim()) return null;
   return canonicalTimezoneForCity(city);
 }
+
+/** Display label for About-the-client location (city + country). */
+export function formatClientLocationDisplay(
+  city?: string | null,
+  country?: string | null,
+): string | null {
+  const cityPart = city?.trim() || null;
+  const countryPart = country?.trim() || null;
+  if (cityPart && countryPart) return `${cityPart}, ${countryPart}`;
+  return cityPart ?? countryPart;
+}

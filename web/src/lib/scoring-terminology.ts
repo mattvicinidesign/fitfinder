@@ -25,7 +25,7 @@ export const SCORING_CATEGORY_SUBTOTAL_LABEL = "Category Score";
 
 /** Display titles for legacy V1 scoring category cards. */
 export const SCORING_CATEGORY_LABELS: Record<ScoringCategoryId, string> = {
-  clientProfile: "Client Quality",
+  clientProfile: "About Client",
   clientPreferences: "Preference",
   roleDetails: "Role",
   categoryMatching: "Qualification",
@@ -37,7 +37,7 @@ export const OPPORTUNITY_CATEGORY_LABELS = {
   qualificationsMatch: "Qualifications",
   industryAlignment: "Industry",
   preferenceAlignment: "Preferences",
-  clientQuality: "Client Quality",
+  clientQuality: "About Client",
 } as const satisfies Record<OpportunityCategoryKey, string>;
 
 /** Opportunity Engine weights (sum = 100). */
@@ -54,9 +54,9 @@ export const GLOBAL_SCORE_INFO =
 
 export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
   clientProfile:
-    "Client quality from About the client — location, rating, and average pay rate. Each item found counts equally toward the category score. Registered users only.",
+    "About the client — client name, employer type, posting date, who can apply, location, rating, and average pay rate. Each item found counts equally toward the category score. Registered users only.",
   clientPreferences:
-    "How well you match the client preferences — location, timezone, talent type, and AI emphasis stated in the posting.",
+    "How well you match the client preferences — location, timezone, and AI emphasis stated in the posting.",
   roleDetails:
     "How well the role fits your resume — title, industry, pay, hours, and duration. Each identified item counts equally.",
   categoryMatching:

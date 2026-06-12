@@ -22,6 +22,39 @@ export function functionUrl(name: string): string {
   return `/api/functions/${name}`;
 }
 
+function createTimeoutSignal(timeoutMs: number): AbortSignal {
+  if (typeof AbortSignal !== "undefined" && "timeout" in AbortSignal) {
+    return AbortSignal.timeout(timeoutMs);
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  controller.signal.addEventListener(
+    "abort",
+    () => clearTimeout(timer),
+    { once: true },
+  );
+  return controller.signal;
+}
+
+function parseResponsePayload(data: unknown): unknown {
+  if (typeof data === "string") {
+    try {
+      return JSON.parse(data) as unknown;
+    } catch {
+      return data;
+    }
+  }
+  return data;
+}
+
+function isTimeoutError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return (
+    error.name === "TimeoutError" ||
+    error.message.toLowerCase().includes("timeout")
+  );
+}
+
 async function authorizedHeaders(): Promise<Record<string, string>> {
   const supabase = createClient();
   await supabase.auth.refreshSession().catch(() => {
@@ -51,24 +84,48 @@ async function authorizedHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
-export async function invokeFunction<T>(
-  name: string,
-  body: Record<string, unknown> = {},
-  timeoutMs: number = DEFAULT_TIMEOUT_MS,
-): Promise<T> {
-  const headers = await authorizedHeaders();
+async function postFunctionRequest(
+  url: string,
+  headers: Record<string, string>,
+  body: Record<string, unknown>,
+  timeoutMs: number,
+): Promise<{ ok: boolean; status: number; payload: unknown }> {
+  if (isNativePlatform()) {
+    const { CapacitorHttp } = await import("@capacitor/core");
+    try {
+      const response = await CapacitorHttp.post({
+        url,
+        headers,
+        data: body,
+        connectTimeout: timeoutMs,
+        readTimeout: timeoutMs,
+      });
+      return {
+        ok: response.status >= 200 && response.status < 300,
+        status: response.status,
+        payload: parseResponsePayload(response.data),
+      };
+    } catch (error) {
+      if (isTimeoutError(error)) {
+        throw new Error("Request timed out. Try again.");
+      }
+      throw new Error(
+        "Could not reach the server. Check your connection and try again.",
+      );
+    }
+  }
 
   let res: Response;
   try {
-    res = await fetch(functionUrl(name), {
+    res = await fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
-      credentials: isNativePlatform() ? "omit" : "include",
-      signal: AbortSignal.timeout(timeoutMs),
+      credentials: "include",
+      signal: createTimeoutSignal(timeoutMs),
     });
-  } catch (e) {
-    if (e instanceof Error && e.name === "TimeoutError") {
+  } catch (error) {
+    if (isTimeoutError(error)) {
       throw new Error("Request timed out. Try again.");
     }
     throw new Error(
@@ -76,21 +133,33 @@ export async function invokeFunction<T>(
     );
   }
 
-  const payload = (await res.json().catch(() => null)) as
-    | T
-    | { error?: string; message?: string }
-    | null;
+  const payload = (await res.json().catch(() => null)) as unknown;
+  return { ok: res.ok, status: res.status, payload };
+}
 
-  if (!res.ok) {
+export async function invokeFunction<T>(
+  name: string,
+  body: Record<string, unknown> = {},
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+): Promise<T> {
+  const headers = await authorizedHeaders();
+  const { ok, status, payload } = await postFunctionRequest(
+    functionUrl(name),
+    headers,
+    body,
+    timeoutMs,
+  );
+
+  if (!ok) {
     const err =
       (payload && typeof payload === "object" && "error" in payload
-        ? payload.error
+        ? (payload as { error?: string }).error
         : null) ??
       (payload && typeof payload === "object" && "message" in payload
-        ? payload.message
+        ? (payload as { message?: string }).message
         : null) ??
-      res.statusText;
-    if (res.status === 401) {
+      `HTTP ${status}`;
+    if (status === 401) {
       throw new Error("Session expired. Sign in again (guest or email).");
     }
     throw new Error(

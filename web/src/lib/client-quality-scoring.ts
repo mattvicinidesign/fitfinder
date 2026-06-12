@@ -1,8 +1,18 @@
 /**
- * Client Quality scoring items from Upwork "About the client":
- * Location, Rating, and Avg Pay rate.
+ * Client Quality scoring items from job posting metadata:
+ * platform, employer type, posting metadata, location, rating, and avg pay rate.
  */
 
+import { formatClientLocationDisplay } from "@/lib/client-location-parse";
+import {
+  extractClientNameFromJobDescription,
+  formatHeaderDatePosted,
+  headerEmployerKindLabel,
+} from "@/lib/posting-header-meta";
+import {
+  isDatePostedWithin3Days,
+  isUnitedStatesHireArea,
+} from "@/lib/posting-detail-highlights";
 import {
   isClientAvgHourlyAtOrAboveProfile,
   isUnitedStatesClientOrigin,
@@ -10,9 +20,14 @@ import {
   POSTING_DETAIL_MISSING,
   type JobPostingDetails,
 } from "@/lib/posting-details";
+import { detectJobPlatform, type JobPlatform } from "@/lib/job-platform";
 import type { Compensation } from "@/lib/types";
 
 export const CLIENT_QUALITY_FIELD_LABELS = {
+  platform: "Platform",
+  employerType: "Employer Type",
+  posted: "Posted",
+  applicants: "Who Can Apply",
   location: "Location",
   rating: "Rating",
   avgPayRate: "Avg Pay rate",
@@ -36,10 +51,13 @@ export function isClientRatingAtLeast3(value: string): boolean {
 /** 0–100 points for one Client Quality item, or null when not identified. */
 export function clientQualityLocationPoints(
   clientOrigin: string | null | undefined,
+  clientCity?: string | null,
 ): number | null {
-  const value = clientOrigin?.trim();
-  if (!value) return null;
-  return isUnitedStatesClientOrigin(value) ? 100 : 0;
+  const country = clientOrigin?.trim();
+  const city = clientCity?.trim();
+  if (!country && !city) return null;
+  if (!country) return null;
+  return isUnitedStatesClientOrigin(country) ? 100 : 0;
 }
 
 export function clientQualityRatingPoints(
@@ -73,13 +91,92 @@ export function clientQualityAvgPayPoints(
   return 50;
 }
 
+export function resolveClientQualityClientName(
+  companyName?: string | null,
+  jobDescription?: string | null,
+): string {
+  return (
+    companyName?.trim() ||
+    extractClientNameFromJobDescription(jobDescription) ||
+    "Upwork Client"
+  );
+}
+
+function clientHasExplicitName(
+  companyName?: string | null,
+  jobDescription?: string | null,
+): boolean {
+  return Boolean(
+    companyName?.trim() || extractClientNameFromJobDescription(jobDescription),
+  );
+}
+
+/** Named client = 100; anonymous Upwork Client = 70. */
+export function clientQualityClientPoints(
+  companyName?: string | null,
+  jobDescription?: string | null,
+): number {
+  return clientHasExplicitName(companyName, jobDescription) ? 100 : 70;
+}
+
+export function clientQualityPlatformPoints(
+  platform: JobPlatform | null,
+): number | null {
+  if (!platform) return null;
+  return 100;
+}
+
+export function clientQualityEmployerPoints(
+  employerType?: "agency" | "product_company" | "unknown" | null,
+): number | null {
+  if (employerType === "product_company") return 100;
+  if (employerType === "agency") return 50;
+  return null;
+}
+
+export function clientQualityDatePostedPoints(
+  datePosted?: string | null,
+): number | null {
+  const value = datePosted?.trim();
+  if (!value || value === POSTING_DETAIL_MISSING) return null;
+  return isDatePostedWithin3Days(value) ? 100 : 60;
+}
+
+export function clientQualityHireAreaPoints(
+  hireArea?: string | null,
+): number | null {
+  const value = hireArea?.trim();
+  if (!value || value === POSTING_DETAIL_MISSING) return null;
+  return isUnitedStatesHireArea(value) ? 100 : 0;
+}
+
+export function formatClientQualityLocationLabel(
+  details?: JobPostingDetails | null,
+): string | null {
+  return formatClientLocationDisplay(
+    details?.clientCity,
+    details?.clientOrigin,
+  );
+}
+
+export interface ClientQualityScoreExtras {
+  companyName?: string | null;
+  jobDescription?: string | null;
+  employerType?: "agency" | "product_company" | "unknown" | null;
+}
+
 /** Equal-weight average of identified About-the-client items (0–100). */
 export function clientQualityScoreFromPostingDetails(
   details: JobPostingDetails | null | undefined,
   profileCompensation?: Compensation | null,
+  extras?: ClientQualityScoreExtras,
 ): number | null {
   const points = [
-    clientQualityLocationPoints(details?.clientOrigin),
+    clientQualityPlatformPoints(detectJobPlatform(extras?.jobDescription)),
+    clientQualityEmployerPoints(extras?.employerType),
+    clientQualityDatePostedPoints(details?.datePosted),
+    clientQualityHireAreaPoints(details?.hireArea),
+    clientQualityLocationPoints(details?.clientOrigin, details?.clientCity),
     clientQualityRatingPoints(details?.clientRating),
     clientQualityAvgPayPoints(details?.clientAverageHourlyRate, profileCompensation),
   ].filter((score): score is number => score != null);

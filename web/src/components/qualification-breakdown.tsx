@@ -253,6 +253,7 @@ export function QualificationBreakdown({
   parsedResume,
   jobDescription,
   jobTitle: analysisJobTitle,
+  companyName,
   profileDesiredCompensation,
   profileQualifiedIndustries,
   profileQualifiedSkills,
@@ -265,6 +266,7 @@ export function QualificationBreakdown({
   parsedResume?: ParsedResume | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
+  companyName?: string | null;
   profileDesiredCompensation?: Compensation | null;
   profileQualifiedIndustries?: string[] | null;
   profileQualifiedSkills?: string[] | null;
@@ -286,6 +288,8 @@ export function QualificationBreakdown({
     profileTimezone,
     jobDescription,
     jobTitle: analysisJobTitle,
+    companyName,
+    postingContext,
   });
 
   const qualificationsSubtotal = sectionCategoryScore(
@@ -311,6 +315,8 @@ export function QualificationBreakdown({
         profileTimezone={profileTimezone}
         jobDescription={jobDescription}
         jobTitle={analysisJobTitle}
+        companyName={companyName}
+        postingContext={postingContext}
       />
 
       <ReportRevealSection>

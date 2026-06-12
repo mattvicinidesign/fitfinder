@@ -1,12 +1,42 @@
 /**
- * Client Quality scoring items from Upwork "About the client":
- * Location, Rating, and Avg Pay rate.
+ * About Client scoring items from job posting metadata:
+ * platform, employer type, posting metadata, location, rating, and avg pay rate.
  */
 
+import { formatClientLocationDisplay } from "./client_location_parse.ts";
+import { detectJobPlatform, type JobPlatform } from "./job_platform.ts";
 import type { ProfileScoringRow } from "./profile_scoring.ts";
 import type { JobPostingDetails, ParsedJob } from "./types.ts";
 
 export const POSTING_DETAIL_MISSING = "—";
+
+function normalizeCountry(value: string): string | null {
+  const n = value.trim().toLowerCase();
+  if (n === "united states" || n === "usa" || n === "u.s." || n === "u.s.a.") {
+    return "us";
+  }
+  return null;
+}
+
+function isDatePostedWithin3Days(label: string): boolean {
+  if (!label || label === POSTING_DETAIL_MISSING) return false;
+  const lower = label.toLowerCase();
+  if (/\btoday\b/.test(lower)) return true;
+  if (/\byesterday\b/.test(lower)) return true;
+  const daysAgo = label.match(/(\d+)\s+days?\s+ago/i);
+  if (daysAgo) {
+    const n = Number.parseInt(daysAgo[1], 10);
+    return Number.isFinite(n) && n < 3;
+  }
+  const hoursAgo = label.match(/(\d+)\s+hours?\s+ago/i);
+  if (hoursAgo) return true;
+  return false;
+}
+
+function isUnitedStatesHireArea(label: string): boolean {
+  if (!label || label === POSTING_DETAIL_MISSING) return false;
+  return normalizeCountry(label) === "us";
+}
 
 export function isExplicitClientAvgPayRate(value: string): boolean {
   return (
@@ -22,14 +52,6 @@ function parseHourlyRateFromLabel(label: string): number | null {
   if (!m) return null;
   const n = Number.parseFloat(m[1].replace(/,/g, ""));
   return Number.isFinite(n) ? n : null;
-}
-
-function normalizeCountry(value: string): string | null {
-  const n = value.trim().toLowerCase();
-  if (n === "united states" || n === "usa" || n === "u.s." || n === "u.s.a.") {
-    return "us";
-  }
-  return null;
 }
 
 export function isUnitedStatesClientOrigin(value: string): boolean {
@@ -59,10 +81,13 @@ export function isClientAvgHourlyAtOrAboveProfile(
 
 export function clientQualityLocationPoints(
   clientOrigin: string | null | undefined,
+  clientCity?: string | null,
 ): number | null {
-  const value = clientOrigin?.trim();
-  if (!value) return null;
-  return isUnitedStatesClientOrigin(value) ? 100 : 0;
+  const country = clientOrigin?.trim();
+  const city = clientCity?.trim();
+  if (!country && !city) return null;
+  if (!country) return null;
+  return isUnitedStatesClientOrigin(country) ? 100 : 0;
 }
 
 export function clientQualityRatingPoints(
@@ -96,12 +121,58 @@ export function clientQualityAvgPayPoints(
   return 50;
 }
 
+export function clientQualityPlatformPoints(
+  platform: JobPlatform | null,
+): number | null {
+  if (!platform) return null;
+  return 100;
+}
+
+export function clientQualityEmployerPoints(
+  employerType?: ParsedJob["employerType"] | null,
+): number | null {
+  if (employerType === "product_company") return 100;
+  if (employerType === "agency") return 50;
+  return null;
+}
+
+export function clientQualityDatePostedPoints(
+  datePosted?: string | null,
+): number | null {
+  const value = datePosted?.trim();
+  if (!value || value === POSTING_DETAIL_MISSING) return null;
+  return isDatePostedWithin3Days(value) ? 100 : 60;
+}
+
+export function clientQualityHireAreaPoints(
+  hireArea?: string | null,
+): number | null {
+  const value = hireArea?.trim();
+  if (!value || value === POSTING_DETAIL_MISSING) return null;
+  return isUnitedStatesHireArea(value) ? 100 : 0;
+}
+
+export function formatClientQualityLocationLabel(
+  details?: JobPostingDetails | null,
+): string | null {
+  return formatClientLocationDisplay(
+    details?.clientCity,
+    details?.clientOrigin,
+  );
+}
+
 export function clientQualityScoreFromPostingDetails(
   details: JobPostingDetails | null | undefined,
   profile?: ProfileScoringRow | null,
+  employerType?: ParsedJob["employerType"] | null,
+  jobText?: string | null,
 ): number | null {
   const points = [
-    clientQualityLocationPoints(details?.clientOrigin),
+    clientQualityPlatformPoints(detectJobPlatform(jobText)),
+    clientQualityEmployerPoints(employerType),
+    clientQualityDatePostedPoints(details?.datePosted),
+    clientQualityHireAreaPoints(details?.hireArea),
+    clientQualityLocationPoints(details?.clientOrigin, details?.clientCity),
     clientQualityRatingPoints(details?.clientRating),
     clientQualityAvgPayPoints(details?.clientAverageHourlyRate, profile),
   ].filter((score): score is number => score != null);
@@ -113,6 +184,12 @@ export function clientQualityScoreFromPostingDetails(
 export function clientQualityScoreFromJob(
   job: ParsedJob,
   profile?: ProfileScoringRow | null,
+  jobText?: string | null,
 ): number | null {
-  return clientQualityScoreFromPostingDetails(job.postingDetails ?? null, profile);
+  return clientQualityScoreFromPostingDetails(
+    job.postingDetails ?? null,
+    profile,
+    job.employerType ?? null,
+    jobText,
+  );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { PostingHeaderMetaFields } from "@/components/posting-header-meta";
 import { QualificationBreakdown } from "@/components/qualification-breakdown";
 import {
   ReportRevealProvider,
@@ -49,18 +48,6 @@ export function AnalysisResultView({
               <p className="text-[22px] font-semibold leading-tight tracking-tight text-foreground">
                 {result.jobTitle ?? result.parsedJob.roleTitle ?? "Job"}
               </p>
-              {result.companyName?.trim() ? (
-                <p className="text-[14px] text-muted-foreground">
-                  {result.companyName}
-                </p>
-              ) : null}
-              <PostingHeaderMetaFields
-                parsedJob={parsedJob}
-                jobDescription={jobDescription}
-                jobTitle={result.jobTitle}
-                companyName={result.companyName}
-                postingContext={postingContext}
-              />
             </div>
           </ReportRevealSection>
           <QualificationBreakdown
@@ -70,6 +57,7 @@ export function AnalysisResultView({
             parsedJob={parsedJob}
             parsedResume={parsedResume}
             jobTitle={result.jobTitle}
+            companyName={result.companyName}
             profileDesiredCompensation={profileDesiredCompensation}
             profileQualifiedIndustries={profileQualifiedIndustries}
             profileQualifiedSkills={profileQualifiedSkills}

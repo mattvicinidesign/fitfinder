@@ -23,7 +23,7 @@ Fit Finder has **one UI** in `web/src/` and **one backend** in `supabase/`. Thre
 | Product API (analyze, parse) | `web/src/lib/api.ts` (wraps invoke-function) | Reimplement scoring in UI |
 
 - **Web / preview / Vercel:** `invokeFunction` → `/api/functions/<name>` (session from cookies).
-- **Native iOS:** `invokeFunction` → `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/<name>` with JWT + apikey headers.
+- **Native iOS:** `invokeFunction` → `${NEXT_PUBLIC_SUPABASE_URL}/functions/v1/<name>` via `CapacitorHttp` (native URLSession, bypasses WKWebView CORS) with JWT + apikey headers. `CapacitorHttp.enabled` is set in `capacitor.config.ts`.
 
 When adding a new privileged backend operation:
 

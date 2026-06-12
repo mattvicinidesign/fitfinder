@@ -14,6 +14,12 @@ const config: CapacitorConfig = {
     hostname: "fitfinder.app",
     androidScheme: "https",
   },
+  plugins: {
+    // Native URLSession/OkHttp for cross-origin calls (Supabase edge functions).
+    CapacitorHttp: {
+      enabled: true,
+    },
+  },
 };
 
 export default config;

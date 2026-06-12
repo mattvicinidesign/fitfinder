@@ -23,6 +23,7 @@ import type {
   Compensation,
   ParsedJob,
   ParsedResume,
+  PostingContext,
   ScoreResult,
 } from "@/lib/types";
 
@@ -40,6 +41,8 @@ export function QualificationSummarySection({
   profileTimezone,
   jobDescription,
   jobTitle,
+  companyName,
+  postingContext,
 }: {
   score: ScoreResult;
   parsedJob?: ParsedJob;
@@ -50,6 +53,8 @@ export function QualificationSummarySection({
   profileTimezone?: string | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
+  companyName?: string | null;
+  postingContext?: PostingContext | null;
 }) {
   const isGuest = score.scoringMode === "guest";
   const rollupOptions = buildReportRollupOptions({
@@ -62,6 +67,8 @@ export function QualificationSummarySection({
     profileTimezone,
     jobDescription,
     jobTitle,
+    companyName,
+    postingContext,
   });
 
   const postingRows = rollupOptions?.postingRows ?? [];
@@ -81,6 +88,8 @@ export function QualificationSummarySection({
       profileTimezone,
       jobDescription,
       jobTitle,
+      companyName,
+      postingContext,
       breakdown: score.categoryBreakdown,
       isGuest,
     };
@@ -124,6 +133,10 @@ export function QualificationSummarySection({
   const locationField = fieldByKey(clientFields, "clientOrigin");
   const ratingField = fieldByKey(clientFields, "clientRating");
   const avgPayField = fieldByKey(clientFields, "clientAverageHourlyRate");
+  const platformField = fieldByKey(clientFields, "platform");
+  const employerField = fieldByKey(clientFields, "employerType");
+  const postedField = fieldByKey(clientFields, "datePosted");
+  const hireAreaField = fieldByKey(clientFields, "hireArea");
 
   const industryField = fieldByKey(roleFields, "industry");
   const roleField = fieldByKey(roleFields, "role");
@@ -132,7 +145,6 @@ export function QualificationSummarySection({
   const durationField = fieldByKey(roleFields, "duration");
   const countryField = fieldByKey(preferencesFields, "locationPreferred");
   const timezonePrefField = fieldByKey(preferencesFields, "timezonePreferred");
-  const talentField = fieldByKey(preferencesFields, "talentType");
   const aiField = fieldByKey(preferencesFields, "aiEmphasis");
 
   return (
@@ -144,6 +156,31 @@ export function QualificationSummarySection({
           info={SCORING_CATEGORY_INFO.clientProfile}
         >
           <div className="space-y-3">
+            {platformField ? (
+              <SummaryScoredField field={platformField} />
+            ) : null}
+            {employerField || postedField ? (
+              <div
+                className={cn(
+                  "grid min-w-0 gap-x-4 gap-y-3",
+                  employerField && postedField ? "grid-cols-2" : "grid-cols-1",
+                )}
+              >
+                {employerField ? <SummaryScoredField field={employerField} /> : null}
+                {postedField ? (
+                  <SummaryScoredField
+                    field={postedField}
+                    postingDetailKey="datePosted"
+                  />
+                ) : null}
+              </div>
+            ) : null}
+            {hireAreaField ? (
+              <SummaryScoredField
+                field={hireAreaField}
+                postingDetailKey="hireArea"
+              />
+            ) : null}
             {locationField ? (
               <SummaryScoredField
                 field={locationField}
@@ -203,19 +240,7 @@ export function QualificationSummarySection({
                 ) : null}
               </div>
             ) : null}
-            {talentField || aiField ? (
-              <div
-                className={cn(
-                  "grid min-w-0 gap-x-4 gap-y-3",
-                  talentField && aiField
-                    ? "grid-cols-2"
-                    : "grid-cols-1",
-                )}
-              >
-                {talentField ? <SummaryScoredField field={talentField} /> : null}
-                {aiField ? <SummaryScoredField field={aiField} /> : null}
-              </div>
-            ) : null}
+            {aiField ? <SummaryScoredField field={aiField} /> : null}
           </div>
           <SectionScoreSubtotal
             score={clientPreferencesSubtotal}

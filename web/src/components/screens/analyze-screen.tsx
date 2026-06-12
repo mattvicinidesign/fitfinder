@@ -96,7 +96,7 @@ const DEMO_RESULT: AnalysisResult = {
       },
       {
         category: "clientQuality",
-        label: "Client Quality",
+        label: "About Client",
         score: 78,
         weight: 10,
         contribution: 7.8,

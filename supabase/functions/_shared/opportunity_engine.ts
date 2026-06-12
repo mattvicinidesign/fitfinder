@@ -6,6 +6,7 @@
 
 import { detectRoleArchetype } from "./archetype_detection.ts";
 import { clientQualityScoreFromJob } from "./client_quality_scoring.ts";
+import { formatClientLocationDisplay } from "./client_location_parse.ts";
 import {
   LOWER_INDUSTRIES,
   NEUTRAL_INDUSTRIES,
@@ -305,14 +306,19 @@ function scorePreferenceAlignment(
 function scoreClientQuality(
   job: ParsedJob,
   profile: ProfileScoringRow | null | undefined,
+  jobText?: string | null,
 ): OpportunityCategoryScore {
   const weight = OPPORTUNITY_WEIGHTS.clientQuality;
-  const score = clientQualityScoreFromJob(job, profile) ?? 50;
+  const score = clientQualityScoreFromJob(job, profile, jobText) ?? 50;
   const details = job.postingDetails;
   const signals: string[] = [];
 
-  if (details?.clientOrigin?.trim()) {
-    signals.push(`Location: ${details.clientOrigin.trim()}`);
+  const location = formatClientLocationDisplay(
+    details?.clientCity,
+    details?.clientOrigin,
+  );
+  if (location?.trim()) {
+    signals.push(`Location: ${location.trim()}`);
   }
   if (details?.clientRating?.trim()) {
     signals.push(`Rating: ${details.clientRating.trim()}`);
@@ -358,10 +364,10 @@ export function scoreOpportunity(
   if (mode === "registered") {
     categories.push(
       scorePreferenceAlignment(resume, job, options.profile, options),
-      scoreClientQuality(job, options.profile),
+      scoreClientQuality(job, options.profile, options.jobText),
     );
   } else {
-    categories.push(scoreClientQuality(job, options.profile));
+    categories.push(scoreClientQuality(job, options.profile, options.jobText));
   }
 
   let fitScore = 0;

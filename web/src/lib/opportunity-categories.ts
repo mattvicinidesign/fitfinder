@@ -120,6 +120,12 @@ export function sectionCategoryScore(
     const fromDetails = clientQualityScoreFromPostingDetails(
       ctx.parsedJob?.postingDetails,
       ctx.profileDesiredCompensation ?? ctx.parsedResume?.desiredCompensation ?? null,
+      {
+        companyName: ctx.companyName,
+        jobDescription: ctx.jobDescription,
+        employerType:
+          ctx.postingContext?.employerType ?? ctx.parsedJob?.employerType ?? null,
+      },
     );
     if (fromDetails != null) return fromDetails;
   }
