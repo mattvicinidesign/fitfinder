@@ -203,15 +203,10 @@ export function ProfileScreen() {
                   onChange={(v) => patch({ fullName: v })}
                 />
                 <LabeledInput
-                  label="Country"
+                  label="Location"
+                  placeholder="City, country"
                   value={profile.country ?? ""}
                   onChange={(v) => patch({ country: v })}
-                />
-                <LabeledInput
-                  label="Timezone"
-                  placeholder="America/New_York"
-                  value={profile.timezone ?? ""}
-                  onChange={(v) => patch({ timezone: v })}
                 />
               </div>
             </Section>
