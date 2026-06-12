@@ -8,6 +8,7 @@ import {
   type RecentActivityItem,
 } from "@/lib/recent-activity";
 import { buildSampleAnalysisResult } from "@/lib/sample-report-fixtures";
+import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import type { AnalysisRecord, AnalysisResult, Recommendation } from "@/lib/types";
 
 const SEED_VERSION = "v4";
@@ -33,7 +34,6 @@ type SampleSpec = {
   job_title: string;
   company_name: string | null;
   hireArea: string;
-  meta_line: string;
   fit_score: number;
   qualification_score: number;
   confidence_score: number;
@@ -48,7 +48,6 @@ const SPECS: SampleSpec[] = [
     job_title: "Senior Product Designer",
     company_name: "Northline SaaS",
     hireArea: "Worldwide",
-    meta_line: "Upwork Client | Product Company | 2 Days Ago | Worldwide",
     fit_score: 89,
     qualification_score: 82,
     confidence_score: 74,
@@ -61,7 +60,6 @@ const SPECS: SampleSpec[] = [
     job_title: "UX Research Lead",
     company_name: "Helio Health",
     hireArea: "United States",
-    meta_line: "Upwork Client | Agency | 5 Days Ago | United States",
     fit_score: 76,
     qualification_score: 71,
     confidence_score: 68,
@@ -74,7 +72,6 @@ const SPECS: SampleSpec[] = [
     job_title: "AI Product Designer",
     company_name: "Vector Labs",
     hireArea: "Worldwide",
-    meta_line: "Upwork Client | Startup | 1 Week Ago | Worldwide",
     fit_score: 62,
     qualification_score: 58,
     confidence_score: 55,
@@ -87,7 +84,6 @@ const SPECS: SampleSpec[] = [
     job_title: "Design Systems Specialist",
     company_name: "Meridian Enterprise",
     hireArea: "Canada",
-    meta_line: "Upwork Client | Product Company | 3 Days Ago | Canada",
     fit_score: 84,
     qualification_score: 79,
     confidence_score: 70,
@@ -100,7 +96,6 @@ const SPECS: SampleSpec[] = [
     job_title: "Freelance Brand Designer",
     company_name: "Studio Rowan",
     hireArea: "United Kingdom",
-    meta_line: "Upwork Client | Agency | 2 Weeks Ago | United Kingdom",
     fit_score: 71,
     qualification_score: 67,
     confidence_score: 64,
@@ -137,13 +132,15 @@ function sampleEntry(spec: SampleSpec): AnalysisReportCacheEntry {
 }
 
 function specToRecord(spec: SampleSpec): RecentActivityItem {
+  const result = buildSampleResult(spec);
+  const { score } = normalizeAnalysisResult(result);
   return {
     id: spec.id,
     report_id: spec.id,
     company_name: spec.company_name,
     job_title: spec.job_title,
     qualification_score: spec.qualification_score,
-    fit_score: spec.fit_score,
+    fit_score: score.fitScore,
     confidence_score: spec.confidence_score,
     career_fit_adjustment: 5,
     recommendation: spec.recommendation,
@@ -151,7 +148,6 @@ function specToRecord(spec: SampleSpec): RecentActivityItem {
     narrative_json: null,
     parsed_job_json: null,
     created_at: isoDaysAgo(spec.daysAgo),
-    activity_meta_line: spec.meta_line,
   };
 }
 

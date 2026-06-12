@@ -286,6 +286,45 @@ export function extractJobTitleFromText(
   return roleFromFirstLine(text);
 }
 
+const ROLE_PRODUCT_SUFFIX =
+  /\b(?:AI[- ]?Powered|AI[- ]?native|SaaS|Platform|AdTech|MarTech|FinTech|Web3|B2B|B2C|Mobile App|Web App|Software|Product|Solution|Tool|Service|Startup|Company|Agency|Studio|E-Commerce|Ecommerce)\b/i;
+
+/** True when a trailing "for …" clause is product/company marketing, not role scope. */
+function isProductOrCompanyTitleSuffix(suffix: string): boolean {
+  const s = suffix.trim();
+  if (!s) return false;
+  if (ROLE_PRODUCT_SUFFIX.test(s)) return true;
+  // Long descriptive tail (e.g. "AI-Powered AdTech SaaS Platform") — not a role name.
+  if (s.length > 22 && !/\b(?:remote|freelance|contract|part[- ]?time|full[- ]?time)\b/i.test(s)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Normalize a posting headline into a role title for scoring metadata.
+ * Strips marketing tails like "for AI-Powered AdTech SaaS Platform".
+ */
+export function generalizeRoleTitle(
+  title: string | null | undefined,
+): string | null {
+  let t = trimOrNull(title);
+  if (!t) return null;
+
+  const parts = t.split(/\s+for\s+/i);
+  if (parts.length >= 2) {
+    const head = parts[0]?.trim() ?? "";
+    const tail = parts.slice(1).join(" for ").trim();
+    if (head && tail && isProductOrCompanyTitleSuffix(tail)) {
+      t = head;
+    }
+  }
+
+  t = t.replace(/\s+at\s+[A-Z0-9][^.!?]*$/i, "").trim();
+
+  return t || trimOrNull(title);
+}
+
 /** Prefer the fullest title among explicit, paste first line, and LLM roleTitle. */
 export function resolveJobTitle(
   jobTitle: string | null | undefined,
@@ -302,6 +341,17 @@ export function resolveJobTitle(
 
   return candidates.reduce((best, current) =>
     current.length > best.length ? current : best,
+  );
+}
+
+/** Role title for scoring metadata — generalized, not the raw posting headline. */
+export function resolveRoleTitle(
+  jobTitle: string | null | undefined,
+  jobDescription: string | null | undefined,
+  roleTitle: string | null | undefined,
+): string | null {
+  return generalizeRoleTitle(
+    resolveJobTitle(jobTitle, jobDescription, roleTitle),
   );
 }
 
@@ -390,7 +440,7 @@ export function buildPostingDetailRows(
   return ROW_DEFS.map(({ key, title, section }) => {
     let value: string | null = null;
     if (key === "role") {
-      value = resolveJobTitle(
+      value = resolveRoleTitle(
         options?.jobTitle,
         options?.jobDescription,
         job.roleTitle,
@@ -450,7 +500,7 @@ export function enrichParsedJobForPostingDetails(
     ...job,
     postingDetails: normalizePostingDetails(job, jobText),
     roleTitle:
-      resolveJobTitle(options?.jobTitle, jobText, job.roleTitle) ??
+      resolveRoleTitle(options?.jobTitle, jobText, job.roleTitle) ??
       job.roleTitle,
   };
 }

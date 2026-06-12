@@ -117,7 +117,7 @@ postingDetails (informational only — NOT used in scoring):
 - clientAverageHourlyRate: average hourly rate the client has paid, verbatim (e.g. "$45.00/hr").
 - hoursNeeded: weekly hours expectation (e.g. "More than 30 hours per week", "Less than 10 hrs/week").
 - duration: project/engagement length as written (e.g. "3 to 6 months", "Less than 1 month") — not the same as engagementDuration enum.
-- roleTitle: job role / title (maps to "Role" in UI).
+- roleTitle: canonical role only (e.g. "Senior UX Strategist / Product UX Designer") — omit marketing tails after "for" (e.g. "for AI-Powered AdTech SaaS Platform") and omit "at CompanyName".
 - Use null for each field when absent. Do not invent platform stats.
 
 Use [] for absent lists, null for absent optional fields. Do not invent compensation or location unless stated.

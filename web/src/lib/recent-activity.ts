@@ -1,4 +1,6 @@
-import { buildPostingHeaderMetaLine } from "@/lib/posting-header-meta";
+import { formatRelativeTimeAgo } from "@/lib/posting-header-meta";
+import { loadAnalysisReport } from "@/lib/analysis-report-cache";
+import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import type { AnalysisRecord, Recommendation } from "@/lib/types";
 import type { AnalysisReportCacheEntry } from "@/lib/analysis-report-cache";
 
@@ -7,7 +9,6 @@ export type RecentActivityEntry = {
   analysisId: string | null;
   job_title: string | null;
   company_name: string | null;
-  meta_line: string | null;
   fit_score: number | null;
   qualification_score: number | null;
   confidence_score: number | null;
@@ -17,7 +18,6 @@ export type RecentActivityEntry = {
 };
 
 export type RecentActivityItem = AnalysisRecord & {
-  activity_meta_line?: string | null;
   /** Key in sessionStorage report cache (always use for report links). */
   report_id: string;
 };
@@ -42,6 +42,27 @@ function writeStored(entries: RecentActivityEntry[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, MAX_STORED)));
 }
 
+function normalizeReportEntryFitScore(
+  entry: AnalysisReportCacheEntry,
+): number {
+  return normalizeAnalysisResult(entry.result, {
+    profileDesiredCompensation: entry.profileDesiredCompensation,
+    profileQualifiedIndustries: entry.profileQualifiedIndustries,
+    profileQualifiedSkills: entry.profileQualifiedSkills,
+    profileCountry: entry.profileCountry,
+    profileTimezone: entry.profileTimezone,
+  }).score.fitScore;
+}
+
+/** Report ring score (0–100) for an activity list row. */
+export function resolveActivityFitScore(item: RecentActivityItem): number {
+  const cached = loadAnalysisReport(item.report_id);
+  if (cached) {
+    return normalizeReportEntryFitScore(cached);
+  }
+  return item.fit_score ?? 0;
+}
+
 /** Record a generated report for Recent activity (independent of Save Report). */
 export function recordRecentActivityFromReport(
   reportId: string,
@@ -49,6 +70,7 @@ export function recordRecentActivityFromReport(
 ): void {
   const { result, analysisId } = entry;
   const created_at = new Date().toISOString();
+  const displayFitScore = normalizeReportEntryFitScore(entry);
   const next: RecentActivityEntry = {
     reportId,
     analysisId,
@@ -57,15 +79,7 @@ export function recordRecentActivityFromReport(
       result.parsedJob.roleTitle?.trim() ||
       "Job",
     company_name: result.companyName?.trim() || null,
-    meta_line:
-      buildPostingHeaderMetaLine({
-        parsedJob: result.parsedJob,
-        jobDescription: result.jobDescription,
-        jobTitle: result.jobTitle,
-        companyName: result.companyName,
-        postingContext: result.postingContext,
-      }) ?? null,
-    fit_score: result.score.fitScore,
+    fit_score: displayFitScore,
     qualification_score: result.score.qualificationScore,
     confidence_score: result.score.confidenceScore,
     recommendation: result.score.recommendation,
@@ -100,21 +114,13 @@ function recentEntryToAnalysisRecord(entry: RecentActivityEntry): RecentActivity
     narrative_json: null,
     parsed_job_json: null,
     created_at: entry.created_at,
-    activity_meta_line: entry.meta_line,
   };
 }
 
-/** Subtitle for recent activity rows: Upwork Client | Agency | 4 Days Ago | Worldwide */
+/** Subtitle for activity list rows — when Analyze Fit was run. */
 export function activityMetaLine(item: RecentActivityItem): string | null {
-  if (item.activity_meta_line?.trim()) return item.activity_meta_line.trim();
-  return (
-    buildPostingHeaderMetaLine({
-      parsedJob: item.parsed_job_json ?? undefined,
-      jobDescription: item.job_description,
-      jobTitle: item.job_title,
-      companyName: item.company_name,
-    }) ?? null
-  );
+  const ago = formatRelativeTimeAgo(item.created_at);
+  return ago ? ago.toLowerCase() : null;
 }
 
 /** Merge persisted analyses with locally tracked reports; newest first. */
@@ -140,11 +146,9 @@ export function mergeRecentActivity(
         report_id: local.reportId,
         job_title: existing.job_title?.trim() || fromLocal.job_title,
         company_name: existing.company_name?.trim() || fromLocal.company_name,
-        activity_meta_line:
-          existing.activity_meta_line?.trim() || fromLocal.activity_meta_line,
         recommendation_label:
           existing.recommendation_label || fromLocal.recommendation_label,
-        fit_score: existing.fit_score ?? fromLocal.fit_score,
+        fit_score: fromLocal.fit_score ?? existing.fit_score,
         qualification_score:
           existing.qualification_score ?? fromLocal.qualification_score,
         confidence_score:

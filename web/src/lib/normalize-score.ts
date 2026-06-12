@@ -1,4 +1,4 @@
-import { normalizePostingDetails, resolveJobTitle } from "@/lib/posting-details";
+import { normalizePostingDetails, resolveJobTitle, resolveRoleTitle } from "@/lib/posting-details";
 import { normalizeParsedJob } from "@/lib/normalize-parsed-job";
 import { resolveJobCompensation } from "@/lib/compensation-match";
 import { resolvePostingContext } from "@/lib/posting-context";
@@ -10,7 +10,7 @@ import { resumeToolsMatchPool } from "@/lib/resume-tools";
 import { normalizeOpportunityCategories } from "@/lib/opportunity-categories";
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
 import { buildReportRollupOptions } from "@/lib/report-rollup-context";
-import { computeWeightedReportScore } from "@/lib/section-score-rollups";
+import { resolveReportFitScore } from "@/lib/report-fit-score";
 import type {
   AnalysisResult,
   CategoryKey,
@@ -217,7 +217,6 @@ export function normalizeScoreResult(
     asArray<unknown>(s.opportunityCategories).map(normalizeOpportunityCategory),
   );
   const opportunityDebug = normalizeOpportunityDebug(s.opportunityDebug);
-  const usesOpportunityEngine = opportunityCategories.length > 0;
 
   const baseScore: ScoreResult = {
     qualificationScore: Number(s.qualificationScore) || 0,
@@ -239,35 +238,6 @@ export function normalizeScoreResult(
     negativeSignalsFound: asArray<string>(s.negativeSignalsFound),
   };
 
-  if (usesOpportunityEngine) {
-    const fitScore = Number(s.fitScore) || 0;
-    const { recommendation, label: recommendationLabel } =
-      s.recommendation && s.recommendationLabel
-        ? {
-            recommendation: normalizeRecommendation(s.recommendation),
-            label: String(s.recommendationLabel),
-          }
-        : recommendFromFitScore(fitScore);
-
-    const normalized: ScoreResult = {
-      ...baseScore,
-      fitScore,
-      recommendation,
-      recommendationLabel,
-    };
-
-    if (options?.parsedJob) {
-      return enrichCoverageCategories(
-        normalized,
-        options.parsedJob,
-        options.parsedResume,
-        options.jobDescription,
-        options.profileQualifiedSkills,
-      );
-    }
-    return normalized;
-  }
-
   const rollupOptions = buildReportRollupOptions({
     score: baseScore,
     parsedJob: options?.parsedJob,
@@ -281,12 +251,7 @@ export function normalizeScoreResult(
     jobTitle: options?.jobTitle,
   });
 
-  const reportFitScore = computeWeightedReportScore(
-    categoryBreakdown,
-    scoringMode === "guest",
-    rollupOptions,
-  );
-  const fitScore = reportFitScore ?? (Number(s.fitScore) || 0);
+  const fitScore = resolveReportFitScore(baseScore, rollupOptions);
   const { recommendation, label: recommendationLabel } =
     recommendFromFitScore(fitScore);
 
@@ -364,7 +329,7 @@ function enrichParsedJob(
 
   const postingDetails = normalizePostingDetails(parsedJob, text);
   const roleTitle =
-    resolveJobTitle(jobTitle, text, parsedJob.roleTitle) ?? parsedJob.roleTitle;
+    resolveRoleTitle(jobTitle, text, parsedJob.roleTitle) ?? parsedJob.roleTitle;
   const compensation = resolveJobCompensation(parsedJob, text);
 
   return normalizeParsedJob(

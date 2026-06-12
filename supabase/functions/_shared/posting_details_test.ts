@@ -1,8 +1,10 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import {
   extractPostingDetailsFromText,
+  generalizeRoleTitle,
   normalizePostingDetails,
   resolvePostingDetailRows,
+  resolveRoleTitle,
 } from "./posting_details.ts";
 import type { ParsedJob } from "./types.ts";
 
@@ -70,4 +72,38 @@ Deno.test("Upwork paste extracts all posting detail fields", () => {
   assertEquals(rows.find((r) => r.key === "role")?.section, "role");
   assertEquals(rows.find((r) => r.key === "hireArea")?.section, "global");
   assertEquals(rows.find((r) => r.key === "datePosted")?.section, "global");
+});
+
+Deno.test("generalizeRoleTitle strips product marketing after for", () => {
+  assertEquals(
+    generalizeRoleTitle(
+      "Senior UX Strategist / Product UX Designer for AI-Powered AdTech SaaS Platform",
+    ),
+    "Senior UX Strategist / Product UX Designer",
+  );
+});
+
+Deno.test("resolveRoleTitle uses generalized role in posting rows", () => {
+  const jobText = `Senior UX Strategist / Product UX Designer for AI-Powered AdTech SaaS Platform
+Posted 4 weeks ago
+Worldwide`;
+  const rows = resolvePostingDetailRows(
+    {
+      skills: [],
+      industries: [],
+      workflows: [],
+      compensation: null,
+      toolRequirements: [],
+      aiRequirements: [],
+    },
+    { jobDescription: jobText },
+  );
+  assertEquals(
+    rows.find((r) => r.key === "role")?.value,
+    "Senior UX Strategist / Product UX Designer",
+  );
+  assertEquals(
+    resolveRoleTitle(null, jobText, null),
+    "Senior UX Strategist / Product UX Designer",
+  );
 });

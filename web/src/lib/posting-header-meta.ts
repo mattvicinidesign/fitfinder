@@ -80,6 +80,45 @@ export function formatHeaderDatePosted(raw?: string | null): string | null {
   return toTitleCaseWords(withoutPosted);
 }
 
+const RELATIVE_TIME_UNIT: Array<[number, string, string]> = [
+  [60, "second", "seconds"],
+  [60, "minute", "minutes"],
+  [24, "hour", "hours"],
+  [7, "day", "days"],
+  [4, "week", "weeks"],
+  [12, "month", "months"],
+  [Number.POSITIVE_INFINITY, "year", "years"],
+];
+
+function relativeTimeAgoLabel(value: number, singular: string, plural: string): string {
+  const unit = value === 1 ? singular : plural;
+  return toTitleCaseWords(`${value} ${unit} ago`);
+}
+
+/** Relative time since an ISO timestamp — e.g. "4 Days Ago", "Just Now". */
+export function formatRelativeTimeAgo(
+  isoDate?: string | null,
+  nowMs: number = Date.now(),
+): string | null {
+  if (!isoDate?.trim()) return null;
+
+  const thenMs = new Date(isoDate).getTime();
+  if (Number.isNaN(thenMs)) return null;
+
+  let diffSeconds = Math.floor(Math.max(0, nowMs - thenMs) / 1000);
+  if (diffSeconds < 45) return "Just Now";
+
+  let value = diffSeconds;
+  for (const [unitSeconds, singular, plural] of RELATIVE_TIME_UNIT) {
+    if (value < unitSeconds) {
+      return relativeTimeAgoLabel(value, singular, plural);
+    }
+    value = Math.floor(value / unitSeconds);
+  }
+
+  return null;
+}
+
 export interface PostingHeaderMetaInput {
   companyName?: string | null;
   jobDescription?: string | null;

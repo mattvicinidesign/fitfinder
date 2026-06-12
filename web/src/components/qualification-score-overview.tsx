@@ -3,13 +3,9 @@
 import { AnimatedScoreProgress } from "@/components/animated-score-progress";
 import { QualificationScoreCircle } from "@/components/qualification-score-circle";
 import { SummarySectionCard } from "@/components/summary-section-card";
-import { computeWeightedReportScore } from "@/lib/section-score-rollups";
+import { resolveReportFitScore } from "@/lib/report-fit-score";
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
-import {
-  buildOverallMatchRollups,
-  computeOverallMatchFitScore,
-  usesOpportunityEngine,
-} from "@/lib/opportunity-categories";
+import { buildOverallMatchRollups } from "@/lib/opportunity-categories";
 import {
   GLOBAL_SCORE_INFO,
   GLOBAL_SCORE_LABEL,
@@ -82,19 +78,8 @@ export function QualificationScoreOverview({
   score: ScoreResult;
   rollupOptions: ReportRollupOptions;
 }) {
-  const isGuest = score.scoringMode === "guest";
-  const engineActive = usesOpportunityEngine(score);
   const rollups = buildOverallMatchRollups(score, rollupOptions);
-
-  const rollupFitScore = computeOverallMatchFitScore(rollups);
-  const reportFitScore = rollupFitScore ??
-    (engineActive
-      ? score.fitScore
-      : (computeWeightedReportScore(
-          score.categoryBreakdown,
-          isGuest,
-          rollupOptions,
-        ) ?? score.fitScore));
+  const reportFitScore = resolveReportFitScore(score, rollupOptions);
 
   const { recommendation, label: recommendationLabel } =
     recommendFromFitScore(reportFitScore);

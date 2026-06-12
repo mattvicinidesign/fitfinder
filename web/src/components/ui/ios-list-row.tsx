@@ -1,3 +1,5 @@
+import { fitScoreOnTen } from "@/components/qualification-score-circle";
+import { resolveActivityFitScore, type RecentActivityItem } from "@/lib/recent-activity";
 import { scoreColor } from "@/lib/score";
 import type { AnalysisRecord } from "@/lib/types";
 
@@ -6,10 +8,15 @@ export function IosAnalysisListRow({
   analysis: a,
   subtitle,
 }: {
-  analysis: AnalysisRecord;
+  analysis: AnalysisRecord & { report_id?: string };
   /** When set, replaces company name + recommendation (e.g. posting meta line). */
   subtitle?: string | null;
 }) {
+  const fitScore = resolveActivityFitScore({
+    ...(a as RecentActivityItem),
+    report_id: a.report_id ?? a.id,
+  });
+
   return (
     <div className="flex items-center gap-3 bg-background px-4 py-3.5">
       <div className="min-w-0 flex-1">
@@ -36,8 +43,8 @@ export function IosAnalysisListRow({
         )}
       </div>
       <div className="text-right shrink-0">
-        <p className={`text-[28px] font-bold tabular-nums leading-none ${scoreColor(a.fit_score ?? 0)}`}>
-          {Math.round(a.fit_score ?? 0)}
+        <p className={`text-[28px] font-bold tabular-nums leading-none ${scoreColor(fitScore)}`}>
+          {fitScoreOnTen(fitScore)}
         </p>
         <p className="text-[11px] text-muted-foreground mt-0.5">Fit</p>
       </div>
