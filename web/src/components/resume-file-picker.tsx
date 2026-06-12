@@ -16,8 +16,8 @@ interface Props {
 }
 
 /**
- * Resume upload: PDF, Word, or text file. Upload returns quickly; AI parsing
- * continues in the background while the user fills in the job description.
+ * Resume upload: PDF, Word, or text file. Shows success only after storage
+ * upload and AI parsing both finish.
  */
 export function ResumeFilePicker({
   onParsed,
@@ -33,26 +33,19 @@ export function ResumeFilePicker({
     const file = files?.[0];
     if (!file) return;
     setUploading(true);
+    setParsing(false);
     try {
       const { resumeId, fileName: name } = await uploadResume(file);
       onParsed({ resumeId, fileName: name });
-      toast.success("Resume uploaded.");
       setUploading(false);
       setParsing(true);
-      try {
-        await waitForResumeParse(resumeId);
-        toast.success("Resume parsed.");
-      } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Resume parsing failed.",
-        );
-      } finally {
-        setParsing(false);
-      }
+      await waitForResumeParse(resumeId);
+      toast.success("Upload complete.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed.");
-      setUploading(false);
     } finally {
+      setUploading(false);
+      setParsing(false);
       if (fileRef.current) fileRef.current.value = "";
     }
   }

@@ -2,6 +2,8 @@
 // (including bonus / nice-to-have sections the model often skips).
 
 import { normalizePostingDetails } from "./posting_details.ts";
+import { enrichAiEmphasisFromJobText } from "./ai_emphasis_match.ts";
+import { sanitizeCountryRequirement } from "./preferred_qualifications_parse.ts";
 import {
   extractIndustriesFromText,
   normalizeIndustryList,
@@ -355,6 +357,11 @@ export function normalizeParsedJob(
   }
 
   const postingDetails = normalizePostingDetails(parsed, jobText);
+  const countryRequirement = sanitizeCountryRequirement(
+    { ...parsed, postingDetails },
+    jobText,
+  );
+  const aiEmphasis = enrichAiEmphasisFromJobText(parsed, jobText);
 
   const taggedMandatorySkills = dedupeLabels(
     partitionSkillsAndTools([
@@ -378,5 +385,8 @@ export function normalizeParsedJob(
     toolRequirements,
     bonusToolRequirements,
     postingDetails,
+    countryRequirement,
+    aiRequirements: aiEmphasis.aiRequirements,
+    aiMaturityLevel: aiEmphasis.aiMaturityLevel,
   };
 }

@@ -41,7 +41,7 @@ You extract structured data from job descriptions. Return ONLY valid JSON matchi
   "bonusToolRequirements": string[],  // tools named in bonus / nice-to-have / preferred sections only
   "aiRequirements": string[],
   "softwareModels": string[],
-  "countryRequirement": string|null,
+  "countryRequirement": string|null,  // freelancer location restriction ONLY — see rules below
   "timezoneRequirement": string|null,
   "roleTitle": string|null,
   "aiMaturityLevel": number|null,
@@ -102,6 +102,11 @@ industries (job posting):
 - NEVER put skills, disciplines, or tools here (e.g. NOT "web design", "mobile app development", "user research") — use skills or toolRequirements instead.
 
 workflows: always return [] (not used in V1).
+
+countryRequirement (freelancer hire location — NOT clientOrigin):
+- Set ONLY when the posting restricts where freelancers may apply: Upwork header line after "Posted …" (e.g. "Worldwide", "Only freelancers located in the U.S. may apply"), Preferred qualifications Location/Country, or explicit "hire in / talent must be in" lines.
+- Use null when the only country mentioned is the client's base in "About the client" (postingDetails.clientOrigin) — that is where the client is based, not who they want to hire.
+- "Worldwide" or global remote → null (no specific country requirement).
 
 postingDetails (informational only — NOT used in scoring):
 - Extract only when explicitly stated in the posting (common on freelance platforms).

@@ -1,6 +1,8 @@
 // Post-process parsed job JSON — keep in sync with supabase/functions/_shared/normalize_parsed_job.ts
 
 import { normalizePostingDetails } from "@/lib/posting-details";
+import { enrichAiEmphasisFromJobText } from "@/lib/ai-emphasis-match";
+import { sanitizeCountryRequirement } from "@/lib/preferred-qualifications-parse";
 import { normalizeIndustryList } from "@/lib/tech-industries";
 import type { ParsedJob } from "@/lib/types";
 
@@ -343,6 +345,11 @@ export function normalizeParsedJob(
   const industries = [...fromModel.industries];
 
   const postingDetails = normalizePostingDetails(parsed, jobText);
+  const countryRequirement = sanitizeCountryRequirement(
+    { ...parsed, postingDetails },
+    jobText,
+  );
+  const aiEmphasis = enrichAiEmphasisFromJobText(parsed, jobText);
 
   const taggedMandatorySkills = dedupeLabels(
     partitionSkillsAndTools([
@@ -366,5 +373,8 @@ export function normalizeParsedJob(
     toolRequirements,
     bonusToolRequirements,
     postingDetails,
+    countryRequirement,
+    aiRequirements: aiEmphasis.aiRequirements,
+    aiMaturityLevel: aiEmphasis.aiMaturityLevel,
   };
 }

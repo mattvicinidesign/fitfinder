@@ -5,11 +5,16 @@
  * — Category weights toward the global score stay in SCORING_CATEGORY_WEIGHTS.
  */
 
-import { buildAiEmphasisDetail } from "@/lib/ai-emphasis-match";
+import {
+  buildAiEmphasisDetail,
+  isAiEmphasisPreferenceMatch,
+  jobHasAiEmphasis,
+} from "@/lib/ai-emphasis-match";
 import {
   buildCompensationDetail,
-  formatCompensation,
+  formatCompensationDisplay,
   isHourlyCompensationWithinProfileRange,
+  resolveJobCompensation,
 } from "@/lib/compensation-match";
 import {
   CLIENT_QUALITY_FIELD_LABELS,
@@ -68,6 +73,8 @@ export interface SectionFieldScore {
   title: string;
   /** Value pill text when identified in the posting. */
   badgeLabel: string;
+  /** Secondary line under the pill (e.g. "Hourly" for pay bands). */
+  badgeSubtext?: string | null;
   state: SummaryMatchState;
   /** False when posting has no value — excluded from category subtotal. */
   identified: boolean;
@@ -105,12 +112,14 @@ function field(
   badgeLabel: string,
   state: SummaryMatchState,
   points: number | null,
+  badgeSubtext?: string | null,
 ): SectionFieldScore {
   return {
     key,
     title,
     identified,
     badgeLabel: identified ? badgeLabel : NOT_SPECIFIED_LABEL,
+    badgeSubtext: identified ? (badgeSubtext ?? null) : null,
     state: identified ? state : "unknown",
     points: identified ? points : null,
   };
@@ -411,14 +420,17 @@ export function buildClientPreferencesFields(
   const countryCat = categoryPoints(countryRow);
   const tzCat = categoryPoints(lookupCategory(ctx.breakdown, "timezone"));
   const aiCat = lookupCategory(ctx.breakdown, "aiEmphasis");
-  const aiDetail = buildAiEmphasisDetail(ctx.parsedJob, ctx.parsedResume);
+  const aiDetail = buildAiEmphasisDetail(
+    ctx.parsedJob,
+    ctx.parsedResume,
+    ctx.jobDescription,
+  );
 
   let aiIdentified = Boolean(
     aiCat && aiCat.status !== "unknown",
   );
-  if (!aiIdentified && aiDetail) {
-    aiIdentified =
-      aiDetail.jobRequirements.length > 0 || aiDetail.jobMaturity != null;
+  if (!aiIdentified) {
+    aiIdentified = jobHasAiEmphasis(ctx.parsedJob, ctx.jobDescription);
   }
 
   let aiState: SummaryMatchState = "unknown";
@@ -430,9 +442,13 @@ export function buildClientPreferencesFields(
     aiPoints = aiPts.points;
     aiLabel =
       aiPts.state === "unknown" ? "—" : aiPts.state === "match" ? "YES" : "NO";
+    if (aiDetail && aiState !== "match" && isAiEmphasisPreferenceMatch(aiDetail)) {
+      aiState = "match";
+      aiPoints = 100;
+      aiLabel = "YES";
+    }
   } else if (aiIdentified && aiDetail) {
-    const matched =
-      aiDetail.matched.length > 0 && aiDetail.missing.length === 0;
+    const matched = isAiEmphasisPreferenceMatch(aiDetail);
     aiState = matched ? "match" : "mismatch";
     aiPoints = matched ? 100 : 0;
     aiLabel = matched ? "YES" : "NO";
@@ -625,30 +641,30 @@ export function buildRoleDetailsFields(
 function buildCompensationField(ctx: SectionFieldScoreContext): SectionFieldScore {
   const resumeAsk =
     ctx.parsedResume?.desiredCompensation ?? ctx.profileDesiredCompensation ?? null;
-  const compDetail = buildCompensationDetail(
-    ctx.parsedJob?.compensation,
-    resumeAsk,
-  );
+  const jobComp = resolveJobCompensation(ctx.parsedJob, ctx.jobDescription);
+  const display = formatCompensationDisplay(jobComp);
+  const compDetail = buildCompensationDetail(jobComp, resumeAsk);
   const compCategory = lookupCategory(ctx.breakdown, "compensation");
-  const jobHasComp =
-    Boolean(ctx.parsedJob?.compensation) ||
-    Boolean(compDetail.jobOfferLabel);
 
-  if (!jobHasComp) {
+  if (!display) {
     return field("compensation", "Pay", false, "", "unknown", null);
   }
 
   const withinProfileRange = isHourlyCompensationWithinProfileRange(
-    ctx.parsedJob?.compensation,
+    jobComp,
     resumeAsk,
   );
-  const jobOfferLabel =
-    compDetail.jobOfferLabel?.replace(/\$/g, "").trim() ??
-    formatCompensation(ctx.parsedJob?.compensation)?.replace(/\$/g, "").trim() ??
-    "—";
 
   if (withinProfileRange) {
-    return field("compensation", "Pay", true, jobOfferLabel, "match", 100);
+    return field(
+      "compensation",
+      "Pay",
+      true,
+      display.amountLabel,
+      "match",
+      100,
+      display.periodLabel,
+    );
   }
 
   const cat = categoryPoints(compCategory);
@@ -657,9 +673,10 @@ function buildCompensationField(ctx: SectionFieldScoreContext): SectionFieldScor
       "compensation",
       "Pay",
       true,
-      jobOfferLabel,
+      display.amountLabel,
       cat.state,
       cat.points,
+      display.periodLabel,
     );
   }
 
@@ -668,9 +685,10 @@ function buildCompensationField(ctx: SectionFieldScoreContext): SectionFieldScor
     "compensation",
     "Pay",
     true,
-    jobOfferLabel,
+    display.amountLabel,
     matched ? "match" : "mismatch",
     matched ? 100 : 0,
+    display.periodLabel,
   );
 }
 

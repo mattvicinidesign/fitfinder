@@ -54,7 +54,7 @@ export const GLOBAL_SCORE_INFO =
 
 export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
   clientProfile:
-    "About the client — client name, employer type, posting date, who can apply, location, rating, and average pay rate. Each item found counts equally toward the category score. Registered users only.",
+    "About the client — employer type, location, rating, and average pay rate, plus client preferences (location, timezone, and AI emphasis). Posted date, availability, and platform appear under the job title. Each item found counts equally toward the category score. Registered users only.",
   clientPreferences:
     "How well you match the client preferences — location, timezone, and AI emphasis stated in the posting.",
   roleDetails:

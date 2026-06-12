@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ReportBackButton } from "@/components/report-back-button";
-import { GuestUpgradePrompt } from "@/components/guest-upgrade-prompt";
 import { useSearchParams } from "next/navigation";
 import { AnalysisResultView } from "@/components/analysis-result";
 import { SaveReportButton } from "@/components/save-job-button";
@@ -123,9 +122,6 @@ export function AnalysisReportScreen() {
           profileCountry={entry.profileCountry ?? profileCountry}
           profileTimezone={entry.profileTimezone ?? profileTimezone}
         />
-      </div>
-      <div className="pb-6">
-        <GuestUpgradePrompt variant="save" className="mx-0 w-full" />
       </div>
     </ReportShell>
   );

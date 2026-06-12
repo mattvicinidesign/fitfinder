@@ -1,7 +1,10 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import {
+  extractHeaderLocationPreference,
   extractPreferredQualificationsFields,
+  isClientOriginNotApplicantPreference,
   resolveJobCountryRequirement,
+  resolveJobPreferredLocation,
   resolveJobTalentType,
   resolveJobTimezoneRequirement,
 } from "./preferred_qualifications_parse.ts";
@@ -45,6 +48,79 @@ Deno.test("resolveJobPreferredLocation prefers PQ Location over vague Worldwide 
       PREFERRED_BLOCK,
     ),
     "Americas, Europe",
+  );
+});
+
+const US_ONLY_HEADER = `UI/UX Web Designer
+Posted 2 days ago
+Only freelancers located in the U.S. may apply.
+
+Summary
+We need a designer.
+
+About the client
+United States
+Miami 3:03 PM`;
+
+Deno.test("extractHeaderLocationPreference reads US-only header line", () => {
+  assertEquals(
+    extractHeaderLocationPreference(US_ONLY_HEADER),
+    "United States",
+  );
+});
+
+Deno.test("resolveJobPreferredLocation ignores About the client country", () => {
+  const job = `Senior UX Strategist
+Posted 4 weeks ago
+Worldwide
+
+Summary
+Body text.
+
+About the client
+United States
+Miami 1:25 PM`;
+
+  assertEquals(
+    resolveJobPreferredLocation(
+      {
+        countryRequirement: "United States",
+        postingDetails: { clientOrigin: "United States" },
+      },
+      job,
+    ),
+    null,
+  );
+});
+
+Deno.test("resolveJobPreferredLocation uses header US-only over client origin parse", () => {
+  assertEquals(
+    resolveJobPreferredLocation(
+      {
+        countryRequirement: "United States",
+        postingDetails: { clientOrigin: "United States" },
+      },
+      US_ONLY_HEADER,
+    ),
+    "United States",
+  );
+});
+
+Deno.test("isClientOriginNotApplicantPreference detects client base only", () => {
+  const job = `Title
+Posted 1 day ago
+Worldwide
+
+About the client
+United States`;
+
+  assertEquals(
+    isClientOriginNotApplicantPreference(
+      "United States",
+      { postingDetails: { clientOrigin: "United States" } },
+      job,
+    ),
+    true,
   );
 });
 

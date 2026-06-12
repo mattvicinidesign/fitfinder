@@ -13,7 +13,7 @@
 // narrative, optionally stores the analysis, and returns the full result.
 
 import { completeJSON } from "../_shared/openai.ts";
-import { normalizeParsedJob } from "../_shared/normalize_parsed_job.ts";
+import { resolveJobTitle } from "../_shared/posting_details.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
 import {
   mergeProfileIntoResumeForScoring,
@@ -143,9 +143,7 @@ Deno.serve(async (req: Request) => {
     const postingContext = postingContextPreview;
 
     const resolvedJobTitle =
-      typeof jobTitle === "string" && jobTitle.trim()
-        ? jobTitle.trim()
-        : parsedJob.roleTitle?.trim() || null;
+      resolveJobTitle(jobTitle, jobText, parsedJob.roleTitle) ?? null;
 
     const result: AnalysisResult = {
       companyName,

@@ -234,6 +234,33 @@ function roleFromFirstLine(text: string): string | null {
   return first;
 }
 
+/** First non-empty line of a job paste (Upwork title line). */
+export function extractJobTitleFromText(
+  text: string | null | undefined,
+): string | null {
+  if (!text?.trim()) return null;
+  return roleFromFirstLine(text);
+}
+
+/** Prefer the fullest title among explicit, paste first line, and LLM roleTitle. */
+export function resolveJobTitle(
+  jobTitle: string | null | undefined,
+  jobDescription: string | null | undefined,
+  roleTitle: string | null | undefined,
+): string | null {
+  const candidates = [
+    trimOrNull(jobTitle),
+    extractJobTitleFromText(jobDescription),
+    trimOrNull(roleTitle),
+  ].filter((value): value is string => Boolean(value));
+
+  if (candidates.length === 0) return null;
+
+  return candidates.reduce((best, current) =>
+    current.length > best.length ? current : best,
+  );
+}
+
 function inferDetailsFromParsedJob(
   parsed: ParsedJob,
 ): Partial<JobPostingDetails> {
@@ -307,10 +334,10 @@ export function buildPostingDetailRows(
   return ROW_DEFS.map(({ key, title, section }) => {
     let value: string | null = null;
     if (key === "role") {
-      value = mergeDetail(
-        job.roleTitle,
+      value = resolveJobTitle(
         options?.jobTitle,
-        options?.jobDescription ? roleFromFirstLine(options.jobDescription) : null,
+        options?.jobDescription,
+        job.roleTitle,
       );
     } else if (d) {
       value = trimOrNull(d[key]);
@@ -336,7 +363,7 @@ export function enrichParsedJobForPostingDetails(
     ...job,
     postingDetails: normalizePostingDetails(job, jobText),
     roleTitle:
-      mergeDetail(job.roleTitle, options?.jobTitle, roleFromFirstLine(jobText)) ??
+      resolveJobTitle(options?.jobTitle, jobText, job.roleTitle) ??
       job.roleTitle,
   };
 }

@@ -1,4 +1,4 @@
-import type { Compensation } from "@/lib/types";
+import type { Compensation, ParsedJob } from "@/lib/types";
 
 export type CompensationAlignment =
   | "unknown"
@@ -45,23 +45,223 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function formatMoney(amount: number, currency: string | null): string {
+function formatMoney(
+  amount: number,
+  currency: string | null,
+  period: Compensation["period"],
+): string {
   const c = currency ?? "USD";
+  const decimals = period === "hour" ? 2 : 0;
   try {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: c,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     }).format(amount);
   } catch {
-    return `${amount.toLocaleString()} ${c}`;
+    return `$${amount.toFixed(decimals)}`;
   }
+}
+
+function periodDisplayLabel(period: Compensation["period"]): string {
+  if (period === "hour") return "Hourly";
+  if (period === "month") return "Monthly";
+  if (period === "year") return "Annual";
+  return "";
 }
 
 function periodLabel(period: Compensation["period"]): string {
   if (period === "hour") return "/hr";
   if (period === "month") return "/mo";
   return "/yr";
+}
+
+export interface CompensationDisplay {
+  /** e.g. "$65.00 - $75.00" */
+  amountLabel: string;
+  /** e.g. "Hourly" */
+  periodLabel: string;
+}
+
+function parseDollarAmount(raw: string): number | null {
+  const n = Number.parseFloat(raw.replace(/,/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+function isExcludedRateContext(snippet: string): boolean {
+  return (
+    /avg\.?\s*hourly|avg hourly rate paid|\(job budget\)|bid range/i.test(
+      snippet,
+    ) ||
+    /\|\s*avg\s*\$/i.test(snippet) ||
+    /\bhigh\s*\$[\d,.]+.*\|\s*avg/i.test(snippet)
+  );
+}
+
+/**
+ * Upwork client-specified pay lives in the Featured Job header (hrs / duration /
+ * expert / $min – $max). Stop before Activity, Preferred qualifications, or About the client.
+ */
+function upworkClientPaySearchRegion(text: string): string {
+  let end = text.length;
+  for (const marker of [
+    /\bactivity on this job\b/i,
+    /\babout the client\b/i,
+    /\bpreferred qualifications\b/i,
+    /\bskills and expertise\b/i,
+    /\bsubmit a proposal\b/i,
+    /\bsimilar jobs on upwork\b/i,
+  ]) {
+    const idx = text.search(marker);
+    if (idx > 0) end = Math.min(end, idx);
+  }
+
+  const header = text.slice(0, end);
+
+  const featuredIdx = header.search(/\bfeatured job\b/i);
+  if (featuredIdx >= 0) {
+    return header.slice(featuredIdx);
+  }
+
+  const hrsIdx = header.search(
+    /\b(?:more|less) than \d+\s+hrs?\s*\/\s*week\b/i,
+  );
+  if (hrsIdx >= 0) {
+    return header.slice(hrsIdx, Math.min(hrsIdx + 900, header.length));
+  }
+
+  return header.slice(0, Math.min(1500, header.length));
+}
+
+function compensationAmountsAppearInRegion(
+  comp: Compensation,
+  region: string,
+): boolean {
+  const amounts = [comp.min, comp.max].filter(
+    (n): n is number => n != null && Number.isFinite(n),
+  );
+  if (amounts.length === 0) return false;
+
+  return amounts.some((amount) => {
+    const fixed = amount.toFixed(2);
+    const flexible = amount.toString();
+    return (
+      region.includes(`$${fixed}`) ||
+      region.includes(fixed) ||
+      region.includes(flexible)
+    );
+  });
+}
+
+function extractCompensationFromRegion(
+  search: string,
+): Compensation | null {
+  if (/bid range/i.test(search)) {
+    const beforeBid = search.split(/\bbid range\b/i)[0] ?? search;
+    if (beforeBid.trim().length > 0) {
+      return extractCompensationFromRegion(beforeBid);
+    }
+    return null;
+  }
+
+  const rangePatterns: RegExp[] = [
+    /\$(\d[\d,]*\.\d{2})\s*(?:\r?\n+\s*[-–—]\s*\r?\n+\s*|\s*[-–—]\s+)\$(\d[\d,]*\.\d{2})/,
+    /\$(\d[\d,]*\.\d{2})\s*[-–—]\s*\$(\d[\d,]*\.\d{2})/,
+  ];
+
+  for (const re of rangePatterns) {
+    const match = search.match(re);
+    if (!match?.[1] || !match[2]) continue;
+    const context = search.slice(
+      Math.max(0, (match.index ?? 0) - 40),
+      (match.index ?? 0) + match[0].length + 120,
+    );
+    if (isExcludedRateContext(context)) continue;
+
+    const min = parseDollarAmount(match[1]);
+    const max = parseDollarAmount(match[2]);
+    if (min == null || max == null) continue;
+
+    return {
+      min: Math.min(min, max),
+      max: Math.max(min, max),
+      currency: "USD",
+      period: "hour",
+    };
+  }
+
+  const hourlySingle = search.match(/\$(\d[\d,]*\.\d{2})\s*\/\s*hr\b/i);
+  if (hourlySingle?.[1]) {
+    const context = search.slice(
+      Math.max(0, (hourlySingle.index ?? 0) - 40),
+      (hourlySingle.index ?? 0) + hourlySingle[0].length + 40,
+    );
+    if (!isExcludedRateContext(context)) {
+      const rate = parseDollarAmount(hourlySingle[1]);
+      if (rate != null) {
+        return { min: rate, max: rate, currency: "USD", period: "hour" };
+      }
+    }
+  }
+
+  return null;
+}
+
+/** Pull client pay band from the Upwork Featured Job header when parse omitted it. */
+export function extractCompensationFromJobText(
+  jobText: string | null | undefined,
+): Compensation | null {
+  const text = jobText?.trim();
+  if (!text) return null;
+
+  const search = upworkClientPaySearchRegion(text);
+  return extractCompensationFromRegion(search);
+}
+
+export function resolveJobCompensation(
+  parsedJob: ParsedJob | null | undefined,
+  jobText?: string | null,
+): Compensation | null {
+  const text = jobText?.trim() ?? "";
+  const fromFeaturedHeader = extractCompensationFromJobText(text);
+  if (fromFeaturedHeader) return fromFeaturedHeader;
+
+  const fromParse = parsedJob?.compensation ?? null;
+  if (!fromParse || !text) return null;
+
+  const region = upworkClientPaySearchRegion(text);
+  if (compensationAmountsAppearInRegion(fromParse, region)) {
+    return fromParse;
+  }
+
+  return null;
+}
+
+/** Upwork-style primary amount + period subtext for Role Pay pills. */
+export function formatCompensationDisplay(
+  comp: Compensation | null | undefined,
+): CompensationDisplay | null {
+  if (!comp) return null;
+
+  const { min, max, currency, period } = comp;
+  let amountLabel: string | null = null;
+
+  if (min != null && max != null && min !== max) {
+    amountLabel = `${formatMoney(min, currency, period)} - ${formatMoney(max, currency, period)}`;
+  } else {
+    const single = max ?? min;
+    if (single != null) {
+      amountLabel = formatMoney(single, currency, period);
+    }
+  }
+
+  if (!amountLabel) return null;
+
+  return {
+    amountLabel,
+    periodLabel: periodDisplayLabel(period),
+  };
 }
 
 /** Job offer hourly band overlaps profile desired hourly band. */
@@ -99,11 +299,11 @@ export function formatCompensation(comp: Compensation | null | undefined): strin
   const pl = periodLabel(period);
 
   if (min != null && max != null && min !== max) {
-    return `${formatMoney(min, currency)} – ${formatMoney(max, currency)}${pl}`;
+    return `${formatMoney(min, currency, period)} – ${formatMoney(max, currency, period)}${pl}`;
   }
   const single = max ?? min;
   if (single != null) {
-    return `${formatMoney(single, currency)}${pl}`;
+    return `${formatMoney(single, currency, period)}${pl}`;
   }
   return null;
 }

@@ -26,9 +26,9 @@ import type {
 /** Overall Match display order for registered users (mirrors report section cards). */
 export const OVERALL_MATCH_CATEGORY_ORDER: OpportunityCategoryKey[] = [
   "clientQuality",
-  "preferenceAlignment",
   "roleAlignment",
   "qualificationsMatch",
+  "preferenceAlignment",
 ];
 
 /** Full engine category order (includes industry for normalization/debug). */

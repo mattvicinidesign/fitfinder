@@ -1,4 +1,5 @@
 import type { AnalysisResult, Compensation } from "@/lib/types";
+import { resolveJobTitle } from "@/lib/posting-details";
 import { recordRecentActivityFromReport } from "@/lib/recent-activity";
 
 export type AnalysisReportCacheEntry = {
@@ -29,9 +30,11 @@ export function saveAnalysisReport(
 
 export function reportRoleTitle(result: AnalysisResult): string {
   return (
-    result.jobTitle?.trim() ||
-    result.parsedJob.roleTitle?.trim() ||
-    "Job"
+    resolveJobTitle(
+      result.jobTitle,
+      result.jobDescription,
+      result.parsedJob.roleTitle,
+    ) ?? "Job"
   );
 }
 

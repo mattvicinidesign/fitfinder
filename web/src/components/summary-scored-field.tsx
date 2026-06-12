@@ -44,6 +44,11 @@ export function SummaryScoredField({
       ) : (
         <SummaryMatchBadge label={f.badgeLabel} state="mismatch" />
       )}
+      {f.identified && f.badgeSubtext ? (
+        <p className="text-[11px] font-medium text-muted-foreground leading-snug">
+          {f.badgeSubtext}
+        </p>
+      ) : null}
     </div>
   );
 }

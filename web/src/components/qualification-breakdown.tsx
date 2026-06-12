@@ -1,16 +1,10 @@
 "use client";
 
-import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
-import {
-  CoverageMatchPopover,
-  SKILLS_POPOVER_LABELS,
-  TOOLS_POPOVER_LABELS,
-  type CoverageMatchPopoverLabels,
-} from "@/components/coverage-match-popover";
 import { AiEmphasisBreakdownRow } from "@/components/ai-emphasis-breakdown-row";
 import { CompensationBreakdownRow } from "@/components/compensation-breakdown-row";
 import { CountryBreakdownRow } from "@/components/country-breakdown-row";
 import { breakdownCategoryCardClass } from "@/components/breakdown-accordion";
+import { QualificationCoveragePillsRow } from "@/components/qualification-coverage-pills-row";
 import { QualificationScoreOverview } from "@/components/qualification-score-overview";
 import { QualificationSummarySection } from "@/components/qualification-summary-section";
 import { ReportRevealSection } from "@/components/report-reveal-section";
@@ -33,9 +27,6 @@ import {
 } from "@/lib/coverage-detail";
 import {
   scoreColor,
-  scoreProgressClass,
-  SCORE_PROGRESS_BAR_HEIGHT_CLASS,
-  scoreProgressTrackClass,
 } from "@/lib/score";
 import { NOT_SPECIFIED_LABEL } from "@/lib/not-specified";
 import {
@@ -70,15 +61,6 @@ const SUMMARY_ONLY_KEYS = new Set<CategoryKey>([
   "timezone",
 ]);
 
-const COVERAGE_UI: Record<
-  CoverageCategoryKey,
-  { popoverLabels: CoverageMatchPopoverLabels }
-> = {
-  skills: { popoverLabels: SKILLS_POPOVER_LABELS },
-  tools: { popoverLabels: TOOLS_POPOVER_LABELS },
-  workflow: { popoverLabels: SKILLS_POPOVER_LABELS },
-};
-
 function resolveCoverageCategory(
   key: CoverageCategoryKey,
   label: string,
@@ -109,94 +91,6 @@ function resolveCoverageCategory(
     totalCount: computed.total,
     matchDetail: computed.items,
   };
-}
-
-function CoverageBreakdownRow({
-  label,
-  category,
-  coverageKey,
-  parsedJob,
-  parsedResume,
-  jobDescription,
-  profileQualifiedSkills,
-}: {
-  label: string;
-  category: CategoryScore;
-  coverageKey: CoverageCategoryKey;
-  parsedJob?: ParsedJob;
-  parsedResume?: ParsedResume | null;
-  jobDescription?: string | null;
-  profileQualifiedSkills?: string[] | null;
-}) {
-  const ui = COVERAGE_UI[coverageKey];
-
-  const computed: CoverageResult | null = parsedJob
-    ? coverageDetailForCategory(
-        coverageKey,
-        parsedJob,
-        parsedResume,
-        jobDescription,
-        coverageKey === "skills" ? profileQualifiedSkills : undefined,
-      )
-    : null;
-
-  const detail =
-    computed?.items?.length
-      ? computed.items
-      : category.matchDetail?.length
-        ? category.matchDetail
-        : [];
-
-  const total = category.totalCount ?? detail.length;
-  const matched =
-    category.matchedCount ?? detail.filter((i) => i.matched).length;
-  const ratioText = total > 0 ? `${matched}/${total}` : null;
-  const pct =
-    total > 0
-      ? Math.round((matched / total) * 100)
-      : Math.round(category.score);
-  const hasDetail = detail.length > 0;
-
-  const body = (
-    <>
-      <div className="flex items-center justify-between gap-4">
-        <span className="text-[15px] flex-1 min-w-0">{label}</span>
-        <div className="flex items-baseline gap-2 shrink-0 tabular-nums">
-          {ratioText ? (
-            <span className={cn("text-[15px] font-medium", scoreColor(pct))}>
-              {ratioText}
-            </span>
-          ) : null}
-        </div>
-      </div>
-      <Progress value={pct} className="w-full gap-0">
-        <ProgressTrack
-          className={cn(
-            SCORE_PROGRESS_BAR_HEIGHT_CLASS,
-            scoreProgressTrackClass(pct),
-          )}
-        >
-          <ProgressIndicator className={scoreProgressClass(pct)} />
-        </ProgressTrack>
-      </Progress>
-    </>
-  );
-
-  if (!hasDetail) {
-    return (
-      <div className={cn(breakdownCategoryCardClass, "space-y-2")}>{body}</div>
-    );
-  }
-
-  return (
-    <CoverageMatchPopover
-      items={detail}
-      labels={ui.popoverLabels}
-      showBonusBadge={coverageKey === "tools"}
-    >
-      {body}
-    </CoverageMatchPopover>
-  );
 }
 
 function BreakdownRow({
@@ -354,7 +248,7 @@ export function QualificationBreakdown({
             );
             if (displayCategory) {
               return (
-                <CoverageBreakdownRow
+                <QualificationCoveragePillsRow
                   key={key}
                   label={label}
                   category={displayCategory}
@@ -442,6 +336,7 @@ export function QualificationBreakdown({
         </div>
       </SummarySectionCard>
       </ReportRevealSection>
+
     </div>
   );
 }

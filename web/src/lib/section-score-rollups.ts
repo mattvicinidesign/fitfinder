@@ -37,16 +37,16 @@ export interface ReportSectionRollup {
 
 const REGISTERED_SECTION_IDS: ReportSectionId[] = [
   "clientProfile",
-  "clientPreferences",
   "roleDetails",
   "categoryMatching",
+  "clientPreferences",
 ];
 
 const GUEST_SECTION_IDS: ReportSectionId[] = [
   "clientProfile",
-  "clientPreferences",
   "roleDetails",
   "categoryMatching",
+  "clientPreferences",
 ];
 
 /** Report scoring category card order (mirrors qualification-breakdown layout). */

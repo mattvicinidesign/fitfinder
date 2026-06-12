@@ -1,4 +1,7 @@
-import { buildAiEmphasisDetail } from "@/lib/ai-emphasis-match";
+import {
+  buildAiEmphasisDetail,
+  isAiEmphasisPreferenceMatch,
+} from "@/lib/ai-emphasis-match";
 import {
   buildCompensationDetail,
   formatCompensation,
@@ -125,10 +128,10 @@ export function buildSummaryCriteria({
   }
 
   const aiCategory = lookup("aiEmphasis");
-  const aiDetail = buildAiEmphasisDetail(parsedJob, parsedResume);
+  const aiDetail = buildAiEmphasisDetail(parsedJob, parsedResume, jobDescription);
   let aiState = categoryState(aiCategory);
   if (aiState === "unknown" && aiDetail) {
-    if (aiDetail.matched.length > 0 && aiDetail.missing.length === 0) {
+    if (isAiEmphasisPreferenceMatch(aiDetail)) {
       aiState = "match";
     } else if (aiDetail.missing.length > 0 && aiDetail.matched.length === 0) {
       aiState = "mismatch";
