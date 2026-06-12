@@ -48,6 +48,11 @@ const GUEST_SECTION_IDS: ReportSectionId[] = [
   "categoryMatching",
 ];
 
+/** Report scoring category card order (mirrors qualification-breakdown layout). */
+export function reportSectionOrder(isGuest: boolean): ReportSectionId[] {
+  return isGuest ? GUEST_SECTION_IDS : REGISTERED_SECTION_IDS;
+}
+
 export interface ReportRollupOptions {
   fieldContext: SectionFieldScoreContext;
   postingRows: PostingDetailRow[];
@@ -75,7 +80,7 @@ export function computeReportSectionRollups(
   isGuest: boolean,
   options: ReportRollupOptions,
 ): ReportSectionRollup[] {
-  const sectionIds = isGuest ? GUEST_SECTION_IDS : REGISTERED_SECTION_IDS;
+  const sectionIds = reportSectionOrder(isGuest);
 
   return sectionIds.map((id) => {
     const { score, fraction } = rollupForCategory(id, options);

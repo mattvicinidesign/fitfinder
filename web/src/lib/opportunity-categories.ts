@@ -1,5 +1,8 @@
 import type { ReportRollupOptions } from "@/lib/section-score-rollups";
-import { computeReportSectionRollups } from "@/lib/section-score-rollups";
+import {
+  computeReportSectionRollups,
+  reportSectionOrder,
+} from "@/lib/section-score-rollups";
 import {
   OPPORTUNITY_CATEGORY_LABELS,
   OPPORTUNITY_CATEGORY_WEIGHTS,
@@ -13,12 +16,12 @@ import type {
   ScoreResult,
 } from "@/lib/types";
 
-/** Categories shown in Overall Match (industry is scored by the engine but not listed). */
+/** Overall Match display order for registered users (mirrors report section cards). */
 export const OVERALL_MATCH_CATEGORY_ORDER: OpportunityCategoryKey[] = [
+  "clientQuality",
+  "preferenceAlignment",
   "roleAlignment",
   "qualificationsMatch",
-  "preferenceAlignment",
-  "clientQuality",
 ];
 
 /** Full engine category order (includes industry for normalization/debug). */
@@ -133,17 +136,26 @@ export function buildOverallMatchRollups(
   score: ScoreResult,
   rollupOptions: ReportRollupOptions,
 ): OverallMatchRollupRow[] {
+  const isGuest = score.scoringMode === "guest";
+
   if (usesOpportunityEngine(score)) {
-    return normalizeOpportunityCategories(score.opportunityCategories ?? [])
-      .filter((row) => row.category !== "industryAlignment")
-      .map((row) => ({
+    const categoriesByKey = getOpportunityCategoryMap(score);
+    const rows: OverallMatchRollupRow[] = [];
+
+    for (const sectionId of reportSectionOrder(isGuest)) {
+      const key = LEGACY_SECTION_TO_OPPORTUNITY[sectionId];
+      const row = categoriesByKey.get(key);
+      if (!row || key === "industryAlignment") continue;
+      rows.push({
         id: row.category,
         title: row.label,
         score: row.score,
-      }));
+      });
+    }
+
+    return rows;
   }
 
-  const isGuest = score.scoringMode === "guest";
   return computeReportSectionRollups(
     score.categoryBreakdown,
     isGuest,
