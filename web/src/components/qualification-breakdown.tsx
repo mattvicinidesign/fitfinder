@@ -21,7 +21,10 @@ import {
   buildQualificationsFields,
   sectionFieldFraction,
 } from "@/lib/section-field-scoring";
-import { sectionRollupScore } from "@/lib/section-score-rollups";
+import {
+  scoringCategoryTitleForScore,
+  sectionCategoryScore,
+} from "@/lib/opportunity-categories";
 import { TimezoneBreakdownRow } from "@/components/timezone-breakdown-row";
 import {
   coverageDetailForCategory,
@@ -37,7 +40,6 @@ import {
 import { NOT_SPECIFIED_LABEL } from "@/lib/not-specified";
 import {
   SCORING_CATEGORY_INFO,
-  scoringCategoryTitle,
 } from "@/lib/scoring-terminology";
 import { GUEST_WEIGHT_ROWS, REGISTERED_WEIGHT_ROWS } from "@/lib/scoring-weights";
 import type {
@@ -273,9 +275,6 @@ export function QualificationBreakdown({
   const categoryRows = rows.filter(({ key }) => !SUMMARY_ONLY_KEYS.has(key));
   const breakdown = score.categoryBreakdown;
   const isGuest = score.scoringMode === "guest";
-  const industryCategory = lookupCategory(breakdown, "industry");
-  const industryLabel =
-    rows.find(({ key }) => key === "industry")?.label ?? "Industry";
   const rollupOptions = buildReportRollupOptions({
     score,
     parsedJob,
@@ -289,9 +288,8 @@ export function QualificationBreakdown({
     jobTitle: analysisJobTitle,
   });
 
-  const qualificationsSubtotal = sectionRollupScore(
-    breakdown,
-    isGuest,
+  const qualificationsSubtotal = sectionCategoryScore(
+    score,
     "categoryMatching",
     rollupOptions,
   );
@@ -306,17 +304,6 @@ export function QualificationBreakdown({
       </ReportRevealSection>
       <QualificationSummarySection
         score={score}
-        industryLabel={industryLabel}
-        industryCategory={
-          industryCategory ?? {
-            category: "industry",
-            label: industryLabel,
-            status: "unknown",
-            score: 0,
-            weight: isGuest ? 30 : 18,
-            contribution: 0,
-          }
-        }
         parsedJob={parsedJob}
         parsedResume={parsedResume}
         profileQualifiedIndustries={profileQualifiedIndustries}
@@ -328,7 +315,7 @@ export function QualificationBreakdown({
 
       <ReportRevealSection>
         <SummarySectionCard
-          title={scoringCategoryTitle("categoryMatching")}
+          title={scoringCategoryTitleForScore("categoryMatching", score)}
           info={SCORING_CATEGORY_INFO.categoryMatching}
         >
         <div className="space-y-3">

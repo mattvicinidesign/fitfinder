@@ -2,9 +2,11 @@
  * Canonical qualification report terminology:
  *
  * - **Overall Match** — 0–10 ring + recommendation (e.g. 8.7 Strong Pursuit)
- * - **Opportunity category** — Role Alignment, Qualifications, Industry, …
+ * - **Opportunity category** — Role Alignment, Qualifications, Preferences, …
  * - **Scoring item** — one row inside a legacy category card (V1 UI only).
  */
+
+import type { OpportunityCategoryKey } from "@/lib/types";
 
 /** Legacy scoring category id (Client Profile, Role Details, …). */
 export type ScoringCategoryId =
@@ -36,7 +38,7 @@ export const OPPORTUNITY_CATEGORY_LABELS = {
   industryAlignment: "Industry",
   preferenceAlignment: "Preferences",
   clientQuality: "Client Quality",
-} as const;
+} as const satisfies Record<OpportunityCategoryKey, string>;
 
 /** Opportunity Engine weights (sum = 100). */
 export const OPPORTUNITY_CATEGORY_WEIGHTS = {
@@ -48,7 +50,7 @@ export const OPPORTUNITY_CATEGORY_WEIGHTS = {
 } as const;
 
 export const GLOBAL_SCORE_INFO =
-  "Your overall career fit for this role. Role alignment and qualifications drive the score; industry, preferences, and client quality fine-tune the result (Role 35%, Qualifications 30%, Industry 15%, Preferences 10%, Client 10%).";
+  "Your overall career fit for this role. Role alignment and qualifications drive the score; preferences and client quality fine-tune the result.";
 
 export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
   clientProfile:
@@ -56,7 +58,7 @@ export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
   clientPreferences:
     "How well you match the client preferences — location, timezone, talent type, and AI emphasis stated in the posting.",
   roleDetails:
-    "How well the role fits — title and industry for guest users; title, industry, pay, hours, and duration when signed in.",
+    "How well the role fits — title for guest users; title, pay, hours, and duration when signed in.",
   categoryMatching:
     "How many of the posting's required skills and tools you match. Every keyword is weighted equally.",
 };

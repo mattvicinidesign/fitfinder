@@ -14,8 +14,8 @@ export type OpportunityCategoryKey = keyof typeof OPPORTUNITY_WEIGHTS;
 export const OPPORTUNITY_CATEGORY_LABELS: Record<OpportunityCategoryKey, string> = {
   roleAlignment: "Role Alignment",
   qualificationsMatch: "Qualifications",
-  industryAlignment: "Industry Alignment",
-  preferenceAlignment: "Preference Alignment",
+  industryAlignment: "Industry",
+  preferenceAlignment: "Preferences",
   clientQuality: "Client Quality",
 };
 

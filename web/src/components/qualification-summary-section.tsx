@@ -1,6 +1,5 @@
 "use client";
 
-import { IndustrySummaryContent } from "@/components/industry-breakdown-row";
 import { SummaryScoredField } from "@/components/summary-scored-field";
 import { SectionScoreSubtotal } from "@/components/section-score-subtotal";
 import { SummarySectionCard } from "@/components/summary-section-card";
@@ -13,13 +12,14 @@ import {
   sectionFieldFraction,
 } from "@/lib/section-field-scoring";
 import {
+  scoringCategoryTitleForScore,
+  sectionCategoryScore,
+} from "@/lib/opportunity-categories";
+import {
   SCORING_CATEGORY_INFO,
-  scoringCategoryTitle,
 } from "@/lib/scoring-terminology";
-import { sectionRollupScore } from "@/lib/section-score-rollups";
 import { cn } from "@/lib/utils";
 import type {
-  CategoryScore,
   Compensation,
   ParsedJob,
   ParsedResume,
@@ -32,8 +32,6 @@ function fieldByKey<T extends { key: string }>(fields: T[], key: string): T | un
 
 export function QualificationSummarySection({
   score,
-  industryLabel,
-  industryCategory,
   parsedJob,
   parsedResume,
   profileQualifiedIndustries,
@@ -44,8 +42,6 @@ export function QualificationSummarySection({
   jobTitle,
 }: {
   score: ScoreResult;
-  industryLabel: string;
-  industryCategory: CategoryScore;
   parsedJob?: ParsedJob;
   parsedResume?: ParsedResume | null;
   profileQualifiedIndustries?: string[] | null;
@@ -99,28 +95,24 @@ export function QualificationSummarySection({
 
   const showClientCard = clientFields.length > 0;
   const showPreferencesCard = preferencesFields.length > 0;
-  const showRoleCard =
-    roleFields.length > 0 || Boolean(industryCategory || parsedJob);
+  const showRoleCard = roleFields.length > 0;
 
   if (!showClientCard && !showPreferencesCard && !showRoleCard) {
     return null;
   }
 
-  const clientProfileSubtotal = sectionRollupScore(
-    score.categoryBreakdown,
-    isGuest,
+  const clientProfileSubtotal = sectionCategoryScore(
+    score,
     "clientProfile",
     rollupOptions,
   );
-  const clientPreferencesSubtotal = sectionRollupScore(
-    score.categoryBreakdown,
-    isGuest,
+  const clientPreferencesSubtotal = sectionCategoryScore(
+    score,
     "clientPreferences",
     rollupOptions,
   );
-  const roleDetailsSubtotal = sectionRollupScore(
-    score.categoryBreakdown,
-    isGuest,
+  const roleDetailsSubtotal = sectionCategoryScore(
+    score,
     "roleDetails",
     rollupOptions,
   );
@@ -148,7 +140,7 @@ export function QualificationSummarySection({
       {showClientCard ? (
         <ReportRevealSection>
         <SummarySectionCard
-          title={scoringCategoryTitle("clientProfile")}
+          title={scoringCategoryTitleForScore("clientProfile", score)}
           info={SCORING_CATEGORY_INFO.clientProfile}
         >
           <div className="space-y-3">
@@ -204,7 +196,7 @@ export function QualificationSummarySection({
       {showPreferencesCard ? (
         <ReportRevealSection>
         <SummarySectionCard
-          title={scoringCategoryTitle("clientPreferences")}
+          title={scoringCategoryTitleForScore("clientPreferences", score)}
           info={SCORING_CATEGORY_INFO.clientPreferences}
         >
           <div className="space-y-3">
@@ -249,28 +241,14 @@ export function QualificationSummarySection({
       {showRoleCard ? (
         <ReportRevealSection>
         <SummarySectionCard
-          title={scoringCategoryTitle("roleDetails")}
+          title={scoringCategoryTitleForScore("roleDetails", score)}
           info={SCORING_CATEGORY_INFO.roleDetails}
         >
           <div className="space-y-3">
             {roleField ? <SummaryScoredField field={roleField} postingDetailKey="role" /> : null}
-            <div
-              className={cn(
-                "grid min-w-0 gap-x-4 gap-y-3",
-                !isGuest && compensationField ? "grid-cols-2" : "grid-cols-1",
-              )}
-            >
-              <IndustrySummaryContent
-                label={industryLabel}
-                category={industryCategory}
-                parsedJob={parsedJob}
-                parsedResume={parsedResume}
-                profileQualifiedIndustries={profileQualifiedIndustries}
-              />
-              {!isGuest && compensationField ? (
-                <SummaryScoredField field={compensationField} />
-              ) : null}
-            </div>
+            {!isGuest && compensationField ? (
+              <SummaryScoredField field={compensationField} />
+            ) : null}
             {hoursField || durationField ? (
               <div
                 className={cn(

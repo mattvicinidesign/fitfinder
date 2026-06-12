@@ -5,6 +5,7 @@ import {
   collectResumeWorkflowTokens,
 } from "@/lib/coverage-detail";
 import { resumeToolsMatchPool } from "@/lib/resume-tools";
+import { normalizeOpportunityCategories } from "@/lib/opportunity-categories";
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
 import { buildReportRollupOptions } from "@/lib/report-rollup-context";
 import { computeWeightedReportScore } from "@/lib/section-score-rollups";
@@ -210,8 +211,8 @@ export function normalizeScoreResult(
   const categoryBreakdown = asArray<unknown>(s.categoryBreakdown).map(
     normalizeCategoryScore,
   );
-  const opportunityCategories = asArray<unknown>(s.opportunityCategories).map(
-    normalizeOpportunityCategory,
+  const opportunityCategories = normalizeOpportunityCategories(
+    asArray<unknown>(s.opportunityCategories).map(normalizeOpportunityCategory),
   );
   const opportunityDebug = normalizeOpportunityDebug(s.opportunityDebug);
   const usesOpportunityEngine = opportunityCategories.length > 0;

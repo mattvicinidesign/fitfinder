@@ -1,4 +1,4 @@
-import { OPPORTUNITY_CATEGORY_WEIGHTS } from "@/lib/scoring-terminology";
+import { OPPORTUNITY_CATEGORY_LABELS, OPPORTUNITY_CATEGORY_WEIGHTS } from "@/lib/scoring-terminology";
 import type {
   AnalysisResult,
   OpportunityCategoryScore,
@@ -103,14 +103,14 @@ function buildOpportunityCategories(targetFit: number): OpportunityCategoryScore
   return [
     {
       category: "roleAlignment",
-      label: "Role Alignment",
+      label: OPPORTUNITY_CATEGORY_LABELS.roleAlignment,
       score: roleScore,
       weight: OPPORTUNITY_CATEGORY_WEIGHTS.roleAlignment,
       contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.roleAlignment, roleScore),
     },
     {
       category: "qualificationsMatch",
-      label: "Qualifications",
+      label: OPPORTUNITY_CATEGORY_LABELS.qualificationsMatch,
       score: qualScore,
       weight: OPPORTUNITY_CATEGORY_WEIGHTS.qualificationsMatch,
       contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.qualificationsMatch, qualScore),
@@ -119,21 +119,21 @@ function buildOpportunityCategories(targetFit: number): OpportunityCategoryScore
     },
     {
       category: "industryAlignment",
-      label: "Industry Alignment",
+      label: OPPORTUNITY_CATEGORY_LABELS.industryAlignment,
       score: industryScore,
       weight: OPPORTUNITY_CATEGORY_WEIGHTS.industryAlignment,
       contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.industryAlignment, industryScore),
     },
     {
       category: "preferenceAlignment",
-      label: "Preference Alignment",
+      label: OPPORTUNITY_CATEGORY_LABELS.preferenceAlignment,
       score: prefScore,
       weight: OPPORTUNITY_CATEGORY_WEIGHTS.preferenceAlignment,
       contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.preferenceAlignment, prefScore),
     },
     {
       category: "clientQuality",
-      label: "Client Quality",
+      label: OPPORTUNITY_CATEGORY_LABELS.clientQuality,
       score: clientScore,
       weight: OPPORTUNITY_CATEGORY_WEIGHTS.clientQuality,
       contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.clientQuality, clientScore),

@@ -3,15 +3,15 @@
 import { AnimatedScoreProgress } from "@/components/animated-score-progress";
 import { QualificationScoreCircle } from "@/components/qualification-score-circle";
 import { SummarySectionCard } from "@/components/summary-section-card";
-import {
-  computeReportSectionRollups,
-  computeWeightedReportScore,
-} from "@/lib/section-score-rollups";
+import { computeWeightedReportScore } from "@/lib/section-score-rollups";
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
+import {
+  buildOverallMatchRollups,
+  usesOpportunityEngine,
+} from "@/lib/opportunity-categories";
 import {
   GLOBAL_SCORE_INFO,
   GLOBAL_SCORE_LABEL,
-  OPPORTUNITY_CATEGORY_LABELS,
 } from "@/lib/scoring-terminology";
 import {
   scoreColor,
@@ -24,38 +24,26 @@ import {
   useAnimatedNumber,
 } from "@/lib/use-score-reveal";
 import type { ReportRollupOptions } from "@/lib/section-score-rollups";
-import type { OpportunityCategoryScore, ScoreResult } from "@/lib/types";
+import type { ScoreResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function ScoringCategoryRollupRow({
   title,
   score,
-  fraction,
   animateDelay = 0,
-  displayMode = "percent",
 }: {
   title: string;
   score: number | null;
-  fraction: { matched: number; total: number } | null;
   animateDelay?: number;
-  displayMode?: "percent" | "qualifications";
 }) {
   const hasScore = score != null;
   const pct = hasScore ? Math.round(score) : 0;
   const scoreOnTen = hasScore ? score / 10 : 0;
-  const fractionTarget =
-    fraction && fraction.total > 0
-      ? (fraction.matched / fraction.total) * 100
-      : null;
   const animatedScoreOnTen = useAnimatedNumber(scoreOnTen, {
     disabled: !hasScore,
     delay: animateDelay,
   });
   const valueText = hasScore ? formatScoreOnTen(animatedScoreOnTen) : "—";
-  const barValue =
-    displayMode === "qualifications" && fractionTarget != null
-      ? fractionTarget
-      : pct;
 
   return (
     <div className="space-y-1.5 min-w-0">
@@ -73,7 +61,7 @@ function ScoringCategoryRollupRow({
         </span>
       </div>
       <AnimatedScoreProgress
-        value={hasScore ? barValue : 0}
+        value={hasScore ? pct : 0}
         delay={animateDelay}
         trackClassName={cn(
           SCORE_PROGRESS_BAR_HEIGHT_CLASS,
@@ -85,24 +73,6 @@ function ScoringCategoryRollupRow({
   );
 }
 
-function opportunityRollups(categories: OpportunityCategoryScore[]) {
-  return categories.map((c) => ({
-    id: c.category,
-    title:
-      OPPORTUNITY_CATEGORY_LABELS[c.category] ??
-      c.label,
-    score: c.score,
-    fraction:
-      c.matchedCount != null && c.totalCount != null && c.totalCount > 0
-        ? { matched: c.matchedCount, total: c.totalCount }
-        : null,
-    displayMode:
-      c.category === "qualificationsMatch"
-        ? ("qualifications" as const)
-        : ("percent" as const),
-  }));
-}
-
 /** Global score card: scoring category rollups (left) and 0–10 ring (right). */
 export function QualificationScoreOverview({
   score,
@@ -112,23 +82,10 @@ export function QualificationScoreOverview({
   rollupOptions: ReportRollupOptions;
 }) {
   const isGuest = score.scoringMode === "guest";
-  const usesOpportunityEngine = (score.opportunityCategories?.length ?? 0) > 0;
+  const engineActive = usesOpportunityEngine(score);
+  const rollups = buildOverallMatchRollups(score, rollupOptions);
 
-  const rollups = usesOpportunityEngine
-    ? opportunityRollups(score.opportunityCategories!)
-    : computeReportSectionRollups(
-        score.categoryBreakdown,
-        isGuest,
-        rollupOptions,
-      ).map((section) => ({
-        id: section.id,
-        title: section.title,
-        score: section.score,
-        fraction: section.fraction,
-        displayMode: "percent" as const,
-      }));
-
-  const reportFitScore = usesOpportunityEngine
+  const reportFitScore = engineActive
     ? score.fitScore
     : (computeWeightedReportScore(
         score.categoryBreakdown,
@@ -136,10 +93,10 @@ export function QualificationScoreOverview({
         rollupOptions,
       ) ?? score.fitScore);
 
-  const recommendation = usesOpportunityEngine
+  const recommendation = engineActive
     ? score.recommendation
     : recommendFromFitScore(reportFitScore).recommendation;
-  const recommendationLabel = usesOpportunityEngine
+  const recommendationLabel = engineActive
     ? score.recommendationLabel
     : recommendFromFitScore(reportFitScore).label;
 
@@ -156,9 +113,7 @@ export function QualificationScoreOverview({
               key={section.id}
               title={section.title}
               score={section.score}
-              fraction={section.fraction}
               animateDelay={index * 80}
-              displayMode={section.displayMode}
             />
           ))}
         </div>

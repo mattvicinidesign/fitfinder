@@ -22,32 +22,30 @@ export function SectionScoreSubtotal({
 }: {
   score: number | null;
   label?: string;
-  /** Drives the 0–10 display score (matched/total*10); not shown as a ratio. */
+  /** Fallback when score is null — matched/total converted to 0–10. */
   fraction?: { matched: number; total: number } | null;
   animateDelay?: number;
   className?: string;
 }) {
   const hasScore = score != null;
-  const pct = hasScore ? Math.round(score) : 0;
-  const fractionTarget =
+  const scoreOnTen = hasScore ? score / 10 : null;
+  const fractionOnTen =
     fraction && fraction.total > 0
       ? (fraction.matched / fraction.total) * 10
       : null;
-  const disabled = !hasScore && fractionTarget == null;
-  const animatedValue = useAnimatedNumber(fractionTarget ?? pct, {
+  const targetOnTen = scoreOnTen ?? fractionOnTen;
+  const disabled = targetOnTen == null;
+  const colorPct = hasScore
+    ? Math.round(score)
+    : fractionOnTen != null
+      ? Math.round(fractionOnTen * 10)
+      : 0;
+  const animatedValue = useAnimatedNumber(targetOnTen ?? 0, {
     disabled,
     delay: animateDelay,
   });
-  const valueText = disabled
-    ? "—"
-    : fractionTarget != null
-      ? formatScoreOnTen(animatedValue)
-      : `${Math.round(animatedValue)}%`;
-  const finalValueText = disabled
-    ? "—"
-    : fractionTarget != null
-      ? formatScoreOnTen(fractionTarget)
-      : `${pct}%`;
+  const valueText = disabled ? "—" : formatScoreOnTen(animatedValue);
+  const finalValueText = disabled ? "—" : formatScoreOnTen(targetOnTen);
 
   return (
     <div
@@ -65,7 +63,7 @@ export function SectionScoreSubtotal({
         <span
           className={cn(
             "text-[14px] font-medium tabular-nums shrink-0",
-            hasScore ? scoreColor(pct) : "text-muted-foreground",
+            !disabled ? scoreColor(colorPct) : "text-muted-foreground",
           )}
         >
           {valueText}

@@ -16,7 +16,6 @@ import {
   clientOriginTimezoneToneToSummaryState,
   extractTimezoneFromAboutClient,
 } from "@/lib/client-origin-timezone";
-import { buildIndustryDetail } from "@/lib/industry-match";
 import { preferredLocationMatchesCandidate } from "@/lib/country-match";
 import {
   jobPreferredLocationDisplay,
@@ -357,18 +356,6 @@ export function buildRoleDetailsFields(
   const roleRow = postingRowByKey(rows, "role");
   const hoursRow = postingRowByKey(rows, "hoursNeeded");
   const durationRow = postingRowByKey(rows, "duration");
-  const industryCat = lookupCategory(ctx.breakdown, "industry");
-  const industryDetail = ctx.parsedJob
-    ? buildIndustryDetail(
-        ctx.parsedJob,
-        ctx.parsedResume,
-        ctx.profileQualifiedIndustries,
-      )
-    : null;
-  const industryIdentified = Boolean(
-    industryDetail && industryDetail.jobIndustries.length > 0,
-  );
-  const industryPts = categoryPoints(industryCat);
 
   const fields: SectionFieldScore[] = [];
 
@@ -383,20 +370,6 @@ export function buildRoleDetailsFields(
           isRoleArchetypeMatch(roleRow!.value, highlightCtx),
         )
       : field("role", "Title", false, "", "unknown", null),
-  );
-
-  const industryLabel =
-    industryDetail?.jobIndustries.join(", ") ??
-    (industryCat?.status !== "unknown" ? "Industry fit" : NOT_SPECIFIED_LABEL);
-  fields.push(
-    field(
-      "industry",
-      "Industry",
-      industryIdentified,
-      industryLabel,
-      industryPts.state,
-      industryIdentified ? industryPts.points : null,
-    ),
   );
 
   if (!ctx.isGuest) {
