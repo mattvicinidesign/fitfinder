@@ -262,19 +262,19 @@ export function ProfileScreen() {
               />
             </Section>
 
-            <Section title="Location">
-              <ChipMultiSelect
-                options={REGION_OPTIONS}
-                value={profile.preferredRegions}
-                onChange={(v) => patch({ preferredRegions: v })}
-              />
-            </Section>
-
             <Section title="Employer Type">
               <ChipMultiSelect
                 options={COMPANY_TYPE_OPTIONS}
                 value={profile.preferredCompanyTypes}
                 onChange={(v) => patch({ preferredCompanyTypes: v })}
+              />
+            </Section>
+
+            <Section title="Location">
+              <ChipMultiSelect
+                options={REGION_OPTIONS}
+                value={profile.preferredRegions}
+                onChange={(v) => patch({ preferredRegions: v })}
               />
             </Section>
           </div>
