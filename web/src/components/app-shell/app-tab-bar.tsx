@@ -5,7 +5,7 @@ import { NavTab } from "@/components/app-shell/nav-tab";
 import { safeBottomTabBar } from "@/lib/safe-area";
 
 /**
- * Primary navigation — four tabs; Analyze Fit is the home screen CTA.
+ * Primary navigation — five tabs; Analyze Fit is the home screen CTA.
  */
 export function AppTabBar() {
   return (

@@ -1,4 +1,5 @@
 import {
+  BarChart2,
   Bookmark,
   Clock,
   Home,
@@ -21,6 +22,7 @@ export const APP_NAV: NavItem[] = [
   { href: "/saved", label: "Saved", icon: Bookmark },
   { href: ANALYZE_ROUTE, label: "Analyze", icon: ScanSearch },
   { href: "/history", label: "History", icon: Clock },
+  { href: "/stats", label: "Stats", icon: BarChart2 },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
