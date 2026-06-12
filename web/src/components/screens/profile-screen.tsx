@@ -43,11 +43,11 @@ import {
 } from "@/components/ui/sticky-bottom-cta";
 import { safeBottomOverlay, safeTopCompact } from "@/lib/safe-area";
 
-type ProfileTab = "general" | "skills" | "documents" | "settings";
+type ProfileTab = "general" | "preferences" | "documents" | "settings";
 
 const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
   { id: "general", label: "General Info" },
-  { id: "skills", label: "Skills" },
+  { id: "preferences", label: "Preferences" },
   { id: "documents", label: "Documents" },
   { id: "settings", label: "Settings" },
 ];
@@ -69,7 +69,7 @@ export function ProfileScreen() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDirty = !profilesEqual(profile, savedProfile);
   const showFloatingActions =
-    (activeTab === "general" || activeTab === "skills") && isDirty;
+    (activeTab === "general" || activeTab === "preferences") && isDirty;
 
   async function loadDocuments() {
     setDocumentsLoading(true);
@@ -217,10 +217,10 @@ export function ProfileScreen() {
               </div>
             </Section>
           </div>
-        ) : activeTab === "skills" ? (
+        ) : activeTab === "preferences" ? (
           <div className="space-y-7">
             <Section
-              title="Minimum hourly rate"
+              title="Pay"
               subtitle="Skills, tools, industries, and roles come from your resume — this is about what you want."
             >
               <div className="flex items-center gap-2">
@@ -262,7 +262,7 @@ export function ProfileScreen() {
               />
             </Section>
 
-            <Section title="Preferred regions">
+            <Section title="Location">
               <ChipMultiSelect
                 options={REGION_OPTIONS}
                 value={profile.preferredRegions}
@@ -270,7 +270,7 @@ export function ProfileScreen() {
               />
             </Section>
 
-            <Section title="Preferred company types">
+            <Section title="Employer Type">
               <ChipMultiSelect
                 options={COMPANY_TYPE_OPTIONS}
                 value={profile.preferredCompanyTypes}
