@@ -161,6 +161,7 @@ export function QualificationSummarySection({
   const compensationField = fieldByKey(roleFields, "compensation");
   const hoursField = fieldByKey(roleFields, "hoursNeeded");
   const durationField = fieldByKey(roleFields, "duration");
+  const contractToHireField = fieldByKey(roleFields, "contractToHire");
 
   return (
     <div className="space-y-3 w-full" role="region" aria-label="Scoring categories">
@@ -216,6 +217,7 @@ export function QualificationSummarySection({
                 field: durationField,
                 postingDetailKey: "duration",
               },
+              { field: contractToHireField },
             ]}
           />
           <SectionScoreSubtotal

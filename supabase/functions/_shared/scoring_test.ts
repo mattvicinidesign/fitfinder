@@ -178,3 +178,19 @@ Deno.test("Opportunity Engine: fit score capped at 100", () => {
   assert(result.fitScore <= 100);
   assert(result.fitScore >= 0);
 });
+
+Deno.test("Opportunity Engine: contract-to-hire note in role alignment", () => {
+  const jobText = [
+    "Contract-to-hire opportunity",
+    "This lets talent know that this job could become full time.",
+    "Senior Product Designer needed for B2B SaaS.",
+  ].join("\n");
+  const result = scoreFit(productResume, productJob, {
+    mode: "registered",
+    jobText,
+  });
+  const role = result.opportunityCategories!.find((c) =>
+    c.category === "roleAlignment"
+  )!;
+  assert(role.details?.includes("Contract-To-Hire"));
+});

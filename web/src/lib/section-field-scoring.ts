@@ -33,6 +33,7 @@ import {
   formatHeaderDatePosted,
   headerEmployerKindLabel,
 } from "@/lib/posting-header-meta";
+import { isContractToHirePosting } from "@/lib/posting-context";
 import { preferredLocationMatchesCandidate } from "@/lib/country-match";
 import {
   jobPreferredLocationDisplay,
@@ -647,6 +648,17 @@ export function buildRoleDetailsFields(
     );
   } else {
     fields.push(field("duration", "Duration", false, "", "unknown", null));
+  }
+
+  if (
+    isContractToHirePosting(ctx.parsedJob, {
+      jobText: ctx.jobDescription,
+      postingContext: ctx.postingContext,
+    })
+  ) {
+    fields.push(
+      field("contractToHire", "Note", true, "Contract-To-Hire", "unknown", null),
+    );
   }
 
   return fields;

@@ -106,7 +106,7 @@ function inferPathFromText(
 ): EngagementPath {
   const lower = text.toLowerCase();
   if (
-    /\bcontract[- ]?to[- ]?hire\b|\bcontract to hire\b|\btemp[- ]?to[- ]?perm\b|\bconversion to (?:full|fte)\b/i.test(
+    /\bcontract[- ]?to[- ]?hire\b|\bcontract to hire\b|\btemp[- ]?to[- ]?perm\b|\bconversion to (?:full|fte)\b|\bcould become full[- ]?time\b/i.test(
       lower,
     )
   ) {
@@ -194,6 +194,22 @@ export function hasPostingContextSignals(context: PostingContext): boolean {
     context.hireTarget !== "unknown" ||
     context.badges.length > 0
   );
+}
+
+/** True when the posting is a contract-to-hire opportunity (e.g. Upwork banner). */
+export function isContractToHirePosting(
+  job: ParsedJob | null | undefined,
+  options?: {
+    jobText?: string | null;
+    postingContext?: PostingContext | null;
+  },
+): boolean {
+  if (options?.postingContext?.engagementPath === "contract_to_hire") return true;
+  if (job?.engagementPath === "contract_to_hire") return true;
+  const text = postingText(job ?? ({} as ParsedJob), options?.jobText);
+  if (!text.trim()) return false;
+  const hireTarget = pickEnum(job?.hireTarget, HIRE) ?? "unknown";
+  return inferPathFromText(text, hireTarget) === "contract_to_hire";
 }
 
 /** Derive posting context from parsed job (or API payload). Not used in scoring. */

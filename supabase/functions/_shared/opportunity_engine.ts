@@ -22,6 +22,7 @@ import {
 } from "./profile_scoring.ts";
 import { findSkillLabelMatch, resumeSkillMatchPool } from "./qualified_skills.ts";
 import type { PostingContext } from "./posting_context.ts";
+import { isContractToHirePosting } from "./posting_context.ts";
 import type {
   OpportunityCategoryScore,
   OpportunityEngineDebug,
@@ -107,18 +108,28 @@ function scoreRoleAlignment(
   job: ParsedJob,
   jobTitle: string | null | undefined,
   jobBlob: string,
+  options: Pick<ScoreOpportunityOptions, "jobText" | "posting"> = {},
 ): OpportunityCategoryScore {
   const detected = detectRoleArchetype(jobTitle ?? job.roleTitle, jobBlob);
   const weight = OPPORTUNITY_WEIGHTS.roleAlignment;
+  const details = detected.label
+    ? [`Archetype: ${detected.label} (${detected.tier})`]
+    : ["Role archetype unclear"];
+  if (
+    isContractToHirePosting(job, {
+      jobText: options.jobText,
+      posting: options.posting,
+    })
+  ) {
+    details.push("Contract-To-Hire");
+  }
   return {
     category: "roleAlignment",
     label: OPPORTUNITY_CATEGORY_LABELS.roleAlignment,
     score: detected.score,
     weight,
     contribution: round(weight * (detected.score / 100)),
-    details: detected.label
-      ? [`Archetype: ${detected.label} (${detected.tier})`]
-      : ["Role archetype unclear"],
+    details,
   };
 }
 
@@ -355,7 +366,7 @@ export function scoreOpportunity(
   const roleDetected = detectRoleArchetype(options.jobTitle ?? job.roleTitle, jobBlob);
 
   const categories: OpportunityCategoryScore[] = [
-    scoreRoleAlignment(job, options.jobTitle, jobBlob),
+    scoreRoleAlignment(job, options.jobTitle, jobBlob, options),
     scoreQualificationsMatch(resume, job),
     scoreIndustryAlignment(resume, job),
   ];

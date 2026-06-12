@@ -118,7 +118,7 @@ function inferDurationFromText(text: string): EngagementDuration {
 function inferPathFromText(text: string, hireTarget: HireTarget): EngagementPath {
   const lower = text.toLowerCase();
   if (
-    /\bcontract[- ]?to[- ]?hire\b|\bcontract to hire\b|\btemp[- ]?to[- ]?perm\b|\bconversion to (?:full|fte)\b/i.test(
+    /\bcontract[- ]?to[- ]?hire\b|\bcontract to hire\b|\btemp[- ]?to[- ]?perm\b|\bconversion to (?:full|fte)\b|\bcould become full[- ]?time\b/i.test(
       lower,
     )
   ) {
@@ -193,6 +193,24 @@ function resolveEngagementMetadata(
   }
 
   return { engagementDuration, engagementPath, payStructure, badges };
+}
+
+/** True when the posting is a contract-to-hire opportunity (e.g. Upwork banner). */
+export function isContractToHirePosting(
+  job: ParsedJob | null | undefined,
+  options?: {
+    jobText?: string | null;
+    posting?: PostingContext | null;
+  },
+): boolean {
+  if (options?.posting?.engagementPath === "contract_to_hire") return true;
+  if (job?.engagementPath === "contract_to_hire") return true;
+  const text = postingText(job ?? ({} as ParsedJob), options?.jobText);
+  if (!text.trim()) return false;
+  const hireTarget =
+    normalizeEnum(job?.hireTarget, ["freelancer", "agency", "direct_hire", "unknown"] as const) ??
+    "unknown";
+  return inferPathFromText(text, hireTarget) === "contract_to_hire";
 }
 
 export function resolvePostingContext(

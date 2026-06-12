@@ -72,7 +72,7 @@ Posting context (informational only):
 - hireTarget "direct_hire": full-time, FTE, employee, W2, join our team (not freelance, not hiring an agency).
 - engagementDuration "ongoing": retainer, ongoing projects, long-term, continuous, open-ended, permanent engagement.
 - engagementDuration "short_term": one-off project, temporary, fixed duration, N weeks/months, single engagement.
-- engagementPath "contract_to_hire": contract-to-hire, temp-to-perm, conversion to full-time/FTE after contract.
+- engagementPath "contract_to_hire": contract-to-hire, temp-to-perm, conversion to full-time/FTE after contract. Upwork shows a "Contract-to-hire opportunity" banner when this applies.
 - engagementPath "contract": freelance/contractor/1099 engagement without stated conversion to hire (use when not contract_to_hire).
 - engagementPath "direct_hire": W2/FTE/staff role with no contract phase (align with hireTarget direct_hire when clear).
 - payStructure "hourly": hourly rate, $/hr, per hour (also set compensation.period "hour" when amounts present).
