@@ -107,8 +107,8 @@ function inferJobEngagementTypes(
     labels.add("Contract");
   }
 
-  if (/\bfractional\b|\bpart[- ]?time cpo\b|\bpart[- ]?time cto\b/.test(blob)) {
-    labels.add("Fractional");
+  if (/\bfractional\b|\bpart[- ]?time\b/.test(blob)) {
+    labels.add("Part Time");
   }
 
   if (

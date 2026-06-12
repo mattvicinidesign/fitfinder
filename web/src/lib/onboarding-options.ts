@@ -10,10 +10,10 @@
  */
 
 export const ENGAGEMENT_TYPE_OPTIONS = [
-  "Freelance",
-  "Contract",
-  "Fractional",
   "Full-Time",
+  "Part Time",
+  "Contract",
+  "Freelance",
 ] as const;
 
 export const COMPANY_TYPE_OPTIONS = [
