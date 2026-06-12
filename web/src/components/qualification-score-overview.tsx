@@ -7,6 +7,7 @@ import { computeWeightedReportScore } from "@/lib/section-score-rollups";
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
 import {
   buildOverallMatchRollups,
+  computeOverallMatchFitScore,
   usesOpportunityEngine,
 } from "@/lib/opportunity-categories";
 import {
@@ -85,20 +86,18 @@ export function QualificationScoreOverview({
   const engineActive = usesOpportunityEngine(score);
   const rollups = buildOverallMatchRollups(score, rollupOptions);
 
-  const reportFitScore = engineActive
-    ? score.fitScore
-    : (computeWeightedReportScore(
-        score.categoryBreakdown,
-        isGuest,
-        rollupOptions,
-      ) ?? score.fitScore);
+  const rollupFitScore = computeOverallMatchFitScore(rollups);
+  const reportFitScore = rollupFitScore ??
+    (engineActive
+      ? score.fitScore
+      : (computeWeightedReportScore(
+          score.categoryBreakdown,
+          isGuest,
+          rollupOptions,
+        ) ?? score.fitScore));
 
-  const recommendation = engineActive
-    ? score.recommendation
-    : recommendFromFitScore(reportFitScore).recommendation;
-  const recommendationLabel = engineActive
-    ? score.recommendationLabel
-    : recommendFromFitScore(reportFitScore).label;
+  const { recommendation, label: recommendationLabel } =
+    recommendFromFitScore(reportFitScore);
 
   return (
     <SummarySectionCard title={GLOBAL_SCORE_LABEL} info={GLOBAL_SCORE_INFO}>

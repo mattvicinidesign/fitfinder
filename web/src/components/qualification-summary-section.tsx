@@ -125,6 +125,7 @@ export function QualificationSummarySection({
   const ratingField = fieldByKey(clientFields, "clientRating");
   const avgPayField = fieldByKey(clientFields, "clientAverageHourlyRate");
 
+  const industryField = fieldByKey(roleFields, "industry");
   const roleField = fieldByKey(roleFields, "role");
   const compensationField = fieldByKey(roleFields, "compensation");
   const hoursField = fieldByKey(roleFields, "hoursNeeded");
@@ -233,7 +234,8 @@ export function QualificationSummarySection({
         >
           <div className="space-y-3">
             {roleField ? <SummaryScoredField field={roleField} postingDetailKey="role" /> : null}
-            {!isGuest && compensationField ? (
+            {industryField ? <SummaryScoredField field={industryField} /> : null}
+            {compensationField ? (
               <SummaryScoredField field={compensationField} />
             ) : null}
             {hoursField || durationField ? (

@@ -2,6 +2,8 @@
 // write made inside an Edge Function is still subject to Row Level Security.
 
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
+
+export type { SupabaseClient };
 import { corsHeaders } from "./cors.ts";
 
 export function createUserClient(req: Request): SupabaseClient {

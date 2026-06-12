@@ -1,5 +1,6 @@
 import { isExcludedIndustryMatch } from "@/lib/qualified-industries";
 import {
+  extractIndustriesFromText,
   industrySimilarity,
   normalizeIndustryList,
   resolveCanonicalIndustry,
@@ -44,6 +45,14 @@ function mergeForMatching(
   return merged;
 }
 
+function industriesFromWorkHistory(resume: ParsedResume): string[] {
+  const blob = resume.workHistory
+    .map((entry) => [entry.company, entry.title, entry.summary ?? ""].join(" "))
+    .join("\n");
+  if (!blob.trim()) return [];
+  return extractIndustriesFromText(blob);
+}
+
 function normalizeParsedIndustries(
   job: ParsedJob,
   resume?: ParsedResume | null,
@@ -54,7 +63,10 @@ function normalizeParsedIndustries(
   matchIndustries: string[];
 } {
   const jobNorm = normalizeIndustryList(job.industries);
-  const resumeNorm = normalizeIndustryList(resume?.industries);
+  const resumeNorm = normalizeIndustryList([
+    ...(resume?.industries ?? []),
+    ...(resume ? industriesFromWorkHistory(resume) : []),
+  ]);
   const resumeIndustries = resumeNorm.industries.filter(
     (l) => !isExcludedIndustryMatch(l),
   );

@@ -360,6 +360,8 @@ export function scoreOpportunity(
       scorePreferenceAlignment(resume, job, options.profile, options),
       scoreClientQuality(job, options.profile),
     );
+  } else {
+    categories.push(scoreClientQuality(job, options.profile));
   }
 
   let fitScore = 0;

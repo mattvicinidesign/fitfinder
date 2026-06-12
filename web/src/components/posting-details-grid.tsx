@@ -40,6 +40,11 @@ export function PostingDetailFields({
             ? NOT_SPECIFIED_LABEL
             : row.value;
 
+        const highlightPositive =
+          !isGlobal &&
+          !row.missing &&
+          isPostingDetailHighlightPositive(row.key, row.value, highlightCtx);
+
         return (
           <div key={row.key} className="space-y-1.5 min-w-0">
             <SummaryFieldLabel>{row.title}</SummaryFieldLabel>
@@ -51,11 +56,8 @@ export function PostingDetailFields({
                   : undefined
               }
               muted={row.missing}
-              positive={
-                !isGlobal &&
-                !row.missing &&
-                isPostingDetailHighlightPositive(row.key, row.value, highlightCtx)
-              }
+              positive={highlightPositive}
+              negative={!isGlobal && !row.missing && !highlightPositive}
             />
           </div>
         );

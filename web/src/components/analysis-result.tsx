@@ -2,14 +2,12 @@
 
 import { PostingHeaderMetaFields } from "@/components/posting-header-meta";
 import { QualificationBreakdown } from "@/components/qualification-breakdown";
-import { ScoringDebugPanel } from "@/components/scoring-debug-panel";
 import {
   ReportRevealProvider,
   ReportRevealSection,
 } from "@/components/report-reveal-section";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import type { AnalysisResult, Compensation } from "@/lib/types";
-import { useSearchParams } from "next/navigation";
 
 export function AnalysisResultView({
   result,
@@ -28,11 +26,6 @@ export function AnalysisResultView({
   profileCountry?: string | null;
   profileTimezone?: string | null;
 }) {
-  const searchParams = useSearchParams();
-  const showScoringDebug =
-    process.env.NODE_ENV === "development" ||
-    searchParams.get("debug") === "scoring";
-
   const normalized = normalizeAnalysisResult(result, {
     profileDesiredCompensation,
     profileQualifiedIndustries,
@@ -83,11 +76,6 @@ export function AnalysisResultView({
             profileCountry={profileCountry}
             profileTimezone={profileTimezone}
           />
-          {showScoringDebug && score.opportunityDebug ? (
-            <ReportRevealSection>
-              <ScoringDebugPanel debug={score.opportunityDebug} />
-            </ReportRevealSection>
-          ) : null}
         </div>
       </div>
     </ReportRevealProvider>

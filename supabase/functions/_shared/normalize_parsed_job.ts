@@ -255,16 +255,16 @@ export function extractUpworkTaggedSkills(jobText: string): {
       continue;
     }
 
-    if (!inSection) continue;
-
-    if (UPWORK_SKILLS_SECTION_END.test(trimmed)) break;
-
     const mandatoryMatch = trimmed.match(UPWORK_MANDATORY_SKILLS_HEADER);
     if (mandatoryMatch) {
       mode = "mandatory";
       mandatory.push(...parseInlineSkillTags(mandatoryMatch[1] ?? ""));
       continue;
     }
+
+    if (!inSection) continue;
+
+    if (UPWORK_SKILLS_SECTION_END.test(trimmed)) break;
 
     const optionalMatch = trimmed.match(UPWORK_OPTIONAL_SKILLS_HEADER);
     if (optionalMatch) {

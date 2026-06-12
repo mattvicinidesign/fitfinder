@@ -1,6 +1,6 @@
 import type { Recommendation } from "@/lib/types";
 
-/** Matches SummaryMatchBadge / SummaryInfoBadge pill tints. */
+/** Matches SummaryMatchBadge / SummaryInfoBadge pill tints (green = match, red = mismatch). */
 export type ScoreShadeTier = "positive" | "caution" | "negative";
 
 /**

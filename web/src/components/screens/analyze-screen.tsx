@@ -29,7 +29,7 @@ import {
   ANALYZE_SECTION_CLASS,
   ANALYZE_SECTION_LABEL_CLASS,
 } from "@/components/analyze-form-styles";
-import { waitForResumeParse } from "@/lib/resume-upload";
+import { waitForResumeParse, getCachedParsedResume } from "@/lib/resume-parse-tracker";
 import { ReportLink } from "@/components/report-link";
 import { openAnalysisReport } from "@/lib/report-return";
 import { cn } from "@/lib/utils";
@@ -208,10 +208,12 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         .join("\n\n");
       setStatus("Parsing resume…");
       await waitForResumeParse(resumeId);
+      const parsedResume = getCachedParsedResume(resumeId);
       setStatus("Scoring fit…");
       const { analysisId, result } = await analyze({
         jobText: jobContent,
         resumeId,
+        ...(parsedResume ? { parsedResume } : {}),
       });
       const reportId = analysisId ?? crypto.randomUUID();
       saveAnalysisReport(reportId, {

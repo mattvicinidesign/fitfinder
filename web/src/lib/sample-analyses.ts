@@ -178,12 +178,16 @@ export function loadSampleAnalysisReport(
   return sampleEntry(spec);
 }
 
-function reportHasFullBreakdown(entry: AnalysisReportCacheEntry | null): boolean {
-  return (entry?.result.score.categoryBreakdown.length ?? 0) > 0;
+function isUsableCachedReport(entry: AnalysisReportCacheEntry | null): boolean {
+  if (!entry?.result?.score) return false;
+  const score = entry.result.score;
+  if ((score.opportunityCategories?.length ?? 0) > 0) return true;
+  if ((score.categoryBreakdown?.length ?? 0) > 0) return true;
+  return typeof score.fitScore === "number" && Number.isFinite(score.fitScore);
 }
 
 function sampleReportIsComplete(reportId: string): boolean {
-  return reportHasFullBreakdown(loadAnalysisReport(reportId));
+  return isUsableCachedReport(loadAnalysisReport(reportId));
 }
 
 /** Load a report from session cache or rebuild sample fixtures. */
@@ -191,7 +195,7 @@ export function resolveReportEntry(
   reportId: string,
 ): AnalysisReportCacheEntry | null {
   const cached = loadAnalysisReport(reportId);
-  if (reportHasFullBreakdown(cached)) {
+  if (isUsableCachedReport(cached)) {
     return cached;
   }
 

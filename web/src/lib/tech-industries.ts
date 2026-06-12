@@ -254,6 +254,30 @@ export function normalizeIndustryList(
   return { industries: out, rehomedAsSkills };
 }
 
+/** Scan free text (e.g. work history) for canonical industry labels. */
+export function extractIndustriesFromText(text: string): CanonicalTechIndustry[] {
+  const lower = text.toLowerCase();
+  const seen = new Set<CanonicalTechIndustry>();
+  const found: CanonicalTechIndustry[] = [];
+
+  const tryAdd = (label: CanonicalTechIndustry) => {
+    if (seen.has(label)) return;
+    seen.add(label);
+    found.push(label);
+  };
+
+  for (const label of CANONICAL_TECH_INDUSTRIES) {
+    const token = normalizeIndustryToken(label);
+    if (token.length >= 3 && lower.includes(token)) tryAdd(label);
+  }
+
+  for (const [alias, label] of Object.entries(INDUSTRY_ALIASES)) {
+    if (alias.length >= 4 && lower.includes(alias)) tryAdd(label);
+  }
+
+  return found;
+}
+
 export function industrySimilarity(a: string, b: string): number {
   const resolvedA = resolveCanonicalIndustry(a) ?? a;
   const resolvedB = resolveCanonicalIndustry(b) ?? b;

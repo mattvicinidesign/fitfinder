@@ -9,9 +9,47 @@ import { completeJSON } from "../_shared/openai.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
 import { mergeProfileQualifiedFromParsed } from "../_shared/sync_profile_qualified.ts";
 import { RESUME_PARSE_SYSTEM } from "../_shared/prompts.ts";
-import { createUserClient, requireUser } from "../_shared/supabaseClient.ts";
+import {
+  createUserClient,
+  requireUser,
+  type SupabaseClient,
+} from "../_shared/supabaseClient.ts";
 import { error, handlePreflight, json } from "../_shared/cors.ts";
 import type { ParsedResume } from "../_shared/types.ts";
+
+function isRetriableDbError(message: string): boolean {
+  return /connection (error|reset)|timed out|fetch failed|broken pipe|unexpected eof/i.test(
+    message,
+  );
+}
+
+async function persistParsedResume(
+  supabase: SupabaseClient,
+  resumeId: string,
+  userId: string,
+  parsed: ParsedResume,
+): Promise<string | null> {
+  const attempts = 3;
+  let lastMessage = "Unknown database error";
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const { error: dbError } = await supabase
+      .from("resumes")
+      .update({ parsed_resume_json: parsed })
+      .eq("id", resumeId)
+      .eq("user_id", userId);
+
+    if (!dbError) return null;
+
+    lastMessage = dbError.message;
+    if (!isRetriableDbError(lastMessage) || attempt === attempts - 1) {
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+  }
+
+  return lastMessage;
+}
 
 Deno.serve(async (req: Request) => {
   const preflight = handlePreflight(req);
@@ -54,13 +92,21 @@ Deno.serve(async (req: Request) => {
     ]);
     const parsed = normalizeParsedResume(parsedRaw, resumeText);
 
+    let persisted = true;
+    let persistWarning: string | null = null;
+
     if (typeof resumeId === "string") {
-      const { error: dbError } = await supabase
-        .from("resumes")
-        .update({ parsed_resume_json: parsed })
-        .eq("id", resumeId)
-        .eq("user_id", userId);
-      if (dbError) return error(`Failed to persist parsed resume: ${dbError.message}`, 500);
+      const persistError = await persistParsedResume(
+        supabase,
+        resumeId,
+        userId,
+        parsed,
+      );
+      if (persistError) {
+        persisted = false;
+        persistWarning = persistError;
+        console.error(`Failed to persist parsed resume: ${persistError}`);
+      }
 
       const { data: profileRow } = await supabase
         .from("profiles")
@@ -68,7 +114,10 @@ Deno.serve(async (req: Request) => {
         .eq("user_id", userId)
         .maybeSingle();
 
-      const qualified = mergeProfileQualifiedFromParsed(profileRow ?? undefined, parsed);
+      const qualified = mergeProfileQualifiedFromParsed(
+        profileRow ?? undefined,
+        parsed,
+      );
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
@@ -79,11 +128,17 @@ Deno.serve(async (req: Request) => {
         .eq("user_id", userId);
 
       if (profileError) {
-        return error(`Failed to sync profile qualifications: ${profileError.message}`, 500);
+        console.error(
+          `Failed to sync profile qualifications: ${profileError.message}`,
+        );
       }
     }
 
-    return json({ parsedResume: parsed });
+    return json({
+      parsedResume: parsed,
+      persisted,
+      ...(persistWarning ? { persistWarning } : {}),
+    });
   } catch (e) {
     if (e instanceof Response) return e;
     return error((e as Error).message, 500);

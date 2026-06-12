@@ -58,7 +58,7 @@ export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
   clientPreferences:
     "How well you match the client preferences — location, timezone, talent type, and AI emphasis stated in the posting.",
   roleDetails:
-    "How well the role fits — title for guest users; title, pay, hours, and duration when signed in.",
+    "How well the role fits your resume — title, industry, pay, hours, and duration. Each identified item counts equally.",
   categoryMatching:
     "How many of the posting's required skills and tools you match. Every keyword is weighted equally.",
 };

@@ -5,9 +5,15 @@ import {
   reportSectionOrder,
 } from "@/lib/section-score-rollups";
 import {
+  buildQualificationsFields,
+  buildRoleDetailsFields,
+  equalWeightSectionSubtotal,
+} from "@/lib/section-field-scoring";
+import {
   OPPORTUNITY_CATEGORY_LABELS,
   OPPORTUNITY_CATEGORY_WEIGHTS,
   SCORING_CATEGORY_LABELS,
+  SCORING_CATEGORY_WEIGHTS,
   type ScoringCategoryId,
 } from "@/lib/scoring-terminology";
 import { formatScoreOnTen } from "@/lib/use-score-reveal";
@@ -108,8 +114,9 @@ export function sectionCategoryScore(
   sectionId: ScoringCategoryId,
   rollupOptions: ReportRollupOptions,
 ): number | null {
+  const ctx = rollupOptions.fieldContext;
+
   if (sectionId === "clientProfile") {
-    const ctx = rollupOptions.fieldContext;
     const fromDetails = clientQualityScoreFromPostingDetails(
       ctx.parsedJob?.postingDetails,
       ctx.profileDesiredCompensation ?? ctx.parsedResume?.desiredCompensation ?? null,
@@ -117,11 +124,28 @@ export function sectionCategoryScore(
     if (fromDetails != null) return fromDetails;
   }
 
+  if (sectionId === "categoryMatching") {
+    const fromFields = equalWeightSectionSubtotal(buildQualificationsFields(ctx));
+    if (fromFields != null) return fromFields;
+  }
+
+  if (sectionId === "roleDetails") {
+    const fromFields = equalWeightSectionSubtotal(
+      buildRoleDetailsFields(
+        ctx,
+        rollupOptions.postingRows,
+        rollupOptions.highlightCtx,
+      ),
+    );
+    if (fromFields != null) return fromFields;
+  }
+
   if (usesOpportunityEngine(score)) {
-    return getOpportunityCategoryScore(
+    const engineScore = getOpportunityCategoryScore(
       score,
       LEGACY_SECTION_TO_OPPORTUNITY[sectionId],
     );
+    if (engineScore != null) return engineScore;
   }
 
   const isGuest = score.scoringMode === "guest";
@@ -151,31 +175,37 @@ export function buildOverallMatchRollups(
 ): OverallMatchRollupRow[] {
   const isGuest = score.scoringMode === "guest";
 
-  if (usesOpportunityEngine(score)) {
-    const categoriesByKey = getOpportunityCategoryMap(score);
-    const rows: OverallMatchRollupRow[] = [];
+  return reportSectionOrder(isGuest).map((sectionId) => ({
+    id: LEGACY_SECTION_TO_OPPORTUNITY[sectionId],
+    title: scoringCategoryTitleForScore(sectionId, score),
+    score: sectionCategoryScore(score, sectionId, rollupOptions),
+  }));
+}
 
-    for (const sectionId of reportSectionOrder(isGuest)) {
-      const key = LEGACY_SECTION_TO_OPPORTUNITY[sectionId];
-      const row = categoriesByKey.get(key);
-      if (!row || key === "industryAlignment") continue;
-      rows.push({
-        id: row.category,
-        title: row.label,
-        score: row.score,
-      });
-    }
+const OVERALL_MATCH_WEIGHTS: Partial<
+  Record<OpportunityCategoryKey, number>
+> = {
+  clientQuality: SCORING_CATEGORY_WEIGHTS.clientProfile,
+  preferenceAlignment: SCORING_CATEGORY_WEIGHTS.clientPreferences,
+  roleAlignment: SCORING_CATEGORY_WEIGHTS.roleDetails,
+  qualificationsMatch: SCORING_CATEGORY_WEIGHTS.categoryMatching,
+};
 
-    return rows;
+/** Weighted Overall Match ring from the same category rows shown in the card. */
+export function computeOverallMatchFitScore(
+  rollups: OverallMatchRollupRow[],
+): number | null {
+  let weighted = 0;
+  let totalWeight = 0;
+
+  for (const row of rollups) {
+    if (row.score == null) continue;
+    const weight = OVERALL_MATCH_WEIGHTS[row.id as OpportunityCategoryKey];
+    if (weight == null) continue;
+    weighted += row.score * weight;
+    totalWeight += weight;
   }
 
-  return computeReportSectionRollups(
-    score.categoryBreakdown,
-    isGuest,
-    rollupOptions,
-  ).map((section) => ({
-    id: section.id,
-    title: section.title,
-    score: section.score,
-  }));
+  if (totalWeight === 0) return null;
+  return Math.round(weighted / totalWeight);
 }

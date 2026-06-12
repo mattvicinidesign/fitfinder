@@ -1,14 +1,18 @@
+import type { ParsedResume } from "@/lib/types";
+
 const inflight = new Map<string, Promise<void>>();
 const errors = new Map<string, Error>();
+const parsedCache = new Map<string, ParsedResume>();
 
 /** Track a background resume parse so callers can await it before analyze. */
 export function trackResumeParse(
   resumeId: string,
-  parsePromise: Promise<unknown>,
+  parsePromise: Promise<{ parsedResume: ParsedResume }>,
 ): void {
   errors.delete(resumeId);
   const tracked = parsePromise
-    .then(() => {
+    .then((result) => {
+      parsedCache.set(resumeId, result.parsedResume);
       errors.delete(resumeId);
     })
     .catch((err: unknown) => {
@@ -30,6 +34,10 @@ export async function waitForResumeParse(resumeId: string): Promise<void> {
   if (pending) await pending;
   const error = errors.get(resumeId);
   if (error) throw error;
+}
+
+export function getCachedParsedResume(resumeId: string): ParsedResume | null {
+  return parsedCache.get(resumeId) ?? null;
 }
 
 export function isResumeParsePending(resumeId: string): boolean {

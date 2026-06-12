@@ -21,6 +21,11 @@ export function SummaryScoredField({
       ? getPostingDetailBadgeIcon(postingDetailKey, f.badgeLabel)
       : undefined;
 
+  const isMatch =
+    f.state === "match" ||
+    f.state === "same_country" ||
+    (f.points != null && f.points >= 50);
+
   return (
     <div
       className="space-y-1.5 min-w-0"
@@ -34,10 +39,8 @@ export function SummaryScoredField({
         </span>
       ) : f.state === "unknown" ? (
         <SummaryMatchBadge label={f.badgeLabel} state="unknown" />
-      ) : f.state === "match" ? (
+      ) : isMatch ? (
         <SummaryInfoBadge label={f.badgeLabel} icon={icon} positive />
-      ) : f.state === "same_country" ? (
-        <SummaryMatchBadge label={f.badgeLabel} state="same_country" />
       ) : (
         <SummaryMatchBadge label={f.badgeLabel} state="mismatch" />
       )}

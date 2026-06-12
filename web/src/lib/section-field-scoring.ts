@@ -40,6 +40,7 @@ import {
   coverageDetailForCategory,
   type CoverageResult,
 } from "@/lib/coverage-detail";
+import { buildIndustryDetail } from "@/lib/industry-match";
 import { talentTypeDisplay } from "@/lib/talent-type-display";
 import type { SummaryMatchState } from "@/lib/summary-criteria";
 import type {
@@ -356,6 +357,86 @@ export function buildClientPreferencesFields(
   ];
 }
 
+function buildIndustryField(ctx: SectionFieldScoreContext): SectionFieldScore {
+  const job = ctx.parsedJob;
+  if (!job) {
+    return field("industry", "Industry", false, "", "unknown", null);
+  }
+
+  const detail = buildIndustryDetail(
+    job,
+    ctx.parsedResume,
+    ctx.profileQualifiedIndustries,
+  );
+
+  if (!detail || detail.jobIndustries.length === 0) {
+    return field("industry", "Industry", false, "", "unknown", null);
+  }
+
+  const label = detail.jobIndustries.join(", ");
+  const points = detail.bestScore;
+  const matched = points >= 50;
+
+  return field(
+    "industry",
+    "Industry",
+    true,
+    label,
+    matched ? "match" : "mismatch",
+    points,
+  );
+}
+
+function roleContextMatchesResume(
+  highlightCtx: PostingDetailHighlightContext,
+  roleLabel?: string | null,
+): boolean {
+  const role =
+    roleLabel?.trim() ||
+    highlightCtx.parsedJob?.roleTitle?.trim() ||
+    highlightCtx.jobTitle?.trim() ||
+    "";
+  if (!role) return Boolean(highlightCtx.parsedResume);
+  return isRoleArchetypeMatch(role, highlightCtx);
+}
+
+function roleHoursPoints(
+  label: string,
+  highlightCtx: PostingDetailHighlightContext,
+  roleLabel?: string | null,
+): number {
+  if (!highlightCtx.parsedResume) {
+    return isHoursNeededAtLeast30PerWeek(label) ? 50 : 0;
+  }
+  if (isHoursNeededAtLeast30PerWeek(label)) {
+    return roleContextMatchesResume(highlightCtx, roleLabel) ? 100 : 70;
+  }
+  const lower = label.toLowerCase();
+  const lessThan = lower.match(/less\s+than\s+(\d+)\s+hrs?/);
+  if (lessThan) {
+    const cap = Number.parseInt(lessThan[1], 10);
+    if (Number.isFinite(cap) && cap >= 20) {
+      return roleContextMatchesResume(highlightCtx, roleLabel) ? 70 : 40;
+    }
+    return 0;
+  }
+  return roleContextMatchesResume(highlightCtx, roleLabel) ? 60 : 30;
+}
+
+function roleDurationPoints(
+  label: string,
+  highlightCtx: PostingDetailHighlightContext,
+  roleLabel?: string | null,
+): number {
+  if (!highlightCtx.parsedResume) {
+    return isDurationMoreThan1Month(label) ? 50 : 0;
+  }
+  if (isDurationMoreThan1Month(label)) {
+    return roleContextMatchesResume(highlightCtx, roleLabel) ? 100 : 70;
+  }
+  return roleContextMatchesResume(highlightCtx, roleLabel) ? 55 : 25;
+}
+
 export function buildRoleDetailsFields(
   ctx: SectionFieldScoreContext,
   rows: PostingDetailRow[],
@@ -364,6 +445,7 @@ export function buildRoleDetailsFields(
   const roleRow = postingRowByKey(rows, "role");
   const hoursRow = postingRowByKey(rows, "hoursNeeded");
   const durationRow = postingRowByKey(rows, "duration");
+  const roleLabel = roleRow?.value ?? null;
 
   const fields: SectionFieldScore[] = [];
 
@@ -380,32 +462,43 @@ export function buildRoleDetailsFields(
       : field("role", "Title", false, "", "unknown", null),
   );
 
-  if (!ctx.isGuest) {
-    fields.push(buildCompensationField(ctx));
+  fields.push(buildIndustryField(ctx));
+  fields.push(buildCompensationField(ctx));
 
+  if (postingRowIdentified(hoursRow)) {
+    const hoursPoints = roleHoursPoints(hoursRow!.value, highlightCtx, roleLabel);
     fields.push(
-      postingRowIdentified(hoursRow)
-        ? binaryField(
-            "hoursNeeded",
-            "Hours",
-            true,
-            hoursRow!.value,
-            isHoursNeededAtLeast30PerWeek(hoursRow!.value),
-          )
-        : field("hoursNeeded", "Hours", false, "", "unknown", null),
+      field(
+        "hoursNeeded",
+        "Hours",
+        true,
+        hoursRow!.value,
+        hoursPoints >= 50 ? "match" : "mismatch",
+        hoursPoints,
+      ),
     );
+  } else {
+    fields.push(field("hoursNeeded", "Hours", false, "", "unknown", null));
+  }
 
-    fields.push(
-      postingRowIdentified(durationRow)
-        ? binaryField(
-            "duration",
-            "Duration",
-            true,
-            durationRow!.value,
-            isDurationMoreThan1Month(durationRow!.value),
-          )
-        : field("duration", "Duration", false, "", "unknown", null),
+  if (postingRowIdentified(durationRow)) {
+    const durationPoints = roleDurationPoints(
+      durationRow!.value,
+      highlightCtx,
+      roleLabel,
     );
+    fields.push(
+      field(
+        "duration",
+        "Duration",
+        true,
+        durationRow!.value,
+        durationPoints >= 50 ? "match" : "mismatch",
+        durationPoints,
+      ),
+    );
+  } else {
+    fields.push(field("duration", "Duration", false, "", "unknown", null));
   }
 
   return fields;
