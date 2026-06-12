@@ -136,14 +136,15 @@ function inferJobCompanyTypes(
   if (/\bstartup\b|\bearly[- ]?stage\b|\bseed stage\b/.test(blob)) {
     labels.add("Startup");
   }
-  if (/\bscale[- ]?up\b|\bseries [abc]\b|\bgrowth stage\b/.test(blob)) {
-    labels.add("Scale-Up");
+  if (
+    /\bscale[- ]?up\b|\bseries [abc]\b|\bgrowth stage\b|\bfounder[- ]?led\b|\bfounder led\b|\bfounder's vision\b/.test(
+      blob,
+    )
+  ) {
+    labels.add("Startup");
   }
   if (/\benterprise\b|\bfortune 500\b|\bglobal company\b/.test(blob)) {
     labels.add("Enterprise");
-  }
-  if (/\bfounder[- ]?led\b|\bfounder led\b|\bfounder's vision\b/.test(blob)) {
-    labels.add("Founder-Led");
   }
 
   return [...labels];

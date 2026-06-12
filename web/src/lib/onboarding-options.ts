@@ -17,10 +17,8 @@ export const ENGAGEMENT_TYPE_OPTIONS = [
 ] as const;
 
 export const COMPANY_TYPE_OPTIONS = [
-  "Startup",
-  "Scale-Up",
   "Enterprise",
-  "Founder-Led",
+  "Startup",
   "Agency",
 ] as const;
 
