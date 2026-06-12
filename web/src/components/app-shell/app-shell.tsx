@@ -150,7 +150,7 @@ function AppShellChrome({ children }: { children: React.ReactNode }) {
   const { showSheet, overlay } = useProfileOverlay();
   const isAnalyzeFlow =
     pathname === "/analyze" || pathname.startsWith("/analyze/report");
-  const hideTabBar = isAnalyzeFlow || showSheet;
+  const hideTabBar = isAnalyzeFlow;
   const lockMainScroll = isAnalyzeFlow || showSheet;
 
   return (

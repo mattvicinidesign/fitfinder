@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useProfileOverlay } from "@/components/app-shell/profile-overlay";
 import { triggerNavHaptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import type { NavItem } from "@/lib/navigation";
 
 export function NavTab({ item }: { item: NavItem }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { openProfile } = useProfileOverlay();
   const prefix = item.href + "/";
   const active = pathname === item.href || pathname.startsWith(prefix);
@@ -18,9 +19,18 @@ export function NavTab({ item }: { item: NavItem }) {
   function handleClick(event: React.MouseEvent<HTMLAnchorElement>) {
     triggerNavHaptic();
 
-    if (isProfileTab && pathname !== "/profile") {
+    if (isProfileTab) {
+      if (pathname !== "/profile") {
+        event.preventDefault();
+        openProfile(pathname);
+      }
+      return;
+    }
+
+    // Leaving the profile sheet via another tab — normal navigation is enough.
+    if (pathname === "/profile") {
       event.preventDefault();
-      openProfile(pathname);
+      router.replace(item.href);
     }
   }
 

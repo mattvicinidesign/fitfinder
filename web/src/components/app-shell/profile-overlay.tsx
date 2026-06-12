@@ -4,9 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
-  useLayoutEffect,
   useRef,
-  useState,
   type ReactNode,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -51,53 +49,27 @@ export function ProfileOverlayProvider({
   const router = useRouter();
   const pathname = usePathname();
   const isProfileRoute = pathname === "/profile";
-
   const returnPathRef = useRef("/home");
-  const closingRef = useRef(false);
 
-  const [phase, setPhase] = useState<ProfileSheetPhase>("hidden");
-
-  const showSheet =
-    !closingRef.current && (phase !== "hidden" || isProfileRoute);
-
-  const finishExit = useCallback(() => {
-    const target = returnPathRef.current;
-    clearProfileReturnPath();
-    setPhase("hidden");
-    router.replace(target);
-  }, [router]);
+  // Only show the sheet on /profile — never keep it open after navigating away.
+  const showSheet = isProfileRoute;
+  const phase: ProfileSheetPhase = isProfileRoute ? "open" : "hidden";
 
   const closeProfile = useCallback(() => {
-    if (closingRef.current || phase === "hidden") return;
-
-    returnPathRef.current = getProfileReturnPath();
-    closingRef.current = true;
-    setPhase("hidden");
-    finishExit();
-  }, [phase, finishExit]);
-
-  useLayoutEffect(() => {
-    if (!isProfileRoute) {
-      closingRef.current = false;
-    }
-  }, [isProfileRoute]);
+    if (!isProfileRoute) return;
+    const target = getProfileReturnPath();
+    clearProfileReturnPath();
+    router.replace(target);
+  }, [router, isProfileRoute]);
 
   const openProfile = useCallback(
     (returnPath: string) => {
       returnPathRef.current = returnPath;
-      closingRef.current = false;
       markProfileSheetEnter(returnPath);
-      setPhase("open");
       router.push("/profile");
     },
     [router],
   );
-
-  useLayoutEffect(() => {
-    if (isProfileRoute && phase === "hidden") {
-      setPhase("open");
-    }
-  }, [isProfileRoute, phase]);
 
   const overlay = showSheet ? (
     <>
