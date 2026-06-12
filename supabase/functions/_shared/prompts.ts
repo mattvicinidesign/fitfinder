@@ -78,6 +78,12 @@ Posting context (informational only):
 - payStructure "salary": annual/monthly salary, W2 pay band, compensation.period "year" or "month".
 - Use "unknown" when unclear. postingContextDetail: one short sentence citing evidence.
 
+Upwork / freelance platform postings:
+- When the paste includes "Skills and Expertise" with "Mandatory skills" tags, put ONLY those
+  tagged skill names in skills[] (verbatim). Do NOT mine extra skills from the job body.
+- Optional/nice-to-have skill tags in that section may be included in skills[] after mandatory tags.
+- Platform tool names (Figma, Tableau, DV360, etc.) belong in toolRequirements, not skills.
+
 Skills vs toolRequirements (critical):
 - toolRequirements: EVERY software, app, platform, framework, or creative tool named anywhere in the posting.
   Include required AND optional items. Scan the ENTIRE document: requirements, responsibilities,

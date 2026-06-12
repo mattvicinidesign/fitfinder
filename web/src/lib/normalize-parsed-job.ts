@@ -1,12 +1,8 @@
-// Post-process parsed job JSON so toolRequirements reflect the full posting
-// (including bonus / nice-to-have sections the model often skips).
+// Post-process parsed job JSON — keep in sync with supabase/functions/_shared/normalize_parsed_job.ts
 
-import { normalizePostingDetails } from "./posting_details.ts";
-import {
-  extractIndustriesFromText,
-  normalizeIndustryList,
-} from "./tech_industries.ts";
-import type { ParsedJob } from "./types.ts";
+import { normalizePostingDetails } from "@/lib/posting-details";
+import { normalizeIndustryList } from "@/lib/tech-industries";
+import type { ParsedJob } from "@/lib/types";
 
 /** Canonical display names keyed by normalized match phrases. */
 const TOOL_PHRASES: ReadonlyArray<{ match: string; label: string }> = [
@@ -343,16 +339,8 @@ export function normalizeParsedJob(
     ),
   ]);
 
-  const fromModel = normalizeIndustryList(parsed.industries);
-  const industriesFromText = extractIndustriesFromText(jobText);
-  const industrySeen = new Set<string>(fromModel.industries);
+  const fromModel = normalizeIndustryList(parsed.industries ?? []);
   const industries = [...fromModel.industries];
-  for (const label of industriesFromText) {
-    if (!industrySeen.has(label)) {
-      industrySeen.add(label);
-      industries.push(label);
-    }
-  }
 
   const postingDetails = normalizePostingDetails(parsed, jobText);
 

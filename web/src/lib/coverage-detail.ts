@@ -1,5 +1,8 @@
 import { isToolListedInBonus } from "@/lib/bonus-tools";
-import { skillsMatchPoolForScoring } from "@/lib/qualified-skills";
+import {
+  findSkillLabelMatch,
+  resumeSkillMatchPool,
+} from "@/lib/qualified-skills";
 import { resumeToolsMatchPool } from "@/lib/resume-tools";
 import type { CoverageMatchDetail, ParsedJob, ParsedResume } from "@/lib/types";
 
@@ -55,6 +58,28 @@ export function collectResumeWorkflowTokens(resume: ParsedResume): string[] {
   return tokens;
 }
 
+function coverageDetailFromSkillRequirements(
+  required: string[],
+  candidateTokens: string[],
+): CoverageResult {
+  const reqs = uniqueRequired(required);
+  if (reqs.length === 0) {
+    return { matched: 0, total: 0, items: [] };
+  }
+
+  const items: CoverageMatchDetail[] = reqs.map(({ label }) => {
+    const resumeMatch = findSkillLabelMatch(label, candidateTokens);
+    return {
+      label,
+      matched: resumeMatch !== null,
+      resumeMatch,
+    };
+  });
+
+  const matched = items.filter((i) => i.matched).length;
+  return { matched, total: items.length, items };
+}
+
 function coverageDetailFromRequired(
   required: string[],
   candidateTokens: string[],
@@ -82,11 +107,8 @@ export function skillsCoverageDetail(
   resume?: ParsedResume | null,
   profileQualifiedSkills?: string[] | null,
 ): CoverageResult {
-  const matchPool = skillsMatchPoolForScoring(
-    resume?.skills,
-    profileQualifiedSkills,
-  );
-  return coverageDetailFromRequired(job.skills ?? [], matchPool);
+  const matchPool = resumeSkillMatchPool(resume, profileQualifiedSkills);
+  return coverageDetailFromSkillRequirements(job.skills ?? [], matchPool);
 }
 
 export function workflowCoverageDetail(

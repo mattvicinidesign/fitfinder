@@ -1,5 +1,7 @@
 /** Profile qualified skills — used for Skills scoring only (not shown on resume). */
 
+import type { ParsedResume } from "./types.ts";
+
 export const PROFILE_QUALIFIED_SKILL_LABELS = [
   "Mobile App Design",
   "User-Centered Design",
@@ -64,6 +66,15 @@ const SKILL_MATCH_ALIASES: Record<string, string[]> = {
     "user experience",
     "experience design",
     "ux designer",
+    "product designer",
+    "product design",
+    "senior product designer",
+    "ux strategist",
+    "product ux",
+    "ux ui designer",
+    "enterprise ux",
+    "workflow design",
+    "dashboard design",
   ],
   [normalizeSkillToken("User Interface Design")]: [
     "ui design",
@@ -113,14 +124,61 @@ function expandSkillMatchPool(skills: string[]): string[] {
   return pool;
 }
 
-/** Merge profile qualified skills into resume skills for scoring only. */
-export function resumeSkillsForScoring(
+function expandedSkillTokens(label: string): string[] {
+  const norm = normalizeSkillToken(label);
+  const out = new Set<string>([norm]);
+
+  for (const [canonical, aliases] of Object.entries(SKILL_MATCH_ALIASES)) {
+    const group = [canonical, ...aliases.map(normalizeSkillToken)];
+    if (!group.includes(norm)) continue;
+    for (const token of group) out.add(token);
+  }
+
+  return [...out];
+}
+
+/** True when a job skill requirement matches a resume/profile skill token. */
+export function skillLabelsMatch(
+  requirement: string,
+  candidate: string,
+): boolean {
+  const reqTokens = expandedSkillTokens(requirement);
+  const candTokens = expandedSkillTokens(candidate);
+
+  for (const req of reqTokens) {
+    for (const cand of candTokens) {
+      if (req === cand || req.includes(cand) || cand.includes(req)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+export function findSkillLabelMatch(
+  requirement: string,
+  candidates: string[],
+): string | null {
+  for (const candidate of candidates) {
+    if (skillLabelsMatch(requirement, candidate)) {
+      return candidate.trim();
+    }
+  }
+  return null;
+}
+
+/** Match pool for skills scoring (includes aliases). */
+export function skillsMatchPoolForScoring(
   resumeSkills: string[] | undefined | null,
-  profileQualified: string[] | null | undefined,
+  profileQualified?: string[] | null,
 ): string[] {
   const fromResume = dedupeSkills(resumeSkills ?? []);
-  const fromProfile = dedupeSkills(profileQualified ?? []);
-
+  const inferredProfile =
+    profileQualified && profileQualified.length > 0
+      ? profileQualified
+      : qualifiedSkillLabelsFromResume(fromResume);
+  const fromProfile = dedupeSkills(inferredProfile ?? []);
   const seen = new Set(fromResume.map(normalizeSkillToken));
   const merged = [...fromResume];
   for (const label of fromProfile) {
@@ -129,8 +187,15 @@ export function resumeSkillsForScoring(
     seen.add(key);
     merged.push(label);
   }
-
   return expandSkillMatchPool(merged);
+}
+
+/** Merge profile qualified skills into resume skills for scoring only. */
+export function resumeSkillsForScoring(
+  resumeSkills: string[] | undefined | null,
+  profileQualified: string[] | null | undefined,
+): string[] {
+  return skillsMatchPoolForScoring(resumeSkills, profileQualified);
 }
 
 /** Profile qualified labels evidenced by parsed resume skills (for profile sync). */
@@ -138,10 +203,33 @@ export function qualifiedSkillLabelsFromResume(
   resumeSkills: string[] | undefined | null,
 ): string[] {
   const poolNorm = new Set(
-    resumeSkillsForScoring(resumeSkills, []).map(normalizeSkillToken),
+    expandSkillMatchPool(dedupeSkills(resumeSkills ?? [])).map(normalizeSkillToken),
   );
   return PROFILE_QUALIFIED_SKILL_LABELS.filter((label) => {
     const aliases = expandSkillMatchPool([label]).map(normalizeSkillToken);
     return aliases.some((token) => poolNorm.has(token));
   });
+}
+
+/** Skills match pool including resume role, archetypes, and work history. */
+export function resumeSkillMatchPool(
+  resume: ParsedResume | null | undefined,
+  profileQualified?: string[] | null,
+): string[] {
+  const contextLabels: string[] = [];
+  if (resume?.roleTitle?.trim()) contextLabels.push(resume.roleTitle.trim());
+  for (const archetype of resume?.archetypes ?? []) {
+    if (archetype.trim()) contextLabels.push(archetype.trim());
+  }
+  for (const job of resume?.workHistory ?? []) {
+    if (job.title?.trim()) contextLabels.push(job.title.trim());
+    if (job.summary?.trim()) contextLabels.push(job.summary.trim());
+  }
+
+  return expandSkillMatchPool(
+    dedupeSkills([
+      ...skillsMatchPoolForScoring(resume?.skills, profileQualified),
+      ...contextLabels,
+    ]),
+  );
 }

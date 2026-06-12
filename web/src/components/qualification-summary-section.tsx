@@ -122,7 +122,6 @@ export function QualificationSummarySection({
   const roleDetailsFraction = sectionFieldFraction(roleFields);
 
   const locationField = fieldByKey(clientFields, "clientOrigin");
-  const timezoneField = fieldByKey(clientFields, "timezone");
   const ratingField = fieldByKey(clientFields, "clientRating");
   const avgPayField = fieldByKey(clientFields, "clientAverageHourlyRate");
 
@@ -144,23 +143,11 @@ export function QualificationSummarySection({
           info={SCORING_CATEGORY_INFO.clientProfile}
         >
           <div className="space-y-3">
-            {locationField || timezoneField ? (
-              <div
-                className={cn(
-                  "grid min-w-0 gap-x-4 gap-y-3",
-                  locationField && timezoneField ? "grid-cols-2" : "grid-cols-1",
-                )}
-              >
-                {locationField ? (
-                  <SummaryScoredField
-                    field={locationField}
-                    postingDetailKey="clientOrigin"
-                  />
-                ) : null}
-                {timezoneField ? (
-                  <SummaryScoredField field={timezoneField} />
-                ) : null}
-              </div>
+            {locationField ? (
+              <SummaryScoredField
+                field={locationField}
+                postingDetailKey="clientOrigin"
+              />
             ) : null}
             {ratingField || avgPayField ? (
               <div

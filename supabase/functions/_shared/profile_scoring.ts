@@ -5,7 +5,10 @@
 
 import { compensationFromProfileRow } from "./profile_compensation.ts";
 import { resumeWithQualifiedIndustries } from "./qualified_industries.ts";
-import { resumeSkillsForScoring } from "./qualified_skills.ts";
+import {
+  qualifiedSkillLabelsFromResume,
+  resumeSkillsForScoring,
+} from "./qualified_skills.ts";
 import type { ParsedJob, ParsedResume } from "./types.ts";
 import type { PostingContext } from "./posting_context.ts";
 
@@ -50,7 +53,16 @@ export function mergeProfileIntoResumeForScoring(
   resume: ParsedResume,
   profile: ProfileScoringRow | null | undefined,
 ): ParsedResume {
-  if (!profile) return resume;
+  const qualifiedForScoring = profile?.qualified_skills?.length
+    ? profile.qualified_skills
+    : qualifiedSkillLabelsFromResume(resume.skills);
+
+  let merged: ParsedResume = {
+    ...resume,
+    skills: resumeSkillsForScoring(resume.skills, qualifiedForScoring),
+  };
+
+  if (!profile) return merged;
 
   const profileCountry =
     typeof profile.country === "string" && profile.country.trim()
@@ -61,15 +73,14 @@ export function mergeProfileIntoResumeForScoring(
       ? profile.timezone.trim()
       : null;
 
-  let merged: ParsedResume = {
-    ...resume,
+  merged = {
+    ...merged,
     country: resume.country?.trim() || profileCountry || resume.country,
     timezone: resume.timezone?.trim() || profileTimezone || resume.timezone,
     industries: resumeWithQualifiedIndustries(
       resume.industries,
       profile.qualified_industries,
     ),
-    skills: resumeSkillsForScoring(resume.skills, profile.qualified_skills),
   };
 
   const profileDesired = compensationFromProfileRow(profile);

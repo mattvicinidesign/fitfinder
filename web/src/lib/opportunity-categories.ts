@@ -1,3 +1,4 @@
+import { clientQualityScoreFromPostingDetails } from "@/lib/client-quality-scoring";
 import type { ReportRollupOptions } from "@/lib/section-score-rollups";
 import {
   computeReportSectionRollups,
@@ -92,6 +93,9 @@ export function scoringCategoryTitleForScore(
   sectionId: ScoringCategoryId,
   score: ScoreResult,
 ): string {
+  if (sectionId === "clientProfile") {
+    return OPPORTUNITY_CATEGORY_LABELS.clientQuality;
+  }
   if (!usesOpportunityEngine(score)) {
     return SCORING_CATEGORY_LABELS[sectionId];
   }
@@ -104,6 +108,15 @@ export function sectionCategoryScore(
   sectionId: ScoringCategoryId,
   rollupOptions: ReportRollupOptions,
 ): number | null {
+  if (sectionId === "clientProfile") {
+    const ctx = rollupOptions.fieldContext;
+    const fromDetails = clientQualityScoreFromPostingDetails(
+      ctx.parsedJob?.postingDetails,
+      ctx.profileDesiredCompensation ?? ctx.parsedResume?.desiredCompensation ?? null,
+    );
+    if (fromDetails != null) return fromDetails;
+  }
+
   if (usesOpportunityEngine(score)) {
     return getOpportunityCategoryScore(
       score,

@@ -5,6 +5,8 @@
  * coverage as an additive matching signal.
  */
 
+import type { ParsedResume } from "@/lib/types";
+
 export const PROFILE_QUALIFIED_SKILL_LABELS = [
   "Mobile App Design",
   "User-Centered Design",
@@ -68,6 +70,15 @@ const SKILL_MATCH_ALIASES: Record<string, string[]> = {
     "user experience",
     "experience design",
     "ux designer",
+    "product designer",
+    "product design",
+    "senior product designer",
+    "ux strategist",
+    "product ux",
+    "ux ui designer",
+    "enterprise ux",
+    "workflow design",
+    "dashboard design",
   ],
   [normalizeSkillToken("User Interface Design")]: [
     "ui design",
@@ -96,13 +107,95 @@ function dedupeSkills(skills: string[]): string[] {
   return out;
 }
 
+function expandSkillMatchPool(skills: string[]): string[] {
+  const pool: string[] = [];
+  const seen = new Set<string>();
+
+  const add = (raw: string) => {
+    const label = raw.trim();
+    const key = normalizeSkillToken(label);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    pool.push(label);
+  };
+
+  for (const skill of skills) {
+    add(skill);
+    for (const alias of SKILL_MATCH_ALIASES[normalizeSkillToken(skill)] ?? []) {
+      add(alias);
+    }
+  }
+
+  return pool;
+}
+
+function expandedSkillTokens(label: string): string[] {
+  const norm = normalizeSkillToken(label);
+  const out = new Set<string>([norm]);
+
+  for (const [canonical, aliases] of Object.entries(SKILL_MATCH_ALIASES)) {
+    const group = [canonical, ...aliases.map(normalizeSkillToken)];
+    if (!group.includes(norm)) continue;
+    for (const token of group) out.add(token);
+  }
+
+  return [...out];
+}
+
+/** True when a job skill requirement matches a resume/profile skill token. */
+export function skillLabelsMatch(
+  requirement: string,
+  candidate: string,
+): boolean {
+  const reqTokens = expandedSkillTokens(requirement);
+  const candTokens = expandedSkillTokens(candidate);
+
+  for (const req of reqTokens) {
+    for (const cand of candTokens) {
+      if (req === cand || req.includes(cand) || cand.includes(req)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+export function findSkillLabelMatch(
+  requirement: string,
+  candidates: string[],
+): string | null {
+  for (const candidate of candidates) {
+    if (skillLabelsMatch(requirement, candidate)) {
+      return candidate.trim();
+    }
+  }
+  return null;
+}
+
+export function qualifiedSkillLabelsFromResume(
+  resumeSkills: string[] | undefined | null,
+): string[] {
+  const poolNorm = new Set(
+    expandSkillMatchPool(dedupeSkills(resumeSkills ?? [])).map(normalizeSkillToken),
+  );
+  return PROFILE_QUALIFIED_SKILL_LABELS.filter((label) => {
+    const aliases = expandSkillMatchPool([label]).map(normalizeSkillToken);
+    return aliases.some((token) => poolNorm.has(token));
+  });
+}
+
 /** Match pool for Skills coverage UI (includes aliases; not shown as resume skills). */
 export function skillsMatchPoolForScoring(
   resumeSkills: string[] | undefined | null,
   profileQualified?: string[] | null,
 ): string[] {
   const fromResume = dedupeSkills(resumeSkills ?? []);
-  const fromProfile = dedupeSkills(profileQualified ?? []);
+  const inferredProfile =
+    profileQualified && profileQualified.length > 0
+      ? profileQualified
+      : qualifiedSkillLabelsFromResume(fromResume);
+  const fromProfile = dedupeSkills(inferredProfile ?? []);
   const seen = new Set(fromResume.map(normalizeSkillToken));
   const merged = [...fromResume];
   for (const label of fromProfile) {
@@ -112,22 +205,24 @@ export function skillsMatchPoolForScoring(
     merged.push(label);
   }
 
-  const pool: string[] = [];
-  const poolSeen = new Set<string>();
-  const add = (raw: string) => {
-    const label = raw.trim();
-    const key = normalizeSkillToken(label);
-    if (!key || poolSeen.has(key)) return;
-    poolSeen.add(key);
-    pool.push(label);
-  };
+  return expandSkillMatchPool(merged);
+}
 
-  for (const skill of merged) {
-    add(skill);
-    for (const alias of SKILL_MATCH_ALIASES[normalizeSkillToken(skill)] ?? []) {
-      add(alias);
-    }
+/** Skills match pool including resume role, archetypes, and work history. */
+export function resumeSkillMatchPool(
+  resume: ParsedResume | null | undefined,
+  profileQualified?: string[] | null,
+): string[] {
+  const contextLabels: string[] = [];
+  if (resume?.roleTitle?.trim()) contextLabels.push(resume.roleTitle.trim());
+  for (const archetype of resume?.archetypes ?? []) {
+    if (archetype.trim()) contextLabels.push(archetype.trim());
+  }
+  for (const job of resume?.workHistory ?? []) {
+    if (job.title?.trim()) contextLabels.push(job.title.trim());
+    if (job.summary?.trim()) contextLabels.push(job.summary.trim());
   }
 
-  return pool;
+  const basePool = skillsMatchPoolForScoring(resume?.skills, profileQualified);
+  return expandSkillMatchPool(dedupeSkills([...basePool, ...contextLabels]));
 }

@@ -12,10 +12,12 @@ import {
   isHourlyCompensationWithinProfileRange,
 } from "@/lib/compensation-match";
 import {
-  buildClientOriginTimezoneSummary,
-  clientOriginTimezoneToneToSummaryState,
-  extractTimezoneFromAboutClient,
-} from "@/lib/client-origin-timezone";
+  CLIENT_QUALITY_FIELD_LABELS,
+  clientQualityAvgPayPoints,
+  clientQualityLocationPoints,
+  clientQualityRatingPoints,
+  isExplicitClientAvgPayRate,
+} from "@/lib/client-quality-scoring";
 import { preferredLocationMatchesCandidate } from "@/lib/country-match";
 import {
   jobPreferredLocationDisplay,
@@ -24,7 +26,6 @@ import {
 import { resolveJobPreferredLocation } from "@/lib/preferred-qualifications-parse";
 import { NOT_SPECIFIED_LABEL, isNotSpecifiedDisplay } from "@/lib/not-specified";
 import {
-  isClientRatingAtLeast3,
   isDurationMoreThan1Month,
   isHoursNeededAtLeast30PerWeek,
   isPostingDetailHighlightPositive,
@@ -32,7 +33,6 @@ import {
   type PostingDetailHighlightContext,
 } from "@/lib/posting-detail-highlights";
 import {
-  isClientAvgHourlyAtOrAboveProfile,
   POSTING_DETAIL_MISSING,
   type PostingDetailRow,
 } from "@/lib/posting-details";
@@ -164,89 +164,97 @@ function postingRowField(
   return binaryField(row.key, row.title, true, row.value, matched);
 }
 
-function isExplicitClientAvgPayRate(value: string): boolean {
-  return (
-    !isNotSpecifiedDisplay(value) &&
-    value !== POSTING_DETAIL_MISSING &&
-    !value.includes("(job budget)")
-  );
-}
-
 export function buildClientProfileFields(
   ctx: SectionFieldScoreContext,
   rows: PostingDetailRow[],
-  highlightCtx: PostingDetailHighlightContext,
+  _highlightCtx: PostingDetailHighlightContext,
 ): SectionFieldScore[] {
-  if (ctx.isGuest) return [];
 
+  const details = ctx.parsedJob?.postingDetails;
   const originRow = postingRowByKey(rows, "clientOrigin");
   const ratingRow = postingRowByKey(rows, "clientRating");
   const avgRow = postingRowByKey(rows, "clientAverageHourlyRate");
+  const profileComp =
+    ctx.parsedResume?.desiredCompensation ?? ctx.profileDesiredCompensation ?? null;
 
-  const clientOrigin = ctx.parsedJob?.postingDetails?.clientOrigin?.trim() ?? "";
-  const userTimezone =
-    ctx.parsedResume?.timezone?.trim() || ctx.profileTimezone?.trim() || null;
-  const tzFromPosting =
-    extractTimezoneFromAboutClient(ctx.jobDescription ?? "") != null ||
-    Boolean(clientOrigin);
-  const tzSummary = buildClientOriginTimezoneSummary(clientOrigin, userTimezone, {
-    jobDescription: ctx.jobDescription,
-    clientCity: ctx.parsedJob?.postingDetails?.clientCity?.trim() || null,
-  });
+  const fields: SectionFieldScore[] = [];
 
-  const timezoneIdentified = tzFromPosting && !isNotSpecifiedDisplay(tzSummary.label);
-  // Green / matched only on an exact timezone match with the user's timezone.
-  // Same country, different timezone (e.g. PST client vs CST user) does not count.
-  const timezoneMatched =
-    timezoneIdentified &&
-    clientOriginTimezoneToneToSummaryState(tzSummary.tone) === "match";
+  const locationValue = details?.clientOrigin?.trim() || originRow?.value || "";
+  const locationIdentified =
+    postingRowIdentified(originRow) || Boolean(details?.clientOrigin?.trim());
+  const locationPoints = clientQualityLocationPoints(details?.clientOrigin);
+  fields.push(
+    locationIdentified && locationPoints != null
+      ? field(
+          "clientOrigin",
+          CLIENT_QUALITY_FIELD_LABELS.location,
+          true,
+          locationValue,
+          locationPoints >= 50 ? "match" : "mismatch",
+          locationPoints,
+        )
+      : field(
+          "clientOrigin",
+          CLIENT_QUALITY_FIELD_LABELS.location,
+          false,
+          "",
+          "unknown",
+          null,
+        ),
+  );
 
-  const fields: SectionFieldScore[] = [
-    postingRowIdentified(originRow)
-      ? postingRowField(originRow, highlightCtx)
-      : field("clientOrigin", "Location", false, "", "unknown", null),
-    field(
-      "timezone",
-      "Timezone",
-      timezoneIdentified,
-      tzSummary.label,
-      timezoneMatched ? "match" : "unknown",
-      timezoneIdentified ? (timezoneMatched ? 100 : 0) : null,
-    ),
-  ];
+  const ratingValue = details?.clientRating?.trim() || ratingRow?.value || "";
+  const ratingIdentified =
+    postingRowIdentified(ratingRow) || Boolean(details?.clientRating?.trim());
+  const ratingPoints = clientQualityRatingPoints(details?.clientRating);
+  fields.push(
+    ratingIdentified && ratingPoints != null
+      ? field(
+          "clientRating",
+          CLIENT_QUALITY_FIELD_LABELS.rating,
+          true,
+          ratingValue,
+          ratingPoints >= 50 ? "match" : "mismatch",
+          ratingPoints,
+        )
+      : field(
+          "clientRating",
+          CLIENT_QUALITY_FIELD_LABELS.rating,
+          false,
+          "",
+          "unknown",
+          null,
+        ),
+  );
 
-  if (ratingRow) {
-    fields.push(
-      postingRowIdentified(ratingRow)
-        ? binaryField(
-            "clientRating",
-            "Rating",
-            true,
-            ratingRow.value,
-            isClientRatingAtLeast3(ratingRow.value),
-          )
-        : field("clientRating", "Rating", false, "", "unknown", null),
-    );
-  }
-
-  if (avgRow) {
-    const identified = postingRowIdentified(avgRow) &&
-      isExplicitClientAvgPayRate(avgRow.value);
-    fields.push(
-      identified
-        ? binaryField(
-            "clientAverageHourlyRate",
-            "Avg. Rate",
-            true,
-            avgRow.value,
-            isClientAvgHourlyAtOrAboveProfile(
-              avgRow.value,
-              highlightCtx.profileDesiredCompensation,
-            ),
-          )
-        : field("clientAverageHourlyRate", "Avg. Rate", false, "", "unknown", null),
-    );
-  }
+  const avgValue =
+    details?.clientAverageHourlyRate?.trim() || avgRow?.value || "";
+  const avgIdentified =
+    (postingRowIdentified(avgRow) && isExplicitClientAvgPayRate(avgRow!.value)) ||
+    isExplicitClientAvgPayRate(details?.clientAverageHourlyRate ?? "");
+  const avgPoints = clientQualityAvgPayPoints(
+    details?.clientAverageHourlyRate ?? (avgIdentified ? avgValue : null),
+    profileComp,
+  );
+  fields.push(
+    avgIdentified && avgPoints != null
+      ? field(
+          "clientAverageHourlyRate",
+          CLIENT_QUALITY_FIELD_LABELS.avgPayRate,
+          true,
+          avgValue,
+          avgPoints >= 50 ? "match" : "mismatch",
+          avgPoints,
+        )
+      : field(
+          "clientAverageHourlyRate",
+          CLIENT_QUALITY_FIELD_LABELS.avgPayRate,
+          false,
+          "",
+          "unknown",
+          null,
+        ),
+  );
 
   return fields;
 }

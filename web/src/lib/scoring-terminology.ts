@@ -25,7 +25,7 @@ export const SCORING_CATEGORY_SUBTOTAL_LABEL = "Category Score";
 
 /** Display titles for legacy V1 scoring category cards. */
 export const SCORING_CATEGORY_LABELS: Record<ScoringCategoryId, string> = {
-  clientProfile: "Client",
+  clientProfile: "Client Quality",
   clientPreferences: "Preference",
   roleDetails: "Role",
   categoryMatching: "Qualification",
@@ -54,7 +54,7 @@ export const GLOBAL_SCORE_INFO =
 
 export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
   clientProfile:
-    "How well you match the client profile — location, timezone, rating, and average pay rate. Registered users only; each item found in the posting counts equally.",
+    "Client quality from About the client — location, rating, and average pay rate. Each item found counts equally toward the category score. Registered users only.",
   clientPreferences:
     "How well you match the client preferences — location, timezone, talent type, and AI emphasis stated in the posting.",
   roleDetails:

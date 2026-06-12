@@ -88,6 +88,9 @@ function extractClientRating(text: string, clientBlock: string | null): string |
 
     const ofFive = block.match(/(\d+(?:\.\d+)?)\s+out\s+of\s+5/i);
     if (ofFive) return `${ofFive[1]} out of 5`;
+
+    const ofReviews = block.match(/(\d+(?:\.\d+)?)\s+of\s+\d+\s+reviews?/i);
+    if (ofReviews) return `${ofReviews[1]} out of 5`;
   }
   return null;
 }
@@ -282,7 +285,7 @@ const ROW_DEFS: {
 }[] = [
   { key: "clientOrigin", title: "Location", section: "client" },
   { key: "clientRating", title: "Rating", section: "client" },
-  { key: "clientAverageHourlyRate", title: "Avg. Rate", section: "client" },
+  { key: "clientAverageHourlyRate", title: "Avg Pay rate", section: "client" },
   { key: "role", title: "Title", section: "role" },
   { key: "hoursNeeded", title: "Hours", section: "role" },
   { key: "duration", title: "Duration", section: "role" },

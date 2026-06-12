@@ -1,4 +1,5 @@
 import { normalizePostingDetails } from "@/lib/posting-details";
+import { normalizeParsedJob } from "@/lib/normalize-parsed-job";
 import { resolvePostingContext } from "@/lib/posting-context";
 import {
   coverageDetailForCategory,
@@ -366,11 +367,14 @@ function enrichParsedJob(
     (typeof jobTitle === "string" && jobTitle.trim() ? jobTitle.trim() : null) ||
     parsedJob.roleTitle;
 
-  return {
-    ...parsedJob,
-    postingDetails,
-    ...(roleTitle ? { roleTitle } : {}),
-  };
+  return normalizeParsedJob(
+    {
+      ...parsedJob,
+      postingDetails,
+      ...(roleTitle ? { roleTitle } : {}),
+    },
+    text,
+  );
 }
 
 export function normalizeAnalysisResult(

@@ -5,6 +5,7 @@
  */
 
 import { detectRoleArchetype } from "./archetype_detection.ts";
+import { clientQualityScoreFromJob } from "./client_quality_scoring.ts";
 import {
   LOWER_INDUSTRIES,
   NEUTRAL_INDUSTRIES,
@@ -18,7 +19,7 @@ import {
   computeOnboardingCareerFitAdjustment,
   type ProfileScoringRow,
 } from "./profile_scoring.ts";
-import { resumeSkillsForScoring } from "./qualified_skills.ts";
+import { findSkillLabelMatch, resumeSkillMatchPool } from "./qualified_skills.ts";
 import type { PostingContext } from "./posting_context.ts";
 import type {
   OpportunityCategoryScore,
@@ -124,19 +125,36 @@ function scoreQualificationsMatch(
   resume: ParsedResume,
   job: ParsedJob,
 ): OpportunityCategoryScore {
-  const required = [
-    ...(job.skills ?? []),
-    ...(job.toolRequirements ?? []),
-  ];
-  const candidatePool = [
-    ...resumeSkillsForScoring(resume.skills, []),
+  const skillReqs = job.skills ?? [];
+  const toolReqs = job.toolRequirements ?? [];
+  const skillPool = resumeSkillMatchPool(resume, null);
+  const toolPool = [
     ...(resume.tools ?? []),
     ...(resume.aiExperience ?? []),
   ];
-  const { matched, total, matchedLabels, missingLabels } = coverageCounts(
-    required,
-    candidatePool,
-  );
+
+  const matchedLabels: string[] = [];
+  const missingLabels: string[] = [];
+  let matched = 0;
+  let total = 0;
+
+  for (const req of skillReqs) {
+    total++;
+    if (findSkillLabelMatch(req, skillPool)) {
+      matched++;
+      matchedLabels.push(req);
+    } else {
+      missingLabels.push(req);
+    }
+  }
+
+  if (toolReqs.length > 0) {
+    const toolCounts = coverageCounts(toolReqs, toolPool);
+    matched += toolCounts.matched;
+    total += toolCounts.total;
+    matchedLabels.push(...toolCounts.matchedLabels);
+    missingLabels.push(...toolCounts.missingLabels);
+  }
 
   const weight = OPPORTUNITY_WEIGHTS.qualificationsMatch;
   if (total === 0) {
@@ -284,79 +302,32 @@ function scorePreferenceAlignment(
   };
 }
 
-function parseRating(label: string | null | undefined): number | null {
-  if (!label?.trim()) return null;
-  const m = label.match(/(\d+(?:\.\d+)?)\s*(?:out\s+of\s+5|\/\s*5)/i);
-  if (m) return Number.parseFloat(m[1]);
-  const bare = label.match(/^(\d+(?:\.\d+)?)$/);
-  if (bare) return Number.parseFloat(bare[1]);
-  return null;
-}
-
-function scoreClientQuality(job: ParsedJob, jobBlob: string): OpportunityCategoryScore {
+function scoreClientQuality(
+  job: ParsedJob,
+  profile: ProfileScoringRow | null | undefined,
+): OpportunityCategoryScore {
   const weight = OPPORTUNITY_WEIGHTS.clientQuality;
+  const score = clientQualityScoreFromJob(job, profile) ?? 50;
   const details = job.postingDetails;
-  let score = 50;
   const signals: string[] = [];
 
-  const rating = parseRating(details?.clientRating ?? null);
-  if (rating != null) {
-    if (rating >= 4.5) {
-      score += 25;
-      signals.push(`Client rating ${rating}/5`);
-    } else if (rating >= 3) {
-      score += 12;
-      signals.push(`Client rating ${rating}/5`);
-    } else {
-      score -= 15;
-      signals.push(`Low client rating ${rating}/5`);
-    }
+  if (details?.clientOrigin?.trim()) {
+    signals.push(`Location: ${details.clientOrigin.trim()}`);
+  }
+  if (details?.clientRating?.trim()) {
+    signals.push(`Rating: ${details.clientRating.trim()}`);
+  }
+  if (details?.clientAverageHourlyRate?.trim()) {
+    signals.push(`Avg pay: ${details.clientAverageHourlyRate.trim()}`);
   }
 
-  const spend = details?.clientAverageHourlyRate ?? "";
-  if (/\$0|no spend|0 spent/i.test(spend)) {
-    score -= 20;
-    signals.push("$0 client spend");
-  } else if (/\$\d+/i.test(spend)) {
-    score += 8;
-    signals.push("Client spend history listed");
-  }
-
-  if (/\bunverified\b|\bnot verified\b/i.test(jobBlob)) {
-    score -= 15;
-    signals.push("Unverified payment");
-  } else if (/\bpayment verified\b|\bverified payment\b/i.test(jobBlob)) {
-    score += 15;
-    signals.push("Payment verified");
-  }
-
-  if (/\bagency outsourcing\b|\bwhite label\b|\bsubcontract\b/i.test(jobBlob)) {
-    score -= 12;
-    signals.push("Agency outsourcing signals");
-  }
-
-  const skillCount = (job.skills?.length ?? 0) + (job.toolRequirements?.length ?? 0);
-  if (skillCount >= 4 && jobBlob.length > 400) {
-    score += 8;
-    signals.push("Detailed job description");
-  } else if (jobBlob.length < 120) {
-    score -= 10;
-    signals.push("Vague requirements");
-  }
-
-  if (/\b50\+ proposals\b|\b100\+ proposals\b|\bhigh competition\b/i.test(jobBlob)) {
-    score -= 8;
-    signals.push("High competition");
-  }
-
-  score = round(clamp(score, 0, 100));
   return {
     category: "clientQuality",
     label: OPPORTUNITY_CATEGORY_LABELS.clientQuality,
     score,
     weight,
     contribution: round(weight * (score / 100)),
-    details: signals.length ? signals : ["Limited client quality signals"],
+    details: signals.length ? signals : ["Limited About-the-client data"],
   };
 }
 
@@ -387,7 +358,7 @@ export function scoreOpportunity(
   if (mode === "registered") {
     categories.push(
       scorePreferenceAlignment(resume, job, options.profile, options),
-      scoreClientQuality(job, jobBlob),
+      scoreClientQuality(job, options.profile),
     );
   }
 
