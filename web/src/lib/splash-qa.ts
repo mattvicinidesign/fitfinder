@@ -12,9 +12,8 @@ export {
 
 /**
  * Splash QA panel (simulate first launch, returning user, replay splash).
- * - Local: always on
- * - Vercel Preview: on by default (see next.config.ts)
- * - Vercel Production: set NEXT_PUBLIC_ENABLE_SPLASH_QA=true to enable
+ * - Web (Vercel + local dev): on by default (see next.config.ts)
+ * - iOS Capacitor build: off unless NEXT_PUBLIC_ENABLE_SPLASH_QA=true at cap:sync
  */
 export function isSplashQaEnabled(): boolean {
   if (process.env.NODE_ENV === "development") return true;

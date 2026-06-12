@@ -8,7 +8,8 @@ import {
   simulateFirstLaunch,
   simulateReturningUser,
 } from "@/lib/splash-qa";
-import { safeBottomTabBar } from "@/lib/safe-area";
+import { safeBottomTabBar, safeTopFloating } from "@/lib/safe-area";
+import { isNativePlatform } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 import { useSplashQa } from "@/components/splash-qa-context";
 
@@ -24,8 +25,18 @@ export function SplashQaPanel() {
     splashQa?.replaySplash();
   }
 
+  const qaButtonClass =
+    "h-9 w-full justify-start rounded-lg border-primary/70 text-[13px] font-medium";
+
   return (
-    <div className={`fixed bottom-4 right-4 z-[110] flex flex-col items-end gap-2 ${safeBottomTabBar}`}>
+    <div
+      className={cn(
+        "fixed z-[110] flex flex-col items-end gap-2",
+        isNativePlatform()
+          ? `bottom-4 right-4 ${safeBottomTabBar}`
+          : `right-4 ${safeTopFloating}`,
+      )}
+    >
       {open ? (
         <div className="w-64 rounded-xl border border-border/60 bg-card p-3 shadow-lg">
           <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
@@ -34,32 +45,32 @@ export function SplashQaPanel() {
           <div className="mt-3 space-y-2">
             <Button
               type="button"
-              variant="secondary"
-              className="h-9 w-full justify-start rounded-lg text-[13px]"
+              variant="outline"
+              className={qaButtonClass}
               onClick={simulateFirstLaunch}
             >
               Simulate first launch
             </Button>
             <Button
               type="button"
-              variant="secondary"
-              className="h-9 w-full justify-start rounded-lg text-[13px]"
+              variant="outline"
+              className={qaButtonClass}
               onClick={simulateReturningUser}
             >
               Simulate returning user
             </Button>
             <Button
               type="button"
-              variant="secondary"
-              className="h-9 w-full justify-start rounded-lg text-[13px]"
+              variant="outline"
+              className={qaButtonClass}
               onClick={handleReplaySplash}
             >
               Replay splash now
             </Button>
             <Button
               type="button"
-              variant="secondary"
-              className="h-9 w-full justify-start rounded-lg text-[13px]"
+              variant="outline"
+              className={qaButtonClass}
               onClick={() => {
                 setOpen(false);
                 resetFirstLaunchFromQa();

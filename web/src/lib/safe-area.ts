@@ -6,6 +6,9 @@
  * env(safe-area-inset-*) is the single source of truth (no double top gap).
  */
 
+/** Floating QA / debug controls (top corner). */
+export const safeTopFloating = "top-[max(1rem,env(safe-area-inset-top))]";
+
 /** Back-button / compact screen headers (Analyze, Report). */
 export const safeTopCompact = "pt-[max(0.5rem,env(safe-area-inset-top))]";
 
