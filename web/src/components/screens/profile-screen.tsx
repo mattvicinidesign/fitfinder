@@ -203,6 +203,12 @@ export function ProfileScreen() {
                   onChange={(v) => patch({ fullName: v })}
                 />
                 <LabeledInput
+                  label="Email"
+                  value={isGuest ? "" : email ?? ""}
+                  placeholder={isGuest ? "Guest session" : "you@example.com"}
+                  readOnly
+                />
+                <LabeledInput
                   label="Location"
                   placeholder="City, country"
                   value={profile.country ?? ""}
@@ -476,11 +482,13 @@ function LabeledInput({
   value,
   onChange,
   placeholder,
+  readOnly,
 }: {
   label: string;
   value: string;
-  onChange: (v: string) => void;
+  onChange?: (v: string) => void;
   placeholder?: string;
+  readOnly?: boolean;
 }) {
   return (
     <div className="space-y-1.5">
@@ -488,8 +496,13 @@ function LabeledInput({
       <Input
         placeholder={placeholder}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-11 text-[17px]"
+        readOnly={readOnly}
+        disabled={readOnly}
+        onChange={readOnly ? undefined : (e) => onChange?.(e.target.value)}
+        className={cn(
+          "h-11 text-[17px]",
+          readOnly && "cursor-default opacity-100 disabled:opacity-100",
+        )}
       />
     </div>
   );
