@@ -94,8 +94,10 @@ behave as **web** (`isNativePlatform()` is false). iOS uses the same bundle afte
 | Auth session | Cookies + server PKCE callback | localStorage + client callback + `fitfinder://` |
 | Backend calls | `web/src/lib/invoke-function.ts` | Same module |
 
-After **any** `web/` UI change, run `npm run cap:sync` before testing in Xcode.
+After **any** `web/` UI change, run `cd web && npm run cap:sync` before testing in Xcode, then commit and push to `main` for Vercel.
 After **backend** changes, deploy Edge Functions (`supabase functions deploy`).
+
+**Splash QA** (web): top-right **QA** floater — simulate first launch, returning user, or replay splash. Enabled on web by default; iOS requires `NEXT_PUBLIC_ENABLE_SPLASH_QA=true` at `cap:sync` time.
 
 Verify both build targets:
 
