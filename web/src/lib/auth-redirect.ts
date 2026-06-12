@@ -37,7 +37,7 @@ export function getAuthCallbackRedirectUrl(nextPath: string): string {
   }
 
   const origin = getWebAuthOrigin();
-  return `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  return `${origin}/api/auth/callback?next=${encodeURIComponent(next)}`;
 }
 
 /** Map fitfinder://auth-callback?…#… into an in-app /auth/callback route. */

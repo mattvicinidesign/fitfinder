@@ -29,15 +29,16 @@ export async function GET(
   const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
   const next = requestUrl.searchParams.get("next") ?? DEFAULT_APP_ROUTE;
 
-  const finishUrl = new URL("/auth/callback", requestUrl.origin);
-  finishUrl.searchParams.set("next", next);
+  const finishUrl = new URL(next.startsWith("/") ? next : `/${next}`, requestUrl.origin);
 
   if (!code && !(tokenHash && type)) {
-    finishUrl.searchParams.set(
-      "error",
+    const failed = new URL("/auth/callback/failed", requestUrl.origin);
+    failed.searchParams.set(
+      "message",
       "Missing sign-in credentials. Try again from the login screen.",
     );
-    return NextResponse.redirect(finishUrl);
+    failed.searchParams.set("next", next);
+    return NextResponse.redirect(failed);
   }
 
   const supabase = await createClient();
@@ -50,7 +51,10 @@ export async function GET(
       });
 
   if (error) {
-    finishUrl.searchParams.set("error", error.message);
+    const failed = new URL("/auth/callback/failed", requestUrl.origin);
+    failed.searchParams.set("message", error.message);
+    failed.searchParams.set("next", next);
+    return NextResponse.redirect(failed);
   }
 
   return NextResponse.redirect(finishUrl);

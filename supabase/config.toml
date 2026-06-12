@@ -31,10 +31,13 @@ site_url = "https://fitfinder.vercel.app"
 additional_redirect_urls = [
   "http://localhost:3000/**",
   "http://localhost:3000/auth/callback",
+  "http://localhost:3000/api/auth/callback",
   "https://fitfinder.vercel.app/**",
   "https://fitfinder.vercel.app/auth/callback",
+  "https://fitfinder.vercel.app/api/auth/callback",
   "https://*.vercel.app/**",
   "https://*.vercel.app/auth/callback",
+  "https://*.vercel.app/api/auth/callback",
   "fitfinder://auth-callback",
   "fitfinder://**",
   "capacitor://localhost/auth/callback",

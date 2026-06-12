@@ -3,8 +3,18 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Refreshes the Supabase auth session on every request.
+ * Skip PKCE callback routes — getUser() here can invalidate flow state before
+ * exchangeCodeForSession runs in /auth/callback/route.ts.
  */
 export async function updateSession(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  if (
+    pathname.startsWith("/auth/callback") ||
+    pathname.startsWith("/api/auth/")
+  ) {
+    return NextResponse.next({ request });
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

@@ -12,6 +12,10 @@ import {
 } from "@/lib/app-session";
 import { isNativePlatform } from "@/lib/platform";
 
+/**
+ * Native iOS magic-link callback (Capacitor static export has no route.ts).
+ * Web uses /auth/callback/route.ts for PKCE exchange on Vercel and dev.
+ */
 export function AuthCallbackClient() {
   const router = useRouter();
   const params = useSearchParams();
@@ -25,17 +29,15 @@ export function AuthCallbackClient() {
       return;
     }
 
-    // Web: exchange PKCE on the server (cookies). Native keeps client-side flow below.
+    // Web: legacy links land on /auth/callback — forward to the server handler.
     if (!isNativePlatform()) {
       const code = params.get("code");
       const tokenHash = params.get("token_hash");
       const type = params.get("type");
       if (code || (tokenHash && type)) {
-        window.location.replace(
-          `/api/auth/callback?${params.toString()}`,
-        );
-        return;
+        window.location.replace(`/api/auth/callback?${params.toString()}`);
       }
+      return;
     }
 
     const supabase = createClient();
@@ -46,19 +48,15 @@ export function AuthCallbackClient() {
         markAppSessionActive();
         await applyPendingSignupProfile();
         clearAuthDeepLinkPending();
-        if (isNativePlatform()) {
-          router.replace(next);
-          return;
-        }
         router.replace(next);
-        router.refresh();
       }
 
       const code = params.get("code");
       if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-          setError(error.message);
+        const { error: exchangeError } =
+          await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) {
+          setError(exchangeError.message);
           return;
         }
         await completeAuth();
@@ -71,12 +69,12 @@ export function AuthCallbackClient() {
         const access_token = hashParams.get("access_token");
         const refresh_token = hashParams.get("refresh_token");
         if (access_token && refresh_token) {
-          const { error } = await supabase.auth.setSession({
+          const { error: sessionError } = await supabase.auth.setSession({
             access_token,
             refresh_token,
           });
-          if (error) {
-            setError(error.message);
+          if (sessionError) {
+            setError(sessionError.message);
             return;
           }
           await completeAuth();
@@ -97,6 +95,14 @@ export function AuthCallbackClient() {
 
     void finish();
   }, [params, next, router]);
+
+  if (!isNativePlatform()) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center px-4 text-sm text-muted-foreground">
+        Signing you in…
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-dvh items-center justify-center px-4 text-sm text-muted-foreground">
