@@ -19,6 +19,25 @@ export function AuthCallbackClient() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const urlError = params.get("error");
+    if (urlError) {
+      setError(urlError);
+      return;
+    }
+
+    // Web: exchange PKCE on the server (cookies). Native keeps client-side flow below.
+    if (!isNativePlatform()) {
+      const code = params.get("code");
+      const tokenHash = params.get("token_hash");
+      const type = params.get("type");
+      if (code || (tokenHash && type)) {
+        window.location.replace(
+          `/api/auth/callback?${params.toString()}`,
+        );
+        return;
+      }
+    }
+
     const supabase = createClient();
 
     async function finish() {
