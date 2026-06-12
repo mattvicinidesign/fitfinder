@@ -13,7 +13,6 @@ import {
   GLOBAL_SCORE_LABEL,
   OPPORTUNITY_CATEGORY_LABELS,
 } from "@/lib/scoring-terminology";
-import { formatStarRating } from "@/lib/star-rating";
 import {
   scoreColor,
   scoreProgressClass,
@@ -43,31 +42,20 @@ function ScoringCategoryRollupRow({
 }) {
   const hasScore = score != null;
   const pct = hasScore ? Math.round(score) : 0;
+  const scoreOnTen = hasScore ? score / 10 : 0;
   const fractionTarget =
     fraction && fraction.total > 0
       ? (fraction.matched / fraction.total) * 100
       : null;
-  const animatedValue = useAnimatedNumber(
+  const animatedScoreOnTen = useAnimatedNumber(scoreOnTen, {
+    disabled: !hasScore,
+    delay: animateDelay,
+  });
+  const valueText = hasScore ? formatScoreOnTen(animatedScoreOnTen) : "—";
+  const barValue =
     displayMode === "qualifications" && fractionTarget != null
       ? fractionTarget
-      : pct,
-    {
-      disabled: !hasScore,
-      delay: animateDelay,
-    },
-  );
-  const valueText =
-    displayMode === "qualifications" && fractionTarget != null
-      ? `${Math.round(animatedValue)}%`
-      : hasScore
-        ? `${Math.round(animatedValue)}%`
-        : "—";
-  const stars =
-    hasScore && displayMode === "qualifications" && fractionTarget != null
-      ? formatStarRating(animatedValue, "percent")
-      : hasScore
-        ? formatStarRating(pct, "percent")
-        : null;
+      : pct;
 
   return (
     <div className="space-y-1.5 min-w-0">
@@ -75,24 +63,17 @@ function ScoringCategoryRollupRow({
         <span className="text-[14px] font-medium text-foreground leading-snug">
           {title}
         </span>
-        <div className="flex flex-col items-end gap-0.5 shrink-0">
-          <span
-            className={cn(
-              "text-[14px] font-medium tabular-nums",
-              hasScore ? scoreColor(pct) : "text-muted-foreground",
-            )}
-          >
-            {valueText}
-          </span>
-          {stars ? (
-            <span className="text-[11px] leading-none tracking-tight" aria-hidden>
-              {stars}
-            </span>
-          ) : null}
-        </div>
+        <span
+          className={cn(
+            "text-[14px] font-semibold tabular-nums shrink-0",
+            hasScore ? scoreColor(pct) : "text-muted-foreground",
+          )}
+        >
+          {valueText}
+        </span>
       </div>
       <AnimatedScoreProgress
-        value={hasScore ? (fractionTarget ?? pct) : 0}
+        value={hasScore ? barValue : 0}
         delay={animateDelay}
         trackClassName={cn(
           SCORE_PROGRESS_BAR_HEIGHT_CLASS,
