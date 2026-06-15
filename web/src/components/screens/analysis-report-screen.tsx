@@ -20,6 +20,7 @@ import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 import {
   resolveReportPreferredCompanyTypes,
   resolveReportPreferredMinimumEmployerRating,
+  resolveReportPreferredRegions,
 } from "@/lib/report-profile-prefs";
 import type { Compensation } from "@/lib/types";
 import { SkeletonAnalysisReport } from "@/components/ui/skeletons";
@@ -54,6 +55,9 @@ export function AnalysisReportScreen() {
     useState<number | null>(
       () => loadLocalProfilePrefs()?.preferredMinimumEmployerRating ?? null,
     );
+  const [profilePreferredRegions, setProfilePreferredRegions] = useState<string[]>(
+    () => loadLocalProfilePrefs()?.preferredRegions ?? [],
+  );
 
   useEffect(() => {
     if (!reportId) {
@@ -83,6 +87,7 @@ export function AnalysisReportScreen() {
         setProfilePreferredMinimumEmployerRating(
           profile.preferredMinimumEmployerRating,
         );
+        setProfilePreferredRegions(profile.preferredRegions);
       }
     });
   }, []);
@@ -129,6 +134,10 @@ export function AnalysisReportScreen() {
     profilePreferredMinimumEmployerRating,
     entry,
   );
+  const resolvedRegions = resolveReportPreferredRegions(
+    profilePreferredRegions,
+    entry,
+  );
 
   return (
     <ReportShell
@@ -151,6 +160,7 @@ export function AnalysisReportScreen() {
           profileTimezone={entry.profileTimezone ?? profileTimezone}
           profilePreferredCompanyTypes={resolvedCompanyTypes}
           profilePreferredMinimumEmployerRating={resolvedMinRating}
+          profilePreferredRegions={resolvedRegions}
         />
       </div>
     </ReportShell>

@@ -29,3 +29,16 @@ export function resolveReportPreferredMinimumEmployerRating(
   if (fromLocal != null) return fromLocal;
   return live ?? null;
 }
+
+/** Prefer live profile regions; fall back to cached snapshot or local mirror. */
+export function resolveReportPreferredRegions(
+  live: string[] | null | undefined,
+  cached: AnalysisReportCacheEntry | null | undefined,
+): string[] {
+  if (live && live.length > 0) return live;
+  const fromCache = cached?.profilePreferredRegions;
+  if (fromCache && fromCache.length > 0) return fromCache;
+  const fromLocal = loadLocalProfilePrefs()?.preferredRegions;
+  if (fromLocal && fromLocal.length > 0) return fromLocal;
+  return live ?? [];
+}

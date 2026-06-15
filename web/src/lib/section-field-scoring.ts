@@ -30,6 +30,7 @@ import {
 } from "@/lib/client-quality-scoring";
 import { buildEmployerTypeMatchDetail } from "@/lib/company-type-match";
 import { buildEmployerRatingMatchDetail } from "@/lib/employer-rating-match";
+import { buildClientLocationRegionMatchDetail } from "@/lib/preferred-region-match";
 import { detectJobPlatform } from "@/lib/job-platform";
 import {
   formatHeaderDatePosted,
@@ -50,7 +51,6 @@ import {
   type PostingDetailHighlightContext,
 } from "@/lib/posting-detail-highlights";
 import {
-  POSTING_DETAIL_MISSING,
   type PostingDetailRow,
 } from "@/lib/posting-details";
 import {
@@ -104,6 +104,7 @@ export interface SectionFieldScoreContext {
   profileTimezone?: string | null;
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
+  profilePreferredRegions?: string[] | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
   companyName?: string | null;
@@ -177,6 +178,23 @@ function categoryPoints(c?: CategoryScore): {
 
 function postingRowIdentified(row?: PostingDetailRow): row is PostingDetailRow {
   return Boolean(row && !row.missing);
+}
+
+function cleanPostingValue(value?: string | null): string {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed || isNotSpecifiedDisplay(trimmed)) return "";
+  return trimmed;
+}
+
+/** Prefer parsed posting details; ignore placeholder row values (e.g. "—"). */
+function resolvedPostingDetailText(
+  fromDetails?: string | null,
+  row?: PostingDetailRow,
+): string {
+  const direct = cleanPostingValue(fromDetails);
+  if (direct) return direct;
+  if (!postingRowIdentified(row)) return "";
+  return cleanPostingValue(row.value);
 }
 
 function postingRowByKey(
@@ -364,39 +382,69 @@ export function buildClientProfileFields(
         ),
   );
 
-  const locationCountry =
-    details?.clientOrigin?.trim() || originRow?.value || "";
-  const locationCity = details?.clientCity?.trim() || null;
+  const locationCountry = resolvedPostingDetailText(
+    details?.clientOrigin,
+    originRow,
+  );
+  const locationCity = cleanPostingValue(details?.clientCity) || null;
   const locationValue =
     formatClientQualityLocationLabel({
       clientCity: locationCity,
       clientOrigin: locationCountry || null,
     }) ?? "";
   const locationIdentified = Boolean(locationValue.trim());
-  const locationPoints = clientQualityLocationPoints(
-    details?.clientOrigin ?? (locationCountry || null),
-    details?.clientCity,
-  );
-  fields.push(
-    locationIdentified && locationPoints != null
-      ? field(
-          "clientOrigin",
-          CLIENT_QUALITY_FIELD_LABELS.location,
-          true,
-          locationValue,
-          locationPoints >= 50 ? "match" : "mismatch",
-          locationPoints,
-          POSTING_ONLY,
-        )
-      : field(
-          "clientOrigin",
-          CLIENT_QUALITY_FIELD_LABELS.location,
-          false,
-          "",
-          "unknown",
-          null,
-        ),
-  );
+  const locationRegionMatch = buildClientLocationRegionMatchDetail({
+    locationDisplay: locationIdentified ? locationValue : null,
+    clientOrigin: locationCountry || null,
+    clientCity: locationCity,
+    profilePreferredRegions: ctx.profilePreferredRegions,
+  });
+
+  if (locationIdentified && locationRegionMatch.compareToProfile) {
+    const state: SummaryMatchState =
+      locationRegionMatch.tier === "exact"
+        ? "match"
+        : locationRegionMatch.tier === "partial"
+          ? "partial_match"
+          : "mismatch";
+    fields.push(
+      field(
+        "clientOrigin",
+        CLIENT_QUALITY_FIELD_LABELS.location,
+        true,
+        locationValue,
+        state,
+        locationRegionMatch.points,
+      ),
+    );
+  } else if (locationIdentified) {
+    const locationPoints = clientQualityLocationPoints(
+      details?.clientOrigin ?? (locationCountry || null),
+      details?.clientCity,
+    );
+    fields.push(
+      field(
+        "clientOrigin",
+        CLIENT_QUALITY_FIELD_LABELS.location,
+        true,
+        locationValue,
+        locationPoints != null && locationPoints >= 50 ? "match" : "mismatch",
+        locationPoints,
+        POSTING_ONLY,
+      ),
+    );
+  } else {
+    fields.push(
+      field(
+        "clientOrigin",
+        CLIENT_QUALITY_FIELD_LABELS.location,
+        false,
+        "",
+        "unknown",
+        null,
+      ),
+    );
+  }
 
   const ratingValue = details?.clientRating?.trim() || ratingRow?.value || "";
   const ratingIdentified =

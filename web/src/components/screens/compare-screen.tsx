@@ -15,6 +15,7 @@ import {
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
 import { fetchUserProfile } from "@/lib/profile";
+import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 import { resolvePostingContext } from "@/lib/posting-context";
 import type { AnalysisRecord, AnalysisResult, Compensation, Narrative } from "@/lib/types";
 import { toast } from "sonner";
@@ -73,6 +74,9 @@ export function CompareScreen() {
     useState<string[]>([]);
   const [profilePreferredMinimumEmployerRating, setProfilePreferredMinimumEmployerRating] =
     useState<number | null>(null);
+  const [profilePreferredRegions, setProfilePreferredRegions] = useState<string[]>(
+    () => loadLocalProfilePrefs()?.preferredRegions ?? [],
+  );
 
   useEffect(() => {
     void Promise.all([
@@ -93,6 +97,7 @@ export function CompareScreen() {
         setProfilePreferredMinimumEmployerRating(
           profile.preferredMinimumEmployerRating,
         );
+        setProfilePreferredRegions(profile.preferredRegions);
       }
     });
   }, []);
@@ -208,6 +213,7 @@ export function CompareScreen() {
               profilePreferredMinimumEmployerRating={
                 profilePreferredMinimumEmployerRating
               }
+              profilePreferredRegions={profilePreferredRegions}
             />
           </div>
         ) : null}
@@ -227,6 +233,7 @@ export function CompareScreen() {
               profilePreferredMinimumEmployerRating={
                 profilePreferredMinimumEmployerRating
               }
+              profilePreferredRegions={profilePreferredRegions}
             />
           </div>
         ) : null}

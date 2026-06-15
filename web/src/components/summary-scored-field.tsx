@@ -26,6 +26,8 @@ export function SummaryScoredField({
     f.state === "same_country" ||
     (f.points != null && f.points >= 50);
 
+  const isPartial = f.state === "partial_match";
+
   return (
     <div
       className="space-y-1.5 min-w-0"
@@ -46,6 +48,8 @@ export function SummaryScoredField({
           ) : null}
           {f.badgeLabel}
         </span>
+      ) : isPartial ? (
+        <SummaryInfoBadge label={f.badgeLabel} icon={icon} partial />
       ) : f.state === "unknown" ? (
         <SummaryMatchBadge label={f.badgeLabel} state="unknown" />
       ) : isMatch ? (

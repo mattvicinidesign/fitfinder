@@ -133,6 +133,7 @@ function sampleEntry(spec: SampleSpec): AnalysisReportCacheEntry {
     profilePreferredCompanyTypes: prefs?.preferredCompanyTypes ?? ["Enterprise"],
     profilePreferredMinimumEmployerRating:
       prefs?.preferredMinimumEmployerRating ?? 5,
+    profilePreferredRegions: prefs?.preferredRegions ?? ["United States"],
   };
 }
 

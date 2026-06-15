@@ -157,6 +157,9 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
     useState<number | null>(
       () => loadLocalProfilePrefs()?.preferredMinimumEmployerRating ?? null,
     );
+  const [profilePreferredRegions, setProfilePreferredRegions] = useState<string[]>(
+    () => loadLocalProfilePrefs()?.preferredRegions ?? [],
+  );
   const [lastReport, setLastReport] = useState<{
     reportId: string;
     roleTitle: string;
@@ -188,6 +191,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         setProfilePreferredMinimumEmployerRating(
           profile.preferredMinimumEmployerRating,
         );
+        setProfilePreferredRegions(profile.preferredRegions);
       }
     });
   }, []);
@@ -247,6 +251,8 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         profilePreferredMinimumEmployerRating:
           profile?.preferredMinimumEmployerRating ??
           profilePreferredMinimumEmployerRating,
+        profilePreferredRegions:
+          profile?.preferredRegions ?? profilePreferredRegions,
       });
       toast.success("Analysis complete and saved.");
       openAnalysisReport(reportId, "/analyze", router);
@@ -401,6 +407,8 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
                         prefs?.preferredCompanyTypes ?? ["Enterprise"],
                       profilePreferredMinimumEmployerRating:
                         prefs?.preferredMinimumEmployerRating ?? 5,
+                      profilePreferredRegions:
+                        prefs?.preferredRegions ?? ["United States"],
                     });
                     openAnalysisReport("demo", "/analyze", router);
                   }}

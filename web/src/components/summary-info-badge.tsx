@@ -5,6 +5,7 @@ import {
   MISMATCH_PILL_CLASS,
   MUTED_PILL_CLASS,
   NEUTRAL_PILL_CLASS,
+  PARTIAL_MATCH_PILL_CLASS,
 } from "@/lib/match-pill-styles";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ export function SummaryInfoBadge({
   muted,
   positive,
   negative,
+  partial,
   className,
 }: {
   label: string;
@@ -25,6 +27,8 @@ export function SummaryInfoBadge({
   positive?: boolean;
   /** Red highlight when the value is identified but does not match. */
   negative?: boolean;
+  /** Blue highlight for a partial onboarding preference match. */
+  partial?: boolean;
   className?: string;
 }) {
   return (
@@ -32,9 +36,10 @@ export function SummaryInfoBadge({
       className={cn(
         "inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium break-words whitespace-normal text-left leading-snug",
         positive && MATCH_PILL_CLASS,
-        !positive && negative && MISMATCH_PILL_CLASS,
-        !positive && !negative && muted && MUTED_PILL_CLASS,
-        !positive && !negative && !muted && NEUTRAL_PILL_CLASS,
+        !positive && partial && PARTIAL_MATCH_PILL_CLASS,
+        !positive && !partial && negative && MISMATCH_PILL_CLASS,
+        !positive && !negative && !partial && muted && MUTED_PILL_CLASS,
+        !positive && !negative && !partial && !muted && NEUTRAL_PILL_CLASS,
         className,
       )}
       title={label}

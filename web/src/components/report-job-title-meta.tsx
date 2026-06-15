@@ -51,6 +51,7 @@ export function ReportJobTitleMeta({
   profileTimezone,
   profilePreferredCompanyTypes,
   profilePreferredMinimumEmployerRating,
+  profilePreferredRegions,
   jobDescription,
   jobTitle,
   companyName,
@@ -66,6 +67,7 @@ export function ReportJobTitleMeta({
   profileTimezone?: string | null;
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
+  profilePreferredRegions?: string[] | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
   companyName?: string | null;
@@ -82,6 +84,7 @@ export function ReportJobTitleMeta({
     profileTimezone,
     profilePreferredCompanyTypes,
     profilePreferredMinimumEmployerRating,
+    profilePreferredRegions,
     jobDescription,
     jobTitle,
     companyName,

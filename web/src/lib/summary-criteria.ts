@@ -23,7 +23,9 @@ export type SummaryMatchState =
   | "mismatch"
   | "unknown"
   /** US client origin while your timezone is US-based but not a direct match */
-  | "same_country";
+  | "same_country"
+  /** In a preferred region bucket but not an exact onboarding chip match */
+  | "partial_match";
 
 export interface SummaryCriterion {
   key: string;
