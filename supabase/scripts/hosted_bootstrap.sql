@@ -40,6 +40,7 @@ create table if not exists public.profiles (
   preferred_engagement_types text[] not null default '{}',
   preferred_regions          text[] not null default '{}',
   preferred_company_types    text[] not null default '{}',
+  preferred_minimum_employer_rating numeric,
   onboarding_completed_at    timestamptz,
   full_name                  text,
   professional_title         text,
@@ -52,6 +53,9 @@ alter table public.profiles
   add column if not exists preferred_regions text[] not null default '{}',
   add column if not exists preferred_company_types text[] not null default '{}',
   add column if not exists onboarding_completed_at timestamptz;
+
+alter table public.profiles
+  add column if not exists preferred_minimum_employer_rating numeric;
 
 alter table public.profiles
   add column if not exists full_name text,

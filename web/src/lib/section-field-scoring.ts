@@ -28,10 +28,11 @@ import {
   formatClientQualityLocationLabel,
   isExplicitClientAvgPayRate,
 } from "@/lib/client-quality-scoring";
+import { buildEmployerTypeMatchDetail } from "@/lib/company-type-match";
+import { buildEmployerRatingMatchDetail } from "@/lib/employer-rating-match";
 import { detectJobPlatform } from "@/lib/job-platform";
 import {
   formatHeaderDatePosted,
-  headerEmployerKindLabel,
 } from "@/lib/posting-header-meta";
 import { isContractToHirePosting } from "@/lib/posting-context";
 import { preferredLocationMatchesCandidate } from "@/lib/country-match";
@@ -81,7 +82,17 @@ export interface SectionFieldScore {
   identified: boolean;
   /** 0–100 when identified; null when excluded. */
   points: number | null;
+  /** Posting metadata only — render as plain text, not match/mismatch pills. */
+  displayAsPlainText?: boolean;
 }
+
+export interface SectionFieldOptions {
+  badgeSubtext?: string | null;
+  displayAsPlainText?: boolean;
+}
+
+/** Posting facts that do not compare resume/profile — plain text in the UI. */
+const POSTING_ONLY: SectionFieldOptions = { displayAsPlainText: true };
 
 export interface SectionFieldScoreContext {
   parsedJob?: ParsedJob;
@@ -91,6 +102,8 @@ export interface SectionFieldScoreContext {
   profileQualifiedSkills?: string[] | null;
   profileCountry?: string | null;
   profileTimezone?: string | null;
+  profilePreferredCompanyTypes?: string[] | null;
+  profilePreferredMinimumEmployerRating?: number | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
   companyName?: string | null;
@@ -113,16 +126,17 @@ function field(
   badgeLabel: string,
   state: SummaryMatchState,
   points: number | null,
-  badgeSubtext?: string | null,
+  options?: SectionFieldOptions,
 ): SectionFieldScore {
   return {
     key,
     title,
     identified,
     badgeLabel: identified ? badgeLabel : NOT_SPECIFIED_LABEL,
-    badgeSubtext: identified ? (badgeSubtext ?? null) : null,
+    badgeSubtext: identified ? (options?.badgeSubtext ?? null) : null,
     state: identified ? state : "unknown",
     points: identified ? points : null,
+    displayAsPlainText: options?.displayAsPlainText ?? false,
   };
 }
 
@@ -132,6 +146,7 @@ function binaryField(
   identified: boolean,
   badgeLabel: string,
   matched: boolean,
+  options?: SectionFieldOptions,
 ): SectionFieldScore {
   return field(
     key,
@@ -140,6 +155,7 @@ function binaryField(
     badgeLabel,
     matched ? "match" : "mismatch",
     identified ? (matched ? 100 : 0) : null,
+    options,
   );
 }
 
@@ -201,6 +217,9 @@ export function buildClientProfileFields(
   const hireAreaRow = postingRowByKey(rows, "hireArea");
   const profileComp =
     ctx.parsedResume?.desiredCompensation ?? ctx.profileDesiredCompensation ?? null;
+  const avgPayDisplayOpts: SectionFieldOptions | undefined = profileComp
+    ? undefined
+    : POSTING_ONLY;
 
   const fields: SectionFieldScore[] = [];
 
@@ -215,6 +234,7 @@ export function buildClientProfileFields(
           platform!,
           "match",
           platformPoints,
+          POSTING_ONLY,
         )
       : field(
           "platform",
@@ -230,8 +250,39 @@ export function buildClientProfileFields(
     ctx.postingContext?.employerType ??
     ctx.parsedJob?.employerType ??
     "unknown";
-  const employerPoints = clientQualityEmployerPoints(employerType);
-  if (employerType === "unknown") {
+  const employerMatch = buildEmployerTypeMatchDetail({
+    parsedJob: ctx.parsedJob,
+    postingContext: ctx.postingContext,
+    jobDescription: ctx.jobDescription,
+    jobTitle: ctx.jobTitle,
+    profilePreferredCompanyTypes: ctx.profilePreferredCompanyTypes,
+  });
+
+  if (employerMatch.identified && employerMatch.compareToProfile) {
+    fields.push(
+      field(
+        "employerType",
+        CLIENT_QUALITY_FIELD_LABELS.employerType,
+        true,
+        employerMatch.badgeLabel,
+        employerMatch.matched ? "match" : "mismatch",
+        employerMatch.points,
+      ),
+    );
+  } else if (employerMatch.identified) {
+    const employerPoints = clientQualityEmployerPoints(employerType);
+    fields.push(
+      field(
+        "employerType",
+        CLIENT_QUALITY_FIELD_LABELS.employerType,
+        true,
+        employerMatch.badgeLabel,
+        employerPoints != null && employerPoints >= 50 ? "match" : "mismatch",
+        employerPoints,
+        POSTING_ONLY,
+      ),
+    );
+  } else if (employerType === "unknown") {
     fields.push(
       field(
         "employerType",
@@ -240,17 +291,7 @@ export function buildClientProfileFields(
         "Unknown",
         "unknown",
         null,
-      ),
-    );
-  } else if (employerPoints != null) {
-    fields.push(
-      field(
-        "employerType",
-        CLIENT_QUALITY_FIELD_LABELS.employerType,
-        true,
-        headerEmployerKindLabel(employerType),
-        employerPoints >= 50 ? "match" : "mismatch",
-        employerPoints,
+        POSTING_ONLY,
       ),
     );
   } else {
@@ -284,6 +325,7 @@ export function buildClientProfileFields(
           postedBadge,
           datePostedPoints >= 50 ? "match" : "mismatch",
           datePostedPoints,
+          POSTING_ONLY,
         )
       : field(
           "datePosted",
@@ -310,6 +352,7 @@ export function buildClientProfileFields(
           hireAreaValue,
           hireAreaPoints >= 50 ? "match" : "mismatch",
           hireAreaPoints,
+          POSTING_ONLY,
         )
       : field(
           "hireArea",
@@ -343,6 +386,7 @@ export function buildClientProfileFields(
           locationValue,
           locationPoints >= 50 ? "match" : "mismatch",
           locationPoints,
+          POSTING_ONLY,
         )
       : field(
           "clientOrigin",
@@ -357,26 +401,48 @@ export function buildClientProfileFields(
   const ratingValue = details?.clientRating?.trim() || ratingRow?.value || "";
   const ratingIdentified =
     postingRowIdentified(ratingRow) || Boolean(details?.clientRating?.trim());
-  const ratingPoints = clientQualityRatingPoints(details?.clientRating);
-  fields.push(
-    ratingIdentified && ratingPoints != null
-      ? field(
-          "clientRating",
-          CLIENT_QUALITY_FIELD_LABELS.rating,
-          true,
-          ratingValue,
-          ratingPoints >= 50 ? "match" : "mismatch",
-          ratingPoints,
-        )
-      : field(
-          "clientRating",
-          CLIENT_QUALITY_FIELD_LABELS.rating,
-          false,
-          "",
-          "unknown",
-          null,
-        ),
-  );
+  const ratingMatch = buildEmployerRatingMatchDetail({
+    clientRating: details?.clientRating ?? (ratingIdentified ? ratingValue : null),
+    profilePreferredMinimumEmployerRating:
+      ctx.profilePreferredMinimumEmployerRating,
+  });
+
+  if (ratingMatch.identified && ratingMatch.compareToProfile) {
+    fields.push(
+      field(
+        "clientRating",
+        CLIENT_QUALITY_FIELD_LABELS.rating,
+        true,
+        ratingMatch.badgeLabel,
+        ratingMatch.matched ? "match" : "mismatch",
+        ratingMatch.points,
+      ),
+    );
+  } else if (ratingMatch.identified) {
+    const ratingPoints = clientQualityRatingPoints(details?.clientRating);
+    fields.push(
+      field(
+        "clientRating",
+        CLIENT_QUALITY_FIELD_LABELS.rating,
+        true,
+        ratingMatch.badgeLabel,
+        ratingPoints != null && ratingPoints >= 50 ? "match" : "mismatch",
+        ratingPoints,
+        POSTING_ONLY,
+      ),
+    );
+  } else {
+    fields.push(
+      field(
+        "clientRating",
+        CLIENT_QUALITY_FIELD_LABELS.rating,
+        false,
+        "",
+        "unknown",
+        null,
+      ),
+    );
+  }
 
   const avgValue =
     details?.clientAverageHourlyRate?.trim() || avgRow?.value || "";
@@ -396,6 +462,7 @@ export function buildClientProfileFields(
           avgValue,
           avgPoints >= 50 ? "match" : "mismatch",
           avgPoints,
+          avgPayDisplayOpts,
         )
       : field(
           "clientAverageHourlyRate",
@@ -624,6 +691,7 @@ export function buildRoleDetailsFields(
         hoursRow!.value,
         hoursPoints >= 50 ? "match" : "mismatch",
         hoursPoints,
+        POSTING_ONLY,
       ),
     );
   } else {
@@ -644,6 +712,7 @@ export function buildRoleDetailsFields(
         durationRow!.value,
         durationPoints >= 50 ? "match" : "mismatch",
         durationPoints,
+        POSTING_ONLY,
       ),
     );
   } else {
@@ -657,7 +726,15 @@ export function buildRoleDetailsFields(
     })
   ) {
     fields.push(
-      field("contractToHire", "Note", true, "Contract-To-Hire", "unknown", null),
+      field(
+        "contractToHire",
+        "Note",
+        true,
+        "Contract-To-Hire",
+        "unknown",
+        null,
+        POSTING_ONLY,
+      ),
     );
   }
 
@@ -667,6 +744,9 @@ export function buildRoleDetailsFields(
 function buildCompensationField(ctx: SectionFieldScoreContext): SectionFieldScore {
   const resumeAsk =
     ctx.parsedResume?.desiredCompensation ?? ctx.profileDesiredCompensation ?? null;
+  const payDisplayOpts: SectionFieldOptions | undefined = resumeAsk
+    ? undefined
+    : POSTING_ONLY;
   const jobComp = resolveJobCompensation(ctx.parsedJob, ctx.jobDescription);
   const display = formatCompensationDisplay(jobComp);
   const compDetail = buildCompensationDetail(jobComp, resumeAsk);
@@ -689,7 +769,7 @@ function buildCompensationField(ctx: SectionFieldScoreContext): SectionFieldScor
       display.amountLabel,
       "match",
       100,
-      display.periodLabel,
+      { badgeSubtext: display.periodLabel },
     );
   }
 
@@ -702,7 +782,7 @@ function buildCompensationField(ctx: SectionFieldScoreContext): SectionFieldScor
       display.amountLabel,
       cat.state,
       cat.points,
-      display.periodLabel,
+      { badgeSubtext: display.periodLabel, ...payDisplayOpts },
     );
   }
 
@@ -714,7 +794,7 @@ function buildCompensationField(ctx: SectionFieldScoreContext): SectionFieldScor
     display.amountLabel,
     matched ? "match" : "mismatch",
     matched ? 100 : 0,
-    display.periodLabel,
+    { badgeSubtext: display.periodLabel, ...payDisplayOpts },
   );
 }
 

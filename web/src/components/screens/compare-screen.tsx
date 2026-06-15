@@ -12,6 +12,8 @@ import {
   fetchProfileQualifiedIndustries,
   fetchProfileQualifiedSkills,
   fetchProfileCountry,
+  fetchProfilePreferredCompanyTypes,
+  fetchProfilePreferredMinimumEmployerRating,
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
 import { resolvePostingContext } from "@/lib/posting-context";
@@ -68,6 +70,10 @@ export function CompareScreen() {
   >([]);
   const [profileCountry, setProfileCountry] = useState<string | null>(null);
   const [profileTimezone, setProfileTimezone] = useState<string | null>(null);
+  const [profilePreferredCompanyTypes, setProfilePreferredCompanyTypes] =
+    useState<string[]>([]);
+  const [profilePreferredMinimumEmployerRating, setProfilePreferredMinimumEmployerRating] =
+    useState<number | null>(null);
 
   useEffect(() => {
     void Promise.all([
@@ -76,12 +82,16 @@ export function CompareScreen() {
       fetchProfileQualifiedSkills(),
       fetchProfileCountry(),
       fetchProfileTimezone(),
-    ]).then(([pay, industries, skills, country, timezone]) => {
+      fetchProfilePreferredCompanyTypes(),
+      fetchProfilePreferredMinimumEmployerRating(),
+    ]).then(([pay, industries, skills, country, timezone, companyTypes, minRating]) => {
       setProfileDesiredCompensation(pay);
       setProfileQualifiedIndustries(industries);
       setProfileQualifiedSkills(skills);
       setProfileCountry(country);
       setProfileTimezone(timezone);
+      setProfilePreferredCompanyTypes(companyTypes);
+      setProfilePreferredMinimumEmployerRating(minRating);
     });
   }, []);
 
@@ -192,6 +202,10 @@ export function CompareScreen() {
               profileQualifiedSkills={profileQualifiedSkills}
               profileCountry={profileCountry}
               profileTimezone={profileTimezone}
+              profilePreferredCompanyTypes={profilePreferredCompanyTypes}
+              profilePreferredMinimumEmployerRating={
+                profilePreferredMinimumEmployerRating
+              }
             />
           </div>
         ) : null}
@@ -207,6 +221,10 @@ export function CompareScreen() {
               profileQualifiedSkills={profileQualifiedSkills}
               profileCountry={profileCountry}
               profileTimezone={profileTimezone}
+              profilePreferredCompanyTypes={profilePreferredCompanyTypes}
+              profilePreferredMinimumEmployerRating={
+                profilePreferredMinimumEmployerRating
+              }
             />
           </div>
         ) : null}

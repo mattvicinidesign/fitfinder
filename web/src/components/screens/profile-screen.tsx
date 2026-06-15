@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { ChipMultiSelect, SelectableChip } from "@/components/ui/chip-multi-select";
 import {
   COMPANY_TYPE_OPTIONS,
+  EMPLOYER_RATING_PRESETS,
   ENGAGEMENT_TYPE_OPTIONS,
   HOURLY_RATE_PRESETS,
   REGION_OPTIONS,
@@ -268,6 +269,44 @@ export function ProfileScreen() {
                 value={profile.preferredCompanyTypes}
                 onChange={(v) => patch({ preferredCompanyTypes: v })}
               />
+            </Section>
+
+            <Section title="Minimum client rating">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={5}
+                    step={0.1}
+                    placeholder="4.0"
+                    value={profile.preferredMinimumEmployerRating?.toString() ?? ""}
+                    onChange={(e) => {
+                      const raw = e.target.value.trim();
+                      patch({
+                        preferredMinimumEmployerRating: raw
+                          ? Math.max(0, Math.min(5, Number(raw)))
+                          : null,
+                      });
+                    }}
+                    className="h-11 w-28 text-[17px]"
+                  />
+                  <span className="text-[15px] text-muted-foreground">out of 5</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {EMPLOYER_RATING_PRESETS.map((rating) => (
+                    <SelectableChip
+                      key={rating}
+                      label={rating === 5 ? "5.0" : String(rating)}
+                      selected={profile.preferredMinimumEmployerRating === rating}
+                      onToggle={() =>
+                        patch({ preferredMinimumEmployerRating: rating })
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
             </Section>
 
             <Section title="Location">

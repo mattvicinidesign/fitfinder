@@ -67,6 +67,8 @@ export function QualificationSummarySection({
   profileDesiredCompensation,
   profileCountry,
   profileTimezone,
+  profilePreferredCompanyTypes,
+  profilePreferredMinimumEmployerRating,
   jobDescription,
   jobTitle,
   companyName,
@@ -79,6 +81,8 @@ export function QualificationSummarySection({
   profileDesiredCompensation?: Compensation | null;
   profileCountry?: string | null;
   profileTimezone?: string | null;
+  profilePreferredCompanyTypes?: string[] | null;
+  profilePreferredMinimumEmployerRating?: number | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
   companyName?: string | null;
@@ -93,6 +97,7 @@ export function QualificationSummarySection({
     profileQualifiedIndustries,
     profileCountry,
     profileTimezone,
+    profilePreferredCompanyTypes,
     jobDescription,
     jobTitle,
     companyName,
@@ -114,6 +119,8 @@ export function QualificationSummarySection({
       profileQualifiedIndustries,
       profileCountry,
       profileTimezone,
+      profilePreferredCompanyTypes,
+      profilePreferredMinimumEmployerRating,
       jobDescription,
       jobTitle,
       companyName,

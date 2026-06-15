@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { clampEmployerRatingPreference } from "@/lib/employer-rating-match";
 import { compensationFromProfileRow } from "@/lib/profile-desired-compensation";
 import type { Compensation } from "@/lib/types";
 
@@ -90,6 +91,47 @@ export async function fetchProfileCountry(): Promise<string | null> {
 
   const c = data?.country;
   return typeof c === "string" && c.trim() ? c.trim() : null;
+}
+
+/** Minimum client star rating (0–5) from Profile → Preferences. */
+export async function fetchProfilePreferredMinimumEmployerRating(): Promise<
+  number | null
+> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("preferred_minimum_employer_rating")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const rating = data?.preferred_minimum_employer_rating;
+  return typeof rating === "number"
+    ? clampEmployerRatingPreference(rating)
+    : null;
+}
+
+/** Employer types selected during onboarding (Enterprise, Startup, Agency). */
+export async function fetchProfilePreferredCompanyTypes(): Promise<string[]> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("preferred_company_types")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  return Array.isArray(data?.preferred_company_types)
+    ? data.preferred_company_types.filter((x): x is string => typeof x === "string")
+    : [];
 }
 
 /** Profile timezone used when resume parse omits timezone. */

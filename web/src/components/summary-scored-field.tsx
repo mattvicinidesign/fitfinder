@@ -37,6 +37,15 @@ export function SummaryScoredField({
         <span className="text-[11px] font-medium text-muted-foreground">
           {f.badgeLabel}
         </span>
+      ) : f.displayAsPlainText ? (
+        <span className="inline-flex max-w-full items-center gap-1 text-[13px] font-medium leading-snug text-foreground break-words">
+          {icon ? (
+            <span className="text-[10px] leading-none shrink-0" aria-hidden>
+              {icon}
+            </span>
+          ) : null}
+          {f.badgeLabel}
+        </span>
       ) : f.state === "unknown" ? (
         <SummaryMatchBadge label={f.badgeLabel} state="unknown" />
       ) : isMatch ? (

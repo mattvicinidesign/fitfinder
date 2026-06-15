@@ -32,3 +32,6 @@ export const REGION_OPTIONS = [
 
 /** Example minimum hourly rates used as quick-pick chips. */
 export const HOURLY_RATE_PRESETS = [50, 75, 100, 125, 150] as const;
+
+/** Minimum client star rating (0–5) quick picks for onboarding. */
+export const EMPLOYER_RATING_PRESETS = [3, 3.5, 4, 4.5, 5] as const;

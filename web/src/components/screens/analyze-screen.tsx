@@ -16,6 +16,8 @@ import {
   fetchProfileQualifiedIndustries,
   fetchProfileQualifiedSkills,
   fetchProfileCountry,
+  fetchProfilePreferredCompanyTypes,
+  fetchProfilePreferredMinimumEmployerRating,
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
 import type { AnalysisResult, Compensation } from "@/lib/types";
@@ -149,6 +151,10 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   >([]);
   const [profileCountry, setProfileCountry] = useState<string | null>(null);
   const [profileTimezone, setProfileTimezone] = useState<string | null>(null);
+  const [profilePreferredCompanyTypes, setProfilePreferredCompanyTypes] =
+    useState<string[]>([]);
+  const [profilePreferredMinimumEmployerRating, setProfilePreferredMinimumEmployerRating] =
+    useState<number | null>(null);
   const [lastReport, setLastReport] = useState<{
     reportId: string;
     roleTitle: string;
@@ -169,12 +175,16 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
       fetchProfileQualifiedSkills(),
       fetchProfileCountry(),
       fetchProfileTimezone(),
-    ]).then(([pay, industries, skills, country, timezone]) => {
+      fetchProfilePreferredCompanyTypes(),
+      fetchProfilePreferredMinimumEmployerRating(),
+    ]).then(([pay, industries, skills, country, timezone, companyTypes, minRating]) => {
       setProfileDesiredCompensation(pay);
       setProfileQualifiedIndustries(industries);
       setProfileQualifiedSkills(skills);
       setProfileCountry(country);
       setProfileTimezone(timezone);
+      setProfilePreferredCompanyTypes(companyTypes);
+      setProfilePreferredMinimumEmployerRating(minRating);
     });
   }, [demo]);
 
@@ -227,6 +237,8 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         profileQualifiedSkills,
         profileCountry,
         profileTimezone,
+        profilePreferredCompanyTypes,
+        profilePreferredMinimumEmployerRating,
       });
       toast.success("Analysis complete and saved.");
       openAnalysisReport(reportId, "/analyze", router);

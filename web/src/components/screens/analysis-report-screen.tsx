@@ -11,6 +11,8 @@ import {
   fetchProfileQualifiedIndustries,
   fetchProfileQualifiedSkills,
   fetchProfileCountry,
+  fetchProfilePreferredCompanyTypes,
+  fetchProfilePreferredMinimumEmployerRating,
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
 import type { AnalysisReportCacheEntry } from "@/lib/analysis-report-cache";
@@ -42,6 +44,10 @@ export function AnalysisReportScreen() {
   >([]);
   const [profileCountry, setProfileCountry] = useState<string | null>(null);
   const [profileTimezone, setProfileTimezone] = useState<string | null>(null);
+  const [profilePreferredCompanyTypes, setProfilePreferredCompanyTypes] =
+    useState<string[]>([]);
+  const [profilePreferredMinimumEmployerRating, setProfilePreferredMinimumEmployerRating] =
+    useState<number | null>(null);
 
   useEffect(() => {
     if (!reportId) {
@@ -59,12 +65,16 @@ export function AnalysisReportScreen() {
       fetchProfileQualifiedSkills(),
       fetchProfileCountry(),
       fetchProfileTimezone(),
-    ]).then(([pay, industries, skills, country, timezone]) => {
+      fetchProfilePreferredCompanyTypes(),
+      fetchProfilePreferredMinimumEmployerRating(),
+    ]).then(([pay, industries, skills, country, timezone, companyTypes, minRating]) => {
       setProfileDesiredCompensation(pay);
       setProfileQualifiedIndustries(industries);
       setProfileQualifiedSkills(skills);
       setProfileCountry(country);
       setProfileTimezone(timezone);
+      setProfilePreferredCompanyTypes(companyTypes);
+      setProfilePreferredMinimumEmployerRating(minRating);
     });
   }, []);
 
@@ -121,6 +131,13 @@ export function AnalysisReportScreen() {
           }
           profileCountry={entry.profileCountry ?? profileCountry}
           profileTimezone={entry.profileTimezone ?? profileTimezone}
+          profilePreferredCompanyTypes={
+            entry.profilePreferredCompanyTypes ?? profilePreferredCompanyTypes
+          }
+          profilePreferredMinimumEmployerRating={
+            entry.profilePreferredMinimumEmployerRating ??
+            profilePreferredMinimumEmployerRating
+          }
         />
       </div>
     </ReportShell>

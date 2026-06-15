@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/client";
 import {
+  clampEmployerRatingPreference,
+} from "@/lib/employer-rating-match";
+import {
   COMPANY_TYPE_OPTIONS,
   ENGAGEMENT_TYPE_OPTIONS,
   REGION_OPTIONS,
@@ -14,6 +17,7 @@ import {
  * and `qualified_skills` columns are left untouched.
  *
  * The minimum hourly rate maps to `desired_compensation_min` (period = hour).
+ * Minimum client rating maps to `preferred_minimum_employer_rating` (0–5).
  */
 export interface UserProfile {
   fullName: string | null;
@@ -21,6 +25,8 @@ export interface UserProfile {
   preferredEngagementTypes: string[];
   preferredCompanyTypes: string[];
   preferredRegions: string[];
+  /** Minimum client star rating (0–5) from onboarding. */
+  preferredMinimumEmployerRating: number | null;
   country: string | null;
   timezone: string | null;
   onboardingCompletedAt: string | null;
@@ -33,6 +39,7 @@ export function emptyUserProfile(): UserProfile {
     preferredEngagementTypes: [],
     preferredCompanyTypes: [],
     preferredRegions: [],
+    preferredMinimumEmployerRating: null,
     country: null,
     timezone: null,
     onboardingCompletedAt: null,
@@ -40,7 +47,7 @@ export function emptyUserProfile(): UserProfile {
 }
 
 const PROFILE_SELECT =
-  "full_name, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, onboarding_completed_at";
+  "full_name, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, preferred_minimum_employer_rating, onboarding_completed_at";
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -78,6 +85,10 @@ function rowToUserProfile(
     preferredEngagementTypes: toStringArray(data.preferred_engagement_types),
     preferredCompanyTypes: toStringArray(data.preferred_company_types),
     preferredRegions: toStringArray(data.preferred_regions),
+    preferredMinimumEmployerRating:
+      typeof data.preferred_minimum_employer_rating === "number"
+        ? clampEmployerRatingPreference(data.preferred_minimum_employer_rating)
+        : null,
     country: typeof data.country === "string" ? data.country : null,
     timezone: typeof data.timezone === "string" ? data.timezone : null,
     onboardingCompletedAt:
@@ -131,6 +142,9 @@ export function normalizeUserProfile(profile: UserProfile): UserProfile {
       profile.preferredRegions,
       REGION_OPTIONS,
     ),
+    preferredMinimumEmployerRating: clampEmployerRatingPreference(
+      profile.preferredMinimumEmployerRating,
+    ),
   };
 }
 
@@ -149,6 +163,15 @@ function pickNumber(
 ): number | null {
   if (current != null && current > 0) return current;
   if (next != null && next > 0) return next;
+  return current;
+}
+
+function pickRatingFloor(
+  current: number | null,
+  next: number | null | undefined,
+): number | null {
+  if (current != null && Number.isFinite(current)) return current;
+  if (next != null && Number.isFinite(next)) return clampEmployerRatingPreference(next);
   return current;
 }
 
@@ -185,6 +208,10 @@ export function mergeUserProfileLayers(
       preferredRegions: pickArray(
         merged.preferredRegions,
         overlay.preferredRegions,
+      ),
+      preferredMinimumEmployerRating: pickRatingFloor(
+        merged.preferredMinimumEmployerRating,
+        overlay.preferredMinimumEmployerRating,
       ),
       onboardingCompletedAt:
         merged.onboardingCompletedAt ?? overlay.onboardingCompletedAt ?? null,
@@ -279,6 +306,9 @@ export async function saveUserProfile(
     preferred_engagement_types: profile.preferredEngagementTypes,
     preferred_regions: profile.preferredRegions,
     preferred_company_types: profile.preferredCompanyTypes,
+    preferred_minimum_employer_rating: clampEmployerRatingPreference(
+      profile.preferredMinimumEmployerRating,
+    ),
     desired_compensation_min: rate != null && rate > 0 ? rate : null,
     desired_compensation_period: rate != null && rate > 0 ? "hour" : null,
     desired_compensation_currency: "USD",
@@ -333,6 +363,7 @@ export function profilesEqual(a: UserProfile, b: UserProfile): boolean {
     a.country === b.country &&
     a.timezone === b.timezone &&
     a.minimumHourlyRate === b.minimumHourlyRate &&
+    a.preferredMinimumEmployerRating === b.preferredMinimumEmployerRating &&
     arraysEqual(a.preferredEngagementTypes, b.preferredEngagementTypes) &&
     arraysEqual(a.preferredCompanyTypes, b.preferredCompanyTypes) &&
     arraysEqual(a.preferredRegions, b.preferredRegions)
@@ -342,6 +373,7 @@ export function profilesEqual(a: UserProfile, b: UserProfile): boolean {
 /** Fields that count toward the completion indicator. */
 const COMPLETION_FIELDS: (keyof UserProfile)[] = [
   "minimumHourlyRate",
+  "preferredMinimumEmployerRating",
   "preferredEngagementTypes",
   "preferredCompanyTypes",
   "preferredRegions",
@@ -349,6 +381,9 @@ const COMPLETION_FIELDS: (keyof UserProfile)[] = [
 
 function isFieldFilled(profile: UserProfile, key: keyof UserProfile): boolean {
   const value = profile[key];
+  if (key === "preferredMinimumEmployerRating") {
+    return typeof value === "number" && value >= 0 && value <= 5;
+  }
   if (Array.isArray(value)) return value.length > 0;
   if (typeof value === "number") return value > 0;
   return value != null && String(value).trim().length > 0;
