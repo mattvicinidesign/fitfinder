@@ -23,6 +23,7 @@ export interface PreferredQualificationsFields {
   country: string | null;
   timezone: string | null;
   talentType: string | null;
+  englishLevel: string | null;
 }
 
 function linesOf(text: string): string[] {
@@ -78,7 +79,13 @@ export function extractPreferredQualificationsFields(
 ): PreferredQualificationsFields {
   const block = preferredQualificationsSection(jobText);
   if (!block) {
-    return { location: null, country: null, timezone: null, talentType: null };
+    return {
+      location: null,
+      country: null,
+      timezone: null,
+      talentType: null,
+      englishLevel: null,
+    };
   }
 
   const location = extractLabelValueFromBlock(block, "Location");
@@ -90,8 +97,24 @@ export function extractPreferredQualificationsFields(
     extractLabelValueFromBlock(block, "Timezone") ??
     extractLabelValueFromBlock(block, "Time Zone");
   const talentType = extractLabelValueFromBlock(block, "Talent Type");
+  const englishLevel =
+    extractLabelValueFromBlock(block, "English level") ??
+    extractLabelValueFromBlock(block, "English Level");
 
-  return { location, country, timezone, talentType };
+  return { location, country, timezone, talentType, englishLevel };
+}
+
+export function resolveJobEnglishLevel(
+  jobDescription?: string | null,
+): string | null {
+  const text = jobDescription?.trim();
+  if (!text) return null;
+
+  const fromPq = extractPreferredQualificationsFields(text).englishLevel;
+  if (fromPq?.trim()) return fromPq.trim();
+
+  const inline = text.match(/\benglish\s+level\s*:\s*([^\n]+)/i);
+  return inline?.[1]?.trim() ?? null;
 }
 
 export function resolveJobTalentType(

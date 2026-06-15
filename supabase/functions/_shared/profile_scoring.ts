@@ -90,39 +90,6 @@ export function mergeProfileIntoResumeForScoring(
   return merged;
 }
 
-function inferJobEngagementTypes(
-  job: ParsedJob,
-  posting: PostingContext | null,
-  blob: string,
-): string[] {
-  const labels = new Set<string>();
-
-  if (
-    posting?.engagementPath === "contract" ||
-    posting?.engagementPath === "contract_to_hire" ||
-    job.hireTarget === "freelancer" ||
-    /\bfreelance\b|\bfreelancer\b|\b1099\b|\bcontractor\b/.test(blob)
-  ) {
-    labels.add("Freelance");
-    labels.add("Contract");
-  }
-
-  if (/\bfractional\b|\bpart[- ]?time\b/.test(blob)) {
-    labels.add("Part Time");
-  }
-
-  if (
-    posting?.engagementPath === "direct_hire" ||
-    posting?.payStructure === "salary" ||
-    job.hireTarget === "direct_hire" ||
-    /\bfull[- ]?time\b|\bw-?2\b|\bsalary\b|\bpermanent\b/.test(blob)
-  ) {
-    labels.add("Full-Time");
-  }
-
-  return [...labels];
-}
-
 function inferJobCompanyTypes(
   job: ParsedJob,
   posting: PostingContext | null,
@@ -144,7 +111,17 @@ function inferJobCompanyTypes(
     labels.add("Startup");
   }
   if (/\benterprise\b|\bfortune 500\b|\bglobal company\b/.test(blob)) {
-    labels.add("Enterprise");
+    labels.add("Company");
+  }
+  if (
+    posting?.employerType === "product_company" ||
+    job.employerType === "product_company"
+  ) {
+    labels.add("Company");
+  }
+
+  if (labels.size === 0) {
+    labels.add("Company");
   }
 
   return [...labels];
@@ -211,23 +188,6 @@ export function computeOnboardingCareerFitAdjustment(
   let delta = 0;
   const negativeSignalsFound: string[] = [];
   const positiveSignalsFound: string[] = [];
-
-  const engagementPrefs = stringArray(profile.preferred_engagement_types);
-  const engagementInJob = inferJobEngagementTypes(job, options.posting ?? null, blob);
-  const engagementOverlap = preferenceOverlap(engagementPrefs, engagementInJob);
-  if (engagementPrefs.length > 0 && engagementInJob.length > 0) {
-    if (engagementOverlap.length === 0) {
-      delta -= 5;
-      negativeSignalsFound.push(
-        `Engagement mismatch (you prefer ${engagementPrefs.join(", ")})`,
-      );
-    } else {
-      delta += 3;
-      positiveSignalsFound.push(
-        `Engagement match (${engagementOverlap.join(", ")})`,
-      );
-    }
-  }
 
   const companyPrefs = stringArray(profile.preferred_company_types);
   const companyInJob = inferJobCompanyTypes(job, options.posting ?? null, blob);

@@ -22,7 +22,6 @@ import {
 } from "./profile_scoring.ts";
 import { findSkillLabelMatch, resumeSkillMatchPool } from "./qualified_skills.ts";
 import type { PostingContext } from "./posting_context.ts";
-import { isContractToHirePosting } from "./posting_context.ts";
 import type {
   OpportunityCategoryScore,
   OpportunityEngineDebug,
@@ -115,14 +114,6 @@ function scoreRoleAlignment(
   const details = detected.label
     ? [`Archetype: ${detected.label} (${detected.tier})`]
     : ["Role archetype unclear"];
-  if (
-    isContractToHirePosting(job, {
-      jobText: options.jobText,
-      posting: options.posting,
-    })
-  ) {
-    details.push("Contract-To-Hire");
-  }
   return {
     category: "roleAlignment",
     label: OPPORTUNITY_CATEGORY_LABELS.roleAlignment,
@@ -280,8 +271,7 @@ function scorePreferenceAlignment(
   });
 
   const hasPrefs = Boolean(
-    profile?.preferred_engagement_types?.length ||
-      profile?.preferred_company_types?.length ||
+    profile?.preferred_company_types?.length ||
       profile?.preferred_regions?.length ||
       profile?.desired_compensation_min,
   );

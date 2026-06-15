@@ -69,6 +69,37 @@ Proposals:
   assertEquals(optional, []);
 });
 
+Deno.test("extractUpworkTaggedSkills ignores preferred qualifications location chips", () => {
+  const text = `Skills and Expertise
+Mandatory skills
+Infographic
+Typography
+Graphic Design
+Social Media Imagery
+Figma
+Social Media Carousel
+Preferred qualifications
+Location:
+Americas
+United States
+Canada
+Argentina
+Uruguay
+Activity on this job
+Proposals:
+50+`;
+  const { mandatory, optional } = extractUpworkTaggedSkills(text);
+  assertEquals(mandatory, [
+    "Infographic",
+    "Typography",
+    "Graphic Design",
+    "Social Media Imagery",
+    "Figma",
+    "Social Media Carousel",
+  ]);
+  assertEquals(optional, []);
+});
+
 Deno.test("normalizeParsedJob prefers Upwork mandatory skills over LLM body skills", () => {
   const parsed: ParsedJob = {
     skills: [
@@ -91,6 +122,18 @@ User Experience Design
 Activity on this job`;
   const out = normalizeParsedJob(parsed, jobText);
   assertEquals(out.skills, ["User Experience Design"]);
+});
+
+Deno.test("skillLabelsMatch links UX and UI Design to product designer resume", () => {
+  assertEquals(skillLabelsMatch("UX & UI Design", "Senior Product Designer"), true);
+  assertEquals(
+    findSkillLabelMatch("UX & UI Design", [
+      "Figma",
+      "Product Strategy",
+      "Senior Product Designer",
+    ]),
+    "Senior Product Designer",
+  );
 });
 
 Deno.test("skillLabelsMatch links UX job tags to product designer resume", () => {

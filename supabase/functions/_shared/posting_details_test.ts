@@ -83,6 +83,15 @@ Deno.test("generalizeRoleTitle strips product marketing after for", () => {
   );
 });
 
+Deno.test("generalizeRoleTitle strips colon-delimited project scope", () => {
+  assertEquals(
+    generalizeRoleTitle(
+      "Senior Web Designer: 2 Premium Hero Sections (30-min test, ongoing homepage project)",
+    ),
+    "Senior Web Designer",
+  );
+});
+
 Deno.test("resolveRoleTitle uses generalized role in posting rows", () => {
   const jobText = `Senior UX Strategist / Product UX Designer for AI-Powered AdTech SaaS Platform
 Posted 4 weeks ago

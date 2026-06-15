@@ -21,6 +21,7 @@ export function AnalysisResultView({
   profilePreferredCompanyTypes = null,
   profilePreferredMinimumEmployerRating = null,
   profilePreferredRegions = null,
+  profilePreferredProjectTypes = null,
   profileMinimumHourlyRate = null,
 }: {
   result: AnalysisResult;
@@ -33,6 +34,7 @@ export function AnalysisResultView({
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
   profilePreferredRegions?: string[] | null;
+  profilePreferredProjectTypes?: string[] | null;
   profileMinimumHourlyRate?: number | null;
 }) {
   const normalized = normalizeAnalysisResult(result, {
@@ -77,6 +79,7 @@ export function AnalysisResultView({
                   profilePreferredMinimumEmployerRating
                 }
                 profilePreferredRegions={profilePreferredRegions}
+                profilePreferredProjectTypes={profilePreferredProjectTypes}
                 profileMinimumHourlyRate={profileMinimumHourlyRate}
                 jobDescription={jobDescription}
                 jobTitle={displayJobTitle}
@@ -103,6 +106,7 @@ export function AnalysisResultView({
               profilePreferredMinimumEmployerRating
             }
             profilePreferredRegions={profilePreferredRegions}
+            profilePreferredProjectTypes={profilePreferredProjectTypes}
             profileMinimumHourlyRate={profileMinimumHourlyRate}
           />
         </div>

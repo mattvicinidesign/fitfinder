@@ -97,7 +97,17 @@ behave as **web** (`isNativePlatform()` is false). iOS uses the same bundle afte
 After **any** `web/` UI change, run `cd web && npm run cap:sync` before testing in Xcode, then commit and push to `main` for Vercel.
 After **backend** changes, deploy Edge Functions (`supabase functions deploy`) and apply new migrations (`supabase db push`).
 
-**Profile preferences on reports:** About Client fields (employer type, minimum client rating) compare against onboarding choices and show green/red pills when a match can be determined. The minimum rating floor is stored in `profiles.preferred_minimum_employer_rating` (migration `0009_profile_preferred_employer_rating.sql`).
+**Profile preferences on reports:** Onboarding collects pay floor, employer type, minimum client rating, project type (Ongoing / One-Time), and regions. These drive green/red pills on the fit report when a posting value can be compared:
+
+| Card | Compared fields |
+| ---- | ---------------- |
+| About Client | Employer type, client origin, rating, avg hourly pay |
+| Preferences | Location, timezone, English level, AI emphasis |
+| Role Alignment | Title, industry, pay, project type |
+
+Migrations: `0009_profile_preferred_employer_rating.sql`, `0010_profile_preferred_project_types.sql`.
+
+**Report UI:** Missing posting values show as **blue** “Not Specified” pills (not scored). Green = match, red = mismatch.
 
 **Splash QA** (web): top-right **QA** floater — simulate first launch, returning user, or replay splash. Enabled on web by default; iOS requires `NEXT_PUBLIC_ENABLE_SPLASH_QA=true` at `cap:sync` time.
 

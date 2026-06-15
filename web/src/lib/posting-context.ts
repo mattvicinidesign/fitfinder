@@ -175,10 +175,7 @@ export function resolveEngagementMetadata(
     inferPayFromText(text, job.compensation);
 
   const badges: string[] = [];
-  if (engagementDuration !== "unknown") {
-    badges.push(DURATION_LABELS[engagementDuration]);
-  }
-  if (engagementPath !== "unknown") {
+  if (engagementPath !== "unknown" && engagementPath !== "contract_to_hire") {
     badges.push(PATH_LABELS[engagementPath]);
   }
   if (payStructure !== "unknown") {

@@ -113,7 +113,7 @@ export async function fetchProfilePreferredMinimumEmployerRating(): Promise<
   return clampEmployerRatingPreference(coerceProfileNumeric(rating));
 }
 
-/** Employer types selected during onboarding (Enterprise, Startup, Agency). */
+/** Employer types selected during onboarding (Company, Startup, Agency). */
 export async function fetchProfilePreferredCompanyTypes(): Promise<string[]> {
   const supabase = createClient();
   const {

@@ -9,6 +9,8 @@ import {
   buildClientProfileFields,
   buildClientPreferencesFields,
   buildRoleDetailsFields,
+  clientProfileFieldFraction,
+  roleAlignmentFieldFraction,
   sectionFieldFraction,
 } from "@/lib/section-field-scoring";
 import {
@@ -69,6 +71,7 @@ export function QualificationSummarySection({
   profilePreferredCompanyTypes,
   profilePreferredMinimumEmployerRating,
   profilePreferredRegions,
+  profilePreferredProjectTypes,
   profileMinimumHourlyRate,
   jobDescription,
   jobTitle,
@@ -85,6 +88,7 @@ export function QualificationSummarySection({
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
   profilePreferredRegions?: string[] | null;
+  profilePreferredProjectTypes?: string[] | null;
   profileMinimumHourlyRate?: number | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
@@ -103,6 +107,7 @@ export function QualificationSummarySection({
     profilePreferredCompanyTypes,
     profilePreferredMinimumEmployerRating,
     profilePreferredRegions,
+    profilePreferredProjectTypes,
     profileMinimumHourlyRate,
     jobDescription,
     jobTitle,
@@ -128,6 +133,7 @@ export function QualificationSummarySection({
       profilePreferredCompanyTypes,
       profilePreferredMinimumEmployerRating,
       profilePreferredRegions,
+      profilePreferredProjectTypes,
       profileMinimumHourlyRate,
       jobDescription,
       jobTitle,
@@ -169,9 +175,9 @@ export function QualificationSummarySection({
     rollupOptions,
   );
 
-  const clientProfileFraction = sectionFieldFraction(clientFields);
+  const clientProfileFraction = clientProfileFieldFraction(clientFields);
   const clientPreferencesFraction = sectionFieldFraction(clientPreferencesFields);
-  const roleDetailsFraction = sectionFieldFraction(roleFields);
+  const roleDetailsFraction = roleAlignmentFieldFraction(roleFields);
 
   const locationField = fieldByKey(clientFields, "clientOrigin");
   const ratingField = fieldByKey(clientFields, "clientRating");
@@ -180,14 +186,13 @@ export function QualificationSummarySection({
 
   const prefLocationField = fieldByKey(clientPreferencesFields, "locationPreferred");
   const prefTimezoneField = fieldByKey(clientPreferencesFields, "timezonePreferred");
+  const prefEnglishField = fieldByKey(clientPreferencesFields, "englishLevel");
   const prefAiField = fieldByKey(clientPreferencesFields, "aiEmphasis");
 
   const industryField = fieldByKey(roleFields, "industry");
   const roleField = fieldByKey(roleFields, "role");
   const compensationField = fieldByKey(roleFields, "compensation");
-  const hoursField = fieldByKey(roleFields, "hoursNeeded");
-  const durationField = fieldByKey(roleFields, "duration");
-  const contractToHireField = fieldByKey(roleFields, "contractToHire");
+  const projectTypeField = fieldByKey(roleFields, "projectType");
 
   return (
     <div className="space-y-3 w-full" role="region" aria-label="Scoring categories">
@@ -233,6 +238,7 @@ export function QualificationSummarySection({
             items={[
               { field: prefLocationField },
               { field: prefTimezoneField },
+              { field: prefEnglishField },
               { field: prefAiField },
             ]}
           />
@@ -256,15 +262,7 @@ export function QualificationSummarySection({
               { field: roleField, postingDetailKey: "role" },
               { field: industryField },
               { field: compensationField },
-              {
-                field: hoursField,
-                postingDetailKey: "hoursNeeded",
-              },
-              {
-                field: durationField,
-                postingDetailKey: "duration",
-              },
-              { field: contractToHireField },
+              { field: projectTypeField },
             ]}
           />
           <SectionScoreSubtotal

@@ -2,6 +2,7 @@ import { COMPANY_TYPE_OPTIONS } from "@/lib/onboarding-options";
 import type { ParsedJob, PostingContext } from "@/lib/types";
 
 const LEGACY_COMPANY_LABELS: Record<string, string> = {
+  Enterprise: "Company",
   "Scale-Up": "Startup",
   "Founder-Led": "Startup",
 };
@@ -49,7 +50,17 @@ export function inferJobCompanyTypes(
     labels.add("Startup");
   }
   if (/\benterprise\b|\bfortune 500\b|\bglobal company\b/.test(blob)) {
-    labels.add("Enterprise");
+    labels.add("Company");
+  }
+  if (
+    posting?.employerType === "product_company" ||
+    job.employerType === "product_company"
+  ) {
+    labels.add("Company");
+  }
+
+  if (labels.size === 0) {
+    labels.add("Company");
   }
 
   return [...labels];
@@ -125,28 +136,11 @@ export function buildEmployerTypeMatchDetail({
     badgeLabel = inferred.join(", ");
   } else if (employerType === "agency") {
     badgeLabel = "Agency";
-  } else if (employerType === "product_company") {
-    badgeLabel = "Company";
   } else {
-    return {
-      badgeLabel: "",
-      identified: false,
-      compareToProfile: false,
-      matched: false,
-      points: null,
-    };
+    badgeLabel = "Company";
   }
 
-  const identified = employerType !== "unknown" || inferred.length > 0;
-  if (!identified) {
-    return {
-      badgeLabel: "",
-      identified: false,
-      compareToProfile: false,
-      matched: false,
-      points: null,
-    };
-  }
+  const identified = true;
 
   if (userPrefs.length === 0 || inferred.length === 0) {
     return {

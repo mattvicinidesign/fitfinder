@@ -43,6 +43,19 @@ export function resolveReportPreferredRegions(
   return live ?? [];
 }
 
+/** Prefer live project-type prefs; fall back to cached snapshot or local mirror. */
+export function resolveReportPreferredProjectTypes(
+  live: string[] | null | undefined,
+  cached: AnalysisReportCacheEntry | null | undefined,
+): string[] {
+  if (live && live.length > 0) return live;
+  const fromCache = cached?.profilePreferredProjectTypes;
+  if (fromCache && fromCache.length > 0) return fromCache;
+  const fromLocal = loadLocalProfilePrefs()?.preferredProjectTypes;
+  if (fromLocal && fromLocal.length > 0) return fromLocal;
+  return live ?? [];
+}
+
 /** Prefer live profile hourly floor; fall back to cached snapshot or local mirror. */
 export function resolveReportMinimumHourlyRate(
   live: number | null | undefined,

@@ -10,7 +10,7 @@ import {
 } from "@/lib/local-profile-prefs";
 import {
   COMPANY_TYPE_OPTIONS,
-  ENGAGEMENT_TYPE_OPTIONS,
+  PROJECT_TYPE_OPTIONS,
   REGION_OPTIONS,
 } from "@/lib/onboarding-options";
 
@@ -31,6 +31,8 @@ export interface UserProfile {
   preferredEngagementTypes: string[];
   preferredCompanyTypes: string[];
   preferredRegions: string[];
+  /** Ongoing vs one-time project preference from onboarding. */
+  preferredProjectTypes: string[];
   /** Minimum client star rating (0–5) from onboarding. */
   preferredMinimumEmployerRating: number | null;
   country: string | null;
@@ -45,6 +47,7 @@ export function emptyUserProfile(): UserProfile {
     preferredEngagementTypes: [],
     preferredCompanyTypes: [],
     preferredRegions: [],
+    preferredProjectTypes: [],
     preferredMinimumEmployerRating: null,
     country: null,
     timezone: null,
@@ -53,7 +56,7 @@ export function emptyUserProfile(): UserProfile {
 }
 
 const PROFILE_SELECT =
-  "full_name, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, preferred_minimum_employer_rating, onboarding_completed_at";
+  "full_name, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, preferred_project_types, preferred_minimum_employer_rating, onboarding_completed_at";
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -88,6 +91,7 @@ function rowToUserProfile(
     preferredEngagementTypes: toStringArray(data.preferred_engagement_types),
     preferredCompanyTypes: toStringArray(data.preferred_company_types),
     preferredRegions: toStringArray(data.preferred_regions),
+    preferredProjectTypes: toStringArray(data.preferred_project_types),
     preferredMinimumEmployerRating: clampEmployerRatingPreference(
       coerceProfileNumeric(data.preferred_minimum_employer_rating),
     ),
@@ -100,12 +104,8 @@ function rowToUserProfile(
   };
 }
 
-const LEGACY_ENGAGEMENT_LABELS: Record<string, string> = {
-  Fractional: "Part Time",
-  "Part-Time": "Part Time",
-};
-
 const LEGACY_COMPANY_LABELS: Record<string, string> = {
+  Enterprise: "Company",
   "Scale-Up": "Startup",
   "Founder-Led": "Startup",
 };
@@ -130,11 +130,7 @@ function normalizePreferenceArray(
 export function normalizeUserProfile(profile: UserProfile): UserProfile {
   return {
     ...profile,
-    preferredEngagementTypes: normalizePreferenceArray(
-      profile.preferredEngagementTypes,
-      ENGAGEMENT_TYPE_OPTIONS,
-      LEGACY_ENGAGEMENT_LABELS,
-    ),
+    preferredEngagementTypes: [],
     preferredCompanyTypes: normalizePreferenceArray(
       profile.preferredCompanyTypes,
       COMPANY_TYPE_OPTIONS,
@@ -143,6 +139,10 @@ export function normalizeUserProfile(profile: UserProfile): UserProfile {
     preferredRegions: normalizePreferenceArray(
       profile.preferredRegions,
       REGION_OPTIONS,
+    ),
+    preferredProjectTypes: normalizePreferenceArray(
+      profile.preferredProjectTypes,
+      PROJECT_TYPE_OPTIONS,
     ),
     preferredMinimumEmployerRating: clampEmployerRatingPreference(
       profile.preferredMinimumEmployerRating,
@@ -210,6 +210,10 @@ export function mergeUserProfileLayers(
       preferredRegions: pickArray(
         merged.preferredRegions,
         overlay.preferredRegions,
+      ),
+      preferredProjectTypes: pickArray(
+        merged.preferredProjectTypes,
+        overlay.preferredProjectTypes,
       ),
       preferredMinimumEmployerRating: pickRatingFloor(
         merged.preferredMinimumEmployerRating,
@@ -309,6 +313,7 @@ export async function saveUserProfile(
     preferred_engagement_types: profile.preferredEngagementTypes,
     preferred_regions: profile.preferredRegions,
     preferred_company_types: profile.preferredCompanyTypes,
+    preferred_project_types: profile.preferredProjectTypes,
     preferred_minimum_employer_rating: clampEmployerRatingPreference(
       profile.preferredMinimumEmployerRating,
     ),
@@ -370,7 +375,8 @@ export function profilesEqual(a: UserProfile, b: UserProfile): boolean {
     a.preferredMinimumEmployerRating === b.preferredMinimumEmployerRating &&
     arraysEqual(a.preferredEngagementTypes, b.preferredEngagementTypes) &&
     arraysEqual(a.preferredCompanyTypes, b.preferredCompanyTypes) &&
-    arraysEqual(a.preferredRegions, b.preferredRegions)
+    arraysEqual(a.preferredRegions, b.preferredRegions) &&
+    arraysEqual(a.preferredProjectTypes, b.preferredProjectTypes)
   );
 }
 
@@ -378,9 +384,9 @@ export function profilesEqual(a: UserProfile, b: UserProfile): boolean {
 const COMPLETION_FIELDS: (keyof UserProfile)[] = [
   "minimumHourlyRate",
   "preferredMinimumEmployerRating",
-  "preferredEngagementTypes",
   "preferredCompanyTypes",
   "preferredRegions",
+  "preferredProjectTypes",
 ];
 
 function isFieldFilled(profile: UserProfile, key: keyof UserProfile): boolean {

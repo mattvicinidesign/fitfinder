@@ -9,15 +9,8 @@
  * Stored verbatim on the profile and used as additive matching signals only.
  */
 
-export const ENGAGEMENT_TYPE_OPTIONS = [
-  "Full-Time",
-  "Part Time",
-  "Contract",
-  "Freelance",
-] as const;
-
 export const COMPANY_TYPE_OPTIONS = [
-  "Enterprise",
+  "Company",
   "Startup",
   "Agency",
 ] as const;
@@ -29,6 +22,9 @@ export const REGION_OPTIONS = [
   "Australia",
   "Worldwide",
 ] as const;
+
+/** Ongoing retainer vs one-time project — maps to posting engagement duration. */
+export const PROJECT_TYPE_OPTIONS = ["Ongoing", "One-Time"] as const;
 
 /** Example minimum hourly rates used as quick-pick chips. */
 export const HOURLY_RATE_PRESETS = [50, 75, 100, 125, 150] as const;

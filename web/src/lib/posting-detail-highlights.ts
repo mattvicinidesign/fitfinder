@@ -150,44 +150,6 @@ export function isHoursNeededAtLeast30PerWeek(label: string): boolean {
   return false;
 }
 
-/** Green when engagement is longer than one month. */
-export function isDurationMoreThan1Month(label: string): boolean {
-  if (!label || label === POSTING_DETAIL_MISSING) return false;
-  const lower = label.toLowerCase();
-
-  const lessThanMo = lower.match(/less\s+than\s+(\d+)\s+month/);
-  if (lessThanMo) {
-    const cap = Number.parseInt(lessThanMo[1], 10);
-    if (Number.isFinite(cap) && cap <= 1) return false;
-  }
-
-  const moreThanMo = lower.match(/more\s+than\s+(\d+)\s+month/);
-  if (moreThanMo) {
-    const floor = Number.parseInt(moreThanMo[1], 10);
-    return Number.isFinite(floor) && floor >= 1;
-  }
-
-  const rangeMo = lower.match(/(\d+)\s*to\s*(\d+)\s+month/);
-  if (rangeMo) {
-    const high = Number.parseInt(rangeMo[2], 10);
-    return Number.isFinite(high) && high > 1;
-  }
-
-  const plusMo = lower.match(/(\d+)\+\s*month/);
-  if (plusMo) {
-    const n = Number.parseInt(plusMo[1], 10);
-    return Number.isFinite(n) && n > 1;
-  }
-
-  const weeks = lower.match(/more\s+than\s+(\d+)\s+week/);
-  if (weeks) {
-    const w = Number.parseInt(weeks[1], 10);
-    return Number.isFinite(w) && w > 4;
-  }
-
-  return false;
-}
-
 export function isPostingDetailHighlightPositive(
   key: string,
   value: string,
@@ -210,8 +172,6 @@ export function isPostingDetailHighlightPositive(
       );
     case "hoursNeeded":
       return isHoursNeededAtLeast30PerWeek(value);
-    case "duration":
-      return isDurationMoreThan1Month(value);
     default:
       return false;
   }

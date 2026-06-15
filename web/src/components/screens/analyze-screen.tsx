@@ -127,7 +127,7 @@ const DEMO_RESULT: AnalysisResult = {
     engagementDuration: "ongoing",
     engagementPath: "contract",
     payStructure: "hourly",
-    badges: ["Ongoing", "Contract", "Hourly"],
+    badges: ["Contract", "Hourly"],
   },
 };
 
@@ -160,6 +160,8 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   const [profilePreferredRegions, setProfilePreferredRegions] = useState<string[]>(
     () => loadLocalProfilePrefs()?.preferredRegions ?? [],
   );
+  const [profilePreferredProjectTypes, setProfilePreferredProjectTypes] =
+    useState<string[]>(() => loadLocalProfilePrefs()?.preferredProjectTypes ?? []);
   const [profileMinimumHourlyRate, setProfileMinimumHourlyRate] = useState<number | null>(
     () => loadLocalProfilePrefs()?.minimumHourlyRate ?? null,
   );
@@ -195,6 +197,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           profile.preferredMinimumEmployerRating,
         );
         setProfilePreferredRegions(profile.preferredRegions);
+        setProfilePreferredProjectTypes(profile.preferredProjectTypes);
         setProfileMinimumHourlyRate(profile.minimumHourlyRate);
       }
     });
@@ -257,6 +260,8 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           profilePreferredMinimumEmployerRating,
         profilePreferredRegions:
           profile?.preferredRegions ?? profilePreferredRegions,
+        profilePreferredProjectTypes:
+          profile?.preferredProjectTypes ?? profilePreferredProjectTypes,
         profileMinimumHourlyRate:
           profile?.minimumHourlyRate ?? profileMinimumHourlyRate,
       });
@@ -410,11 +415,13 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
                       result: DEMO_RESULT,
                       analysisId: null,
                       profilePreferredCompanyTypes:
-                        prefs?.preferredCompanyTypes ?? ["Enterprise"],
+                        prefs?.preferredCompanyTypes ?? ["Company"],
                       profilePreferredMinimumEmployerRating:
                         prefs?.preferredMinimumEmployerRating ?? 5,
                       profilePreferredRegions:
                         prefs?.preferredRegions ?? ["United States"],
+                      profilePreferredProjectTypes:
+                        prefs?.preferredProjectTypes ?? ["Ongoing"],
                       profileMinimumHourlyRate: prefs?.minimumHourlyRate ?? 100,
                     });
                     openAnalysisReport("demo", "/analyze", router);

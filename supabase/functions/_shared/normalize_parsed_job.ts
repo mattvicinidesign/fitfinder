@@ -107,6 +107,48 @@ const UPWORK_OPTIONAL_SKILLS_HEADER =
 const UPWORK_SKILLS_SECTION_END =
   /^(?:#{1,3}\s*)?(?:activity\s+on\s+this\s+job|about\s+the\s+client|project\s+type|deliverables|what\s+we(?:'re|\s+are)\s+looking|important\b|learn\s+more|copy\s+link|job\s+link|bid\s+range|interviewing|proposals|last\s+viewed|hires|invites\s+sent|unanswered\s+invites|member\s+since|payment\s+method)/i;
 
+/** Preferred qualifications (location, timezone, talent type) — not skills. */
+const UPWORK_SKILLS_QUALIFICATIONS_START =
+  /^(?:#{1,3}\s*)?preferred\s+qualifications\b/i;
+
+const UPWORK_SKILL_LOCATION_LABEL =
+  /^(?:#{1,3}\s*)?(?:location|time\s*zone|timezone|country(?:\s+required)?|talent\s+type)\s*[:.]?\s*$/i;
+
+const UPWORK_GEO_SKILL_TOKENS = new Set([
+  "africa",
+  "americas",
+  "apac",
+  "argentina",
+  "asia",
+  "australia",
+  "brazil",
+  "canada",
+  "emea",
+  "europe",
+  "france",
+  "germany",
+  "global",
+  "india",
+  "italy",
+  "latin america",
+  "mexico",
+  "middle east",
+  "netherlands",
+  "new zealand",
+  "north america",
+  "philippines",
+  "poland",
+  "south america",
+  "spain",
+  "u.s.",
+  "uk",
+  "united kingdom",
+  "united states",
+  "uruguay",
+  "usa",
+  "worldwide",
+]);
+
 const UPWORK_SKILL_NOISE_LINE =
   /^(?:proposals?|last\s+viewed|hires?|interviewing|invites?|bid\s+range|posted\b|\d+\+?\s*$|expert\b|entry\b|intermediate\b)/i;
 
@@ -218,17 +260,30 @@ function parseSkillTagLine(line: string): string[] {
   if (!trimmed || trimmed.length > 72) return [];
   if (UPWORK_SKILL_NOISE_LINE.test(trimmed)) return [];
   if (UPWORK_SKILLS_SECTION_END.test(trimmed)) return [];
+  if (UPWORK_SKILLS_QUALIFICATIONS_START.test(trimmed)) return [];
+  if (UPWORK_SKILL_LOCATION_LABEL.test(trimmed)) return [];
   if (UPWORK_SKILLS_SECTION_START.test(trimmed)) return [];
   if (UPWORK_MANDATORY_SKILLS_HEADER.test(trimmed)) return [];
   if (UPWORK_OPTIONAL_SKILLS_HEADER.test(trimmed)) return [];
+
+  const isNonSkillTag = (token: string): boolean => {
+    const n = normalizeKey(token).replace(/:$/, "");
+    if (!n) return true;
+    if (n === "preferred qualifications") return true;
+    if (UPWORK_SKILL_LOCATION_LABEL.test(n)) return true;
+    if (UPWORK_GEO_SKILL_TOKENS.has(n)) return true;
+    if (n.startsWith("location")) return true;
+    return false;
+  };
 
   if (trimmed.includes(",") && trimmed.split(",").length <= 6) {
     return trimmed
       .split(",")
       .map((part) => part.trim())
-      .filter((part) => part.length > 0 && part.length <= 48);
+      .filter((part) => part.length > 0 && part.length <= 48 && !isNonSkillTag(part));
   }
 
+  if (isNonSkillTag(trimmed)) return [];
   return [trimmed];
 }
 
@@ -266,6 +321,8 @@ export function extractUpworkTaggedSkills(jobText: string): {
     }
 
     if (!inSection) continue;
+
+    if (UPWORK_SKILLS_QUALIFICATIONS_START.test(trimmed)) break;
 
     if (UPWORK_SKILLS_SECTION_END.test(trimmed)) break;
 

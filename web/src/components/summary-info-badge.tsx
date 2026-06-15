@@ -3,7 +3,7 @@
 import {
   MATCH_PILL_CLASS,
   MISMATCH_PILL_CLASS,
-  MUTED_PILL_CLASS,
+  NOT_SPECIFIED_PILL_CLASS,
   NEUTRAL_PILL_CLASS,
   PARTIAL_MATCH_PILL_CLASS,
 } from "@/lib/match-pill-styles";
@@ -38,7 +38,7 @@ export function SummaryInfoBadge({
         positive && MATCH_PILL_CLASS,
         !positive && partial && PARTIAL_MATCH_PILL_CLASS,
         !positive && !partial && negative && MISMATCH_PILL_CLASS,
-        !positive && !negative && !partial && muted && MUTED_PILL_CLASS,
+        !positive && !negative && !partial && muted && NOT_SPECIFIED_PILL_CLASS,
         !positive && !negative && !partial && !muted && NEUTRAL_PILL_CLASS,
         className,
       )}

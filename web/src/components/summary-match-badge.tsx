@@ -4,8 +4,9 @@ import type { SummaryMatchState } from "@/lib/summary-criteria";
 import {
   MATCH_PILL_CLASS,
   MISMATCH_PILL_CLASS,
-  MUTED_PILL_CLASS,
+  NOT_SPECIFIED_PILL_CLASS,
 } from "@/lib/match-pill-styles";
+import { isNotSpecifiedDisplay } from "@/lib/not-specified";
 import { cn } from "@/lib/utils";
 
 export function SummaryMatchBadge({
@@ -24,7 +25,10 @@ export function SummaryMatchBadge({
         state === "match" && MATCH_PILL_CLASS,
         state === "same_country" && MATCH_PILL_CLASS,
         state === "mismatch" && MISMATCH_PILL_CLASS,
-        state === "unknown" && MUTED_PILL_CLASS,
+        state === "unknown" &&
+          (isNotSpecifiedDisplay(label)
+            ? NOT_SPECIFIED_PILL_CLASS
+            : "bg-muted/60 text-muted-foreground font-medium"),
         className,
       )}
     >

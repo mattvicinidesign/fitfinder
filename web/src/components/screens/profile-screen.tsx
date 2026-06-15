@@ -13,8 +13,8 @@ import { ChipMultiSelect, SelectableChip } from "@/components/ui/chip-multi-sele
 import {
   COMPANY_TYPE_OPTIONS,
   EMPLOYER_RATING_PRESETS,
-  ENGAGEMENT_TYPE_OPTIONS,
   HOURLY_RATE_PRESETS,
+  PROJECT_TYPE_OPTIONS,
   REGION_OPTIONS,
 } from "@/lib/onboarding-options";
 import {
@@ -117,9 +117,9 @@ export function ProfileScreen() {
       const prefKeys: (keyof UserProfile)[] = [
         "minimumHourlyRate",
         "preferredMinimumEmployerRating",
-        "preferredEngagementTypes",
         "preferredCompanyTypes",
         "preferredRegions",
+        "preferredProjectTypes",
       ];
       if (Object.keys(next).some((key) => prefKeys.includes(key as keyof UserProfile))) {
         saveLocalProfilePrefs(pickLocalProfilePrefs(updated));
@@ -276,14 +276,6 @@ export function ProfileScreen() {
               </div>
             </Section>
 
-            <Section title="Preferred engagement types">
-              <ChipMultiSelect
-                options={ENGAGEMENT_TYPE_OPTIONS}
-                value={profile.preferredEngagementTypes}
-                onChange={(v) => patch({ preferredEngagementTypes: v })}
-              />
-            </Section>
-
             <Section title="Employer Type">
               <ChipMultiSelect
                 options={COMPANY_TYPE_OPTIONS}
@@ -328,6 +320,14 @@ export function ProfileScreen() {
                   ))}
                 </div>
               </div>
+            </Section>
+
+            <Section title="Project type">
+              <ChipMultiSelect
+                options={PROJECT_TYPE_OPTIONS}
+                value={profile.preferredProjectTypes}
+                onChange={(v) => patch({ preferredProjectTypes: v })}
+              />
             </Section>
 
             <Section title="Location">

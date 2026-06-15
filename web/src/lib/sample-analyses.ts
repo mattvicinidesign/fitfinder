@@ -130,10 +130,11 @@ function sampleEntry(spec: SampleSpec): AnalysisReportCacheEntry {
   return {
     result: buildSampleResult(spec),
     analysisId: null,
-    profilePreferredCompanyTypes: prefs?.preferredCompanyTypes ?? ["Enterprise"],
+    profilePreferredCompanyTypes: prefs?.preferredCompanyTypes ?? ["Company"],
     profilePreferredMinimumEmployerRating:
       prefs?.preferredMinimumEmployerRating ?? 5,
     profilePreferredRegions: prefs?.preferredRegions ?? ["United States"],
+    profilePreferredProjectTypes: prefs?.preferredProjectTypes ?? ["Ongoing"],
     profileMinimumHourlyRate: prefs?.minimumHourlyRate ?? 100,
   };
 }

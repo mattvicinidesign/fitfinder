@@ -26,6 +26,7 @@ export function buildReportRollupOptions({
   profilePreferredCompanyTypes,
   profilePreferredMinimumEmployerRating,
   profilePreferredRegions,
+  profilePreferredProjectTypes,
   profileMinimumHourlyRate,
   jobDescription,
   jobTitle,
@@ -43,6 +44,7 @@ export function buildReportRollupOptions({
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
   profilePreferredRegions?: string[] | null;
+  profilePreferredProjectTypes?: string[] | null;
   profileMinimumHourlyRate?: number | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
@@ -75,6 +77,7 @@ export function buildReportRollupOptions({
     profilePreferredCompanyTypes,
     profilePreferredMinimumEmployerRating,
     profilePreferredRegions,
+    profilePreferredProjectTypes,
     profileMinimumHourlyRate,
     jobDescription,
     jobTitle,

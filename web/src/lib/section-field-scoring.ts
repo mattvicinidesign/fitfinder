@@ -29,14 +29,15 @@ import {
   isExplicitClientAvgPayRate,
 } from "@/lib/client-quality-scoring";
 import { buildEmployerTypeMatchDetail } from "@/lib/company-type-match";
+import { buildProjectTypeMatchDetail } from "@/lib/project-type-match";
 import { buildEmployerRatingMatchDetail } from "@/lib/employer-rating-match";
 import { buildClientLocationRegionMatchDetail } from "@/lib/preferred-region-match";
 import { buildClientAvgPayMatchDetail } from "@/lib/client-avg-pay-match";
+import { buildEnglishLevelPreferenceDetail } from "@/lib/english-level-match";
 import { detectJobPlatform } from "@/lib/job-platform";
 import {
   formatHeaderDatePosted,
 } from "@/lib/posting-header-meta";
-import { isContractToHirePosting } from "@/lib/posting-context";
 import { preferredLocationMatchesCandidate } from "@/lib/country-match";
 import {
   jobPreferredLocationDisplay,
@@ -45,8 +46,6 @@ import {
 import { resolveJobPreferredLocation } from "@/lib/preferred-qualifications-parse";
 import { NOT_SPECIFIED_LABEL, isNotSpecifiedDisplay } from "@/lib/not-specified";
 import {
-  isDurationMoreThan1Month,
-  isHoursNeededAtLeast30PerWeek,
   isPostingDetailHighlightPositive,
   isRoleArchetypeMatch,
   type PostingDetailHighlightContext,
@@ -106,6 +105,7 @@ export interface SectionFieldScoreContext {
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
   profilePreferredRegions?: string[] | null;
+  profilePreferredProjectTypes?: string[] | null;
   profileMinimumHourlyRate?: number | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
@@ -621,6 +621,11 @@ export function buildClientPreferencesFields(
       : false
     : false;
 
+  const englishDetail = buildEnglishLevelPreferenceDetail(
+    ctx.jobDescription,
+    ctx.profileCountry,
+  );
+
   return [
     field(
       "locationPreferred",
@@ -637,6 +642,18 @@ export function buildClientPreferencesFields(
       timezoneDisplay.badgeLabel,
       tzReqMatched ? "match" : "mismatch",
       tzReqIdentified ? (tzReqMatched ? 100 : tzCat.points ?? 0) : null,
+    ),
+    field(
+      "englishLevel",
+      "English Level",
+      englishDetail.identified,
+      englishDetail.identified ? englishDetail.badgeLabel : NOT_SPECIFIED_LABEL,
+      englishDetail.identified
+        ? englishDetail.matched
+          ? "match"
+          : "mismatch"
+        : "unknown",
+      englishDetail.points,
     ),
     field("aiEmphasis", "AI Emphasis", aiIdentified, aiLabel, aiState, aiPoints),
   ];
@@ -672,54 +689,38 @@ function buildIndustryField(ctx: SectionFieldScoreContext): SectionFieldScore {
   );
 }
 
-function roleContextMatchesResume(
-  highlightCtx: PostingDetailHighlightContext,
-  roleLabel?: string | null,
-): boolean {
-  const role =
-    roleLabel?.trim() ||
-    highlightCtx.parsedJob?.roleTitle?.trim() ||
-    highlightCtx.jobTitle?.trim() ||
-    "";
-  if (!role) return Boolean(highlightCtx.parsedResume);
-  return isRoleArchetypeMatch(role, highlightCtx);
-}
+function buildProjectTypeField(ctx: SectionFieldScoreContext): SectionFieldScore {
+  const detail = buildProjectTypeMatchDetail({
+    parsedJob: ctx.parsedJob,
+    postingContext: ctx.postingContext,
+    jobDescription: ctx.jobDescription,
+    profilePreferredProjectTypes: ctx.profilePreferredProjectTypes,
+  });
 
-function roleHoursPoints(
-  label: string,
-  highlightCtx: PostingDetailHighlightContext,
-  roleLabel?: string | null,
-): number {
-  if (!highlightCtx.parsedResume) {
-    return isHoursNeededAtLeast30PerWeek(label) ? 50 : 0;
+  if (!detail.identified) {
+    return field("projectType", "Project Type", false, "", "unknown", null);
   }
-  if (isHoursNeededAtLeast30PerWeek(label)) {
-    return roleContextMatchesResume(highlightCtx, roleLabel) ? 100 : 70;
-  }
-  const lower = label.toLowerCase();
-  const lessThan = lower.match(/less\s+than\s+(\d+)\s+hrs?/);
-  if (lessThan) {
-    const cap = Number.parseInt(lessThan[1], 10);
-    if (Number.isFinite(cap) && cap >= 20) {
-      return roleContextMatchesResume(highlightCtx, roleLabel) ? 70 : 40;
-    }
-    return 0;
-  }
-  return roleContextMatchesResume(highlightCtx, roleLabel) ? 60 : 30;
-}
 
-function roleDurationPoints(
-  label: string,
-  highlightCtx: PostingDetailHighlightContext,
-  roleLabel?: string | null,
-): number {
-  if (!highlightCtx.parsedResume) {
-    return isDurationMoreThan1Month(label) ? 50 : 0;
+  if (detail.compareToProfile) {
+    return field(
+      "projectType",
+      "Project Type",
+      true,
+      detail.label,
+      detail.matched ? "match" : "mismatch",
+      detail.points,
+    );
   }
-  if (isDurationMoreThan1Month(label)) {
-    return roleContextMatchesResume(highlightCtx, roleLabel) ? 100 : 70;
-  }
-  return roleContextMatchesResume(highlightCtx, roleLabel) ? 55 : 25;
+
+  return field(
+    "projectType",
+    "Project Type",
+    true,
+    detail.label,
+    "match",
+    100,
+    POSTING_ONLY,
+  );
 }
 
 export function buildRoleDetailsFields(
@@ -728,9 +729,6 @@ export function buildRoleDetailsFields(
   highlightCtx: PostingDetailHighlightContext,
 ): SectionFieldScore[] {
   const roleRow = postingRowByKey(rows, "role");
-  const hoursRow = postingRowByKey(rows, "hoursNeeded");
-  const durationRow = postingRowByKey(rows, "duration");
-  const roleLabel = roleRow?.value ?? null;
 
   const fields: SectionFieldScore[] = [];
 
@@ -749,63 +747,7 @@ export function buildRoleDetailsFields(
 
   fields.push(buildIndustryField(ctx));
   fields.push(buildCompensationField(ctx));
-
-  if (postingRowIdentified(hoursRow)) {
-    const hoursPoints = roleHoursPoints(hoursRow!.value, highlightCtx, roleLabel);
-    fields.push(
-      field(
-        "hoursNeeded",
-        "Hours",
-        true,
-        hoursRow!.value,
-        hoursPoints >= 50 ? "match" : "mismatch",
-        hoursPoints,
-        POSTING_ONLY,
-      ),
-    );
-  } else {
-    fields.push(field("hoursNeeded", "Hours", false, "", "unknown", null));
-  }
-
-  if (postingRowIdentified(durationRow)) {
-    const durationPoints = roleDurationPoints(
-      durationRow!.value,
-      highlightCtx,
-      roleLabel,
-    );
-    fields.push(
-      field(
-        "duration",
-        "Duration",
-        true,
-        durationRow!.value,
-        durationPoints >= 50 ? "match" : "mismatch",
-        durationPoints,
-        POSTING_ONLY,
-      ),
-    );
-  } else {
-    fields.push(field("duration", "Duration", false, "", "unknown", null));
-  }
-
-  if (
-    isContractToHirePosting(ctx.parsedJob, {
-      jobText: ctx.jobDescription,
-      postingContext: ctx.postingContext,
-    })
-  ) {
-    fields.push(
-      field(
-        "contractToHire",
-        "Note",
-        true,
-        "Contract-To-Hire",
-        "unknown",
-        null,
-        POSTING_ONLY,
-      ),
-    );
-  }
+  fields.push(buildProjectTypeField(ctx));
 
   return fields;
 }
@@ -923,6 +865,53 @@ export function buildQualificationsFields(
   fields.push(...qualificationKeywordFields("tools", toolsCoverage));
 
   return fields;
+}
+
+/** About Client card — only these rows are shown and drive the category score. */
+export const CLIENT_PROFILE_DISPLAY_KEYS = new Set([
+  "employerType",
+  "clientOrigin",
+  "clientRating",
+  "clientAverageHourlyRate",
+]);
+
+export function clientProfileDisplayFields(
+  fields: SectionFieldScore[],
+): SectionFieldScore[] {
+  return fields.filter((f) => CLIENT_PROFILE_DISPLAY_KEYS.has(f.key));
+}
+
+export function clientProfileCategorySubtotal(
+  fields: SectionFieldScore[],
+): number | null {
+  return equalWeightSectionSubtotal(clientProfileDisplayFields(fields));
+}
+
+export function clientProfileFieldFraction(
+  fields: SectionFieldScore[],
+): { matched: number; total: number } | null {
+  return sectionFieldFraction(clientProfileDisplayFields(fields));
+}
+
+/** Role Alignment — only profile-compared rows. */
+export function roleAlignmentScoringFields(
+  fields: SectionFieldScore[],
+): SectionFieldScore[] {
+  return fields.filter(
+    (f) => f.identified && f.points != null && !f.displayAsPlainText,
+  );
+}
+
+export function roleAlignmentCategorySubtotal(
+  fields: SectionFieldScore[],
+): number | null {
+  return equalWeightSectionSubtotal(roleAlignmentScoringFields(fields));
+}
+
+export function roleAlignmentFieldFraction(
+  fields: SectionFieldScore[],
+): { matched: number; total: number } | null {
+  return sectionFieldFraction(roleAlignmentScoringFields(fields));
 }
 
 /**

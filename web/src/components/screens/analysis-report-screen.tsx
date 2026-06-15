@@ -20,6 +20,7 @@ import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 import {
   resolveReportPreferredCompanyTypes,
   resolveReportPreferredMinimumEmployerRating,
+  resolveReportPreferredProjectTypes,
   resolveReportPreferredRegions,
   resolveReportMinimumHourlyRate,
 } from "@/lib/report-profile-prefs";
@@ -59,6 +60,8 @@ export function AnalysisReportScreen() {
   const [profilePreferredRegions, setProfilePreferredRegions] = useState<string[]>(
     () => loadLocalProfilePrefs()?.preferredRegions ?? [],
   );
+  const [profilePreferredProjectTypes, setProfilePreferredProjectTypes] =
+    useState<string[]>(() => loadLocalProfilePrefs()?.preferredProjectTypes ?? []);
   const [profileMinimumHourlyRate, setProfileMinimumHourlyRate] = useState<number | null>(
     () => loadLocalProfilePrefs()?.minimumHourlyRate ?? null,
   );
@@ -92,6 +95,7 @@ export function AnalysisReportScreen() {
           profile.preferredMinimumEmployerRating,
         );
         setProfilePreferredRegions(profile.preferredRegions);
+        setProfilePreferredProjectTypes(profile.preferredProjectTypes);
         setProfileMinimumHourlyRate(profile.minimumHourlyRate);
       }
     });
@@ -143,6 +147,10 @@ export function AnalysisReportScreen() {
     profilePreferredRegions,
     entry,
   );
+  const resolvedProjectTypes = resolveReportPreferredProjectTypes(
+    profilePreferredProjectTypes,
+    entry,
+  );
   const resolvedMinimumHourlyRate = resolveReportMinimumHourlyRate(
     profileMinimumHourlyRate,
     entry,
@@ -170,6 +178,7 @@ export function AnalysisReportScreen() {
           profilePreferredCompanyTypes={resolvedCompanyTypes}
           profilePreferredMinimumEmployerRating={resolvedMinRating}
           profilePreferredRegions={resolvedRegions}
+          profilePreferredProjectTypes={resolvedProjectTypes}
           profileMinimumHourlyRate={resolvedMinimumHourlyRate}
         />
       </div>

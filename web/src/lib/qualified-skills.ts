@@ -64,6 +64,25 @@ const SKILL_MATCH_ALIASES: Record<string, string[]> = {
     "ux/ui",
     "ui ux",
     "ux and ui",
+    "ux and ui design",
+    "ux ui design",
+    "ui ux design",
+  ],
+  [normalizeSkillToken("UX & UI Design")]: [
+    "ux and ui",
+    "ux ui",
+    "ux/ui",
+    "ui ux",
+    "ux design",
+    "ui design",
+    "user experience design",
+    "user interface design",
+    "product design",
+    "product designer",
+    "ux designer",
+    "ui designer",
+    "senior product designer",
+    "ux ui designer",
   ],
   [normalizeSkillToken("User Experience Design")]: [
     "ux design",
@@ -129,13 +148,24 @@ function expandSkillMatchPool(skills: string[]): string[] {
   return pool;
 }
 
+function skillAliasGroupForToken(norm: string): string[] | null {
+  for (const [canonical, aliases] of Object.entries(SKILL_MATCH_ALIASES)) {
+    const group = [canonical, ...aliases.map(normalizeSkillToken)];
+    if (group.includes(norm)) return group;
+    for (const token of group) {
+      if (token.length < 5) continue;
+      if (norm === token || norm.startsWith(`${token} `)) return group;
+    }
+  }
+  return null;
+}
+
 function expandedSkillTokens(label: string): string[] {
   const norm = normalizeSkillToken(label);
   const out = new Set<string>([norm]);
 
-  for (const [canonical, aliases] of Object.entries(SKILL_MATCH_ALIASES)) {
-    const group = [canonical, ...aliases.map(normalizeSkillToken)];
-    if (!group.includes(norm)) continue;
+  const group = skillAliasGroupForToken(norm);
+  if (group) {
     for (const token of group) out.add(token);
   }
 

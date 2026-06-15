@@ -3,7 +3,7 @@
 import { SummaryFieldLabel } from "@/components/summary-field-label";
 import { SummaryInfoBadge } from "@/components/summary-info-badge";
 import { SummaryMatchBadge } from "@/components/summary-match-badge";
-import { NOT_SPECIFIED_LABEL } from "@/lib/not-specified";
+import { SummaryNotSpecifiedBadge } from "@/components/summary-not-specified-badge";
 import { buildIndustryDetail } from "@/lib/industry-match";
 import type { CategoryScore, ParsedJob, ParsedResume } from "@/lib/types";
 
@@ -50,9 +50,7 @@ export function IndustrySummaryContent({
           )}
         </div>
       ) : isUnknown ? (
-        <span className="text-[11px] font-medium text-muted-foreground">
-          {NOT_SPECIFIED_LABEL}
-        </span>
+        <SummaryNotSpecifiedBadge />
       ) : detail && detail.resumeIndustries.length > 0 ? (
         <p className="text-[11px] text-muted-foreground leading-snug">
           No industries in posting. Resume: {detail.resumeIndustries.join(", ")}.

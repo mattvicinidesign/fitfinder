@@ -13,6 +13,7 @@ export type LocalProfilePrefs = Pick<
   | "preferredEngagementTypes"
   | "preferredCompanyTypes"
   | "preferredRegions"
+  | "preferredProjectTypes"
   | "preferredMinimumEmployerRating"
 >;
 
@@ -34,6 +35,7 @@ function normalizeLocalProfilePrefs(raw: unknown): LocalProfilePrefs | null {
     preferredEngagementTypes: toStringArray(record.preferredEngagementTypes),
     preferredCompanyTypes: toStringArray(record.preferredCompanyTypes),
     preferredRegions: toStringArray(record.preferredRegions),
+    preferredProjectTypes: toStringArray(record.preferredProjectTypes),
     preferredMinimumEmployerRating: clampEmployerRatingPreference(
       coerceProfileNumeric(record.preferredMinimumEmployerRating),
     ),
@@ -59,6 +61,7 @@ export function saveLocalProfilePrefs(prefs: Partial<LocalProfilePrefs>): void {
     preferredEngagementTypes: [],
     preferredCompanyTypes: [],
     preferredRegions: [],
+    preferredProjectTypes: [],
     preferredMinimumEmployerRating: null,
   };
 
@@ -72,6 +75,8 @@ export function saveLocalProfilePrefs(prefs: Partial<LocalProfilePrefs>): void {
     preferredCompanyTypes:
       prefs.preferredCompanyTypes ?? current.preferredCompanyTypes,
     preferredRegions: prefs.preferredRegions ?? current.preferredRegions,
+    preferredProjectTypes:
+      prefs.preferredProjectTypes ?? current.preferredProjectTypes,
     preferredMinimumEmployerRating:
       prefs.preferredMinimumEmployerRating !== undefined
         ? clampEmployerRatingPreference(prefs.preferredMinimumEmployerRating)
@@ -89,6 +94,7 @@ export function pickLocalProfilePrefs(
     preferredEngagementTypes: profile.preferredEngagementTypes,
     preferredCompanyTypes: profile.preferredCompanyTypes,
     preferredRegions: profile.preferredRegions,
+    preferredProjectTypes: profile.preferredProjectTypes,
     preferredMinimumEmployerRating: profile.preferredMinimumEmployerRating,
   };
 }

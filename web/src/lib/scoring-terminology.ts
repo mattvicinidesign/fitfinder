@@ -54,11 +54,11 @@ export const GLOBAL_SCORE_INFO =
 
 export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
   clientProfile:
-    "About the client — employer type, location, rating, and average pay rate. Posted date, availability, and platform appear under the job title. Each item found counts equally toward the category score. Registered users only.",
+    "About the client — employer type, location, rating, and average pay rate. Each visible item counts equally toward the category score.",
   clientPreferences:
-    "How well you match the client preferences — location, timezone, and AI emphasis stated in the posting.",
+    "How well you match client preferences — location, timezone, English level, and AI emphasis stated in the posting.",
   roleDetails:
-    "How well the role fits your resume — title, industry, pay, hours, and duration. Each identified item counts equally.",
+    "How well the role fits your resume — title, industry, and pay. Each compared item counts equally.",
   categoryMatching:
     "How many of the posting's required skills and tools you match. Every keyword is weighted equally.",
 };

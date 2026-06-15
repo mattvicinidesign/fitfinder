@@ -4,6 +4,7 @@ import {
   extractPreferredQualificationsFields,
   isClientOriginNotApplicantPreference,
   resolveJobCountryRequirement,
+  resolveJobEnglishLevel,
   resolveJobPreferredLocation,
   resolveJobTalentType,
   resolveJobTimezoneRequirement,
@@ -21,6 +22,12 @@ Americas, Europe
 Activity on this job
 Proposals:
 50+`;
+
+Deno.test("extracts English level from Preferred qualifications", () => {
+  const pq = extractPreferredQualificationsFields(PREFERRED_BLOCK);
+  assertEquals(pq.englishLevel, "Fluent");
+  assertEquals(resolveJobEnglishLevel(PREFERRED_BLOCK), "Fluent");
+});
 
 Deno.test("extracts Location from Preferred qualifications", () => {
   const pq = extractPreferredQualificationsFields(PREFERRED_BLOCK);

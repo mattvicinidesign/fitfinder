@@ -1,4 +1,3 @@
-import { clientQualityScoreFromPostingDetails } from "@/lib/client-quality-scoring";
 import type { ReportRollupOptions } from "@/lib/section-score-rollups";
 import {
   computeReportSectionRollups,
@@ -7,8 +6,11 @@ import {
 import {
   buildQualificationsFields,
   buildClientPreferencesFields,
+  buildClientProfileFields,
   buildRoleDetailsFields,
+  clientProfileCategorySubtotal,
   equalWeightSectionSubtotal,
+  roleAlignmentCategorySubtotal,
 } from "@/lib/section-field-scoring";
 import {
   OPPORTUNITY_CATEGORY_LABELS,
@@ -118,17 +120,14 @@ export function sectionCategoryScore(
   const ctx = rollupOptions.fieldContext;
 
   if (sectionId === "clientProfile") {
-    const fromDetails = clientQualityScoreFromPostingDetails(
-      ctx.parsedJob?.postingDetails,
-      ctx.profileDesiredCompensation ?? ctx.parsedResume?.desiredCompensation ?? null,
-      {
-        companyName: ctx.companyName,
-        jobDescription: ctx.jobDescription,
-        employerType:
-          ctx.postingContext?.employerType ?? ctx.parsedJob?.employerType ?? null,
-      },
+    const fromFields = clientProfileCategorySubtotal(
+      buildClientProfileFields(
+        ctx,
+        rollupOptions.postingRows,
+        rollupOptions.highlightCtx,
+      ),
     );
-    if (fromDetails != null) return fromDetails;
+    if (fromFields != null) return fromFields;
   }
 
   if (sectionId === "categoryMatching") {
@@ -137,7 +136,7 @@ export function sectionCategoryScore(
   }
 
   if (sectionId === "roleDetails") {
-    const fromFields = equalWeightSectionSubtotal(
+    const fromFields = roleAlignmentCategorySubtotal(
       buildRoleDetailsFields(
         ctx,
         rollupOptions.postingRows,

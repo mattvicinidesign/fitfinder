@@ -188,7 +188,7 @@ export function buildSampleAnalysisResult(input: SampleReportInput): AnalysisRes
       engagementDuration: "ongoing",
       engagementPath: "contract",
       payStructure: "hourly",
-      badges: ["Ongoing", "Contract", "Hourly"],
+      badges: ["Contract", "Hourly"],
     },
   };
 }

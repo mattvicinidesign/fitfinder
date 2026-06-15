@@ -28,6 +28,7 @@ import {
 import {
   scoreColor,
 } from "@/lib/score";
+import { SummaryNotSpecifiedBadge } from "@/components/summary-not-specified-badge";
 import { NOT_SPECIFIED_LABEL } from "@/lib/not-specified";
 import {
   SCORING_CATEGORY_INFO,
@@ -116,15 +117,18 @@ function BreakdownRow({
       )}
     >
       <span className="text-[15px] flex-1 min-w-0">{label}</span>
-      <span
-        className={cn(
-          "text-[15px] tabular-nums shrink-0 w-16 text-right",
-          matchClass,
-          mutedMatch && "text-muted-foreground",
-        )}
-      >
-        {match}
-      </span>
+      {mutedMatch ? (
+        <SummaryNotSpecifiedBadge />
+      ) : (
+        <span
+          className={cn(
+            "text-[15px] tabular-nums shrink-0 w-16 text-right",
+            matchClass,
+          )}
+        >
+          {match}
+        </span>
+      )}
     </div>
   );
 }
@@ -156,6 +160,7 @@ export function QualificationBreakdown({
   profilePreferredCompanyTypes,
   profilePreferredMinimumEmployerRating,
   profilePreferredRegions,
+  profilePreferredProjectTypes,
   profileMinimumHourlyRate,
 }: {
   score: ScoreResult;
@@ -173,6 +178,7 @@ export function QualificationBreakdown({
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
   profilePreferredRegions?: string[] | null;
+  profilePreferredProjectTypes?: string[] | null;
   profileMinimumHourlyRate?: number | null;
 }) {
   const rows = REGISTERED_WEIGHT_ROWS;
@@ -191,6 +197,7 @@ export function QualificationBreakdown({
     profilePreferredCompanyTypes,
     profilePreferredMinimumEmployerRating,
     profilePreferredRegions,
+    profilePreferredProjectTypes,
     profileMinimumHourlyRate,
     jobDescription,
     jobTitle: analysisJobTitle,
@@ -225,6 +232,7 @@ export function QualificationBreakdown({
           profilePreferredMinimumEmployerRating
         }
         profilePreferredRegions={profilePreferredRegions}
+        profilePreferredProjectTypes={profilePreferredProjectTypes}
         profileMinimumHourlyRate={profileMinimumHourlyRate}
         jobDescription={jobDescription}
         jobTitle={analysisJobTitle}

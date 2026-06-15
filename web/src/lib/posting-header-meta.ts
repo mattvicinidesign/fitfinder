@@ -67,8 +67,7 @@ export function headerEmployerKindLabel(
   employerType?: PostingContext["employerType"] | ParsedJob["employerType"],
 ): string {
   if (employerType === "agency") return "Agency";
-  if (employerType === "product_company") return "Company";
-  return "Unknown";
+  return "Company";
 }
 
 /** e.g. "Posted 4 days ago" → "4 Days Ago". */

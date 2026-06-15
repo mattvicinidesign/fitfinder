@@ -301,6 +301,68 @@ function isProductOrCompanyTitleSuffix(suffix: string): boolean {
   return false;
 }
 
+/** True when text after ":" or " – " is project scope, not part of the role name. */
+function isScopeOrProjectTitleSuffix(suffix: string): boolean {
+  const s = suffix.trim();
+  if (!s) return false;
+  if (isProductOrCompanyTitleSuffix(s)) return true;
+  if (/^\d+\+?\s+.+/i.test(s)) return true;
+  if (
+    /\b(?:section|sections|page|pages|screen|screens|phase|sprint|test|project|homepage|landing|deliverable|deliverables|module|milestone|week|weeks|month|months|hour|hours|hrs?|ongoing|fixed|budget|hero|redesign|mockup|mockups|wireframe|wireframes)\b/i.test(
+      s,
+    )
+  ) {
+    return true;
+  }
+  if (/\(\s*\d+/i.test(s)) return true;
+  return false;
+}
+
+function isScopeParenthetical(inner: string): boolean {
+  const s = inner.trim();
+  if (!s) return false;
+  if (/^\d+/.test(s)) return true;
+  return /\b(?:test|project|homepage|ongoing|deliverable|section|phase|sprint|month|week|min|hour|budget|fixed[- ]?price|hero|redesign)\b/i.test(
+    s,
+  );
+}
+
+function stripScopeParentheticals(title: string): string {
+  return title
+    .replace(/\s*\(([^)]{4,120})\)\s*/g, (match, inner: string) =>
+      isScopeParenthetical(inner) ? " " : match,
+    )
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function stripDescriptiveTitleTail(title: string): string {
+  let t = title.trim();
+  if (!t) return t;
+
+  t = stripScopeParentheticals(t);
+
+  const colonMatch = t.match(/^(.{2,100}?)\s*:\s+(.+)$/);
+  if (colonMatch) {
+    const head = colonMatch[1]?.trim() ?? "";
+    const tail = colonMatch[2]?.trim() ?? "";
+    if (head && tail && isScopeOrProjectTitleSuffix(tail)) {
+      t = head;
+    }
+  }
+
+  const dashMatch = t.match(/^(.{2,100}?)\s+[-–—]\s+(.+)$/);
+  if (dashMatch) {
+    const head = dashMatch[1]?.trim() ?? "";
+    const tail = dashMatch[2]?.trim() ?? "";
+    if (head && tail && isScopeOrProjectTitleSuffix(tail)) {
+      t = head;
+    }
+  }
+
+  return stripScopeParentheticals(t);
+}
+
 /**
  * Normalize a posting headline into a role title for scoring metadata.
  * Strips marketing tails like "for AI-Powered AdTech SaaS Platform".
@@ -310,6 +372,8 @@ export function generalizeRoleTitle(
 ): string | null {
   let t = trimOrNull(title);
   if (!t) return null;
+
+  t = stripDescriptiveTitleTail(t);
 
   const parts = t.split(/\s+for\s+/i);
   if (parts.length >= 2) {
@@ -325,23 +389,24 @@ export function generalizeRoleTitle(
   return t || trimOrNull(title);
 }
 
-/** Prefer the fullest title among explicit, paste first line, and LLM roleTitle. */
+/** Prefer explicit title, then parsed role, then paste first line — each generalized. */
 export function resolveJobTitle(
   jobTitle: string | null | undefined,
   jobDescription: string | null | undefined,
   roleTitle: string | null | undefined,
 ): string | null {
-  const candidates = [
+  const sources = [
     trimOrNull(jobTitle),
-    extractJobTitleFromText(jobDescription),
     trimOrNull(roleTitle),
-  ].filter((value): value is string => Boolean(value));
+    extractJobTitleFromText(jobDescription),
+  ];
 
-  if (candidates.length === 0) return null;
+  for (const raw of sources) {
+    const generalized = generalizeRoleTitle(raw);
+    if (generalized) return generalized;
+  }
 
-  return candidates.reduce((best, current) =>
-    current.length > best.length ? current : best,
-  );
+  return null;
 }
 
 /** Role title for scoring metadata — generalized, not the raw posting headline. */
@@ -414,8 +479,6 @@ const ROW_DEFS: {
   { key: "clientRating", title: "Rating", section: "client" },
   { key: "clientAverageHourlyRate", title: "Avg Pay rate", section: "client" },
   { key: "role", title: "Title", section: "role" },
-  { key: "hoursNeeded", title: "Hours", section: "role" },
-  { key: "duration", title: "Duration", section: "role" },
   { key: "hireArea", title: "Who Can Apply", section: "global" },
   { key: "datePosted", title: "Date posted", section: "global" },
 ];

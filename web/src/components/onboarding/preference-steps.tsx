@@ -3,8 +3,8 @@ import { ChipMultiSelect, SelectableChip } from "@/components/ui/chip-multi-sele
 import {
   COMPANY_TYPE_OPTIONS,
   EMPLOYER_RATING_PRESETS,
-  ENGAGEMENT_TYPE_OPTIONS,
   HOURLY_RATE_PRESETS,
+  PROJECT_TYPE_OPTIONS,
   REGION_OPTIONS,
 } from "@/lib/onboarding-options";
 import type { UserProfile } from "@/lib/profile";
@@ -50,17 +50,6 @@ export function createPreferenceSteps(
             ))}
           </div>
         </div>
-      ),
-    },
-    {
-      title: "What types of work are you interested in?",
-      subtitle: "Used to match the job's engagement and contract structure.",
-      content: (
-        <ChipMultiSelect
-          options={ENGAGEMENT_TYPE_OPTIONS}
-          value={profile.preferredEngagementTypes}
-          onChange={(v) => patch({ preferredEngagementTypes: v })}
-        />
       ),
     },
     {
@@ -113,6 +102,17 @@ export function createPreferenceSteps(
             ))}
           </div>
         </div>
+      ),
+    },
+    {
+      title: "What project types do you prefer?",
+      subtitle: "Ongoing retainer work vs one-time projects.",
+      content: (
+        <ChipMultiSelect
+          options={PROJECT_TYPE_OPTIONS}
+          value={profile.preferredProjectTypes}
+          onChange={(v) => patch({ preferredProjectTypes: v })}
+        />
       ),
     },
     {

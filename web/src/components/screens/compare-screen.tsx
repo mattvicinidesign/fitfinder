@@ -77,6 +77,8 @@ export function CompareScreen() {
   const [profilePreferredRegions, setProfilePreferredRegions] = useState<string[]>(
     () => loadLocalProfilePrefs()?.preferredRegions ?? [],
   );
+  const [profilePreferredProjectTypes, setProfilePreferredProjectTypes] =
+    useState<string[]>(() => loadLocalProfilePrefs()?.preferredProjectTypes ?? []);
   const [profileMinimumHourlyRate, setProfileMinimumHourlyRate] = useState<number | null>(
     () => loadLocalProfilePrefs()?.minimumHourlyRate ?? null,
   );
@@ -101,6 +103,7 @@ export function CompareScreen() {
           profile.preferredMinimumEmployerRating,
         );
         setProfilePreferredRegions(profile.preferredRegions);
+        setProfilePreferredProjectTypes(profile.preferredProjectTypes);
         setProfileMinimumHourlyRate(profile.minimumHourlyRate);
       }
     });
@@ -218,6 +221,7 @@ export function CompareScreen() {
                 profilePreferredMinimumEmployerRating
               }
               profilePreferredRegions={profilePreferredRegions}
+              profilePreferredProjectTypes={profilePreferredProjectTypes}
               profileMinimumHourlyRate={profileMinimumHourlyRate}
             />
           </div>
@@ -239,6 +243,7 @@ export function CompareScreen() {
                 profilePreferredMinimumEmployerRating
               }
               profilePreferredRegions={profilePreferredRegions}
+              profilePreferredProjectTypes={profilePreferredProjectTypes}
               profileMinimumHourlyRate={profileMinimumHourlyRate}
             />
           </div>
