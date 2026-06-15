@@ -24,6 +24,10 @@ import {
   saveUserProfile,
   type UserProfile,
 } from "@/lib/profile";
+import {
+  pickLocalProfilePrefs,
+  saveLocalProfilePrefs,
+} from "@/lib/local-profile-prefs";
 import { ResumeFilePicker } from "@/components/resume-file-picker";
 import {
   fetchUserResumeDocuments,
@@ -95,6 +99,7 @@ export function ProfileScreen() {
       if (existing) {
         setProfile(existing);
         setSavedProfile(existing);
+        saveLocalProfilePrefs(pickLocalProfilePrefs(existing));
       }
       setProfileLoading(false);
       void loadDocuments();
@@ -117,6 +122,7 @@ export function ProfileScreen() {
         "preferredRegions",
       ];
       if (Object.keys(next).some((key) => prefKeys.includes(key as keyof UserProfile))) {
+        saveLocalProfilePrefs(pickLocalProfilePrefs(updated));
         void saveUserProfile(updated).then(({ error }) => {
           if (!error) setSavedProfile(updated);
         });

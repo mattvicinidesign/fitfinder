@@ -16,6 +16,7 @@ import {
 import type { AnalysisReportCacheEntry } from "@/lib/analysis-report-cache";
 import { resolveReportEntry } from "@/lib/sample-analyses";
 import { fetchUserProfile } from "@/lib/profile";
+import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 import {
   resolveReportPreferredCompanyTypes,
   resolveReportPreferredMinimumEmployerRating,
@@ -48,9 +49,11 @@ export function AnalysisReportScreen() {
   const [profileCountry, setProfileCountry] = useState<string | null>(null);
   const [profileTimezone, setProfileTimezone] = useState<string | null>(null);
   const [profilePreferredCompanyTypes, setProfilePreferredCompanyTypes] =
-    useState<string[]>([]);
+    useState<string[]>(() => loadLocalProfilePrefs()?.preferredCompanyTypes ?? []);
   const [profilePreferredMinimumEmployerRating, setProfilePreferredMinimumEmployerRating] =
-    useState<number | null>(null);
+    useState<number | null>(
+      () => loadLocalProfilePrefs()?.preferredMinimumEmployerRating ?? null,
+    );
 
   useEffect(() => {
     if (!reportId) {

@@ -19,6 +19,7 @@ import {
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
 import { fetchUserProfile } from "@/lib/profile";
+import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 import type { AnalysisResult, Compensation } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -151,9 +152,11 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   const [profileCountry, setProfileCountry] = useState<string | null>(null);
   const [profileTimezone, setProfileTimezone] = useState<string | null>(null);
   const [profilePreferredCompanyTypes, setProfilePreferredCompanyTypes] =
-    useState<string[]>([]);
+    useState<string[]>(() => loadLocalProfilePrefs()?.preferredCompanyTypes ?? []);
   const [profilePreferredMinimumEmployerRating, setProfilePreferredMinimumEmployerRating] =
-    useState<number | null>(null);
+    useState<number | null>(
+      () => loadLocalProfilePrefs()?.preferredMinimumEmployerRating ?? null,
+    );
   const [lastReport, setLastReport] = useState<{
     reportId: string;
     roleTitle: string;
@@ -167,7 +170,6 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   }, [demo]);
 
   useEffect(() => {
-    if (demo) return;
     void Promise.all([
       fetchProfileDesiredCompensation(),
       fetchProfileQualifiedIndustries(),
@@ -188,7 +190,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         );
       }
     });
-  }, [demo]);
+  }, []);
 
   async function run(e: React.FormEvent) {
     e.preventDefault();
@@ -391,9 +393,14 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
                   type="button"
                   className="text-primary underline-offset-2 hover:underline"
                   onClick={() => {
+                    const prefs = loadLocalProfilePrefs();
                     saveAnalysisReport("demo", {
                       result: DEMO_RESULT,
                       analysisId: null,
+                      profilePreferredCompanyTypes:
+                        prefs?.preferredCompanyTypes ?? ["Enterprise"],
+                      profilePreferredMinimumEmployerRating:
+                        prefs?.preferredMinimumEmployerRating ?? 5,
                     });
                     openAnalysisReport("demo", "/analyze", router);
                   }}

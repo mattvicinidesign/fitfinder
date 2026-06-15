@@ -37,11 +37,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     underlyingRef.current = children;
   }
 
-  const needsAuth =
-    !isPreview &&
-    PROTECTED_PREFIXES.some(
-      (p) => pathname === p || pathname.startsWith(`${p}/`),
-    );
+  const needsAuth = PROTECTED_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+  const shouldBootstrapGuest = needsAuth || isPreview;
 
   useEffect(() => {
     const supabase = createClient();
@@ -61,7 +60,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!ready || !needsAuth || signedIn) return;
+    if (!ready || !shouldBootstrapGuest || signedIn) return;
     if (isNativePlatform() && !hasCompletedWelcome()) return;
 
     let cancelled = false;
@@ -81,7 +80,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [ready, needsAuth, signedIn, pathname, router]);
+  }, [ready, shouldBootstrapGuest, signedIn, pathname, router]);
 
   const launchGateActive =
     isNativePlatform() && !hasCompletedWelcome();

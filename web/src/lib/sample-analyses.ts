@@ -8,10 +8,11 @@ import {
   type RecentActivityItem,
 } from "@/lib/recent-activity";
 import { buildSampleAnalysisResult } from "@/lib/sample-report-fixtures";
+import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import type { AnalysisRecord, AnalysisResult, Recommendation } from "@/lib/types";
 
-const SEED_VERSION = "v4";
+const SEED_VERSION = "v5";
 const SEED_KEY = `fitfinder-sample-data-${SEED_VERSION}`;
 const RECENT_ACTIVITY_KEY = "fitfinder:recent-activity";
 
@@ -125,9 +126,13 @@ function buildSampleResult(spec: SampleSpec): AnalysisResult {
 }
 
 function sampleEntry(spec: SampleSpec): AnalysisReportCacheEntry {
+  const prefs = loadLocalProfilePrefs();
   return {
     result: buildSampleResult(spec),
     analysisId: null,
+    profilePreferredCompanyTypes: prefs?.preferredCompanyTypes ?? ["Enterprise"],
+    profilePreferredMinimumEmployerRating:
+      prefs?.preferredMinimumEmployerRating ?? 5,
   };
 }
 

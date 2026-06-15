@@ -4,6 +4,11 @@ import {
   coerceProfileNumeric,
 } from "@/lib/employer-rating-match";
 import {
+  loadLocalProfilePrefs,
+  pickLocalProfilePrefs,
+  saveLocalProfilePrefs,
+} from "@/lib/local-profile-prefs";
+import {
   COMPANY_TYPE_OPTIONS,
   ENGAGEMENT_TYPE_OPTIONS,
   REGION_OPTIONS,
@@ -270,8 +275,9 @@ export async function fetchUserProfile(): Promise<UserProfile | null> {
 
   const stored = (await fetchUserProfileFromDatabase()) ?? emptyUserProfile();
   const drafts = await loadLocalProfileDrafts();
+  const localPrefs = loadLocalProfilePrefs();
   const resolved = normalizeUserProfile(
-    mergeUserProfileLayers(stored, ...drafts),
+    mergeUserProfileLayers(stored, ...drafts, localPrefs ?? {}),
   );
 
   if (profileNeedsPreferenceSync(stored, resolved)) {
@@ -318,6 +324,7 @@ export async function saveUserProfile(
   const { error } = await supabase
     .from("profiles")
     .upsert(row, { onConflict: "user_id" });
+  saveLocalProfilePrefs(pickLocalProfilePrefs(profile));
   return { error: error?.message ?? null };
 }
 
