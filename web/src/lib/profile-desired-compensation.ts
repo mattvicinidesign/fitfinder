@@ -34,7 +34,7 @@ export function compensationFromProfileRow(
       min,
       max: max ?? min,
       currency: row.desired_compensation_currency ?? "USD",
-      period: period ?? "year",
+      period: period ?? (min != null ? "hour" : "year"),
     };
   }
 

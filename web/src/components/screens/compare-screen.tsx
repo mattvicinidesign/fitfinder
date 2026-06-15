@@ -77,6 +77,9 @@ export function CompareScreen() {
   const [profilePreferredRegions, setProfilePreferredRegions] = useState<string[]>(
     () => loadLocalProfilePrefs()?.preferredRegions ?? [],
   );
+  const [profileMinimumHourlyRate, setProfileMinimumHourlyRate] = useState<number | null>(
+    () => loadLocalProfilePrefs()?.minimumHourlyRate ?? null,
+  );
 
   useEffect(() => {
     void Promise.all([
@@ -98,6 +101,7 @@ export function CompareScreen() {
           profile.preferredMinimumEmployerRating,
         );
         setProfilePreferredRegions(profile.preferredRegions);
+        setProfileMinimumHourlyRate(profile.minimumHourlyRate);
       }
     });
   }, []);
@@ -214,6 +218,7 @@ export function CompareScreen() {
                 profilePreferredMinimumEmployerRating
               }
               profilePreferredRegions={profilePreferredRegions}
+              profileMinimumHourlyRate={profileMinimumHourlyRate}
             />
           </div>
         ) : null}
@@ -234,6 +239,7 @@ export function CompareScreen() {
                 profilePreferredMinimumEmployerRating
               }
               profilePreferredRegions={profilePreferredRegions}
+              profileMinimumHourlyRate={profileMinimumHourlyRate}
             />
           </div>
         ) : null}

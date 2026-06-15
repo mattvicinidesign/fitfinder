@@ -156,6 +156,7 @@ export function QualificationBreakdown({
   profilePreferredCompanyTypes,
   profilePreferredMinimumEmployerRating,
   profilePreferredRegions,
+  profileMinimumHourlyRate,
 }: {
   score: ScoreResult;
   postingContext?: PostingContext | null;
@@ -172,6 +173,7 @@ export function QualificationBreakdown({
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
   profilePreferredRegions?: string[] | null;
+  profileMinimumHourlyRate?: number | null;
 }) {
   const rows = REGISTERED_WEIGHT_ROWS;
   const categoryRows = rows.filter(({ key }) => !SUMMARY_ONLY_KEYS.has(key));
@@ -189,6 +191,7 @@ export function QualificationBreakdown({
     profilePreferredCompanyTypes,
     profilePreferredMinimumEmployerRating,
     profilePreferredRegions,
+    profileMinimumHourlyRate,
     jobDescription,
     jobTitle: analysisJobTitle,
     companyName,
@@ -222,6 +225,7 @@ export function QualificationBreakdown({
           profilePreferredMinimumEmployerRating
         }
         profilePreferredRegions={profilePreferredRegions}
+        profileMinimumHourlyRate={profileMinimumHourlyRate}
         jobDescription={jobDescription}
         jobTitle={analysisJobTitle}
         companyName={companyName}

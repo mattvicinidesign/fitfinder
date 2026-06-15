@@ -70,6 +70,7 @@ export function QualificationSummarySection({
   profilePreferredCompanyTypes,
   profilePreferredMinimumEmployerRating,
   profilePreferredRegions,
+  profileMinimumHourlyRate,
   jobDescription,
   jobTitle,
   companyName,
@@ -85,6 +86,7 @@ export function QualificationSummarySection({
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
   profilePreferredRegions?: string[] | null;
+  profileMinimumHourlyRate?: number | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
   companyName?: string | null;
@@ -102,6 +104,7 @@ export function QualificationSummarySection({
     profilePreferredCompanyTypes,
     profilePreferredMinimumEmployerRating,
     profilePreferredRegions,
+    profileMinimumHourlyRate,
     jobDescription,
     jobTitle,
     companyName,
@@ -126,6 +129,7 @@ export function QualificationSummarySection({
       profilePreferredCompanyTypes,
       profilePreferredMinimumEmployerRating,
       profilePreferredRegions,
+      profileMinimumHourlyRate,
       jobDescription,
       jobTitle,
       companyName,

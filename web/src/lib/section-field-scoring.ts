@@ -31,6 +31,7 @@ import {
 import { buildEmployerTypeMatchDetail } from "@/lib/company-type-match";
 import { buildEmployerRatingMatchDetail } from "@/lib/employer-rating-match";
 import { buildClientLocationRegionMatchDetail } from "@/lib/preferred-region-match";
+import { buildClientAvgPayMatchDetail } from "@/lib/client-avg-pay-match";
 import { detectJobPlatform } from "@/lib/job-platform";
 import {
   formatHeaderDatePosted,
@@ -105,6 +106,7 @@ export interface SectionFieldScoreContext {
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
   profilePreferredRegions?: string[] | null;
+  profileMinimumHourlyRate?: number | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
   companyName?: string | null;
@@ -235,9 +237,6 @@ export function buildClientProfileFields(
   const hireAreaRow = postingRowByKey(rows, "hireArea");
   const profileComp =
     ctx.parsedResume?.desiredCompensation ?? ctx.profileDesiredCompensation ?? null;
-  const avgPayDisplayOpts: SectionFieldOptions | undefined = profileComp
-    ? undefined
-    : POSTING_ONLY;
 
   const fields: SectionFieldScore[] = [];
 
@@ -492,35 +491,53 @@ export function buildClientProfileFields(
     );
   }
 
-  const avgValue =
-    details?.clientAverageHourlyRate?.trim() || avgRow?.value || "";
-  const avgIdentified =
-    (postingRowIdentified(avgRow) && isExplicitClientAvgPayRate(avgRow!.value)) ||
-    isExplicitClientAvgPayRate(details?.clientAverageHourlyRate ?? "");
-  const avgPoints = clientQualityAvgPayPoints(
-    details?.clientAverageHourlyRate ?? (avgIdentified ? avgValue : null),
-    profileComp,
+  const avgValue = resolvedPostingDetailText(
+    details?.clientAverageHourlyRate,
+    avgRow,
   );
-  fields.push(
-    avgIdentified && avgPoints != null
-      ? field(
-          "clientAverageHourlyRate",
-          CLIENT_QUALITY_FIELD_LABELS.avgPayRate,
-          true,
-          avgValue,
-          avgPoints >= 50 ? "match" : "mismatch",
-          avgPoints,
-          avgPayDisplayOpts,
-        )
-      : field(
-          "clientAverageHourlyRate",
-          CLIENT_QUALITY_FIELD_LABELS.avgPayRate,
-          false,
-          "",
-          "unknown",
-          null,
-        ),
-  );
+  const avgIdentified = isExplicitClientAvgPayRate(avgValue);
+  const avgMatch = buildClientAvgPayMatchDetail({
+    avgPayLabel: avgIdentified ? avgValue : null,
+    profileCompensation: profileComp,
+    profileMinimumHourlyRate: ctx.profileMinimumHourlyRate,
+  });
+
+  if (avgMatch.identified && avgMatch.compareToProfile) {
+    fields.push(
+      field(
+        "clientAverageHourlyRate",
+        CLIENT_QUALITY_FIELD_LABELS.avgPayRate,
+        true,
+        avgMatch.badgeLabel,
+        avgMatch.matched ? "match" : "mismatch",
+        avgMatch.points,
+      ),
+    );
+  } else if (avgMatch.identified) {
+    const avgPoints = clientQualityAvgPayPoints(avgValue, profileComp);
+    fields.push(
+      field(
+        "clientAverageHourlyRate",
+        CLIENT_QUALITY_FIELD_LABELS.avgPayRate,
+        true,
+        avgMatch.badgeLabel,
+        avgPoints != null && avgPoints >= 50 ? "match" : "mismatch",
+        avgPoints,
+        POSTING_ONLY,
+      ),
+    );
+  } else {
+    fields.push(
+      field(
+        "clientAverageHourlyRate",
+        CLIENT_QUALITY_FIELD_LABELS.avgPayRate,
+        false,
+        "",
+        "unknown",
+        null,
+      ),
+    );
+  }
 
   return fields;
 }

@@ -13,6 +13,7 @@ export type AnalysisReportCacheEntry = {
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
   profilePreferredRegions?: string[] | null;
+  profileMinimumHourlyRate?: number | null;
 };
 
 const STORAGE_PREFIX = "fitfinder:analysis-report:";

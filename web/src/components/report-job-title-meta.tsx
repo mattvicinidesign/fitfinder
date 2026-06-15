@@ -52,6 +52,7 @@ export function ReportJobTitleMeta({
   profilePreferredCompanyTypes,
   profilePreferredMinimumEmployerRating,
   profilePreferredRegions,
+  profileMinimumHourlyRate,
   jobDescription,
   jobTitle,
   companyName,
@@ -68,6 +69,7 @@ export function ReportJobTitleMeta({
   profilePreferredCompanyTypes?: string[] | null;
   profilePreferredMinimumEmployerRating?: number | null;
   profilePreferredRegions?: string[] | null;
+  profileMinimumHourlyRate?: number | null;
   jobDescription?: string | null;
   jobTitle?: string | null;
   companyName?: string | null;
@@ -85,6 +87,7 @@ export function ReportJobTitleMeta({
     profilePreferredCompanyTypes,
     profilePreferredMinimumEmployerRating,
     profilePreferredRegions,
+    profileMinimumHourlyRate,
     jobDescription,
     jobTitle,
     companyName,

@@ -21,6 +21,7 @@ import {
   resolveReportPreferredCompanyTypes,
   resolveReportPreferredMinimumEmployerRating,
   resolveReportPreferredRegions,
+  resolveReportMinimumHourlyRate,
 } from "@/lib/report-profile-prefs";
 import type { Compensation } from "@/lib/types";
 import { SkeletonAnalysisReport } from "@/components/ui/skeletons";
@@ -58,6 +59,9 @@ export function AnalysisReportScreen() {
   const [profilePreferredRegions, setProfilePreferredRegions] = useState<string[]>(
     () => loadLocalProfilePrefs()?.preferredRegions ?? [],
   );
+  const [profileMinimumHourlyRate, setProfileMinimumHourlyRate] = useState<number | null>(
+    () => loadLocalProfilePrefs()?.minimumHourlyRate ?? null,
+  );
 
   useEffect(() => {
     if (!reportId) {
@@ -88,6 +92,7 @@ export function AnalysisReportScreen() {
           profile.preferredMinimumEmployerRating,
         );
         setProfilePreferredRegions(profile.preferredRegions);
+        setProfileMinimumHourlyRate(profile.minimumHourlyRate);
       }
     });
   }, []);
@@ -138,6 +143,10 @@ export function AnalysisReportScreen() {
     profilePreferredRegions,
     entry,
   );
+  const resolvedMinimumHourlyRate = resolveReportMinimumHourlyRate(
+    profileMinimumHourlyRate,
+    entry,
+  );
 
   return (
     <ReportShell
@@ -161,6 +170,7 @@ export function AnalysisReportScreen() {
           profilePreferredCompanyTypes={resolvedCompanyTypes}
           profilePreferredMinimumEmployerRating={resolvedMinRating}
           profilePreferredRegions={resolvedRegions}
+          profileMinimumHourlyRate={resolvedMinimumHourlyRate}
         />
       </div>
     </ReportShell>

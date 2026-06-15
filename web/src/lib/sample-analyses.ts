@@ -134,6 +134,7 @@ function sampleEntry(spec: SampleSpec): AnalysisReportCacheEntry {
     profilePreferredMinimumEmployerRating:
       prefs?.preferredMinimumEmployerRating ?? 5,
     profilePreferredRegions: prefs?.preferredRegions ?? ["United States"],
+    profileMinimumHourlyRate: prefs?.minimumHourlyRate ?? 100,
   };
 }
 

@@ -1,5 +1,5 @@
 import type { AnalysisReportCacheEntry } from "@/lib/analysis-report-cache";
-import { clampEmployerRatingPreference } from "@/lib/employer-rating-match";
+import { clampEmployerRatingPreference, coerceProfileNumeric } from "@/lib/employer-rating-match";
 import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 
 /** Prefer live profile prefs; ignore stale empty arrays saved on older reports. */
@@ -41,4 +41,19 @@ export function resolveReportPreferredRegions(
   const fromLocal = loadLocalProfilePrefs()?.preferredRegions;
   if (fromLocal && fromLocal.length > 0) return fromLocal;
   return live ?? [];
+}
+
+/** Prefer live profile hourly floor; fall back to cached snapshot or local mirror. */
+export function resolveReportMinimumHourlyRate(
+  live: number | null | undefined,
+  cached: AnalysisReportCacheEntry | null | undefined,
+): number | null {
+  if (live != null && Number.isFinite(live) && live > 0) return live;
+  const fromCache = coerceProfileNumeric(cached?.profileMinimumHourlyRate);
+  if (fromCache != null && fromCache > 0) return fromCache;
+  const fromLocal = coerceProfileNumeric(
+    loadLocalProfilePrefs()?.minimumHourlyRate,
+  );
+  if (fromLocal != null && fromLocal > 0) return fromLocal;
+  return live ?? null;
 }
