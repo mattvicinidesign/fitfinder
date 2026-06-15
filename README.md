@@ -95,7 +95,9 @@ behave as **web** (`isNativePlatform()` is false). iOS uses the same bundle afte
 | Backend calls | `web/src/lib/invoke-function.ts` | Same module |
 
 After **any** `web/` UI change, run `cd web && npm run cap:sync` before testing in Xcode, then commit and push to `main` for Vercel.
-After **backend** changes, deploy Edge Functions (`supabase functions deploy`).
+After **backend** changes, deploy Edge Functions (`supabase functions deploy`) and apply new migrations (`supabase db push`).
+
+**Profile preferences on reports:** About Client fields (employer type, minimum client rating) compare against onboarding choices and show green/red pills when a match can be determined. The minimum rating floor is stored in `profiles.preferred_minimum_employer_rating` (migration `0009_profile_preferred_employer_rating.sql`).
 
 **Splash QA** (web): top-right **QA** floater — simulate first launch, returning user, or replay splash. Enabled on web by default; iOS requires `NEXT_PUBLIC_ENABLE_SPLASH_QA=true` at `cap:sync` time.
 
