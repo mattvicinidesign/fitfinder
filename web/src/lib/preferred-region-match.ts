@@ -74,7 +74,7 @@ function inferRegionsFromLocationText(text: string): Set<string> {
   return regions;
 }
 
-function isExactChipMatch(
+function isLiteralRegionMatch(
   pref: string,
   locationDisplay: string,
   clientOrigin: string | null,
@@ -100,6 +100,16 @@ function isExactChipMatch(
     default:
       return false;
   }
+}
+
+function locationMatchesPreferredRegion(
+  pref: string,
+  locationDisplay: string,
+  clientOrigin: string | null,
+  inferred: Set<string>,
+): boolean {
+  if (isLiteralRegionMatch(pref, locationDisplay, clientOrigin)) return true;
+  return inferred.has(pref);
 }
 
 export function buildClientLocationRegionMatchDetail({
@@ -135,37 +145,17 @@ export function buildClientLocationRegionMatchDetail({
     };
   }
 
-  const blob = [display, clientCity, clientOrigin].filter(Boolean).join(" ");
+  const origin = clientOrigin?.trim() ?? null;
+  const blob = [display, clientCity, origin].filter(Boolean).join(" ");
   const inferred = inferRegionsFromLocationText(blob);
-  const prefSet = new Set(prefs);
 
   for (const pref of prefs) {
-    if (isExactChipMatch(pref, display, clientOrigin?.trim() ?? null)) {
+    if (locationMatchesPreferredRegion(pref, display, origin, inferred)) {
       return {
         compareToProfile: true,
         tier: "exact",
         matched: true,
         points: 100,
-      };
-    }
-  }
-
-  if (prefSet.has("Worldwide")) {
-    return {
-      compareToProfile: true,
-      tier: "partial",
-      matched: true,
-      points: 70,
-    };
-  }
-
-  for (const region of inferred) {
-    if (prefSet.has(region)) {
-      return {
-        compareToProfile: true,
-        tier: "partial",
-        matched: true,
-        points: 70,
       };
     }
   }
