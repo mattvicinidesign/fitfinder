@@ -402,7 +402,7 @@ export function buildClientProfileFields(
   const ratingIdentified =
     postingRowIdentified(ratingRow) || Boolean(details?.clientRating?.trim());
   const ratingMatch = buildEmployerRatingMatchDetail({
-    clientRating: details?.clientRating ?? (ratingIdentified ? ratingValue : null),
+    clientRating: ratingIdentified ? ratingValue : null,
     profilePreferredMinimumEmployerRating:
       ctx.profilePreferredMinimumEmployerRating,
   });

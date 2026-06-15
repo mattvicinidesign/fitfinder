@@ -1,10 +1,30 @@
 import { parseClientRatingOutOfFive } from "@/lib/posting-detail-highlights";
 
+/** Postgres numeric columns often arrive as strings from Supabase JS. */
+export function coerceProfileNumeric(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number.parseFloat(trimmed);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
 export function clampEmployerRatingPreference(
   value: number | null | undefined,
 ): number | null {
-  if (value == null || !Number.isFinite(value)) return null;
-  return Math.max(0, Math.min(5, value));
+  const numeric =
+    typeof value === "number"
+      ? value
+      : coerceProfileNumeric(value);
+  if (numeric == null) return null;
+  return Math.max(0, Math.min(5, numeric));
+}
+
+export function formatEmployerRatingDisplay(rating: number): string {
+  return Number.isInteger(rating) ? `${rating}.0` : String(rating);
 }
 
 export interface EmployerRatingMatchDetail {
@@ -61,7 +81,7 @@ export function buildEmployerRatingMatchDetail({
   const matched = parsed >= floor;
 
   return {
-    badgeLabel: value,
+    badgeLabel: formatEmployerRatingDisplay(parsed),
     identified: true,
     compareToProfile: true,
     matched,

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import {
   clampEmployerRatingPreference,
+  coerceProfileNumeric,
 } from "@/lib/employer-rating-match";
 import {
   COMPANY_TYPE_OPTIONS,
@@ -78,17 +79,13 @@ function rowToUserProfile(
 ): UserProfile {
   return {
     fullName: resolveFullName(data.full_name, user),
-    minimumHourlyRate:
-      typeof data.desired_compensation_min === "number"
-        ? data.desired_compensation_min
-        : null,
+    minimumHourlyRate: coerceProfileNumeric(data.desired_compensation_min),
     preferredEngagementTypes: toStringArray(data.preferred_engagement_types),
     preferredCompanyTypes: toStringArray(data.preferred_company_types),
     preferredRegions: toStringArray(data.preferred_regions),
-    preferredMinimumEmployerRating:
-      typeof data.preferred_minimum_employer_rating === "number"
-        ? clampEmployerRatingPreference(data.preferred_minimum_employer_rating)
-        : null,
+    preferredMinimumEmployerRating: clampEmployerRatingPreference(
+      coerceProfileNumeric(data.preferred_minimum_employer_rating),
+    ),
     country: typeof data.country === "string" ? data.country : null,
     timezone: typeof data.timezone === "string" ? data.timezone : null,
     onboardingCompletedAt:

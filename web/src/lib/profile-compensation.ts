@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { clampEmployerRatingPreference } from "@/lib/employer-rating-match";
+import { clampEmployerRatingPreference, coerceProfileNumeric } from "@/lib/employer-rating-match";
 import { compensationFromProfileRow } from "@/lib/profile-desired-compensation";
 import type { Compensation } from "@/lib/types";
 
@@ -110,9 +110,7 @@ export async function fetchProfilePreferredMinimumEmployerRating(): Promise<
     .maybeSingle();
 
   const rating = data?.preferred_minimum_employer_rating;
-  return typeof rating === "number"
-    ? clampEmployerRatingPreference(rating)
-    : null;
+  return clampEmployerRatingPreference(coerceProfileNumeric(rating));
 }
 
 /** Employer types selected during onboarding (Enterprise, Startup, Agency). */

@@ -107,7 +107,22 @@ export function ProfileScreen() {
   }, [activeTab]);
 
   function patch(next: Partial<UserProfile>) {
-    setProfile((p) => ({ ...p, ...next }));
+    setProfile((p) => {
+      const updated = { ...p, ...next };
+      const prefKeys: (keyof UserProfile)[] = [
+        "minimumHourlyRate",
+        "preferredMinimumEmployerRating",
+        "preferredEngagementTypes",
+        "preferredCompanyTypes",
+        "preferredRegions",
+      ];
+      if (Object.keys(next).some((key) => prefKeys.includes(key as keyof UserProfile))) {
+        void saveUserProfile(updated).then(({ error }) => {
+          if (!error) setSavedProfile(updated);
+        });
+      }
+      return updated;
+    });
   }
 
   async function save() {
