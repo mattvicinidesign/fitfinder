@@ -81,6 +81,7 @@ export function ReportJobTitleMeta({
     profileCountry,
     profileTimezone,
     profilePreferredCompanyTypes,
+    profilePreferredMinimumEmployerRating,
     jobDescription,
     jobTitle,
     companyName,

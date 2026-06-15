@@ -98,6 +98,7 @@ export function QualificationSummarySection({
     profileCountry,
     profileTimezone,
     profilePreferredCompanyTypes,
+    profilePreferredMinimumEmployerRating,
     jobDescription,
     jobTitle,
     companyName,
