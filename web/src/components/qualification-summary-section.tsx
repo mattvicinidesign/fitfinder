@@ -1,6 +1,5 @@
 "use client";
 
-import { ClientPreferencesSubsection } from "@/components/client-preferences-subsection";
 import { SummaryScoredField } from "@/components/summary-scored-field";
 import { SectionScoreSubtotal } from "@/components/section-score-subtotal";
 import { SummarySectionCard } from "@/components/summary-section-card";
@@ -147,15 +146,21 @@ export function QualificationSummarySection({
   const roleFields = buildRoleDetailsFields(fieldCtx, postingRows, highlightCtx);
 
   const showClientCard = clientFields.length > 0;
+  const showPreferencesCard = clientPreferencesFields.length > 0;
   const showRoleCard = roleFields.length > 0;
 
-  if (!showClientCard && !showRoleCard) {
+  if (!showClientCard && !showPreferencesCard && !showRoleCard) {
     return null;
   }
 
   const clientProfileSubtotal = sectionCategoryScore(
     score,
     "clientProfile",
+    rollupOptions,
+  );
+  const clientPreferencesSubtotal = sectionCategoryScore(
+    score,
+    "clientPreferences",
     rollupOptions,
   );
   const roleDetailsSubtotal = sectionCategoryScore(
@@ -165,12 +170,17 @@ export function QualificationSummarySection({
   );
 
   const clientProfileFraction = sectionFieldFraction(clientFields);
+  const clientPreferencesFraction = sectionFieldFraction(clientPreferencesFields);
   const roleDetailsFraction = sectionFieldFraction(roleFields);
 
   const locationField = fieldByKey(clientFields, "clientOrigin");
   const ratingField = fieldByKey(clientFields, "clientRating");
   const avgPayField = fieldByKey(clientFields, "clientAverageHourlyRate");
   const employerField = fieldByKey(clientFields, "employerType");
+
+  const prefLocationField = fieldByKey(clientPreferencesFields, "locationPreferred");
+  const prefTimezoneField = fieldByKey(clientPreferencesFields, "timezonePreferred");
+  const prefAiField = fieldByKey(clientPreferencesFields, "aiEmphasis");
 
   const industryField = fieldByKey(roleFields, "industry");
   const roleField = fieldByKey(roleFields, "role");
@@ -204,11 +214,32 @@ export function QualificationSummarySection({
               },
             ]}
           />
-          <ClientPreferencesSubsection fields={clientPreferencesFields} />
           <SectionScoreSubtotal
             score={clientProfileSubtotal}
             fraction={clientProfileFraction}
             animateDelay={350}
+          />
+        </SummarySectionCard>
+        </ReportRevealSection>
+      ) : null}
+
+      {showPreferencesCard ? (
+        <ReportRevealSection>
+        <SummarySectionCard
+          title={scoringCategoryTitleForScore("clientPreferences", score)}
+          info={SCORING_CATEGORY_INFO.clientPreferences}
+        >
+          <ScoredFieldGrid
+            items={[
+              { field: prefLocationField },
+              { field: prefTimezoneField },
+              { field: prefAiField },
+            ]}
+          />
+          <SectionScoreSubtotal
+            score={clientPreferencesSubtotal}
+            fraction={clientPreferencesFraction}
+            animateDelay={400}
           />
         </SummarySectionCard>
         </ReportRevealSection>

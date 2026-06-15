@@ -6,6 +6,7 @@ import {
 } from "@/lib/section-score-rollups";
 import {
   buildQualificationsFields,
+  buildClientPreferencesFields,
   buildRoleDetailsFields,
   equalWeightSectionSubtotal,
 } from "@/lib/section-field-scoring";
@@ -143,6 +144,11 @@ export function sectionCategoryScore(
         rollupOptions.highlightCtx,
       ),
     );
+    if (fromFields != null) return fromFields;
+  }
+
+  if (sectionId === "clientPreferences") {
+    const fromFields = equalWeightSectionSubtotal(buildClientPreferencesFields(ctx));
     if (fromFields != null) return fromFields;
   }
 

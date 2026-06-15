@@ -588,7 +588,11 @@ export function buildClientPreferencesFields(
     aiState = aiPts.state;
     aiPoints = aiPts.points;
     aiLabel =
-      aiPts.state === "unknown" ? "—" : aiPts.state === "match" ? "YES" : "NO";
+      aiPts.state === "unknown"
+        ? NOT_SPECIFIED_LABEL
+        : aiPts.state === "match"
+          ? "YES"
+          : "NO";
     if (aiDetail && aiState !== "match" && isAiEmphasisPreferenceMatch(aiDetail)) {
       aiState = "match";
       aiPoints = 100;
@@ -634,7 +638,7 @@ export function buildClientPreferencesFields(
       tzReqMatched ? "match" : "mismatch",
       tzReqIdentified ? (tzReqMatched ? 100 : tzCat.points ?? 0) : null,
     ),
-    field("aiEmphasis", "AI", aiIdentified, aiLabel, aiState, aiPoints),
+    field("aiEmphasis", "AI Emphasis", aiIdentified, aiLabel, aiState, aiPoints),
   ];
 }
 
