@@ -27,6 +27,11 @@ export function parseClientRatingOutOfFive(label: string): number | null {
   if (m) return Number.parseFloat(m[1]);
   const bare = label.match(/^(\d+(?:\.\d+)?)$/);
   if (bare) return Number.parseFloat(bare[1]);
+  const first = label.match(/(\d+(?:\.\d+)?)/);
+  if (first) {
+    const rating = Number.parseFloat(first[1]);
+    if (Number.isFinite(rating) && rating >= 0 && rating <= 5) return rating;
+  }
   return null;
 }
 

@@ -16,10 +16,9 @@ import {
   fetchProfileQualifiedIndustries,
   fetchProfileQualifiedSkills,
   fetchProfileCountry,
-  fetchProfilePreferredCompanyTypes,
-  fetchProfilePreferredMinimumEmployerRating,
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
+import { fetchUserProfile } from "@/lib/profile";
 import type { AnalysisResult, Compensation } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -175,16 +174,19 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
       fetchProfileQualifiedSkills(),
       fetchProfileCountry(),
       fetchProfileTimezone(),
-      fetchProfilePreferredCompanyTypes(),
-      fetchProfilePreferredMinimumEmployerRating(),
-    ]).then(([pay, industries, skills, country, timezone, companyTypes, minRating]) => {
+      fetchUserProfile(),
+    ]).then(([pay, industries, skills, country, timezone, profile]) => {
       setProfileDesiredCompensation(pay);
       setProfileQualifiedIndustries(industries);
       setProfileQualifiedSkills(skills);
       setProfileCountry(country);
       setProfileTimezone(timezone);
-      setProfilePreferredCompanyTypes(companyTypes);
-      setProfilePreferredMinimumEmployerRating(minRating);
+      if (profile) {
+        setProfilePreferredCompanyTypes(profile.preferredCompanyTypes);
+        setProfilePreferredMinimumEmployerRating(
+          profile.preferredMinimumEmployerRating,
+        );
+      }
     });
   }, [demo]);
 
@@ -226,6 +228,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         ...(parsedResume ? { parsedResume } : {}),
       });
       const reportId = analysisId ?? crypto.randomUUID();
+      const profile = await fetchUserProfile();
       saveAnalysisReport(reportId, {
         result: {
           ...result,
@@ -237,8 +240,11 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         profileQualifiedSkills,
         profileCountry,
         profileTimezone,
-        profilePreferredCompanyTypes,
-        profilePreferredMinimumEmployerRating,
+        profilePreferredCompanyTypes:
+          profile?.preferredCompanyTypes ?? profilePreferredCompanyTypes,
+        profilePreferredMinimumEmployerRating:
+          profile?.preferredMinimumEmployerRating ??
+          profilePreferredMinimumEmployerRating,
       });
       toast.success("Analysis complete and saved.");
       openAnalysisReport(reportId, "/analyze", router);

@@ -12,10 +12,9 @@ import {
   fetchProfileQualifiedIndustries,
   fetchProfileQualifiedSkills,
   fetchProfileCountry,
-  fetchProfilePreferredCompanyTypes,
-  fetchProfilePreferredMinimumEmployerRating,
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
+import { fetchUserProfile } from "@/lib/profile";
 import { resolvePostingContext } from "@/lib/posting-context";
 import type { AnalysisRecord, AnalysisResult, Compensation, Narrative } from "@/lib/types";
 import { toast } from "sonner";
@@ -82,16 +81,19 @@ export function CompareScreen() {
       fetchProfileQualifiedSkills(),
       fetchProfileCountry(),
       fetchProfileTimezone(),
-      fetchProfilePreferredCompanyTypes(),
-      fetchProfilePreferredMinimumEmployerRating(),
-    ]).then(([pay, industries, skills, country, timezone, companyTypes, minRating]) => {
+      fetchUserProfile(),
+    ]).then(([pay, industries, skills, country, timezone, profile]) => {
       setProfileDesiredCompensation(pay);
       setProfileQualifiedIndustries(industries);
       setProfileQualifiedSkills(skills);
       setProfileCountry(country);
       setProfileTimezone(timezone);
-      setProfilePreferredCompanyTypes(companyTypes);
-      setProfilePreferredMinimumEmployerRating(minRating);
+      if (profile) {
+        setProfilePreferredCompanyTypes(profile.preferredCompanyTypes);
+        setProfilePreferredMinimumEmployerRating(
+          profile.preferredMinimumEmployerRating,
+        );
+      }
     });
   }, []);
 

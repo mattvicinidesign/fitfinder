@@ -11,12 +11,15 @@ import {
   fetchProfileQualifiedIndustries,
   fetchProfileQualifiedSkills,
   fetchProfileCountry,
-  fetchProfilePreferredCompanyTypes,
-  fetchProfilePreferredMinimumEmployerRating,
   fetchProfileTimezone,
 } from "@/lib/profile-compensation";
 import type { AnalysisReportCacheEntry } from "@/lib/analysis-report-cache";
 import { resolveReportEntry } from "@/lib/sample-analyses";
+import { fetchUserProfile } from "@/lib/profile";
+import {
+  resolveReportPreferredCompanyTypes,
+  resolveReportPreferredMinimumEmployerRating,
+} from "@/lib/report-profile-prefs";
 import type { Compensation } from "@/lib/types";
 import { SkeletonAnalysisReport } from "@/components/ui/skeletons";
 import {
@@ -65,16 +68,19 @@ export function AnalysisReportScreen() {
       fetchProfileQualifiedSkills(),
       fetchProfileCountry(),
       fetchProfileTimezone(),
-      fetchProfilePreferredCompanyTypes(),
-      fetchProfilePreferredMinimumEmployerRating(),
-    ]).then(([pay, industries, skills, country, timezone, companyTypes, minRating]) => {
+      fetchUserProfile(),
+    ]).then(([pay, industries, skills, country, timezone, profile]) => {
       setProfileDesiredCompensation(pay);
       setProfileQualifiedIndustries(industries);
       setProfileQualifiedSkills(skills);
       setProfileCountry(country);
       setProfileTimezone(timezone);
-      setProfilePreferredCompanyTypes(companyTypes);
-      setProfilePreferredMinimumEmployerRating(minRating);
+      if (profile) {
+        setProfilePreferredCompanyTypes(profile.preferredCompanyTypes);
+        setProfilePreferredMinimumEmployerRating(
+          profile.preferredMinimumEmployerRating,
+        );
+      }
     });
   }, []);
 
@@ -112,6 +118,15 @@ export function AnalysisReportScreen() {
     );
   }
 
+  const resolvedCompanyTypes = resolveReportPreferredCompanyTypes(
+    profilePreferredCompanyTypes,
+    entry,
+  );
+  const resolvedMinRating = resolveReportPreferredMinimumEmployerRating(
+    profilePreferredMinimumEmployerRating,
+    entry,
+  );
+
   return (
     <ReportShell
       footer={<SaveReportButton analysisId={entry.analysisId} />}
@@ -131,13 +146,8 @@ export function AnalysisReportScreen() {
           }
           profileCountry={entry.profileCountry ?? profileCountry}
           profileTimezone={entry.profileTimezone ?? profileTimezone}
-          profilePreferredCompanyTypes={
-            entry.profilePreferredCompanyTypes ?? profilePreferredCompanyTypes
-          }
-          profilePreferredMinimumEmployerRating={
-            entry.profilePreferredMinimumEmployerRating ??
-            profilePreferredMinimumEmployerRating
-          }
+          profilePreferredCompanyTypes={resolvedCompanyTypes}
+          profilePreferredMinimumEmployerRating={resolvedMinRating}
         />
       </div>
     </ReportShell>
