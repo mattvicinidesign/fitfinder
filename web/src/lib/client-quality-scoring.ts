@@ -28,7 +28,7 @@ export const CLIENT_QUALITY_FIELD_LABELS = {
   employerType: "Employer Type",
   posted: "Posted",
   applicants: "Who Can Apply",
-  location: "Location",
+  location: "Region",
   rating: "Rating",
   avgPayRate: "Avg Pay rate",
 } as const;

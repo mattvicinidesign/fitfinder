@@ -53,8 +53,8 @@ export function createPreferenceSteps(
       ),
     },
     {
-      title: "What types of companies do you prefer?",
-      subtitle: "Feeds client fit and company-type alignment.",
+      title: "What types of employers do you prefer?",
+      subtitle: "Feeds client fit and employer-type alignment.",
       content: (
         <ChipMultiSelect
           options={COMPANY_TYPE_OPTIONS}

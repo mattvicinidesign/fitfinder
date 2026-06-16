@@ -18,6 +18,8 @@ export interface ParsedResume {
   desiredCompensation?: Compensation | null;
   /** Primary role archetype, e.g. "Product Designer". */
   roleTitle?: string | null;
+  /** Personal portfolio or website URL when listed on the resume. */
+  portfolioUrl?: string | null;
 }
 
 export interface WorkHistoryItem {
@@ -193,6 +195,57 @@ export interface PostingContext {
   engagementPath: "contract_to_hire" | "contract" | "direct_hire" | "unknown";
   payStructure: "hourly" | "fixed_price" | "salary" | "unknown";
   badges: string[];
+}
+
+/**
+ * One job requirement mapped to the resume evidence that satisfies it.
+ * Produced by the proposal generation engine (POST /generate-proposal).
+ */
+export interface RequirementMatch {
+  /** Key requirement extracted from the job description. */
+  requirement: string;
+  /** Resume projects / experience that satisfy the requirement. */
+  evidence: string[];
+  /** 0–100 confidence that the evidence covers the requirement. */
+  confidence: number;
+}
+
+/** A resume project surfaced in the proposal with job-specific relevance. */
+export interface RelevantProject {
+  name: string;
+  whyRelevant: string;
+  keyContributions: string[];
+}
+
+/** Structured, scannable proposal sections returned by the AI layer. */
+export interface ProposalSections {
+  /** 1–3 short tailored paragraphs after "Hi There 👋". */
+  introduction: string;
+  portfolioUrl: string | null;
+  /** 3–5 most relevant projects, ordered by fit to the job. */
+  relevantProjects: RelevantProject[];
+  /** 5–8 expertise areas relevant to the target role. */
+  coreExpertise: string[];
+  howIWork: string[];
+  whatIDeliver: string[];
+  /** Short closing paragraph + sign-off. */
+  closing: string;
+}
+
+/** A generated, job-tailored proposal plus its requirement→evidence mapping. */
+export interface ProposalGeneration {
+  id: string;
+  createdAt: string;
+  /** Compiled plain text (copy / PDF). Mirrors structured sections when present. */
+  proposalText: string;
+  /** Structured sections for premium scannable UI. */
+  sections?: ProposalSections;
+  /** Key requirements extracted from the job description. */
+  jobRequirements: string[];
+  /** Requirement→evidence mapping powering the "Why" panel. */
+  evidenceMatches: RequirementMatch[];
+  /** Analysis/report this proposal was generated from, when known. */
+  reportId: string | null;
 }
 
 /** Full analysis payload returned by POST /analyze. */

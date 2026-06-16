@@ -419,7 +419,7 @@ const ROW_DEFS: {
   title: string;
   section: PostingDetailSection;
 }[] = [
-  { key: "clientOrigin", title: "Location", section: "client" },
+  { key: "clientOrigin", title: "Region", section: "client" },
   { key: "clientRating", title: "Rating", section: "client" },
   { key: "clientAverageHourlyRate", title: "Avg Pay rate", section: "client" },
   { key: "role", title: "Title", section: "role" },

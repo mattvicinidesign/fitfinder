@@ -9,6 +9,7 @@ import {
   normalizeIndustryList,
 } from "./tech_industries.ts";
 import type { ParsedResume } from "./types.ts";
+import { extractPortfolioFromText, normalizePortfolioUrl } from "./portfolio_url.ts";
 
 function dedupeSkills(skills: string[]): string[] {
   const seen = new Set<string>();
@@ -83,6 +84,16 @@ export function normalizeParsedResume(
     (l) => !isExcludedIndustryMatch(l),
   );
 
+  const portfolioFromModel = parsed.portfolioUrl?.trim()
+    ? normalizePortfolioUrl(parsed.portfolioUrl.trim())
+    : null;
+  const portfolioUrl =
+    (resumeText
+      ? extractPortfolioFromText(resumeText, { ...parsed, portfolioUrl: null })
+      : null) ??
+    portfolioFromModel ??
+    null;
+
   return {
     ...parsed,
     industries: industriesFiltered,
@@ -93,5 +104,6 @@ export function normalizeParsedResume(
       ...toolsFromText,
       ...toolsFromWork,
     ]),
+    portfolioUrl,
   };
 }

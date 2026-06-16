@@ -164,6 +164,8 @@ export function AnalysisReportScreen() {
         <AnalysisResultView
           result={entry.result}
           analysisId={entry.analysisId}
+          reportId={reportId}
+          resumeId={entry.resumeId ?? null}
           profileDesiredCompensation={
             entry.profileDesiredCompensation ?? profileDesiredCompensation
           }

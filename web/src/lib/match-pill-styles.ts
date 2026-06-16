@@ -13,9 +13,9 @@ export const PARTIAL_MATCH_PILL_CLASS =
 /** Neutral pill for identified values without a match verdict. */
 export const NEUTRAL_PILL_CLASS = "bg-muted text-foreground font-medium";
 
-/** Blue pill for not specified / missing posting values. */
+/** Blue pill for not specified / missing posting values (muted, deemphasized). */
 export const NOT_SPECIFIED_PILL_CLASS =
-  "bg-sky-500/20 text-sky-400 font-semibold";
+  "bg-sky-500/10 text-sky-400/55 font-medium";
 
 /** @deprecated Use NOT_SPECIFIED_PILL_CLASS for missing posting values. */
 export const MUTED_PILL_CLASS = NOT_SPECIFIED_PILL_CLASS;

@@ -242,8 +242,8 @@ export function ProfileScreen() {
         ) : activeTab === "preferences" ? (
           <div className="space-y-7">
             <Section
-              title="Pay"
-              subtitle="Skills, tools, industries, and roles come from your resume — this is about what you want."
+              title="Min hourly rate"
+              subtitle="From onboarding — we flag jobs that pay below your floor."
             >
               <div className="flex items-center gap-2">
                 <span className="text-[20px] text-muted-foreground">$</span>
@@ -330,7 +330,7 @@ export function ProfileScreen() {
               />
             </Section>
 
-            <Section title="Location">
+            <Section title="Region">
               <ChipMultiSelect
                 options={REGION_OPTIONS}
                 value={profile.preferredRegions}

@@ -21,6 +21,8 @@ export interface ParsedResume {
   timezone?: string | null;
   desiredCompensation?: Compensation | null;
   roleTitle?: string | null;
+  /** Personal portfolio or website URL when listed on the resume. */
+  portfolioUrl?: string | null;
 }
 
 export interface Compensation {
@@ -201,6 +203,46 @@ export interface AnalysisResult {
   score: ScoreResult;
   narrative: Narrative;
   postingContext?: PostingContext;
+}
+
+/**
+ * One job requirement mapped to the resume evidence that satisfies it.
+ * Mirrors supabase/functions/_shared/types.ts RequirementMatch.
+ */
+export interface RequirementMatch {
+  requirement: string;
+  evidence: string[];
+  /** 0–100 confidence that the evidence covers the requirement. */
+  confidence: number;
+}
+
+/** A resume project surfaced in the proposal with job-specific relevance. */
+export interface RelevantProject {
+  name: string;
+  whyRelevant: string;
+  keyContributions: string[];
+}
+
+/** Structured, scannable proposal sections returned by the AI layer. */
+export interface ProposalSections {
+  introduction: string;
+  portfolioUrl: string | null;
+  relevantProjects: RelevantProject[];
+  coreExpertise: string[];
+  howIWork: string[];
+  whatIDeliver: string[];
+  closing: string;
+}
+
+/** A generated, job-tailored proposal plus its requirement→evidence mapping. */
+export interface ProposalGeneration {
+  id: string;
+  createdAt: string;
+  proposalText: string;
+  sections?: ProposalSections;
+  jobRequirements: string[];
+  evidenceMatches: RequirementMatch[];
+  reportId: string | null;
 }
 
 export interface AnalysisRecord {

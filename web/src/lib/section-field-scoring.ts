@@ -629,7 +629,7 @@ export function buildClientPreferencesFields(
   return [
     field(
       "locationPreferred",
-      "Location",
+      "Region",
       locationIdentified,
       locationDisplay.badgeLabel,
       locationMatched ? "match" : "mismatch",

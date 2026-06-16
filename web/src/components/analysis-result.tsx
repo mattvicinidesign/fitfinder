@@ -1,5 +1,6 @@
 "use client";
 
+import { ApplicationAssistantSection } from "@/components/application-assistant-section";
 import { QualificationBreakdown } from "@/components/qualification-breakdown";
 import { ReportJobTitleMeta } from "@/components/report-job-title-meta";
 import {
@@ -13,6 +14,8 @@ import type { AnalysisResult, Compensation } from "@/lib/types";
 export function AnalysisResultView({
   result,
   analysisId = null,
+  reportId = null,
+  resumeId = null,
   profileDesiredCompensation = null,
   profileQualifiedIndustries = null,
   profileQualifiedSkills = null,
@@ -26,6 +29,9 @@ export function AnalysisResultView({
 }: {
   result: AnalysisResult;
   analysisId?: string | null;
+  /** Stable key for caching the generated proposal; falls back to analysisId. */
+  reportId?: string | null;
+  resumeId?: string | null;
   profileDesiredCompensation?: Compensation | null;
   profileQualifiedIndustries?: string[] | null;
   profileQualifiedSkills?: string[] | null;
@@ -110,6 +116,17 @@ export function AnalysisResultView({
             profileMinimumHourlyRate={profileMinimumHourlyRate}
           />
         </div>
+
+        <ApplicationAssistantSection
+          reportId={reportId ?? analysisId}
+          resumeId={resumeId}
+          parsedJob={parsedJob}
+          parsedResume={parsedResume}
+          narrative={result.narrative}
+          jobDescription={jobDescription}
+          jobTitle={displayJobTitle}
+          companyName={result.companyName}
+        />
       </div>
     </ReportRevealProvider>
   );

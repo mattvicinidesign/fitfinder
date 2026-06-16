@@ -248,6 +248,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           jobDescription: result.jobDescription ?? jobContent,
         },
         analysisId,
+        resumeId,
         profileDesiredCompensation,
         profileQualifiedIndustries,
         profileQualifiedSkills,

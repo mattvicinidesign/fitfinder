@@ -45,7 +45,7 @@ export function JobPostingRequirementFields({
 
   return (
     <div className="grid grid-cols-2 gap-3 min-w-0">
-      <SummaryScoredField field={requirementField("locationPreferred", "Location", country)} />
+      <SummaryScoredField field={requirementField("locationPreferred", "Region", country)} />
       <SummaryScoredField field={requirementField("timezonePreferred", "Timezone", timezone)} />
     </div>
   );

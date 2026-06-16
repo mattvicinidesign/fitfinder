@@ -8,16 +8,28 @@
 
 import { invokeFunction } from "@/lib/invoke-function";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
-import type { AnalysisResult, ParsedJob, ParsedResume } from "@/lib/types";
+import type {
+  AnalysisResult,
+  ParsedJob,
+  ParsedResume,
+  ProposalGeneration,
+} from "@/lib/types";
 
 const ANALYZE_TIMEOUT_MS = 120_000;
 const DEFAULT_TIMEOUT_MS = 90_000;
+const LONG_AI_TIMEOUT_MS = 120_000;
+
+const LONG_AI_FUNCTIONS = new Set(["analyze", "generate-proposal"]);
 
 async function invoke<T>(
   name: string,
   body: Record<string, unknown>,
 ): Promise<T> {
-  const timeoutMs = name === "analyze" ? ANALYZE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+  const timeoutMs = LONG_AI_FUNCTIONS.has(name)
+    ? name === "analyze"
+      ? ANALYZE_TIMEOUT_MS
+      : LONG_AI_TIMEOUT_MS
+    : DEFAULT_TIMEOUT_MS;
   try {
     return await invokeFunction<T>(name, body, timeoutMs);
   } catch (e) {
@@ -74,4 +86,29 @@ export async function analyze(
     analysisId: data.analysisId ?? null,
     result: normalizeAnalysisResult(data.result),
   };
+}
+
+export interface GenerateProposalArgs {
+  parsedResume?: ParsedResume | null;
+  parsedJob: ParsedJob;
+  jobDescription?: string | null;
+  jobTitle?: string | null;
+  companyName?: string | null;
+  strengths?: string[];
+  gaps?: string[];
+  candidateName?: string | null;
+  portfolioUrl?: string | null;
+  reportId?: string | null;
+  resumeId?: string | null;
+  resumeText?: string | null;
+}
+
+export async function generateProposal(
+  args: GenerateProposalArgs,
+): Promise<ProposalGeneration> {
+  const data = await invoke<{ proposal: ProposalGeneration }>(
+    "generate-proposal",
+    { ...args } as unknown as Record<string, unknown>,
+  );
+  return data.proposal;
 }

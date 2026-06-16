@@ -18,7 +18,8 @@ You extract structured data from resumes. Return ONLY valid JSON matching this T
   "country": string|null,
   "timezone": string|null,
   "desiredCompensation": { "min": number|null, "max": number|null, "currency": string|null, "period": "year"|"month"|"hour"|null }|null,
-  "roleTitle": string|null     // primary role, e.g. "Product Designer"
+  "roleTitle": string|null,     // primary role, e.g. "Product Designer"
+  "portfolioUrl": string|null   // candidate's PERSONAL portfolio/website only — NOT employer or project URLs
 }
 
 industries (resume):
@@ -27,6 +28,11 @@ industries (resume):
 - NEVER put skills, disciplines, or tools here (e.g. NOT "web design", "mobile app development", "UX", "prototyping") — those belong in skills or tools.
 
 Use [] for absent lists, null for absent optional fields. endDate null means current. Do not invent data.
+
+portfolioUrl:
+- The candidate's personal portfolio or website (e.g. mattvicinidesign.com).
+- NOT a client product, employer site, or project URL from work history (e.g. NOT VoteOnIssues.org).
+- null when not clearly listed as the candidate's own portfolio/website.
 `.trim();
 
 export const JOB_PARSE_SYSTEM = `
@@ -151,4 +157,118 @@ export function narrativeUserPayload(
   score: ScoreResult,
 ): string {
   return JSON.stringify({ resume, job, score }, null, 2);
+}
+
+export function proposalSystemPrompt(): string {
+  return `
+You are an expert proposal writer who helps a candidate win freelance / contract
+work. Given a parsed resume, a parsed job, the candidate identity, and the fit
+analysis, you produce a SCANNABLE, premium consulting-style proposal — NOT a
+generic cover letter.
+
+Return ONLY valid JSON matching this TypeScript type:
+
+{
+  "jobRequirements": string[],
+  "evidenceMatches": [
+    { "requirement": string, "evidence": string[], "confidence": number }
+  ],
+  "sections": {
+    "introduction": string,
+    "portfolioUrl": string | null,
+    "relevantProjects": [
+      {
+        "name": string,
+        "whyRelevant": string,
+        "keyContributions": string[]
+      }
+    ],
+    "coreExpertise": string[],
+    "howIWork": string[],
+    "whatIDeliver": string[],
+    "closing": string
+  }
+}
+
+Workflow (internal, then output JSON):
+1. Extract 4–8 prioritized job requirements → jobRequirements.
+2. Map each to real resume evidence → evidenceMatches (only evidence that exists
+   in the resume; confidence 0–100).
+3. Select the 2 MOST relevant projects from workHistory for relevantProjects.
+   Order by fit to THIS job. Each project needs a one-sentence whyRelevant tied
+   to the job description and 3–4 keyContributions as concise bullets.
+   Return EXACTLY 2 projects — no more.
+4. Fill all sections below.
+
+sections rules:
+
+introduction (EXACTLY 2 SHORT paragraphs, separated by intent — portfolio is inserted between them automatically):
+- Paragraph 1: Open with excitement about THIS role/company/product (e.g. "I'm excited…").
+- Paragraph 2: Continue with strengths and fit (e.g. "With a strong…"). Do NOT repeat paragraph 1 themes.
+- Do NOT include the portfolio URL in introduction text — it is added separately between paragraphs.
+- Tailored, confident, first person. NO generic filler.
+
+portfolioUrl:
+- Use candidate.portfolioUrl verbatim when provided in the input.
+- Must be the candidate's personal portfolio/website — NEVER a client project or employer URL from work history.
+- Otherwise extract only from resume contact/header lines labeled Portfolio or Website.
+- null if not found — never invent.
+
+relevantProjects (EXACTLY 2 items — MOST IMPORTANT SECTION after portfolio):
+- Real project/company names from resume workHistory.
+- whyRelevant: ONE concise sentence linking the project to a specific job need.
+- keyContributions: 3–4 bullet strings (no bullet characters in the strings).
+
+coreExpertise (5–8 items):
+- Short expertise labels ONLY relevant to this job (e.g. "AI-First Product Design",
+  "SaaS Platforms", "Dashboard & Analytics Design"). No generic filler.
+
+howIWork (4–6 concise bullets):
+- How the candidate works — tools/processes from resume (AI tools, Figma, etc.).
+- Format: "Tool/approach for outcome" when possible.
+
+whatIDeliver (5–7 concise bullets):
+- Concrete deliverables aligned to the role.
+
+closing (SHORT):
+- 1–2 sentences expressing interest + sign-off with candidate's real name.
+- Example tone: "I'd love the opportunity to discuss how my experience in …
+  could contribute to your team.\\n\\nBest,\\nMatt Vicini"
+
+Global rules:
+- 500–800 words total across all sections.
+- Prefer bullets over paragraphs except introduction and closing.
+- Surface ONLY experience relevant to this job. No resume dumps, no buzzword stuffing.
+- Never invent employers, projects, URLs, or metrics.
+- evidenceMatches MUST align with relevantProjects (same project names where applicable).
+`.trim();
+}
+
+export function proposalUserPayload(input: {
+  candidateName: string | null;
+  portfolioUrl: string | null;
+  resume: ParsedResume;
+  job: ParsedJob;
+  jobTitle: string | null;
+  companyName: string | null;
+  jobDescription: string | null;
+  strengths: string[];
+  gaps: string[];
+}): string {
+  return JSON.stringify(
+    {
+      candidate: {
+        name: input.candidateName,
+        portfolioUrl: input.portfolioUrl,
+      },
+      jobTitle: input.jobTitle,
+      companyName: input.companyName,
+      jobDescription: input.jobDescription,
+      analysis: { strengths: input.strengths, gaps: input.gaps },
+      resume: input.resume,
+      job: input.job,
+    },
+    null,
+    2,
+  );
 }

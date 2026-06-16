@@ -5,6 +5,7 @@ import { recordRecentActivityFromReport } from "@/lib/recent-activity";
 export type AnalysisReportCacheEntry = {
   result: AnalysisResult;
   analysisId: string | null;
+  resumeId?: string | null;
   profileDesiredCompensation?: Compensation | null;
   profileQualifiedIndustries?: string[] | null;
   profileQualifiedSkills?: string[] | null;
