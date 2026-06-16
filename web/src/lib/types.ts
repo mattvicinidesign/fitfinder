@@ -261,3 +261,15 @@ export interface AnalysisRecord {
   job_description?: string | null;
   created_at: string;
 }
+
+/** Normalized job card from The Muse API (Home recommended carousel). */
+export interface RecommendedJob {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  level: string;
+  publishedAt: string;
+  applyUrl: string;
+  logoUrl: string | null;
+}

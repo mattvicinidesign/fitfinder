@@ -13,7 +13,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { IosGroupedSection } from "@/components/ui/ios-grouped-section";
 import { IosAnalysisListRow } from "@/components/ui/ios-list-row";
-import { GuestUpgradePrompt } from "@/components/guest-upgrade-prompt";
+import { RecommendedJobsSection } from "@/components/recommended-jobs-section";
 import {
   SkeletonAnalysisList,
   SkeletonPrimitive,
@@ -143,7 +143,7 @@ export function HomeScreen() {
         <div className="px-4 -mt-7">
         <Link
           href="/analyze"
-          className="flex items-center gap-3 rounded-2xl bg-card px-4 py-4 shadow-lg ring-1 ring-border transition-colors hover:bg-muted/40"
+          className="flex items-center gap-3 rounded-2xl bg-card px-4 py-4 shadow-lg ring-1 ring-border"
         >
           <Image
             src="/only-fit-wordmark.png"
@@ -160,7 +160,7 @@ export function HomeScreen() {
         </div>
 
         <div className="py-6 space-y-6">
-          <GuestUpgradePrompt variant="save" />
+          <RecommendedJobsSection />
 
           <section className="space-y-2">
             <div className="flex items-center justify-between px-4">

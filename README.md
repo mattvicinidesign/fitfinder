@@ -46,7 +46,7 @@ See [`supabase/README.md`](./supabase/README.md).
 
 ```bash
 cd web
-# Create .env.local with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+# Create .env.local with NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and MUSE_API_KEY
 npm install
 npm run dev                        # http://localhost:3000
 ```
@@ -92,6 +92,7 @@ behave as **web** (`isNativePlatform()` is false). iOS uses the same bundle afte
 | Concern | Web / preview / Vercel | iOS (Capacitor) |
 | ------- | ---------------------- | --------------- |
 | Edge Functions | `/api/functions/*` proxy | Direct Supabase URL |
+| Recommended jobs | `GET /api/jobs/recommended` (The Muse, 5m revalidate) | Same route baked at `cap:sync` build time |
 | Auth session | Cookies + server PKCE callback | localStorage + client callback + `fitfinder://` |
 | Backend calls | `web/src/lib/invoke-function.ts` | Same module |
 | Modals / sheets | Portal to `#app-overlay-root` in AppFrame | Same — never `document.body` + `position: fixed` |
@@ -100,6 +101,8 @@ After **any** `web/` UI change, run `cd web && npm run cap:sync` before testing 
 After **backend** changes, deploy Edge Functions (`supabase functions deploy analyze generate-proposal`) and apply new migrations (`supabase db push`).
 
 **Application Assistant:** On a fit report, generate a tailored proposal from resume + job data. Portfolio URL is extracted from the stored resume (not project URLs), inserted between intro paragraphs, and included in PDF export. Regenerate from the proposal modal.
+
+**Recommended jobs (Home):** Horizontal carousel of product-design listings from [The Muse API](https://www.themuse.com/developers/api/v2). Server route `GET /api/jobs/recommended` filters the Design and UX category, prioritizes product-design titles, and enriches cards with company logos. Cards link to the posting in a new tab. Requires `MUSE_API_KEY` in `web/.env.local` (and Vercel env). Smoke test: `GET /api/jobs/test` in dev.
 
 **Profile preferences on reports:** Onboarding collects pay floor, employer type, minimum client rating, project type (Ongoing / One-Time), and regions. These drive green/red pills on the fit report when a posting value can be compared:
 
@@ -140,7 +143,7 @@ Repo: [github.com/mattvicinidesign/fitfinder](https://github.com/mattvicinidesig
 Quick summary:
 
 1. Import repo in Vercel with **Root Directory** = `web` (not `./`), **Framework Preset** = **Next.js**.
-2. Add env vars from your local `web/.env.local` (`NEXT_PUBLIC_SUPABASE_*`, optional `SUPABASE_SERVICE_ROLE_KEY`).
+2. Add env vars from your local `web/.env.local` (`NEXT_PUBLIC_SUPABASE_*`, `MUSE_API_KEY`, optional `SUPABASE_SERVICE_ROLE_KEY`).
 3. Do **not** set `CAPACITOR_BUILD` on Vercel.
 4. Deploy, then add your production URL to Supabase Auth redirect URLs (`/auth/callback`).
 5. Push to `main` for auto-deploys after the project is connected.

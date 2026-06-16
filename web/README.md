@@ -21,10 +21,12 @@ src/
 ├── components/
 │   ├── app-shell/            # shared navigation (desktop + mobile)
 │   ├── analysis-result.tsx
+│   ├── recommended-jobs-section.tsx  # Home carousel (The Muse)
 │   ├── resume-file-picker.tsx
 │   └── capacitor-bridge.tsx  # fitfinder:// deep links
 └── lib/
     ├── api.ts                # shared Edge Function client (no scoring in UI)
+    ├── muse-jobs.ts          # The Muse recommended jobs fetch + transform
     ├── navigation.ts         # single nav config
     ├── platform.ts           # Capacitor detection
     └── resume-upload.ts      # Storage + parse-resume
@@ -56,7 +58,7 @@ deep links.
 ## Setup
 
 ```bash
-# Create .env.local with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+# Create .env.local with NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and MUSE_API_KEY
 npm install
 npm run dev
 ```
@@ -82,4 +84,5 @@ Root directory: `web/`. Required env vars:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `MUSE_API_KEY` — The Muse jobs API for Home recommended jobs (`/api/jobs/recommended`)
 - `SUPABASE_SERVICE_ROLE_KEY` (optional; delete account)

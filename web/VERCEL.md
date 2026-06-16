@@ -28,6 +28,7 @@ Copy values from your local `web/.env.local`.
 | -------- | -------- | ----- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase → Project Settings → API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Same page (`anon` / publishable key) |
+| `MUSE_API_KEY` | Yes | [The Muse API](https://www.themuse.com/developers/api/v2) — Home recommended jobs carousel |
 | `SUPABASE_SERVICE_ROLE_KEY` | Optional on Vercel | Account delete runs via Supabase Edge Function (`delete-account`); service role lives in Supabase secrets |
 | `NEXT_PUBLIC_APP_URL` | Optional | Custom domain only (e.g. `https://fitfinder.vercel.app`). Preview/production URLs are set automatically from `VERCEL_URL` at build time. |
 
