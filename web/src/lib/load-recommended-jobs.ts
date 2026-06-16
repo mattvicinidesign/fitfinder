@@ -53,12 +53,23 @@ async function fetchWebRecommendedJobs(): Promise<RecommendedJob[]> {
 
 /**
  * Recommended jobs for Home.
- * Web: live API route. Native: bundled at cap:sync (CapacitorHttp breaks local
- * asset fetch); optional live refresh from production Vercel via CapacitorHttp.
+ * Tries live API first; falls back to bundled snapshot (baked at build / cap:sync)
+ * when the server key is missing or the route errors.
  */
 export async function loadRecommendedJobs(): Promise<RecommendedJob[]> {
   if (!isNativePlatform()) {
-    return fetchWebRecommendedJobs();
+    try {
+      const jobs = await fetchWebRecommendedJobs();
+      if (jobs.length > 0) return jobs;
+    } catch {
+      /* fall back to bundled snapshot */
+    }
+
+    if (BUNDLED_RECOMMENDED_JOBS.length > 0) {
+      return BUNDLED_RECOMMENDED_JOBS;
+    }
+
+    throw new Error("Couldn't load recommended jobs.");
   }
 
   try {

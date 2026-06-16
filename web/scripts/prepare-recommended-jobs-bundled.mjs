@@ -206,8 +206,14 @@ async function main() {
   loadEnvLocal();
   const apiKey = process.env.MUSE_API_KEY?.trim();
   if (!apiKey) {
+    if (fs.existsSync(outPath)) {
+      console.warn(
+        "[prepare-recommended-jobs-bundled] MUSE_API_KEY missing — keeping existing bundle.",
+      );
+      return;
+    }
     console.warn(
-      "[prepare-recommended-jobs-bundled] MUSE_API_KEY missing — keeping empty bundle.",
+      "[prepare-recommended-jobs-bundled] MUSE_API_KEY missing — writing empty bundle.",
     );
     writeBundledModule([]);
     return;
