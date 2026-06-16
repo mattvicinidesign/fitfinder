@@ -74,6 +74,9 @@ After `cap sync`, open **`web/ios/App/App.xcworkspace`** in Xcode (not
 `App.xcodeproj`), then confirm the `fitfinder` URL scheme in
 `web/ios/App/App/Info.plist` (under `CFBundleURLTypes`).
 
+The iOS target is **iPhone-only** (portrait, no iPad): `TARGETED_DEVICE_FAMILY = 1`
+in `App.xcodeproj`, `LSRequiresIPhoneOS` in Info.plist, no `UISupportedInterfaceOrientations~ipad`.
+
 ## Navigation (one app, responsive chrome)
 
 | Viewport | Navigation |

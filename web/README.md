@@ -69,7 +69,8 @@ npm run dev
 
 1. `npm run cap:run` — opens Xcode.
 2. Set your Apple team + bundle ID (`com.fitfinder.app`) in Xcode.
-3. Add `fitfinder://auth-callback` to Supabase Auth redirect URLs.
+3. Confirm **Targeted Device Family** is **iPhone** only (not Universal/iPad).
+4. Add `fitfinder://auth-callback` to Supabase Auth redirect URLs.
 4. Enable Anonymous sign-ins in Supabase for guest mode.
 5. Product → Archive → Distribute to App Store.
 

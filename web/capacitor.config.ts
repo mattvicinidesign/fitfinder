@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: "Fit Finder",
   webDir: "out",
   ios: {
-    // Let CSS env(safe-area-inset-*) handle insets — "automatic" double-counts with our headers.
+    // iPhone-only: TARGETED_DEVICE_FAMILY = 1 in ios/App/App.xcodeproj (not iPad).
+    // Portrait only — see Info.plist UISupportedInterfaceOrientations.
     contentInset: "never",
     scheme: "Fit Finder",
   },
