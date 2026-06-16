@@ -149,17 +149,23 @@ function AppShellChrome({ children }: { children: React.ReactNode }) {
   const { showSheet, overlay } = useProfileOverlay();
   const isAnalyzeFlow =
     pathname === "/analyze" || pathname.startsWith("/analyze/report");
+  const usesInternalScroll =
+    pathname === "/home" ||
+    pathname === "/profile" ||
+    pathname === "/onboarding" ||
+    isAnalyzeFlow;
   const hideTabBar = isAnalyzeFlow;
-  const lockMainScroll = isAnalyzeFlow || showSheet;
+  const lockMainScroll = usesInternalScroll || showSheet;
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col">
+    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
       <main
         className={
           lockMainScroll
-            ? "relative min-h-0 flex-1 overflow-hidden"
-            : "min-h-0 flex-1 overflow-y-auto overscroll-contain"
+            ? "relative min-h-0 min-w-0 flex-1 overflow-hidden overflow-x-hidden"
+            : "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain touch-pan-y"
         }
+        {...(!lockMainScroll && { "data-app-scroll-y": true })}
       >
         {overlay}
         {showSheet ? null : children}

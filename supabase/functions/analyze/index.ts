@@ -14,6 +14,7 @@
 
 import { completeJSON } from "../_shared/openai.ts";
 import { resolveJobTitle } from "../_shared/posting_details.ts";
+import { normalizeParsedJob } from "../_shared/normalize_parsed_job.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
 import { loadResumeText } from "../_shared/load_resume_text.ts";
 import {

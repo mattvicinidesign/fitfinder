@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 /** Full-height screen — locks layout so only the body region scrolls. */
 export const screenShellClass =
-  "relative flex h-full min-h-0 flex-col overflow-hidden";
+  "relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden overflow-x-hidden";
 
 export function StickyScreenHeader({
   children,
@@ -36,8 +36,9 @@ export const StickyScreenBody = forwardRef<
   return (
     <div
       ref={ref}
+      data-app-scroll-y
       className={cn(
-        "min-h-0 flex-1 overflow-y-auto overscroll-contain",
+        "min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain touch-pan-y",
         className,
       )}
     >

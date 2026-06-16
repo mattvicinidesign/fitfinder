@@ -154,7 +154,7 @@ function RecommendedJobsCarousel({ jobs }: { jobs: RecommendedJob[] }) {
   }, []);
 
   return (
-    <div className={cn("relative", screenGutterX)}>
+    <div className={cn("relative min-w-0 overflow-hidden", screenGutterX)}>
       <button
         type="button"
         aria-label="Previous jobs"
@@ -167,7 +167,8 @@ function RecommendedJobsCarousel({ jobs }: { jobs: RecommendedJob[] }) {
 
       <div
         ref={scrollRef}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        data-app-scroll-x
+        className="flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain touch-pan-x pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label="Recommended jobs carousel"
       >
         {jobs.map((job) => (

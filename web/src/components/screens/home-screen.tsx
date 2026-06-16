@@ -116,7 +116,10 @@ export function HomeScreen() {
 
   return (
     <div className={cn(screenShellClass, "bg-background")}>
-      <div className="relative z-0 min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div
+        className="relative z-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain touch-pan-y"
+        data-app-scroll-y
+      >
       <div className="relative z-0 overflow-hidden">
         <header
           className={cn(

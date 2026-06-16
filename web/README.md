@@ -23,7 +23,7 @@ src/
 │   ├── analysis-result.tsx
 │   ├── recommended-jobs-section.tsx  # Home carousel — two cards, The Muse
 │   ├── resume-file-picker.tsx
-│   └── capacitor-bridge.tsx  # fitfinder:// deep links
+│   └── capacitor-bridge.tsx  # fitfinder:// deep links + native scroll lock
 └── lib/
     ├── api.ts                # shared Edge Function client (no scoring in UI)
     ├── muse-jobs.ts          # The Muse fetch, transform, live URL validation

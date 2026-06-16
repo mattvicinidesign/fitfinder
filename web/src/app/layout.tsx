@@ -42,9 +42,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${geistMono.variable} h-full overflow-x-hidden antialiased`}
     >
-      <body className="h-dvh overflow-hidden bg-background text-foreground">
+      <body className="h-dvh overflow-hidden overflow-x-hidden bg-background text-foreground">
         <FirstLaunchReset />
         <CapacitorBridge />
         <AppSessionBridge />

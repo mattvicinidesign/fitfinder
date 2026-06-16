@@ -16,6 +16,8 @@ export function CapacitorBridge() {
   useLayoutEffect(() => {
     if (!isNativePlatform()) return;
 
+    document.documentElement.dataset.capacitor = "native";
+
     let remove: (() => void) | undefined;
 
     void (async () => {
@@ -41,7 +43,10 @@ export function CapacitorBridge() {
       }
     })();
 
-    return () => remove?.();
+    return () => {
+      delete document.documentElement.dataset.capacitor;
+      remove?.();
+    };
   }, [router]);
 
   return null;

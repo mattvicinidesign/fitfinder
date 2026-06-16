@@ -114,6 +114,24 @@
     @apply font-sans;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Capacitor WKWebView: block horizontal document pan / rubber-band. */
+  html[data-capacitor="native"],
+  html[data-capacitor="native"] body {
+    overscroll-behavior: none;
+    max-width: 100%;
+  }
+
+  html[data-capacitor="native"] [data-app-scroll-y] {
+    touch-action: pan-y;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+
+  html[data-capacitor="native"] [data-app-scroll-x] {
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+  }
 }
 
 @keyframes home-header-enter {
