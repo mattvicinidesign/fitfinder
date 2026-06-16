@@ -113,6 +113,35 @@ export function transformMuseJob(job: MuseJobRaw): RecommendedJob | null {
   };
 }
 
+const RECOMMENDED_JOBS_LIMIT = 20;
+const RECOMMENDED_JOBS_MAX_PAGES = 5;
+
+/** Muse often returns expired listings — skip URLs that 404 on themuse.com. */
+export async function isLiveMuseJobListing(applyUrl: string): Promise<boolean> {
+  try {
+    const response = await fetch(applyUrl, {
+      method: "HEAD",
+      redirect: "follow",
+      next: { revalidate: 300 },
+    });
+    return response.status >= 200 && response.status < 400;
+  } catch {
+    return false;
+  }
+}
+
+async function filterLiveRecommendedJobs(
+  jobs: RecommendedJob[],
+): Promise<RecommendedJob[]> {
+  const results = await Promise.all(
+    jobs.map(async (job) => ({
+      job,
+      live: await isLiveMuseJobListing(job.applyUrl),
+    })),
+  );
+  return results.filter(({ live }) => live).map(({ job }) => job);
+}
+
 export async function fetchMuseJobsPage(
   page: number,
   opts?: { category?: string },
@@ -190,26 +219,49 @@ async function loadCompanyLogos(
 }
 
 export async function loadRecommendedMuseJobs(): Promise<RecommendedJob[]> {
-  const payload = await fetchMuseJobsPage(0, {
-    category: MUSE_DESIGN_CATEGORY,
-  });
-  const raw = Array.isArray(payload.results) ? payload.results : [];
-  const prioritized = prioritizeProductDesignJobs(raw).slice(0, 20);
-  const companyIds = prioritized
-    .map((job) => job.company?.id)
-    .filter((id): id is number => typeof id === "number");
-  const logosByCompanyId = await loadCompanyLogos(companyIds);
+  const collected: RecommendedJob[] = [];
+  let page = 0;
 
-  return prioritized
-    .map((job) => {
-      const transformed = transformMuseJob(job);
-      if (!transformed) return null;
-      const companyId = job.company?.id;
-      return {
-        ...transformed,
-        logoUrl:
-          companyId != null ? logosByCompanyId.get(companyId) ?? null : null,
-      };
-    })
-    .filter((job): job is RecommendedJob => job != null);
+  while (collected.length < RECOMMENDED_JOBS_LIMIT && page < RECOMMENDED_JOBS_MAX_PAGES) {
+    const payload = await fetchMuseJobsPage(page, {
+      category: MUSE_DESIGN_CATEGORY,
+    });
+    const raw = Array.isArray(payload.results) ? payload.results : [];
+    if (!raw.length) break;
+
+    const prioritized = prioritizeProductDesignJobs(raw);
+    const companyIds = [
+      ...new Set(
+        prioritized
+          .map((job) => job.company?.id)
+          .filter((id): id is number => typeof id === "number"),
+      ),
+    ];
+    const logosByCompanyId = await loadCompanyLogos(companyIds);
+
+    const candidates = prioritized
+      .map((job) => {
+        const transformed = transformMuseJob(job);
+        if (!transformed) return null;
+        const companyId = job.company?.id;
+        return {
+          ...transformed,
+          logoUrl:
+            companyId != null ? logosByCompanyId.get(companyId) ?? null : null,
+        };
+      })
+      .filter((job): job is RecommendedJob => job != null);
+
+    const live = await filterLiveRecommendedJobs(candidates);
+    for (const job of live) {
+      if (collected.length >= RECOMMENDED_JOBS_LIMIT) break;
+      if (!collected.some((existing) => existing.id === job.id)) {
+        collected.push(job);
+      }
+    }
+
+    page++;
+  }
+
+  return collected;
 }

@@ -6,7 +6,7 @@ export function SkeletonOpportunityCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "w-[260px] shrink-0 rounded-xl bg-card p-4 ring-1 ring-border/60",
+        "w-[calc(50%-0.375rem)] shrink-0 rounded-xl bg-card p-4 ring-1 ring-border/60",
         className,
       )}
     >

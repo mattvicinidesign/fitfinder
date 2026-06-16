@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Card,
@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/card";
 import { SkeletonOpportunityCarousel } from "@/components/ui/skeletons/skeleton-opportunity-card";
 import type { RecommendedJob } from "@/lib/types";
+import { loadRecommendedJobs } from "@/lib/load-recommended-jobs";
+import { isNativePlatform } from "@/lib/platform";
+import { openExternalUrl } from "@/lib/open-external-url";
 import { screenGutterX } from "@/lib/screen-gutter";
 import { cn } from "@/lib/utils";
 
@@ -66,16 +69,25 @@ function CompanyLogo({
 }
 
 function RecommendedJobCard({ job }: { job: RecommendedJob }) {
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!isNativePlatform()) return;
+    event.preventDefault();
+    void openExternalUrl(job.applyUrl);
+  };
+
   return (
     <a
       href={job.applyUrl}
-      target="_blank"
-      rel="noopener noreferrer"
+      onClick={handleClick}
+      {...(!isNativePlatform() && {
+        target: "_blank",
+        rel: "noopener noreferrer",
+      })}
       aria-label={`View ${job.title} at ${job.company}`}
       data-carousel-card
       className={cn(
         "block h-full shrink-0 snap-start rounded-xl outline-offset-2 transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring",
-        "min-w-full md:min-w-[calc(50%-0.375rem)] lg:min-w-[calc(25%-0.5625rem)]",
+        "min-w-[calc(50%-0.375rem)] lg:min-w-[calc(25%-0.5625rem)]",
       )}
     >
       <Card size="sm" className="h-full gap-3 py-3 ring-border/60">
@@ -184,17 +196,7 @@ export function RecommendedJobsSection() {
   useEffect(() => {
     let active = true;
 
-    void fetch("/api/jobs/recommended")
-      .then(async (res) => {
-        const data = (await res.json()) as {
-          jobs?: RecommendedJob[];
-          error?: string;
-        };
-        if (!res.ok) {
-          throw new Error(data.error ?? "Couldn't load recommended jobs.");
-        }
-        return data.jobs ?? [];
-      })
+    void loadRecommendedJobs()
       .then((next) => {
         if (!active) return;
         setJobs(next);

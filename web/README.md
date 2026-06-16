@@ -26,7 +26,9 @@ src/
 │   └── capacitor-bridge.tsx  # fitfinder:// deep links
 └── lib/
     ├── api.ts                # shared Edge Function client (no scoring in UI)
-    ├── muse-jobs.ts          # The Muse recommended jobs fetch + transform
+    ├── muse-jobs.ts          # The Muse fetch, transform, live URL validation
+    ├── load-recommended-jobs.ts  # Platform-aware loader (API / bundle / Vercel)
+    ├── open-external-url.ts  # In-app browser on native, new tab on web
     ├── navigation.ts         # single nav config
     ├── platform.ts           # Capacitor detection
     └── resume-upload.ts      # Storage + parse-resume

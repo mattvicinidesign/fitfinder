@@ -92,7 +92,7 @@ behave as **web** (`isNativePlatform()` is false). iOS uses the same bundle afte
 | Concern | Web / preview / Vercel | iOS (Capacitor) |
 | ------- | ---------------------- | --------------- |
 | Edge Functions | `/api/functions/*` proxy | Direct Supabase URL |
-| Recommended jobs | `GET /api/jobs/recommended` (The Muse, 5m revalidate) | Same route baked at `cap:sync` build time |
+| Recommended jobs | `GET /api/jobs/recommended` (The Muse, 5m revalidate) | Jobs baked into JS at `cap:sync`; live refresh from Vercel; `@capacitor/browser` for external links |
 | Auth session | Cookies + server PKCE callback | localStorage + client callback + `fitfinder://` |
 | Backend calls | `web/src/lib/invoke-function.ts` | Same module |
 | Modals / sheets | Portal to `#app-overlay-root` in AppFrame | Same — never `document.body` + `position: fixed` |
@@ -102,7 +102,7 @@ After **backend** changes, deploy Edge Functions (`supabase functions deploy ana
 
 **Application Assistant:** On a fit report, generate a tailored proposal from resume + job data. Portfolio URL is extracted from the stored resume (not project URLs), inserted between intro paragraphs, and included in PDF export. Regenerate from the proposal modal.
 
-**Recommended jobs (Home):** Horizontal carousel of product-design listings from [The Muse API](https://www.themuse.com/developers/api/v2). Server route `GET /api/jobs/recommended` filters the Design and UX category, prioritizes product-design titles, and enriches cards with company logos. Cards link to the posting in a new tab. Requires `MUSE_API_KEY` in `web/.env.local` (and Vercel env). Smoke test: `GET /api/jobs/test` in dev.
+**Recommended jobs (Home):** Horizontal carousel (two cards visible on phone) of product-design listings from [The Muse API](https://www.themuse.com/developers/api/v2). Server route `GET /api/jobs/recommended` filters Design and UX, prioritizes product-design titles, validates live Muse URLs (skips expired 404 listings), and enriches cards with company logos. Tapping a card opens the posting on themuse.com (new tab on web; in-app browser on iOS). Requires `MUSE_API_KEY` in `web/.env.local` (and Vercel env). Smoke test: `GET /api/jobs/test` in dev.
 
 **Profile preferences on reports:** Onboarding collects pay floor, employer type, minimum client rating, project type (Ongoing / One-Time), and regions. These drive green/red pills on the fit report when a posting value can be compared:
 
