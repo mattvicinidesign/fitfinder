@@ -15,7 +15,7 @@
 // Generates a job-tailored proposal plus a requirement→evidence mapping. This is
 // additive to the analysis flow and never persists or mutates report data.
 
-import { extractResumeTextFromStorage } from "../_shared/extractResumeText.ts";
+import { loadResumeText } from "../_shared/load_resume_text.ts";
 import { completeJSON } from "../_shared/openai.ts";
 import {
   compileProposalText,
@@ -26,7 +26,7 @@ import {
 import { resolvePortfolioUrl } from "../_shared/portfolio_url.ts";
 import { proposalSystemPrompt, proposalUserPayload } from "../_shared/prompts.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
-import { createUserClient, requireUser, type SupabaseClient } from "../_shared/supabaseClient.ts";
+import { createUserClient, requireUser } from "../_shared/supabaseClient.ts";
 import { error, handlePreflight, json } from "../_shared/cors.ts";
 import type {
   ParsedJob,
@@ -77,41 +77,6 @@ function normalizeEvidenceMatches(value: unknown): RequirementMatch[] {
     out.push({ requirement, evidence, confidence });
   }
   return out;
-}
-
-async function loadResumeText(
-  supabase: SupabaseClient,
-  userId: string,
-  opts: { resumeId?: string | null; reportId?: string | null },
-): Promise<string | null> {
-  let resumeId = opts.resumeId ?? null;
-
-  if (!resumeId && opts.reportId) {
-    const { data: analysis } = await supabase
-      .from("analyses")
-      .select("resume_id")
-      .eq("id", opts.reportId)
-      .eq("user_id", userId)
-      .maybeSingle();
-    resumeId = analysis?.resume_id ?? null;
-  }
-
-  if (!resumeId) return null;
-
-  const { data: row, error: rowError } = await supabase
-    .from("resumes")
-    .select("file_url")
-    .eq("id", resumeId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (rowError || !row?.file_url) return null;
-
-  try {
-    return await extractResumeTextFromStorage(supabase, row.file_url);
-  } catch {
-    return null;
-  }
 }
 
 Deno.serve(async (req: Request) => {

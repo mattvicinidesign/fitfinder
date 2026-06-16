@@ -15,6 +15,7 @@
 import { completeJSON } from "../_shared/openai.ts";
 import { resolveJobTitle } from "../_shared/posting_details.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
+import { loadResumeText } from "../_shared/load_resume_text.ts";
 import {
   mergeProfileIntoResumeForScoring,
   type ProfileScoringRow,
@@ -69,11 +70,20 @@ Deno.serve(async (req: Request) => {
 
     // 1. Resolve the parsed resume: inline > stored > empty.
     let resume: ParsedResume = EMPTY_RESUME;
+    const resumeIdValue = typeof resumeId === "string" ? resumeId : null;
+    let resumeTextForNormalize: string | null = null;
+    if (resumeIdValue) {
+      resumeTextForNormalize = await loadResumeText(supabase, userId, {
+        resumeId: resumeIdValue,
+      });
+    }
+
     if (parsedResume) {
       resume = normalizeParsedResume(
         { ...EMPTY_RESUME, ...parsedResume },
+        resumeTextForNormalize ?? undefined,
       );
-    } else if (typeof resumeId === "string") {
+    } else if (resumeIdValue) {
       const { data, error: dbError } = await supabase
         .from("resumes")
         .select("parsed_resume_json")
@@ -82,10 +92,13 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       if (dbError) return error(`Failed to load resume: ${dbError.message}`, 500);
       if (data?.parsed_resume_json) {
-        resume = normalizeParsedResume({
-          ...EMPTY_RESUME,
-          ...data.parsed_resume_json,
-        });
+        resume = normalizeParsedResume(
+          {
+            ...EMPTY_RESUME,
+            ...data.parsed_resume_json,
+          },
+          resumeTextForNormalize ?? undefined,
+        );
       }
     }
 

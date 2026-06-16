@@ -32,6 +32,7 @@ The UI calls `web/src/lib/api.ts`, which invokes:
 - `POST /functions/v1/parse-resume`
 - `POST /functions/v1/parse-job`
 - `POST /functions/v1/analyze`
+- `POST /functions/v1/generate-proposal` — tailored Application Assistant proposals on fit reports
 
 **Do not reimplement scoring in the Next.js app.**
 
@@ -93,9 +94,12 @@ behave as **web** (`isNativePlatform()` is false). iOS uses the same bundle afte
 | Edge Functions | `/api/functions/*` proxy | Direct Supabase URL |
 | Auth session | Cookies + server PKCE callback | localStorage + client callback + `fitfinder://` |
 | Backend calls | `web/src/lib/invoke-function.ts` | Same module |
+| Modals / sheets | Portal to `#app-overlay-root` in AppFrame | Same — never `document.body` + `position: fixed` |
 
 After **any** `web/` UI change, run `cd web && npm run cap:sync` before testing in Xcode, then commit and push to `main` for Vercel.
-After **backend** changes, deploy Edge Functions (`supabase functions deploy`) and apply new migrations (`supabase db push`).
+After **backend** changes, deploy Edge Functions (`supabase functions deploy analyze generate-proposal`) and apply new migrations (`supabase db push`).
+
+**Application Assistant:** On a fit report, generate a tailored proposal from resume + job data. Portfolio URL is extracted from the stored resume (not project URLs), inserted between intro paragraphs, and included in PDF export. Regenerate from the proposal modal.
 
 **Profile preferences on reports:** Onboarding collects pay floor, employer type, minimum client rating, project type (Ongoing / One-Time), and regions. These drive green/red pills on the fit report when a posting value can be compared:
 
