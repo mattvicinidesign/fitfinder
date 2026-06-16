@@ -87,7 +87,7 @@ function RecommendedJobCard({ job }: { job: RecommendedJob }) {
       data-carousel-card
       className={cn(
         "block h-full shrink-0 snap-start rounded-xl outline-offset-2 transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-ring",
-        "min-w-[calc(50%-0.375rem)] lg:min-w-[calc(25%-0.5625rem)]",
+        "min-w-[calc(50%-0.375rem)]",
       )}
     >
       <Card size="sm" className="h-full gap-3 py-3 ring-border/60">

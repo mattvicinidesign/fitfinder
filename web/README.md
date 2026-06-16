@@ -21,7 +21,7 @@ src/
 ├── components/
 │   ├── app-shell/            # shared navigation (desktop + mobile)
 │   ├── analysis-result.tsx
-│   ├── recommended-jobs-section.tsx  # Home carousel (The Muse)
+│   ├── recommended-jobs-section.tsx  # Home carousel — two cards, The Muse
 │   ├── resume-file-picker.tsx
 │   └── capacitor-bridge.tsx  # fitfinder:// deep links
 └── lib/
