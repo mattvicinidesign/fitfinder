@@ -10,6 +10,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-metric: var(--font-metric);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -149,6 +150,14 @@
 
 .home-header-enter {
   animation: home-header-enter 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.home-hero-gradient {
+  background: linear-gradient(
+    180deg,
+    var(--primary) 0%,
+    color-mix(in srgb, var(--primary) 84%, #021428 16%) 100%
+  );
 }
 
 .brand-title-gradient {

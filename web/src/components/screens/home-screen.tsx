@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { HomeSearchReportsBar } from "@/components/home-search-reports-bar";
 import { usePathname } from "next/navigation";
-import { ChevronRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import {
   screenShellClass,
@@ -16,6 +15,7 @@ import { IosAnalysisListRow } from "@/components/ui/ios-list-row";
 import { RecommendedJobsSection } from "@/components/recommended-jobs-section";
 import { HomeHeroIllustration } from "@/components/home-hero-illustration";
 import { InfoTooltip } from "@/components/info-tooltip";
+import { MetricScore } from "@/components/ui/metric-score";
 import {
   SkeletonAnalysisList,
   SkeletonHomeWelcome,
@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import {
   activityMetaLine,
   loadRecentActivity,
+  matchesReportSearchQuery,
   mergeRecentActivity,
   type RecentActivityItem,
 } from "@/lib/recent-activity";
@@ -36,22 +37,22 @@ import {
   pickAnalysisListWithSamples,
   pickRecentActivityList,
 } from "@/lib/sample-analyses";
-import { fetchUserDisplayName } from "@/lib/profile";
-import { homeHeroContentInset } from "@/lib/screen-gutter";
+import { homeHeroContentInset, screenGutterX } from "@/lib/screen-gutter";
 import type { AnalysisRecord } from "@/lib/types";
 
-const RECENT_LIMIT = 15;
+const RECENT_LIMIT = 20;
+const VIEW_ALL_HREF = "/history";
 
 function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
   return (
     <div className="min-w-0 flex-1 pb-1">
-      <div className="flex items-start gap-1.5">
-        <p className="text-[64px] font-bold tabular-nums leading-none tracking-tight">
-          {stats.averageFitOnTen?.toFixed(1) ?? "—"}
+      <div className="flex items-center gap-1.5">
+        <p className="text-[13px] font-semibold uppercase tracking-[0.12em]">
+          Avg Fit Score
         </p>
         <InfoTooltip
           label="About your average fit score"
-          triggerClassName="mt-4 size-6 text-primary-foreground/65 hover:text-primary-foreground focus-visible:ring-primary-foreground/40 [&_svg]:size-4"
+          triggerClassName="size-5 text-primary-foreground/65 hover:text-primary-foreground focus-visible:ring-primary-foreground/40 [&_svg]:size-4"
           panelClassName="z-30 w-64"
           text={
             <>
@@ -67,9 +68,9 @@ function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
           }
         />
       </div>
-      <p className="mt-2 text-[13px] font-semibold uppercase tracking-[0.12em]">
-        Avg Fit Score
-      </p>
+      <MetricScore as="p" size="hero" className="mt-1 text-primary-foreground">
+        {stats.averageFitOnTen?.toFixed(1) ?? "—"}
+      </MetricScore>
       <p className="mt-2.5 text-[12px] font-semibold leading-snug text-primary-foreground">
         <span className="tabular-nums text-emerald-400">
           {stats.onlyFitPercent}%
@@ -79,7 +80,7 @@ function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
           <>
             {" "}
             <span className="text-primary-foreground/90">
-              • Last Analysis {stats.lastAnalysisDateLabel}
+              • Updated {stats.lastAnalysisDateLabel}
             </span>
           </>
         ) : null}
@@ -93,11 +94,16 @@ export function HomeScreen() {
   const [analyses, setAnalyses] = useState<RecentActivityItem[]>([]);
   const [fitStats, setFitStats] = useState<HomeFitStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(true);
   const [headerEntered, setHeaderEntered] = useState(false);
-  const [displayName, setDisplayName] = useState<string | null>(null);
   const searchSentinelRef = useRef<HTMLDivElement>(null);
   const [searchStuck, setSearchStuck] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredAnalyses = useMemo(
+    () =>
+      analyses.filter((item) => matchesReportSearchQuery(item, searchQuery)),
+    [analyses, searchQuery],
+  );
 
   useEffect(() => {
     if (pathname !== "/home") {
@@ -134,30 +140,6 @@ export function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    const supabase = createClient();
-
-    async function loadDisplayName() {
-      const name = await fetchUserDisplayName();
-      setDisplayName(name);
-      setProfileLoading(false);
-    }
-
-    void loadDisplayName();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) {
-        setDisplayName(null);
-        return;
-      }
-      void loadDisplayName();
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
     void loadActivity();
   }, [loadActivity]);
 
@@ -175,7 +157,7 @@ export function HomeScreen() {
   }, [loadActivity]);
 
   const showPersonalizedHero =
-    !loading && !profileLoading && fitStats != null && fitStats.analyzedCount > 0;
+    !loading && fitStats != null && fitStats.analyzedCount > 0;
 
   useEffect(() => {
     const sentinel = searchSentinelRef.current;
@@ -198,12 +180,12 @@ export function HomeScreen() {
       scrollRoot.removeEventListener("scroll", updateStuck);
       window.removeEventListener("resize", updateStuck);
     };
-  }, [pathname, headerEntered, showPersonalizedHero, loading, profileLoading]);
+  }, [pathname, headerEntered, showPersonalizedHero, loading]);
 
   return (
     <div className={cn(screenShellClass, "bg-background")}>
       <div
-        className="relative z-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain touch-pan-y"
+        className="relative z-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain touch-pan-y pb-[4.5rem]"
         data-app-scroll-y
       >
         <div
@@ -216,32 +198,25 @@ export function HomeScreen() {
           <div className="overflow-hidden rounded-b-[29px]">
             <header
               className={cn(
-                `bg-primary pr-4 text-primary-foreground ${homeHeroContentInset}`,
+                "home-hero-gradient text-primary-foreground",
+                homeHeroContentInset,
                 showPersonalizedHero ? "pb-10" : "pb-24",
               )}
             >
-              {profileLoading ? (
-                <SkeletonPrimitive className="h-4 w-36 bg-primary-foreground/20" />
-              ) : (
-                <p className="text-[15px] font-medium">
-                  {displayName ? `Welcome, ${displayName}` : "Welcome"}
-                </p>
-              )}
-
-              {loading || profileLoading ? (
-                <div className="mt-4 flex items-end justify-between gap-3">
+              {loading ? (
+                <div className="flex items-end justify-between gap-3">
                   <SkeletonHomeWelcome className="flex-1" />
                   <SkeletonPrimitive className="h-[140px] w-[148px] shrink-0 rounded-xl bg-primary-foreground/15" />
                 </div>
               ) : showPersonalizedHero ? (
-                <div className="mt-4 flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2">
                   <HomeHeroStats stats={fitStats} />
                   <div className="h-[140px] w-[148px] shrink-0">
                     <HomeHeroIllustration />
                   </div>
                 </div>
               ) : (
-                <h1 className="mt-2 max-w-[17rem] text-[28px] font-bold leading-tight tracking-tight">
+                <h1 className="max-w-[17rem] text-[28px] font-bold leading-tight tracking-tight">
                   Know if you fit, before you apply.
                 </h1>
               )}
@@ -256,27 +231,18 @@ export function HomeScreen() {
 
         <div
           className={cn(
-            "sticky top-0 z-30 px-4",
+            "sticky top-0 z-30",
+            screenGutterX,
             searchStuck
-              ? "bg-background pb-3 pt-[max(1rem,env(safe-area-inset-top))]"
+              ? "pb-3 pt-[max(1rem,env(safe-area-inset-top))]"
               : "pb-5",
           )}
         >
           <div className={cn(!searchStuck && "-mt-7")}>
-            <div className="relative flex items-center gap-3 rounded-2xl bg-[#0f1419] px-4 py-4 shadow-lg ring-1 ring-white/10">
-              <Image
-                src="/only-fit-wordmark.png"
-                alt=""
-                width={331}
-                height={148}
-                className="h-6 w-auto shrink-0 object-contain"
-                aria-hidden
-              />
-              <span className="flex-1 text-[16px] font-medium text-white/70">
-                Search Reports
-              </span>
-              <ChevronRight className="size-5 shrink-0 text-white/70" aria-hidden />
-            </div>
+            <HomeSearchReportsBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
           </div>
         </div>
 
@@ -289,62 +255,70 @@ export function HomeScreen() {
           <div
             className={cn(
               "space-y-6 pb-6",
+              screenGutterX,
               searchStuck ? "pt-3" : "pt-6",
             )}
           >
-            <RecommendedJobsSection />
+            <RecommendedJobsSection embedded />
 
             <section className="space-y-2">
-              <div className="flex items-center justify-between px-4">
-                <h2 className="text-[13px] font-normal uppercase tracking-wide text-muted-foreground">
-                  Recent activity
-                </h2>
-                {analyses.length > 0 ? (
-                  <Link
-                    href="/saved"
-                    className="text-[13px] font-medium text-primary hover:underline"
-                  >
-                    View saved
-                  </Link>
-                ) : null}
-              </div>
+              <h2 className="text-[13px] font-normal uppercase tracking-wide text-muted-foreground">
+                Recent activity
+              </h2>
 
               {loading ? (
-                <SkeletonAnalysisList count={RECENT_LIMIT} />
+                <SkeletonAnalysisList
+                  count={RECENT_LIMIT}
+                  className="mx-0"
+                  rowClassName="px-0"
+                />
               ) : analyses.length === 0 ? (
-                <p className="px-4 py-10 text-center text-[15px] text-muted-foreground leading-snug">
+                <p className="py-10 text-center text-[15px] text-muted-foreground leading-snug">
                   No activity yet. Tap{" "}
                   <span className="font-medium text-foreground">Analyze Fit</span>{" "}
                   to run your first fit report.
                 </p>
+              ) : filteredAnalyses.length === 0 ? (
+                <p className="py-10 text-center text-[15px] text-muted-foreground leading-snug">
+                  No reports match your search.
+                </p>
               ) : (
-                <IosGroupedSection>
-                  {analyses.map((a) => (
-                    <ReportLink
-                      key={a.id}
-                      analysis={a}
-                      from="/home"
-                      className="block transition-colors hover:bg-muted/30 active:bg-muted/40"
-                    >
-                      <IosAnalysisListRow
+                <>
+                  <IosGroupedSection fullWidth>
+                    {filteredAnalyses.map((a) => (
+                      <ReportLink
+                        key={a.id}
                         analysis={a}
-                        subtitle={activityMetaLine(a)}
-                      />
-                    </ReportLink>
-                  ))}
-                </IosGroupedSection>
+                        from="/home"
+                        className="block transition-colors hover:bg-muted/30 active:bg-muted/40"
+                      >
+                        <IosAnalysisListRow
+                          analysis={a}
+                          subtitle={activityMetaLine(a)}
+                          className="px-0"
+                        />
+                      </ReportLink>
+                    ))}
+                  </IosGroupedSection>
+                  <Link
+                    href={VIEW_ALL_HREF}
+                    className="block pt-3 text-center text-[13px] font-medium text-primary hover:underline"
+                  >
+                    View all
+                  </Link>
+                </>
               )}
             </section>
           </div>
         </div>
       </div>
 
-      <StickyBottomCta>
+      <StickyBottomCta variant="floating" scrollFade>
         <Link
           href="/analyze"
           className={cn(
             buttonVariants({ variant: "default", size: "lg" }),
-            "h-12 w-full rounded-xl text-[17px] font-semibold",
+            "h-12 w-full rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]",
           )}
         >
           Analyze Fit

@@ -7,6 +7,7 @@ export const LAST_ROUTE_KEY = "fitfinder-last-route";
 export const QA_RETURNING_SPLASH_KEY = "fitfinder-qa-returning-splash";
 export const SIGNUP_LAUNCH_KEY = "fitfinder-signup-launch";
 export const AUTH_DEEP_LINK_KEY = "fitfinder-auth-deep-link";
+export const SEARCH_TYPEWRITER_DONE_KEY = "fitfinder-home-search-typewriter-done";
 export const DEFAULT_APP_ROUTE = "/home";
 
 /** @deprecated Signup is in the launch overlay — use requestSignupFlow() instead. */
@@ -147,4 +148,15 @@ export function isAuthDeepLinkPending(): boolean {
 export function clearAuthDeepLinkPending(): void {
   if (!canUseSessionStorage()) return;
   sessionStorage.removeItem(AUTH_DEEP_LINK_KEY);
+}
+
+/** Cold session (first open / force quit) — play home search placeholder typewriter once. */
+export function shouldPlaySearchReportsTypewriter(): boolean {
+  if (!canUseSessionStorage()) return false;
+  return sessionStorage.getItem(SEARCH_TYPEWRITER_DONE_KEY) !== "true";
+}
+
+export function markSearchReportsTypewriterDone(): void {
+  if (!canUseSessionStorage()) return;
+  sessionStorage.setItem(SEARCH_TYPEWRITER_DONE_KEY, "true");
 }

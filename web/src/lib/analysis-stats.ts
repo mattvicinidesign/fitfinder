@@ -8,7 +8,7 @@ export interface HomeFitStats {
   onlyFitCount: number;
   onlyFitPercent: number;
   analyzedCount: number;
-  /** e.g. "June 2, 2026" from the most recent analysis. */
+  /** e.g. "June 17, 2026" from the most recent analysis — shown as "Updated …" on home. */
   lastAnalysisDateLabel: string | null;
 }
 

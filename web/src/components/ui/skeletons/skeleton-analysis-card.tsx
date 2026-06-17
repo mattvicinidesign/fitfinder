@@ -26,9 +26,11 @@ export function SkeletonAnalysisCard({ className }: { className?: string }) {
 export function SkeletonAnalysisList({
   count = 5,
   className,
+  rowClassName,
 }: {
   count?: number;
   className?: string;
+  rowClassName?: string;
 }) {
   return (
     <div
@@ -38,7 +40,7 @@ export function SkeletonAnalysisList({
       )}
     >
       {Array.from({ length: count }).map((_, index) => (
-        <SkeletonAnalysisCard key={index} />
+        <SkeletonAnalysisCard key={index} className={rowClassName} />
       ))}
     </div>
   );

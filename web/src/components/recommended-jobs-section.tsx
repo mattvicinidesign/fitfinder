@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -27,16 +26,11 @@ const carouselNavButtonClass = cn(
   "[appearance:none] [-webkit-appearance:none]",
 );
 
-function formatPostedDate(iso: string): string {
-  if (!iso) return "Date not listed";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "Date not listed";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
+const LOGO_SIZE_CLASS = "size-[75px] shrink-0";
+const LOGO_FRAME_CLASS = cn(
+  LOGO_SIZE_CLASS,
+  "flex items-center justify-center overflow-hidden rounded-[4px]",
+);
 
 function CompanyLogo({
   company,
@@ -47,21 +41,26 @@ function CompanyLogo({
 }) {
   if (logoUrl) {
     return (
-      <img
-        src={logoUrl}
-        alt=""
-        width={75}
-        height={75}
-        className="size-[75px] shrink-0 object-contain object-left"
-        loading="lazy"
-      />
+      <div className={LOGO_FRAME_CLASS}>
+        <img
+          src={logoUrl}
+          alt=""
+          width={75}
+          height={75}
+          className="size-full rounded-[4px] object-contain object-left"
+          loading="lazy"
+        />
+      </div>
     );
   }
 
   return (
     <div
       aria-hidden
-      className="flex size-[75px] shrink-0 items-center justify-center rounded-lg bg-muted text-[22px] font-semibold text-muted-foreground"
+      className={cn(
+        LOGO_FRAME_CLASS,
+        "bg-muted text-[22px] font-semibold text-muted-foreground",
+      )}
     >
       {company.charAt(0).toUpperCase()}
     </div>
@@ -94,7 +93,7 @@ function RecommendedJobCard({ job }: { job: RecommendedJob }) {
         <div className="px-3">
           <CompanyLogo company={job.company} logoUrl={job.logoUrl} />
         </div>
-        <CardHeader className="min-w-0 gap-1 px-3 pt-0">
+        <CardHeader className="min-w-0 gap-1 px-3 pt-0 pb-3">
           <CardTitle className="truncate text-[15px] leading-snug">
             {job.title}
           </CardTitle>
@@ -102,15 +101,18 @@ function RecommendedJobCard({ job }: { job: RecommendedJob }) {
             {job.company}
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-3 text-[13px] text-muted-foreground">
-          <p>{formatPostedDate(job.publishedAt)}</p>
-        </CardContent>
       </Card>
     </a>
   );
 }
 
-function RecommendedJobsCarousel({ jobs }: { jobs: RecommendedJob[] }) {
+function RecommendedJobsCarousel({
+  jobs,
+  embedded = false,
+}: {
+  jobs: RecommendedJob[];
+  embedded?: boolean;
+}) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -154,7 +156,9 @@ function RecommendedJobsCarousel({ jobs }: { jobs: RecommendedJob[] }) {
   }, []);
 
   return (
-    <div className={cn("relative min-w-0 overflow-hidden", screenGutterX)}>
+    <div
+      className={cn("relative min-w-0 overflow-hidden", !embedded && screenGutterX)}
+    >
       <button
         type="button"
         aria-label="Previous jobs"
@@ -189,7 +193,7 @@ function RecommendedJobsCarousel({ jobs }: { jobs: RecommendedJob[] }) {
   );
 }
 
-export function RecommendedJobsSection() {
+export function RecommendedJobsSection({ embedded = false }: { embedded?: boolean }) {
   const [jobs, setJobs] = useState<RecommendedJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -222,20 +226,15 @@ export function RecommendedJobsSection() {
   if (!loading && !error && jobs.length === 0) return null;
 
   return (
-    <section className="space-y-2" aria-labelledby="recommended-jobs-title">
-      <h2
-        id="recommended-jobs-title"
-        className="px-4 text-[13px] font-normal uppercase tracking-wide text-muted-foreground"
-      >
-        Recommended Jobs
-      </h2>
-
+    <section className="space-y-2" aria-label="Recommended jobs">
       {loading ? (
         <SkeletonOpportunityCarousel count={3} />
       ) : error ? (
-        <p className="px-4 text-[14px] text-muted-foreground">{error}</p>
+        <p className={cn("text-[14px] text-muted-foreground", !embedded && "px-4")}>
+          {error}
+        </p>
       ) : (
-        <RecommendedJobsCarousel jobs={jobs} />
+        <RecommendedJobsCarousel jobs={jobs} embedded={embedded} />
       )}
     </section>
   );

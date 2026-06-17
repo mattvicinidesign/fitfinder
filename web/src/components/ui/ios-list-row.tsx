@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+import { MetricScore } from "@/components/ui/metric-score";
 import { fitScoreOnTen } from "@/components/qualification-score-circle";
 import { resolveActivityFitScore, type RecentActivityItem } from "@/lib/recent-activity";
 import { scoreColor } from "@/lib/score";
@@ -7,10 +9,12 @@ import type { AnalysisRecord } from "@/lib/types";
 export function IosAnalysisListRow({
   analysis: a,
   subtitle,
+  className,
 }: {
   analysis: AnalysisRecord & { report_id?: string };
   /** When set, replaces company name + recommendation (e.g. posting meta line). */
   subtitle?: string | null;
+  className?: string;
 }) {
   const fitScore = resolveActivityFitScore({
     ...(a as RecentActivityItem),
@@ -18,7 +22,7 @@ export function IosAnalysisListRow({
   });
 
   return (
-    <div className="flex items-center gap-3 bg-background px-4 py-3.5">
+    <div className={cn("flex items-center gap-3 bg-background px-4 py-3.5", className)}>
       <div className="min-w-0 flex-1">
         <p className="text-[17px] font-semibold leading-tight truncate">
           {a.job_title ?? "Untitled role"}
@@ -43,9 +47,9 @@ export function IosAnalysisListRow({
         )}
       </div>
       <div className="text-right shrink-0">
-        <p className={`text-[28px] font-bold tabular-nums leading-none ${scoreColor(fitScore)}`}>
+        <MetricScore as="p" size="md" className={scoreColor(fitScore)}>
           {fitScoreOnTen(fitScore)}
-        </p>
+        </MetricScore>
         <p className="text-[11px] text-muted-foreground mt-0.5">Fit</p>
       </div>
     </div>

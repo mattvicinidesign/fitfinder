@@ -51,23 +51,48 @@ export const StickyScreenBody = forwardRef<
 export function StickyBottomCta({
   children,
   className,
+  variant = "bar",
+  scrollFade = false,
 }: {
   children: React.ReactNode;
   className?: string;
+  variant?: "bar" | "floating";
+  /** Soft gradient above floating CTAs — dims scroll content under the button. */
+  scrollFade?: boolean;
 }) {
+  const isFloating = variant === "floating";
+  const showScrollFade = isFloating && scrollFade;
+
   return (
-    <div
-      className={cn(
-        "sticky bottom-0 z-20 shrink-0",
-        "border-t border-border/50 bg-background/95 backdrop-blur-md",
-        screenGutterX,
-        "pt-3",
-        safeBottomCta,
-        "shadow-[0_-8px_32px_rgba(0,0,0,0.35)]",
-        className,
-      )}
-    >
-      {children}
-    </div>
+    <>
+      {showScrollFade ? (
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[6.75rem]",
+            "bg-gradient-to-t from-background from-[28%] via-background/80 via-[58%] to-transparent",
+          )}
+        />
+      ) : null}
+      <div
+        className={cn(
+          "z-20",
+          isFloating
+            ? "pointer-events-none absolute inset-x-0 bottom-0 bg-transparent px-4 pb-3 pt-3"
+            : cn(
+                "sticky bottom-0 shrink-0 pt-3",
+                "border-t border-border/50 bg-background/95 backdrop-blur-md",
+                "shadow-[0_-8px_32px_rgba(0,0,0,0.35)]",
+                screenGutterX,
+                safeBottomCta,
+              ),
+          className,
+        )}
+      >
+        <div className={isFloating ? "pointer-events-auto" : undefined}>
+          {children}
+        </div>
+      </div>
+    </>
   );
 }

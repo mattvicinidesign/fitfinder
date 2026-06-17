@@ -9,6 +9,7 @@ import {
   useRevealOnMount,
 } from "@/lib/use-score-reveal";
 import type { Recommendation } from "@/lib/types";
+import { metricScoreClass } from "@/components/ui/metric-score";
 import { cn } from "@/lib/utils";
 
 const RING_SIZES = {
@@ -58,7 +59,7 @@ export function QualificationScoreCircle({
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - animatedProgress);
   const center = ringSize / 2;
-  const scoreFont = size === "large" ? "text-[42px]" : "text-[36px]";
+  const scoreFont = metricScoreClass(size === "large" ? "xl" : "lg");
 
   return (
     <div
@@ -105,7 +106,7 @@ export function QualificationScoreCircle({
         </svg>
         <span
           className={cn(
-            "absolute inset-0 flex items-center justify-center font-semibold leading-none tabular-nums tracking-tight text-foreground",
+            "absolute inset-0 flex items-center justify-center text-foreground",
             scoreFont,
           )}
         >

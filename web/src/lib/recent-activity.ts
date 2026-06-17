@@ -168,4 +168,15 @@ export function mergeRecentActivity(
     .slice(0, limit);
 }
 
+export function matchesReportSearchQuery(
+  item: Pick<RecentActivityItem, "job_title" | "company_name">,
+  query: string,
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return `${item.job_title ?? ""} ${item.company_name ?? ""}`
+    .toLowerCase()
+    .includes(q);
+}
+
 export { reportHrefForAnalysis } from "@/lib/report-navigation";
