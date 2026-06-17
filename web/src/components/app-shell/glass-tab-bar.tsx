@@ -17,6 +17,8 @@ const LENS_WIDTH = 72;
 const LENS_HEIGHT = 88;
 const MAGNIFY_RADIUS = 52;
 const MAX_SCALE = 1.38;
+const DRAG_THRESHOLD_PX = 8;
+const LENS_TRANSITION = "left 320ms cubic-bezier(0.22, 1, 0.36, 1)";
 
 function scaleForDistance(distance: number): number {
   const t = Math.max(0, 1 - distance / MAGNIFY_RADIUS);
@@ -28,6 +30,8 @@ export function GlassTabBar() {
   const containerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const draggingRef = useRef(false);
+  const didDragRef = useRef(false);
+  const pointerStartRef = useRef({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [tabCenters, setTabCenters] = useState<number[]>([]);
   const [lensX, setLensX] = useState(0);
@@ -118,29 +122,58 @@ export function GlassTabBar() {
     [tabCenters],
   );
 
+  const animateToTab = useCallback(
+    (index: number) => {
+      const center = tabCenters[index];
+      if (center == null) return;
+      draggingRef.current = false;
+      setIsDragging(false);
+      setLensX(center);
+    },
+    [tabCenters],
+  );
+
+  const shouldSuppressClick = useCallback(() => didDragRef.current, []);
+
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (reduceMotion) return;
-    draggingRef.current = true;
-    setIsDragging(true);
+    didDragRef.current = false;
+    pointerStartRef.current = { x: event.clientX, y: event.clientY };
     containerRef.current?.setPointerCapture(event.pointerId);
-    setLensX(lensXFromClient(event.clientX));
   };
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current || reduceMotion) return;
+    if (reduceMotion) return;
+
+    if (!draggingRef.current) {
+      const dx = event.clientX - pointerStartRef.current.x;
+      const dy = event.clientY - pointerStartRef.current.y;
+      if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+      draggingRef.current = true;
+      didDragRef.current = true;
+      setIsDragging(true);
+    }
+
     setLensX(lensXFromClient(event.clientX));
   };
 
   const onPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-    setIsDragging(false);
     containerRef.current?.releasePointerCapture(event.pointerId);
-    setLensX(snapToNearestTab(lensXFromClient(event.clientX)));
+    if (draggingRef.current) {
+      draggingRef.current = false;
+      setIsDragging(false);
+      setLensX(snapToNearestTab(lensXFromClient(event.clientX)));
+    }
+    if (didDragRef.current) {
+      window.setTimeout(() => {
+        didDragRef.current = false;
+      }, 0);
+    }
   };
 
   const onPointerCancel = () => {
     draggingRef.current = false;
+    didDragRef.current = false;
     setIsDragging(false);
     const activeIndex = BOTTOM_TAB_NAV.findIndex((item) => {
       const prefix = `${item.href}/`;
@@ -184,9 +217,7 @@ export function GlassTabBar() {
               width: LENS_WIDTH,
               height: LENS_HEIGHT,
               left: lensX - LENS_WIDTH / 2,
-              transition: isDragging
-                ? "none"
-                : "left 280ms cubic-bezier(0.22, 1, 0.36, 1)",
+              transition: isDragging ? "none" : LENS_TRANSITION,
             }}
           />
         ) : null}
@@ -209,6 +240,8 @@ export function GlassTabBar() {
                 item={item}
                 magnifyScale={magnifyScale}
                 lensHighlight={lensHighlight}
+                onSelect={() => animateToTab(index)}
+                shouldSuppressClick={shouldSuppressClick}
               />
             );
           })}

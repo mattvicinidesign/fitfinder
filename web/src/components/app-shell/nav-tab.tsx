@@ -12,10 +12,18 @@ type NavTabProps = {
   item: NavItem;
   magnifyScale?: number;
   lensHighlight?: boolean;
+  onSelect?: () => void;
+  shouldSuppressClick?: () => boolean;
 };
 
 export const NavTab = forwardRef<HTMLAnchorElement, NavTabProps>(function NavTab(
-  { item, magnifyScale = 1, lensHighlight = false },
+  {
+    item,
+    magnifyScale = 1,
+    lensHighlight = false,
+    onSelect,
+    shouldSuppressClick,
+  },
   ref,
 ) {
   const pathname = usePathname();
@@ -28,6 +36,12 @@ export const NavTab = forwardRef<HTMLAnchorElement, NavTabProps>(function NavTab
   const emphasized = active || lensHighlight;
 
   function handleClick(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (shouldSuppressClick?.()) {
+      event.preventDefault();
+      return;
+    }
+
+    onSelect?.();
     triggerNavHaptic();
 
     if (isProfileTab) {
