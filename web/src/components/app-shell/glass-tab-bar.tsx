@@ -7,9 +7,11 @@ import {
   useRef,
   useState,
 } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BOTTOM_TAB_NAV } from "@/lib/navigation";
 import { NavTab } from "@/components/app-shell/nav-tab";
+import { useProfileOverlay } from "@/components/app-shell/profile-overlay";
+import { triggerNavHaptic } from "@/lib/haptics";
 import { safeBottomTabBar } from "@/lib/safe-area";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +29,8 @@ function scaleForDistance(distance: number): number {
 
 export function GlassTabBar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { openProfile } = useProfileOverlay();
   const containerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const draggingRef = useRef(false);
@@ -105,21 +109,61 @@ export function GlassTabBar() {
     [clampLensX, lensX],
   );
 
-  const snapToNearestTab = useCallback(
+  const nearestTabFromX = useCallback(
     (x: number) => {
-      if (!tabCenters.length) return x;
-      let nearest = tabCenters[0];
+      if (!tabCenters.length) return null;
+
+      let nearestIndex = 0;
       let nearestDistance = Number.POSITIVE_INFINITY;
-      for (const center of tabCenters) {
+      for (let index = 0; index < tabCenters.length; index += 1) {
+        const center = tabCenters[index];
+        if (center == null) continue;
         const distance = Math.abs(center - x);
         if (distance < nearestDistance) {
           nearestDistance = distance;
-          nearest = center;
+          nearestIndex = index;
         }
       }
-      return nearest;
+
+      return { index: nearestIndex, center: tabCenters[nearestIndex]! };
     },
     [tabCenters],
+  );
+
+  const snapToNearestTab = useCallback(
+    (x: number) => nearestTabFromX(x)?.center ?? x,
+    [nearestTabFromX],
+  );
+
+  const navigateToTab = useCallback(
+    (index: number) => {
+      const item = BOTTOM_TAB_NAV[index];
+      if (!item) return;
+
+      const prefix = `${item.href}/`;
+      const isActive = pathname === item.href || pathname.startsWith(prefix);
+      const isProfileTab = item.href === "/profile";
+
+      if (isProfileTab) {
+        if (pathname !== "/profile") {
+          triggerNavHaptic();
+          openProfile(pathname);
+        }
+        return;
+      }
+
+      if (isActive) return;
+
+      triggerNavHaptic();
+
+      if (pathname === "/profile") {
+        router.replace(item.href);
+        return;
+      }
+
+      router.push(item.href);
+    },
+    [pathname, router, openProfile],
   );
 
   const animateToTab = useCallback(
@@ -162,7 +206,14 @@ export function GlassTabBar() {
     if (draggingRef.current) {
       draggingRef.current = false;
       setIsDragging(false);
-      setLensX(snapToNearestTab(lensXFromClient(event.clientX)));
+      const x = lensXFromClient(event.clientX);
+      const nearest = nearestTabFromX(x);
+      if (nearest) {
+        setLensX(nearest.center);
+        navigateToTab(nearest.index);
+      } else {
+        setLensX(snapToNearestTab(x));
+      }
     }
     if (didDragRef.current) {
       window.setTimeout(() => {

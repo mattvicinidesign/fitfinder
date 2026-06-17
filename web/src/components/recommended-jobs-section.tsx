@@ -14,6 +14,7 @@ import { loadRecommendedJobs } from "@/lib/load-recommended-jobs";
 import { isNativePlatform } from "@/lib/platform";
 import { openExternalUrl } from "@/lib/open-external-url";
 import { screenGutterX } from "@/lib/screen-gutter";
+import { useHorizontalScrollAxisLock } from "@/lib/use-horizontal-scroll-axis-lock";
 import { cn } from "@/lib/utils";
 
 const CAROUSEL_GAP_PX = 12;
@@ -117,6 +118,8 @@ function RecommendedJobsCarousel({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
+  useHorizontalScrollAxisLock(scrollRef);
+
   const updateScrollState = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -172,7 +175,7 @@ function RecommendedJobsCarousel({
       <div
         ref={scrollRef}
         data-app-scroll-x
-        className="flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain touch-pan-x pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label="Recommended jobs carousel"
       >
         {jobs.map((job) => (
