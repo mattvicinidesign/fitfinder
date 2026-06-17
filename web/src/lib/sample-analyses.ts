@@ -12,7 +12,7 @@ import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import type { AnalysisRecord, AnalysisResult, Recommendation } from "@/lib/types";
 
-const SEED_VERSION = "v5";
+const SEED_VERSION = "v6";
 const SEED_KEY = `fitfinder-sample-data-${SEED_VERSION}`;
 const RECENT_ACTIVITY_KEY = "fitfinder:recent-activity";
 
@@ -22,6 +22,19 @@ export const SAMPLE_REPORT_IDS = [
   "sample-analysis-3",
   "sample-analysis-4",
   "sample-analysis-5",
+  "sample-analysis-6",
+  "sample-analysis-7",
+  "sample-analysis-8",
+  "sample-analysis-9",
+  "sample-analysis-10",
+  "sample-analysis-11",
+  "sample-analysis-12",
+  "sample-analysis-13",
+  "sample-analysis-14",
+  "sample-analysis-15",
+  "sample-analysis-16",
+  "sample-analysis-17",
+  "sample-analysis-18",
 ] as const;
 
 export const SAMPLE_SAVED_REPORT_IDS = [
@@ -103,6 +116,162 @@ const SPECS: SampleSpec[] = [
     recommendation: "apply",
     recommendation_label: "Good Opportunity",
     daysAgo: 14,
+  },
+  {
+    id: "sample-analysis-6",
+    job_title: "Lead Product Designer",
+    company_name: "Atlas Fintech",
+    hireArea: "United States",
+    fit_score: 92,
+    qualification_score: 88,
+    confidence_score: 80,
+    recommendation: "strong_apply",
+    recommendation_label: "Strong Pursuit",
+    daysAgo: 1,
+  },
+  {
+    id: "sample-analysis-7",
+    job_title: "Senior UX Designer",
+    company_name: "Brightpath Health",
+    hireArea: "Canada",
+    fit_score: 78,
+    qualification_score: 74,
+    confidence_score: 69,
+    recommendation: "apply",
+    recommendation_label: "Good Opportunity",
+    daysAgo: 4,
+  },
+  {
+    id: "sample-analysis-8",
+    job_title: "Product Design Contractor",
+    company_name: "Orbit Commerce",
+    hireArea: "Worldwide",
+    fit_score: 55,
+    qualification_score: 52,
+    confidence_score: 48,
+    recommendation: "stretch",
+    recommendation_label: "Proceed With Caution",
+    daysAgo: 6,
+  },
+  {
+    id: "sample-analysis-9",
+    job_title: "Design Lead",
+    company_name: "Summit AI",
+    hireArea: "United States",
+    fit_score: 91,
+    qualification_score: 86,
+    confidence_score: 78,
+    recommendation: "strong_apply",
+    recommendation_label: "Strong Pursuit",
+    daysAgo: 8,
+  },
+  {
+    id: "sample-analysis-10",
+    job_title: "Visual Product Designer",
+    company_name: "Lumen Apps",
+    hireArea: "Worldwide",
+    fit_score: 73,
+    qualification_score: 70,
+    confidence_score: 66,
+    recommendation: "apply",
+    recommendation_label: "Good Opportunity",
+    daysAgo: 9,
+  },
+  {
+    id: "sample-analysis-11",
+    job_title: "Staff Product Designer",
+    company_name: "Nova Systems",
+    hireArea: "United States",
+    fit_score: 68,
+    qualification_score: 64,
+    confidence_score: 60,
+    recommendation: "stretch",
+    recommendation_label: "Proceed With Caution",
+    daysAgo: 10,
+  },
+  {
+    id: "sample-analysis-12",
+    job_title: "UX/UI Designer",
+    company_name: "Riverbank Studio",
+    hireArea: "United Kingdom",
+    fit_score: 81,
+    qualification_score: 77,
+    confidence_score: 72,
+    recommendation: "strong_apply",
+    recommendation_label: "Strong Pursuit",
+    daysAgo: 11,
+  },
+  {
+    id: "sample-analysis-13",
+    job_title: "Product Designer II",
+    company_name: "Clearview HR",
+    hireArea: "Canada",
+    fit_score: 75,
+    qualification_score: 72,
+    confidence_score: 67,
+    recommendation: "apply",
+    recommendation_label: "Good Opportunity",
+    daysAgo: 12,
+  },
+  {
+    id: "sample-analysis-14",
+    job_title: "Mobile Product Designer",
+    company_name: "Pulse Mobile",
+    hireArea: "Worldwide",
+    fit_score: 58,
+    qualification_score: 54,
+    confidence_score: 50,
+    recommendation: "stretch",
+    recommendation_label: "Proceed With Caution",
+    daysAgo: 13,
+  },
+  {
+    id: "sample-analysis-15",
+    job_title: "Principal Product Designer",
+    company_name: "Forge Platform",
+    hireArea: "United States",
+    fit_score: 94,
+    qualification_score: 90,
+    confidence_score: 82,
+    recommendation: "strong_apply",
+    recommendation_label: "Strong Pursuit",
+    daysAgo: 15,
+  },
+  {
+    id: "sample-analysis-16",
+    job_title: "Experience Designer",
+    company_name: "Harbor Logistics",
+    hireArea: "United States",
+    fit_score: 65,
+    qualification_score: 61,
+    confidence_score: 58,
+    recommendation: "stretch",
+    recommendation_label: "Proceed With Caution",
+    daysAgo: 16,
+  },
+  {
+    id: "sample-analysis-17",
+    job_title: "Product Designer",
+    company_name: "Cedar Labs",
+    hireArea: "Worldwide",
+    fit_score: 48,
+    qualification_score: 45,
+    confidence_score: 42,
+    recommendation: "not_recommended",
+    recommendation_label: "Not Recommended",
+    daysAgo: 17,
+  },
+  {
+    id: "sample-analysis-18",
+    job_title: "Senior Interaction Designer",
+    company_name: "Peak Retail",
+    hireArea: "United States",
+    fit_score: 77,
+    qualification_score: 73,
+    confidence_score: 68,
+    recommendation: "apply",
+    recommendation_label: "Good Opportunity",
+    daysAgo: 18,
   },
 ];
 
@@ -237,16 +406,25 @@ export function filterOpenableAnalyses<
   return items.filter((item) => canOpenAnalysisItem(item));
 }
 
-/** Recent activity for home — openable rows first, else canonical samples. */
+/** Recent activity for home — openable rows first, padded with samples up to limit. */
 export function pickRecentActivityList(
   merged: RecentActivityItem[],
   limit: number,
 ): RecentActivityItem[] {
   const loadable = filterOpenableAnalyses(merged);
-  if (loadable.length > 0) {
-    return loadable.slice(0, limit);
+  const primary = loadable.length > 0 ? loadable.slice(0, limit) : [];
+  if (primary.length >= limit) return primary;
+
+  const seen = new Set(primary.map((row) => row.id));
+  const filled: RecentActivityItem[] = [...primary];
+  for (const sample of getSampleAnalyses()) {
+    if (filled.length >= limit) break;
+    if (seen.has(sample.id)) continue;
+    filled.push(sample);
+    seen.add(sample.id);
   }
-  return getSampleAnalyses().slice(0, limit);
+
+  return filled.length > 0 ? filled : getSampleAnalyses().slice(0, limit);
 }
 
 /** Saved/history — openable DB rows first, else sample saved list. */

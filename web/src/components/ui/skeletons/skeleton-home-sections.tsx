@@ -5,8 +5,9 @@ import { SkeletonPrimitive } from "@/components/ui/skeletons/skeleton-primitive"
 export function SkeletonHomeWelcome({ className }: { className?: string }) {
   return (
     <div className={className}>
-      <SkeletonPrimitive className="h-3.5 w-36 bg-primary-foreground/20" />
-      <SkeletonPrimitive className="mt-2 h-7 w-[88%] max-w-[300px] bg-primary-foreground/20" />
+      <SkeletonPrimitive className="h-14 w-20 bg-primary-foreground/20" />
+      <SkeletonPrimitive className="mt-2 h-3 w-28 bg-primary-foreground/20" />
+      <SkeletonPrimitive className="mt-3 h-4 w-36 bg-primary-foreground/20" />
     </div>
   );
 }

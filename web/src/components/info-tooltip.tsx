@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -9,11 +9,15 @@ export function InfoTooltip({
   label,
   text,
   className,
+  triggerClassName,
+  panelClassName,
 }: {
   /** Accessible name for the trigger (e.g. "About Client"). */
   label: string;
-  text: string;
+  text: ReactNode;
   className?: string;
+  triggerClassName?: string;
+  panelClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLSpanElement>(null);
@@ -47,7 +51,10 @@ export function InfoTooltip({
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex size-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          "inline-flex size-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          triggerClassName,
+        )}
       >
         <Info className="size-3.5" aria-hidden />
       </button>
@@ -55,7 +62,10 @@ export function InfoTooltip({
         <span
           id={panelId}
           role="tooltip"
-          className="absolute left-0 top-6 z-20 w-60 rounded-lg bg-white px-3 py-2 text-[12px] font-normal normal-case leading-snug tracking-normal text-zinc-900 shadow-xl ring-1 ring-black/10"
+          className={cn(
+            "absolute left-0 top-6 z-20 w-60 rounded-lg bg-white px-3 py-2 text-[12px] font-normal normal-case leading-snug tracking-normal text-zinc-900 shadow-xl ring-1 ring-black/10",
+            panelClassName,
+          )}
         >
           {text}
         </span>

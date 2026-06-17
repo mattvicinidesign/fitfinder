@@ -18,6 +18,34 @@ export function CapacitorBridge() {
 
     document.documentElement.dataset.capacitor = "native";
 
+    let touchStartY = 0;
+
+    const onTouchStart = (event: TouchEvent) => {
+      touchStartY = event.touches[0]?.clientY ?? 0;
+    };
+
+    /** Block iOS WKWebView rubber-band when pulling past scroll extents. */
+    const onTouchMove = (event: TouchEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const scroller = target.closest("[data-app-scroll-y]");
+      if (!(scroller instanceof HTMLElement)) return;
+
+      const touchY = event.touches[0]?.clientY ?? 0;
+      const deltaY = touchY - touchStartY;
+      const { scrollTop, scrollHeight, clientHeight } = scroller;
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+      if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+
     let remove: (() => void) | undefined;
 
     void (async () => {
@@ -45,6 +73,8 @@ export function CapacitorBridge() {
 
     return () => {
       delete document.documentElement.dataset.capacitor;
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchmove", onTouchMove);
       remove?.();
     };
   }, [router]);

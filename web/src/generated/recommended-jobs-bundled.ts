@@ -63,6 +63,26 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000097/small_logo.png?v=b9f90222099555b55a519f48ead6fd8c771278a73658bd12292e119cda6e9c5a"
   },
   {
+    "id": "21856910",
+    "title": "Senior Manager, Product, GDI",
+    "company": "The Coca-Cola Company",
+    "location": "Atlanta, GA",
+    "level": "Senior Level",
+    "publishedAt": "2026-06-16T23:35:56Z",
+    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-manager-product-gdi-d8b203",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+  },
+  {
+    "id": "21856908",
+    "title": "Senior Manager, Packaging Design Adaptation",
+    "company": "The Coca-Cola Company",
+    "location": "Atlanta, GA",
+    "level": "Senior Level",
+    "publishedAt": "2026-06-16T23:35:56Z",
+    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-manager-packaging-design-adaptation-b0624f",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+  },
+  {
     "id": "21852459",
     "title": "Senior Manager, Innovation - Packaging & Equipment",
     "company": "The Coca-Cola Company",
@@ -123,16 +143,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
-    "id": "21727110",
-    "title": "UI Designer - Unpublished R&D Product (Contract)",
-    "company": "Riot Games",
-    "location": "Guangzhou, China",
-    "level": "Mid Level",
-    "publishedAt": "2026-05-19T18:30:31Z",
-    "applyUrl": "https://www.themuse.com/jobs/riotgames/ui-designer-unpublished-rd-product-contract",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
-  },
-  {
     "id": "21649313",
     "title": "Mechanical Engineer - Manufacturing Machinery, Satellites (Starlink)",
     "company": "SpaceX",
@@ -151,16 +161,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-04-14T23:32:35Z",
     "applyUrl": "https://www.themuse.com/jobs/spacex/wastewater-technician-starlink-pcb-d6cc35",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21508658",
-    "title": "Customer Experience Program Specialist",
-    "company": "Uber",
-    "location": "Sydney, Australia",
-    "level": "Mid Level",
-    "publishedAt": "2026-04-02T00:15:32Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/customer-experience-program-specialist-8b2643",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
     "id": "21418125",
@@ -183,16 +183,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
-    "id": "21038917",
-    "title": "Staff Product Designer",
-    "company": "GlossGenius",
-    "location": "New York, NY",
-    "level": "Senior Level",
-    "publishedAt": "2026-05-13T18:46:40Z",
-    "applyUrl": "https://www.themuse.com/jobs/glossgenius/staff-product-designer-44678c",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
-  },
-  {
     "id": "21820506",
     "title": "Product Design Consultant (Contract, 3–6 Months)",
     "company": "Nanit",
@@ -201,5 +191,15 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-11T18:29:09Z",
     "applyUrl": "https://www.themuse.com/jobs/nanit/product-design-consultant-contract-36-months",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000106/small_logo.png?v=5d4d6dac86a0ea7229ffbf5eb4358bd1490c38bd69c72f7a8f37d9f6bbde9601"
+  },
+  {
+    "id": "21852953",
+    "title": "Propulsion Technician (Raptor)",
+    "company": "SpaceX",
+    "location": "El Segundo, CA",
+    "level": "Senior Level",
+    "publishedAt": "2026-06-16T23:35:17Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/propulsion-technician-raptor-27fce2",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   }
 ] as RecommendedJob[];

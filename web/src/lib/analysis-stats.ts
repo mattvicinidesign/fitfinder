@@ -1,5 +1,17 @@
 import type { AnalysisRecord } from "@/lib/types";
 
+/** Display scale 0–10 = fit_score ÷ 100 stored as 0–100. */
+export const ONLY_FIT_SCORE_MIN = 90;
+
+export interface HomeFitStats {
+  averageFitOnTen: number | null;
+  onlyFitCount: number;
+  onlyFitPercent: number;
+  analyzedCount: number;
+  /** e.g. "June 2, 2026" from the most recent analysis. */
+  lastAnalysisDateLabel: string | null;
+}
+
 export interface RecommendationStat {
   label: string;
   count: number;
@@ -18,6 +30,64 @@ export interface AnalysisStats {
 function average(values: number[]): number | null {
   if (!values.length) return null;
   return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+}
+
+function formatLastAnalysisDateLabel(
+  analyses: AnalysisRecord[],
+): string | null {
+  let latestIso: string | null = null;
+  let latestTime = Number.NEGATIVE_INFINITY;
+
+  for (const row of analyses) {
+    if (!row.created_at) continue;
+    const time = new Date(row.created_at).getTime();
+    if (Number.isNaN(time) || time <= latestTime) continue;
+    latestTime = time;
+    latestIso = row.created_at;
+  }
+
+  if (!latestIso) return null;
+
+  const date = new Date(latestIso);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+/** Home hero metrics — average fit (0–10) and OnlyFit share across analyzed jobs. */
+export function computeHomeFitStats(analyses: AnalysisRecord[]): HomeFitStats {
+  const fitScores = analyses
+    .map((row) => row.fit_score)
+    .filter((value): value is number => value != null);
+
+  let onlyFitCount = 0;
+  for (const score of fitScores) {
+    if (score >= ONLY_FIT_SCORE_MIN) onlyFitCount++;
+  }
+
+  const analyzedCount = analyses.length;
+  const averageFitOnTen =
+    fitScores.length > 0
+      ? Math.round(
+          (fitScores.reduce((sum, score) => sum + score, 0) /
+            fitScores.length /
+            10) *
+            10,
+        ) / 10
+      : null;
+
+  return {
+    averageFitOnTen,
+    onlyFitCount,
+    onlyFitPercent:
+      analyzedCount > 0 ? Math.round((onlyFitCount / analyzedCount) * 100) : 0,
+    analyzedCount,
+    lastAnalysisDateLabel: formatLastAnalysisDateLabel(analyses),
+  };
 }
 
 /** Aggregate headline metrics from analysis rows. */
