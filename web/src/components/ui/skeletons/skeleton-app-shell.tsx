@@ -17,14 +17,16 @@ export function SkeletonAppShell({ showTabBar = true }: { showTabBar?: boolean }
         </div>
       </main>
       {showTabBar ? (
-        <div className={`shrink-0 border-t border-border/60 bg-background/95 px-2 pt-2 ${safeBottomTabBar}`}>
-          <div className="flex items-end justify-between gap-1">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="flex flex-1 flex-col items-center gap-1 py-1">
-                <SkeletonPrimitive className="size-6 rounded-md" />
-                <SkeletonPrimitive className="h-2 w-8" />
-              </div>
-            ))}
+        <div className={`shrink-0 px-4 pt-2 ${safeBottomTabBar}`}>
+          <div className="mx-auto rounded-[999px] border border-white/12 bg-background/35 p-2 backdrop-blur-2xl">
+            <div className="flex h-[58px] items-center justify-between gap-1 px-2">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="flex flex-1 flex-col items-center gap-1">
+                  <SkeletonPrimitive className="size-6 rounded-md" />
+                  <SkeletonPrimitive className="h-2 w-8" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ) : null}
