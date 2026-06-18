@@ -102,6 +102,17 @@ export function shouldPersistRoute(pathname: string): boolean {
   return true;
 }
 
+/** Dev-only: allow direct route preview without trapping on welcome after splash. */
+export function shouldSkipWelcomeForDevDeepLink(pathname: string): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    hasCompletedSplash() &&
+    !hasCompletedWelcome() &&
+    shouldPersistRoute(pathname) &&
+    pathname !== DEFAULT_APP_ROUTE
+  );
+}
+
 export function clearOnboardingState(): void {
   if (canUseLocalStorage()) {
     localStorage.removeItem(SPLASH_STORAGE_KEY);

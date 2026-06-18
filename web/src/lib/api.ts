@@ -13,13 +13,14 @@ import type {
   ParsedJob,
   ParsedResume,
   ProposalGeneration,
+  ResumeReviewResult,
 } from "@/lib/types";
 
 const ANALYZE_TIMEOUT_MS = 120_000;
 const DEFAULT_TIMEOUT_MS = 90_000;
 const LONG_AI_TIMEOUT_MS = 120_000;
 
-const LONG_AI_FUNCTIONS = new Set(["analyze", "generate-proposal"]);
+const LONG_AI_FUNCTIONS = new Set(["analyze", "generate-proposal", "review-resume"]);
 
 async function invoke<T>(
   name: string,
@@ -111,4 +112,20 @@ export async function generateProposal(
     { ...args } as unknown as Record<string, unknown>,
   );
   return data.proposal;
+}
+
+export interface ReviewResumeArgs {
+  resumeId?: string;
+  resumeText?: string;
+  parsedResume?: ParsedResume | null;
+}
+
+export async function reviewResume(
+  args: ReviewResumeArgs,
+): Promise<ResumeReviewResult> {
+  const data = await invoke<{ review: ResumeReviewResult }>(
+    "review-resume",
+    { ...args } as unknown as Record<string, unknown>,
+  );
+  return data.review;
 }

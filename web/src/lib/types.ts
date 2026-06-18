@@ -245,6 +245,72 @@ export interface ProposalGeneration {
   reportId: string | null;
 }
 
+export type ResumeReviewFindingStatus = "pass" | "warn" | "fail";
+
+export type ResumeReviewCategoryKey =
+  | "content"
+  | "structure"
+  | "ats"
+  | "completeness";
+
+export interface ResumeReviewFinding {
+  label: string;
+  status: ResumeReviewFindingStatus;
+}
+
+export interface ResumeReviewCategory {
+  key: ResumeReviewCategoryKey;
+  label: string;
+  score: number;
+  explanation: string;
+  findings: ResumeReviewFinding[];
+}
+
+export interface ResumeReviewImprovement {
+  rank: number;
+  title: string;
+  estimatedMatchImprovementPercent: number;
+  detail: string | null;
+  categoryKey: ResumeReviewCategoryKey;
+}
+
+export interface AtsKeywordChange {
+  before: string;
+  after: string;
+}
+
+export type AtsKeywordChangeDecision = "pending" | "approved" | "rejected";
+
+/** ATS keyword optimization result — ATS Compatibility only. */
+export interface AtsKeywordOptimization {
+  originalATSScore: number;
+  optimizedATSScore: number;
+  improvementPercentage: number;
+  /** Scan finished and preview is available. */
+  scanCompleted: boolean;
+  /** User confirmed and the optimized resume was applied. */
+  optimizationApplied: boolean;
+  optimizedResumeText: string;
+  originalResumeText: string;
+  keywordChanges: AtsKeywordChange[];
+  /** Review decisions for the first 10 preview changes. */
+  keywordChangeDecisions?: AtsKeywordChangeDecision[];
+  completedAt: string;
+  improvementDismissed: boolean;
+}
+
+/** Resume-only health assessment — not a job match score. */
+export interface ResumeReviewResult {
+  id: string;
+  createdAt: string;
+  letterGrade: string;
+  overallScore: number;
+  summary: string;
+  categories: ResumeReviewCategory[];
+  improvements: ResumeReviewImprovement[];
+  resumeId: string | null;
+}
+
 export interface AnalysisRecord {
   id: string;
   company_name: string | null;

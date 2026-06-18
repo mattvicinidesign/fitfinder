@@ -248,6 +248,47 @@ export interface ProposalGeneration {
   reportId: string | null;
 }
 
+export type ResumeReviewFindingStatus = "pass" | "warn" | "fail";
+
+export type ResumeReviewCategoryKey =
+  | "content"
+  | "structure"
+  | "ats"
+  | "completeness";
+
+export interface ResumeReviewFinding {
+  label: string;
+  status: ResumeReviewFindingStatus;
+}
+
+export interface ResumeReviewCategory {
+  key: ResumeReviewCategoryKey;
+  label: string;
+  score: number;
+  explanation: string;
+  findings: ResumeReviewFinding[];
+}
+
+export interface ResumeReviewImprovement {
+  rank: number;
+  title: string;
+  estimatedMatchImprovementPercent: number;
+  detail: string | null;
+  categoryKey: ResumeReviewCategoryKey;
+}
+
+/** Resume-only health assessment — not a job match score. */
+export interface ResumeReviewResult {
+  id: string;
+  createdAt: string;
+  letterGrade: string;
+  overallScore: number;
+  summary: string;
+  categories: ResumeReviewCategory[];
+  improvements: ResumeReviewImprovement[];
+  resumeId: string | null;
+}
+
 /** Full analysis payload returned by POST /analyze. */
 export interface AnalysisResult {
   companyName: string | null;

@@ -4,6 +4,27 @@ import {
   markLaunchFlowComplete,
 } from "@/lib/app-session";
 
+const GUEST_SIGN_IN_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(
+  promise: PromiseLike<T>,
+  ms: number,
+  message: string,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(message)), ms);
+    Promise.resolve(promise)
+      .then((value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error: unknown) => {
+        window.clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
 /** Start an anonymous Supabase session when the app needs auth but has none. */
 export async function ensureGuestSession(): Promise<{ error: string | null }> {
   const supabase = createClient();
@@ -12,10 +33,26 @@ export async function ensureGuestSession(): Promise<{ error: string | null }> {
   } = await supabase.auth.getSession();
 
   if (session?.user) {
+    markLaunchFlowComplete();
+    markAppSessionActive();
     return { error: null };
   }
 
-  const { error } = await supabase.auth.signInAnonymously();
+  let signInResult: Awaited<ReturnType<typeof supabase.auth.signInAnonymously>>;
+  try {
+    signInResult = await withTimeout(
+      supabase.auth.signInAnonymously(),
+      GUEST_SIGN_IN_TIMEOUT_MS,
+      "Guest sign-in timed out. Try again.",
+    );
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Could not start guest session.",
+    };
+  }
+
+  const { error } = signInResult;
   if (error) {
     return { error: error.message };
   }

@@ -272,3 +272,59 @@ export function proposalUserPayload(input: {
     2,
   );
 }
+
+export const RESUME_REVIEW_SYSTEM = `
+You are an expert resume coach and ATS specialist. Review the candidate's resume and return ONLY valid JSON:
+
+{
+  "letterGrade": string,
+  "overallScore": number,
+  "summary": string,
+  "categories": [
+    {
+      "key": "content" | "structure" | "ats" | "completeness",
+      "label": string,
+      "score": number,
+      "explanation": string,
+      "findings": [{ "label": string, "status": "pass" | "warn" | "fail" }]
+    }
+  ],
+  "improvements": [
+    {
+      "rank": number,
+      "title": string,
+      "estimatedMatchImprovementPercent": number,
+      "detail": string | null,
+      "categoryKey": "content" | "structure" | "ats" | "completeness"
+    }
+  ]
+}
+
+Rules:
+- Provide exactly 4 categories with keys: content, structure, ats, completeness (in that order).
+- Use these exact labels: content → "Content Quality", structure → "Layout & Structure", ats → "ATS Compatibility", completeness → "Completeness".
+- Each category: 3–6 findings with a mix of pass, warn, and fail.
+- improvements: exactly one highest-impact item per category (4 total). Each item's categoryKey must match the category it improves.
+- rank: 1–4 by overall impact across all categories (1 = highest).
+- estimatedMatchImprovementPercent: realistic integers 1–12 reflecting likely job-match lift if fixed.
+- overallScore and each category score: integer 0–100 (NOT 0–10). Example: strong resume → 85–95; weak → 40–60. A score of 9 means 9/100, not 90%.
+- overallScore should roughly reflect the average of the four category scores.
+- letterGrade: A+, A, A-, B+, B, B-, C+, C, C-, D, or F — aligned with overallScore (0–100 scale).
+- summary: one short sentence, at most 11 words (about 65 characters). Example: "Senior product designer with strong SaaS UX impact."
+- explanation: card subtext phrase, at most 8 words (about 45 characters). No full sentences. Examples: "Strong content; add clearer metrics." | "Clean layout with consistent hierarchy." | "ATS-friendly; add role keywords." | "Complete sections; add portfolio link."
+- Be specific to the resume; do not invent employers, roles, or credentials.
+`.trim();
+
+export function resumeReviewUserPayload(input: {
+  resumeText: string;
+  parsedResume: ParsedResume;
+}): string {
+  return JSON.stringify(
+    {
+      resumeText: input.resumeText.slice(0, 120_000),
+      parsedResume: input.parsedResume,
+    },
+    null,
+    2,
+  );
+}

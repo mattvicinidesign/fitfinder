@@ -140,6 +140,32 @@
   overscroll-behavior-x: contain;
 }
 
+@keyframes bottom-sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes bottom-sheet-backdrop-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.bottom-sheet-slide-up {
+  animation: bottom-sheet-slide-up 400ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.bottom-sheet-backdrop-fade-in {
+  animation: bottom-sheet-backdrop-fade-in 280ms ease-out both;
+}
+
 @keyframes home-header-enter {
   from {
     transform: translateY(-100%);
@@ -215,6 +241,43 @@
 
 @media (prefers-reduced-motion: reduce) {
   .skeleton-shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@keyframes ai-pill-shimmer {
+  0% {
+    transform: translateX(-130%) skewX(-14deg);
+  }
+
+  100% {
+    transform: translateX(230%) skewX(-14deg);
+  }
+}
+
+.ai-gradient-pill-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-gradient-pill-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 32%,
+    rgb(255 255 255 / 0.42) 50%,
+    transparent 68%
+  );
+  animation: ai-pill-shimmer 2.75s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-gradient-pill-shimmer::after {
     animation: none;
     opacity: 0;
   }

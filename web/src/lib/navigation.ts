@@ -1,6 +1,6 @@
 import {
   BarChart2,
-  Bookmark,
+  ClipboardCheck,
   Clock,
   Home,
   ScanSearch,
@@ -16,10 +16,11 @@ export interface NavItem {
 }
 
 export const ANALYZE_ROUTE = "/analyze";
+export const RESUME_REVIEW_ROUTE = "/resume-review";
 
 export const APP_NAV: NavItem[] = [
   { href: "/home", label: "Home", icon: Home },
-  { href: "/saved", label: "Saved", icon: Bookmark },
+  { href: RESUME_REVIEW_ROUTE, label: "Resume Review", icon: ClipboardCheck },
   { href: ANALYZE_ROUTE, label: "Analyze", icon: ScanSearch },
   { href: "/history", label: "History", icon: Clock },
   { href: "/stats", label: "Stats", icon: BarChart2 },
@@ -31,7 +32,10 @@ export const BOTTOM_TAB_NAV: NavItem[] = APP_NAV.filter(
   (item) => item.href !== ANALYZE_ROUTE,
 );
 
-export const PROTECTED_PREFIXES = APP_NAV.map((n) => n.href);
+export const PROTECTED_PREFIXES = [
+  ...APP_NAV.map((n) => n.href),
+  "/saved",
+];
 
 /** Canonical UI reference route (demo data, no auth required). */
 export const FIT_FINDER_PREVIEW_PATH = "/preview";

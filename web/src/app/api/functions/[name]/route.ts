@@ -6,6 +6,7 @@ const ALLOWED = new Set([
   "parse-resume",
   "parse-job",
   "generate-proposal",
+  "review-resume",
   "delete-account",
 ]);
 

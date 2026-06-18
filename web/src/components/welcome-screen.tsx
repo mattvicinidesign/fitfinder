@@ -1,17 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { LaunchOverlayFrame } from "@/components/launch-overlay-frame";
 import { WelcomeHeroIllustration } from "@/components/welcome-hero-illustration";
-import {
-  markWelcomeComplete,
-  markLaunchFlowComplete,
-  markAppSessionActive,
-} from "@/lib/app-session";
+import { ensureGuestSession } from "@/lib/ensure-guest-session";
+import { DEFAULT_APP_ROUTE } from "@/lib/app-session";
 import { clearOnboardingProgress } from "@/lib/onboarding-progress";
 import { navigateApp } from "@/lib/navigate-app";
 import { safeBottomOverlay, safeTopHero } from "@/lib/safe-area";
@@ -23,6 +19,7 @@ interface WelcomeScreenProps {
 
 export function WelcomeScreen({ onExit, onSignUp }: WelcomeScreenProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [busy, setBusy] = useState<"guest" | "account" | null>(null);
 
   function handleCreateAccount() {
@@ -33,29 +30,28 @@ export function WelcomeScreen({ onExit, onSignUp }: WelcomeScreenProps) {
 
   async function handleContinueAsGuest() {
     setBusy("guest");
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      toast.error(error.message);
-      setBusy(null);
-      return;
-    }
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
+    try {
+      const result = await ensureGuestSession();
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      clearOnboardingProgress();
+      onExit(DEFAULT_APP_ROUTE);
+
+      if (pathname === DEFAULT_APP_ROUTE) {
+        return;
+      }
+
+      navigateApp(DEFAULT_APP_ROUTE, router, "replace");
+    } catch {
       toast.error("Could not start guest session. Try again.");
+    } finally {
       setBusy(null);
-      return;
     }
-
-    markWelcomeComplete();
-    markLaunchFlowComplete();
-    clearOnboardingProgress();
-    markAppSessionActive();
-    onExit("/home");
-    navigateApp("/home", router, "push");
   }
 
   return (

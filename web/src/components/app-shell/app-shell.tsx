@@ -11,6 +11,12 @@ import {
   ProfileOverlayProvider,
   useProfileOverlay,
 } from "@/components/app-shell/profile-overlay";
+import {
+  isResumeReviewCategoryRoute,
+  ResumeReviewCategoryOverlayProvider,
+  useResumeReviewCategoryOverlay,
+} from "@/components/app-shell/resume-review-category-overlay";
+import { ResumeReviewScreen } from "@/components/screens/resume-review-screen";
 import { SkeletonAppShell } from "@/components/ui/skeletons";
 import { ensureGuestSession } from "@/lib/ensure-guest-session";
 import { isNativePlatform } from "@/lib/platform";
@@ -27,14 +33,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
   const underlyingRef = useRef<React.ReactNode>(null);
   const profileContentRef = useRef<React.ReactNode>(null);
+  const resumeReviewUnderlayRef = useRef<React.ReactNode>(null);
+  const resumeReviewCategoryContentRef = useRef<React.ReactNode>(null);
 
   const isProfile = pathname === "/profile";
   const isPreview = pathname === "/preview";
+  const isResumeReviewCategory = isResumeReviewCategoryRoute(pathname);
+  const isResumeReviewMain = pathname === "/resume-review";
 
   if (isProfile) {
     profileContentRef.current = children;
+  } else if (isResumeReviewCategory) {
+    resumeReviewCategoryContentRef.current = children;
   } else {
     underlyingRef.current = children;
+    if (isResumeReviewMain) {
+      resumeReviewUnderlayRef.current = children;
+    }
   }
 
   const needsAuth = PROTECTED_PREFIXES.some(
@@ -138,7 +153,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           isProfile ? (profileContentRef.current ?? children) : null
         }
       >
-        <AppShellChrome>{children}</AppShellChrome>
+        <ResumeReviewCategoryOverlayProvider
+          underlay={resumeReviewUnderlayRef.current ?? <ResumeReviewScreen />}
+          categoryContent={
+            isResumeReviewCategory
+              ? (resumeReviewCategoryContentRef.current ?? children)
+              : null
+          }
+        >
+          <AppShellChrome>{children}</AppShellChrome>
+        </ResumeReviewCategoryOverlayProvider>
       </ProfileOverlayProvider>
     </AppFrame>
   );
@@ -146,7 +170,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 function AppShellChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { showSheet, overlay } = useProfileOverlay();
+  const { showSheet: showProfileSheet, overlay: profileOverlay } =
+    useProfileOverlay();
+  const { showSheet: showCategorySheet, overlay: categoryOverlay } =
+    useResumeReviewCategoryOverlay();
   const isAnalyzeFlow =
     pathname === "/analyze" || pathname.startsWith("/analyze/report");
   const usesInternalScroll =
@@ -154,11 +181,12 @@ function AppShellChrome({ children }: { children: React.ReactNode }) {
     pathname === "/profile" ||
     pathname === "/onboarding" ||
     isAnalyzeFlow;
+  const showAnySheet = showProfileSheet || showCategorySheet;
   const hideTabBar = isAnalyzeFlow;
-  const lockMainScroll = usesInternalScroll || showSheet;
+  const lockMainScroll = usesInternalScroll || showAnySheet;
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
+    <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
       <main
         className={
           lockMainScroll
@@ -167,10 +195,11 @@ function AppShellChrome({ children }: { children: React.ReactNode }) {
         }
         {...(!lockMainScroll && { "data-app-scroll-y": true })}
       >
-        {overlay}
-        {showSheet ? null : children}
+        {profileOverlay}
+        {showAnySheet ? null : children}
       </main>
       {hideTabBar ? null : <AppTabBar />}
+      {categoryOverlay}
     </div>
   );
 }

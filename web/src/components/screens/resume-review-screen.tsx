@@ -1,0 +1,110 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { IosLargeTitle } from "@/components/ui/ios-large-title";
+import { ResumeReviewResultView } from "@/components/resume-review-result";
+import { ResumeReviewUploadZone } from "@/components/resume-review-upload-zone";
+import { reviewResume } from "@/lib/api";
+import { getCachedParsedResume } from "@/lib/resume-parse-tracker";
+import {
+  clearResumeReview,
+  loadResumeReview,
+  loadResumeReviewFileName,
+  saveResumeReview,
+  saveResumeReviewFileName,
+} from "@/lib/resume-review-cache";
+import { clearAtsKeywordOptimization } from "@/lib/resume-review-ats-optimization";
+import type { ResumeReviewResult } from "@/lib/types";
+import { toast } from "sonner";
+
+export function ResumeReviewScreen() {
+  const [review, setReview] = useState<ResumeReviewResult | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState(false);
+  const [animateGauge, setAnimateGauge] = useState(false);
+
+  useEffect(() => {
+    const cached = loadResumeReview();
+    if (cached) {
+      setReview(cached);
+      setFileName(loadResumeReviewFileName());
+    }
+  }, []);
+
+  const runReview = useCallback(async (resumeId: string, name: string) => {
+    setReviewing(true);
+    setFileName(name);
+    try {
+      const parsedResume = getCachedParsedResume(resumeId);
+      const previous = loadResumeReview();
+      if (previous?.id) {
+        clearAtsKeywordOptimization(previous.id);
+      }
+      const result = await reviewResume({ resumeId, parsedResume });
+      setAnimateGauge(true);
+      setReview(result);
+      saveResumeReview(result);
+      saveResumeReviewFileName(name);
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Could not review this resume.",
+      );
+      setFileName(null);
+    } finally {
+      setReviewing(false);
+    }
+  }, []);
+
+  const handleReplace = () => {
+    clearResumeReview();
+    setReview(null);
+    setFileName(null);
+    setAnimateGauge(false);
+  };
+
+  return (
+    <>
+      <IosLargeTitle
+        title="Resume Score"
+        subtitle="Your resume health at a glance."
+        trailing={
+          review ? (
+            <button
+              type="button"
+              onClick={handleReplace}
+              className="rounded-lg border border-border/80 bg-card px-3 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-muted/40"
+            >
+              Replace
+            </button>
+          ) : undefined
+        }
+      />
+
+      <div className="py-4 space-y-6">
+        {reviewing ? (
+          <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
+            <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
+            <p className="text-[17px] font-medium text-foreground">
+              Analyzing your resume…
+            </p>
+            <p className="max-w-[16rem] text-[14px] text-muted-foreground">
+              Checking content, structure, ATS compatibility, and completeness.
+            </p>
+          </div>
+        ) : review ? (
+          <ResumeReviewResultView
+            review={review}
+            fileName={fileName}
+            animateGauge={animateGauge}
+            onGaugeAnimationComplete={() => setAnimateGauge(false)}
+          />
+        ) : (
+          <ResumeReviewUploadZone onReady={({ resumeId, fileName: name }) => {
+            void runReview(resumeId, name);
+          }} />
+        )}
+      </div>
+    </>
+  );
+}

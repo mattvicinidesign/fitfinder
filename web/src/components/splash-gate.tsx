@@ -23,7 +23,9 @@ import {
   isSignupLaunchRequested,
   markAppSessionActive,
   markSplashComplete,
+  markWelcomeComplete,
   QA_RETURNING_SPLASH_KEY,
+  shouldSkipWelcomeForDevDeepLink,
 } from "@/lib/app-session";
 import {
   markOnboardingWelcomeRestored,
@@ -78,18 +80,8 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return false;
     return !hasCompletedSplash();
   });
-  const [welcomeExitTarget, setWelcomeExitTarget] = useState<string | null>(
-    null,
-  );
 
   const appVisible = phase === "ready" || phase === "replay";
-
-  const welcomeRouteMatches = useCallback(
-    (target: string, path: string) => {
-      return path === target || path.startsWith(`${target}/`);
-    },
-    [],
-  );
 
   const beginSignupPhase = useCallback(
     (targetPathname: string) => {
@@ -102,6 +94,12 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
 
   const routeAfterSplash = useCallback(
     (targetPathname: string) => {
+      if (shouldSkipWelcomeForDevDeepLink(targetPathname)) {
+        markWelcomeComplete();
+        setPhase("ready");
+        return;
+      }
+
       const destination = resolvePostSplashDestination(isSignupFlowRequested());
 
       if (destination === "home") {
@@ -125,23 +123,9 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
     [beginSignupPhase, router],
   );
 
-  const beginWelcomeExit = useCallback(
-    (target: string) => {
-      setWelcomeExitTarget(target);
-      if (welcomeRouteMatches(target, pathname)) {
-        setPhase("ready");
-        setWelcomeExitTarget(null);
-      }
-    },
-    [pathname, welcomeRouteMatches],
-  );
-
-  useEffect(() => {
-    if (!welcomeExitTarget) return;
-    if (!welcomeRouteMatches(welcomeExitTarget, pathname)) return;
+  const beginWelcomeExit = useCallback((_target: string) => {
     setPhase("ready");
-    setWelcomeExitTarget(null);
-  }, [pathname, welcomeExitTarget, welcomeRouteMatches]);
+  }, []);
 
   useEffect(() => {
     pathnameRef.current = pathname;
@@ -212,6 +196,11 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
         markSplashComplete();
         if (isSignupFlowRequested()) {
           beginSignupPhase(currentPath);
+          return;
+        }
+        if (shouldSkipWelcomeForDevDeepLink(currentPath)) {
+          markWelcomeComplete();
+          setPhase("ready");
           return;
         }
         setPhase("welcome");

@@ -183,14 +183,14 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
-    "id": "21820506",
-    "title": "Product Design Consultant (Contract, 3–6 Months)",
-    "company": "Nanit",
-    "location": "New York, NY",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-11T18:29:09Z",
-    "applyUrl": "https://www.themuse.com/jobs/nanit/product-design-consultant-contract-36-months",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000106/small_logo.png?v=5d4d6dac86a0ea7229ffbf5eb4358bd1490c38bd69c72f7a8f37d9f6bbde9601"
+    "id": "21852947",
+    "title": "Controls Technician (Starship Launch Pad)",
+    "company": "SpaceX",
+    "location": "Brownsville, TX",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-17T23:33:47Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/controls-technician-starship-launch-pad-b72b3f",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
     "id": "21852953",
