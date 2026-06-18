@@ -15,6 +15,11 @@ export const safeTopCompact = "pt-[max(0.5rem,env(safe-area-inset-top))]";
 /** Large-title list screens (Saved, History, Profile title). */
 export const safeTopTitle = "pt-[max(0.75rem,env(safe-area-inset-top))]";
 
+/** Launch overlays (splash, welcome, signup). */
+export const safeTopLaunch = "pt-[max(0px,env(safe-area-inset-top))]";
+
+export const safeBottomLaunch = "pb-[max(0px,env(safe-area-inset-bottom))]";
+
 /** Launch overlays and hero headers (Welcome, Sign up, Home). */
 export const safeTopHero = "pt-[max(1.5rem,env(safe-area-inset-top))]";
 

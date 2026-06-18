@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { HomeSearchReportsBar } from "@/components/home-search-reports-bar";
 import { usePathname } from "next/navigation";
@@ -21,27 +21,44 @@ import {
   SkeletonHomeWelcome,
   SkeletonPrimitive,
 } from "@/components/ui/skeletons";
+import {
+  markHomeHeaderEnterDone,
+  shouldPlayHomeHeaderEnter,
+} from "@/lib/app-session";
+import { useAppShellVisible } from "@/lib/app-shell-visible";
+import {
+  buildHomeActivitySnapshot,
+  readHomeActivitySnapshot,
+  writeHomeActivitySnapshot,
+} from "@/lib/home-activity";
 import { computeHomeFitStats, type HomeFitStats } from "@/lib/analysis-stats";
 import { cn } from "@/lib/utils";
 import {
   activityMetaLine,
-  loadRecentActivity,
   matchesReportSearchQuery,
-  mergeRecentActivity,
   type RecentActivityItem,
 } from "@/lib/recent-activity";
 import { ReportLink } from "@/components/report-link";
-import {
-  ensureSampleAnalysisDataSeeded,
-  getSampleAnalyses,
-  pickAnalysisListWithSamples,
-  pickRecentActivityList,
-} from "@/lib/sample-analyses";
 import { homeHeroContentInset, screenGutterX } from "@/lib/screen-gutter";
 import type { AnalysisRecord } from "@/lib/types";
 
 const RECENT_LIMIT = 20;
 const VIEW_ALL_HREF = "/history";
+
+type HomeHeaderPlayState = "pending" | "animating" | "entered";
+
+function initialHeaderPlayState(): HomeHeaderPlayState {
+  if (typeof window === "undefined") return "pending";
+  return shouldPlayHomeHeaderEnter() ? "pending" : "entered";
+}
+
+function initialHomeActivity() {
+  if (typeof window === "undefined") {
+    return { analyses: [] as RecentActivityItem[], fitStats: null as HomeFitStats | null };
+  }
+  const snapshot = readHomeActivitySnapshot(RECENT_LIMIT);
+  return { analyses: snapshot.analyses, fitStats: snapshot.fitStats };
+}
 
 function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
   return (
@@ -91,10 +108,17 @@ function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
 
 export function HomeScreen() {
   const pathname = usePathname();
-  const [analyses, setAnalyses] = useState<RecentActivityItem[]>([]);
-  const [fitStats, setFitStats] = useState<HomeFitStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [headerEntered, setHeaderEntered] = useState(false);
+  const appShellVisible = useAppShellVisible();
+  const initialActivity = initialHomeActivity();
+  const [analyses, setAnalyses] = useState<RecentActivityItem[]>(
+    initialActivity.analyses,
+  );
+  const [fitStats, setFitStats] = useState<HomeFitStats | null>(
+    initialActivity.fitStats,
+  );
+  const [loading, setLoading] = useState(initialActivity.analyses.length === 0);
+  const [headerPlayState, setHeaderPlayState] =
+    useState<HomeHeaderPlayState>(initialHeaderPlayState);
   const searchSentinelRef = useRef<HTMLDivElement>(null);
   const [searchStuck, setSearchStuck] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -105,19 +129,50 @@ export function HomeScreen() {
     [analyses, searchQuery],
   );
 
-  useEffect(() => {
-    if (pathname !== "/home") {
-      setHeaderEntered(false);
+  useLayoutEffect(() => {
+    if (pathname !== "/home" || !appShellVisible) return;
+
+    if (!shouldPlayHomeHeaderEnter()) {
+      setHeaderPlayState("entered");
       return;
     }
 
-    setHeaderEntered(false);
-    const frame = requestAnimationFrame(() => setHeaderEntered(true));
-    return () => cancelAnimationFrame(frame);
-  }, [pathname]);
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduceMotion) {
+      markHomeHeaderEnterDone();
+      setHeaderPlayState("entered");
+      return;
+    }
+
+    setHeaderPlayState("pending");
+    let outerFrame = 0;
+    let innerFrame = 0;
+    outerFrame = requestAnimationFrame(() => {
+      innerFrame = requestAnimationFrame(() => {
+        setHeaderPlayState("animating");
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(outerFrame);
+      cancelAnimationFrame(innerFrame);
+    };
+  }, [pathname, appShellVisible]);
+
+  const homeContentReady = headerPlayState === "entered";
+
+  const handleHeaderAnimationEnd = useCallback(
+    (event: React.AnimationEvent<HTMLDivElement>) => {
+      if (event.animationName !== "home-header-enter") return;
+      markHomeHeaderEnterDone();
+      setHeaderPlayState("entered");
+    },
+    [],
+  );
 
   const loadActivity = useCallback(async () => {
-    ensureSampleAnalysisDataSeeded();
     const supabase = createClient();
     const { data } = await supabase
       .from("analyses")
@@ -127,21 +182,17 @@ export function HomeScreen() {
       .order("created_at", { ascending: false });
 
     const dbRows = (data ?? []) as AnalysisRecord[];
-    const localRows = loadRecentActivity();
-    const merged = mergeRecentActivity(
-      dbRows,
-      localRows,
-      Number.MAX_SAFE_INTEGER,
-    );
-    const statsSource = pickAnalysisListWithSamples(merged, getSampleAnalyses());
-    setFitStats(computeHomeFitStats(statsSource));
-    setAnalyses(pickRecentActivityList(merged, RECENT_LIMIT));
+    const snapshot = buildHomeActivitySnapshot(dbRows, RECENT_LIMIT);
+    writeHomeActivitySnapshot(snapshot);
+    setFitStats(snapshot.fitStats);
+    setAnalyses(snapshot.analyses);
     setLoading(false);
   }, []);
 
   useEffect(() => {
+    if (!homeContentReady) return;
     void loadActivity();
-  }, [loadActivity]);
+  }, [loadActivity, homeContentReady]);
 
   useEffect(() => {
     const refresh = () => void loadActivity();
@@ -159,7 +210,9 @@ export function HomeScreen() {
   const showPersonalizedHero =
     !loading && fitStats != null && fitStats.analyzedCount > 0;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!homeContentReady) return;
+
     const sentinel = searchSentinelRef.current;
     if (!sentinel) return;
 
@@ -180,7 +233,7 @@ export function HomeScreen() {
       scrollRoot.removeEventListener("scroll", updateStuck);
       window.removeEventListener("resize", updateStuck);
     };
-  }, [pathname, headerEntered, showPersonalizedHero, loading]);
+  }, [pathname, homeContentReady, showPersonalizedHero, loading]);
 
   return (
     <div className={cn(screenShellClass, "bg-background")}>
@@ -191,9 +244,11 @@ export function HomeScreen() {
         <div
           className={cn(
             "relative z-0",
-            !headerEntered && "home-header-pending",
-            headerEntered && "home-header-enter",
+            headerPlayState === "pending" && "home-header-pending",
+            headerPlayState === "animating" && "home-header-enter",
+            headerPlayState === "entered" && "home-header-entered",
           )}
+          onAnimationEnd={handleHeaderAnimationEnd}
         >
           <div className="overflow-hidden rounded-b-[29px]">
             <header
@@ -242,6 +297,7 @@ export function HomeScreen() {
             <HomeSearchReportsBar
               value={searchQuery}
               onChange={setSearchQuery}
+              typewriterEnabled={homeContentReady}
             />
           </div>
         </div>
@@ -257,8 +313,11 @@ export function HomeScreen() {
               "space-y-6 pb-6",
               screenGutterX,
               searchStuck ? "pt-3" : "pt-6",
+              !homeContentReady && "opacity-0",
             )}
           >
+            {homeContentReady ? (
+              <>
             <RecommendedJobsSection embedded />
 
             <section className="space-y-2">
@@ -309,6 +368,8 @@ export function HomeScreen() {
                 </>
               )}
             </section>
+              </>
+            ) : null}
           </div>
         </div>
       </div>

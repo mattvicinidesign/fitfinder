@@ -7,6 +7,13 @@ interface RecommendedJobsResponse {
   error?: string;
 }
 
+let cachedRecommendedJobs: RecommendedJob[] | null = null;
+
+/** Instant carousel paint on home return — refreshed async in the background. */
+export function getCachedRecommendedJobs(): RecommendedJob[] {
+  return cachedRecommendedJobs ?? BUNDLED_RECOMMENDED_JOBS;
+}
+
 /** Production web origin for live native refresh (CapacitorHttp external only). */
 const DEFAULT_LIVE_ORIGIN = "https://fitfinder.vercel.app";
 
@@ -60,12 +67,16 @@ export async function loadRecommendedJobs(): Promise<RecommendedJob[]> {
   if (!isNativePlatform()) {
     try {
       const jobs = await fetchWebRecommendedJobs();
-      if (jobs.length > 0) return jobs;
+      if (jobs.length > 0) {
+        cachedRecommendedJobs = jobs;
+        return jobs;
+      }
     } catch {
       /* fall back to bundled snapshot */
     }
 
     if (BUNDLED_RECOMMENDED_JOBS.length > 0) {
+      cachedRecommendedJobs = BUNDLED_RECOMMENDED_JOBS;
       return BUNDLED_RECOMMENDED_JOBS;
     }
 
@@ -74,12 +85,16 @@ export async function loadRecommendedJobs(): Promise<RecommendedJob[]> {
 
   try {
     const live = await fetchLiveRecommendedJobs();
-    if (live.length > 0) return live;
+    if (live.length > 0) {
+      cachedRecommendedJobs = live;
+      return live;
+    }
   } catch {
     /* fall back to bundled snapshot */
   }
 
   if (BUNDLED_RECOMMENDED_JOBS.length > 0) {
+    cachedRecommendedJobs = BUNDLED_RECOMMENDED_JOBS;
     return BUNDLED_RECOMMENDED_JOBS;
   }
 

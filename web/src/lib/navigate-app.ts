@@ -74,5 +74,10 @@ export function navigateApp(
 }
 
 export function goBackToResumeReview(router?: AppRouter): void {
+  if (router?.replace) {
+    router.replace("/resume-review");
+    router.refresh?.();
+    return;
+  }
   navigateApp("/resume-review", router, "replace");
 }

@@ -9,7 +9,6 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ResumeReviewCategorySheetCloseProvider } from "@/components/app-shell/resume-review-category-sheet-context";
-import { navigateApp } from "@/lib/navigate-app";
 import { cn } from "@/lib/utils";
 
 export type ResumeReviewCategorySheetPhase = "hidden" | "open";
@@ -57,9 +56,11 @@ export function ResumeReviewCategoryOverlayProvider({
     ? "open"
     : "hidden";
 
+  // Client replace (same as profile sheet) — full document loads re-run splash routing
+  // and incorrectly bounce non-home routes to /home on native.
   const closeCategory = useCallback(() => {
     if (!isCategoryRoute) return;
-    navigateApp("/resume-review", router, "replace");
+    router.replace("/resume-review");
   }, [router, isCategoryRoute]);
 
   useEffect(() => {

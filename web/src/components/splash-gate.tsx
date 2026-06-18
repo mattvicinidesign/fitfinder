@@ -32,6 +32,7 @@ import {
   resolvePostSplashDestination,
 } from "@/lib/onboarding-progress";
 import { isSplashQaEnabled } from "@/lib/splash-qa";
+import { markAppShellVisible } from "@/lib/app-shell-visible";
 import { cn } from "@/lib/utils";
 
 export {
@@ -137,6 +138,10 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
       markAppSessionActive();
     }
   }, [phase]);
+
+  useEffect(() => {
+    markAppShellVisible(appVisible);
+  }, [appVisible]);
 
   useLayoutEffect(() => {
     if (pathname.startsWith("/auth/callback")) {

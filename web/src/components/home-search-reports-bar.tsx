@@ -36,10 +36,13 @@ export function HomeSearchReportsBar({
   className,
   value,
   onChange,
+  typewriterEnabled = true,
 }: {
   className?: string;
   value: string;
   onChange: (value: string) => void;
+  /** When false, placeholder stays static until the home hero finishes entering. */
+  typewriterEnabled?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
@@ -50,7 +53,7 @@ export function HomeSearchReportsBar({
   const isSearching = active || value.length > 0;
 
   useEffect(() => {
-    if (isSearching) return;
+    if (isSearching || !typewriterEnabled) return;
 
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -80,7 +83,7 @@ export function HomeSearchReportsBar({
     }, TYPEWRITER_CHAR_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [isSearching]);
+  }, [isSearching, typewriterEnabled]);
 
   const activate = () => {
     markSearchReportsTypewriterDone();

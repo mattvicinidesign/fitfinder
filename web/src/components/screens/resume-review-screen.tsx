@@ -66,7 +66,7 @@ export function ResumeReviewScreen() {
   return (
     <>
       <IosLargeTitle
-        title="Resume Score"
+        title="Score"
         subtitle="Your resume health at a glance."
         trailing={
           review ? (

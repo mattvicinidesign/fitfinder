@@ -10,7 +10,10 @@ import {
 } from "@/components/ui/card";
 import { SkeletonOpportunityCarousel } from "@/components/ui/skeletons/skeleton-opportunity-card";
 import type { RecommendedJob } from "@/lib/types";
-import { loadRecommendedJobs } from "@/lib/load-recommended-jobs";
+import {
+  getCachedRecommendedJobs,
+  loadRecommendedJobs,
+} from "@/lib/load-recommended-jobs";
 import { isNativePlatform } from "@/lib/platform";
 import { openExternalUrl } from "@/lib/open-external-url";
 import { screenGutterX } from "@/lib/screen-gutter";
@@ -197,8 +200,8 @@ function RecommendedJobsCarousel({
 }
 
 export function RecommendedJobsSection({ embedded = false }: { embedded?: boolean }) {
-  const [jobs, setJobs] = useState<RecommendedJob[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState<RecommendedJob[]>(getCachedRecommendedJobs);
+  const [loading, setLoading] = useState(() => getCachedRecommendedJobs().length === 0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

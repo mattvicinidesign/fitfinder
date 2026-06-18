@@ -8,6 +8,7 @@ export const QA_RETURNING_SPLASH_KEY = "fitfinder-qa-returning-splash";
 export const SIGNUP_LAUNCH_KEY = "fitfinder-signup-launch";
 export const AUTH_DEEP_LINK_KEY = "fitfinder-auth-deep-link";
 export const SEARCH_TYPEWRITER_DONE_KEY = "fitfinder-home-search-typewriter-done";
+export const HOME_HEADER_ENTER_DONE_KEY = "fitfinder-home-header-enter-done";
 export const DEFAULT_APP_ROUTE = "/home";
 
 /** @deprecated Signup is in the launch overlay — use requestSignupFlow() instead. */
@@ -170,4 +171,15 @@ export function shouldPlaySearchReportsTypewriter(): boolean {
 export function markSearchReportsTypewriterDone(): void {
   if (!canUseSessionStorage()) return;
   sessionStorage.setItem(SEARCH_TYPEWRITER_DONE_KEY, "true");
+}
+
+/** Cold session — play home hero header slide-in once (tab returns skip it). */
+export function shouldPlayHomeHeaderEnter(): boolean {
+  if (!canUseSessionStorage()) return false;
+  return sessionStorage.getItem(HOME_HEADER_ENTER_DONE_KEY) !== "true";
+}
+
+export function markHomeHeaderEnterDone(): void {
+  if (!canUseSessionStorage()) return;
+  sessionStorage.setItem(HOME_HEADER_ENTER_DONE_KEY, "true");
 }

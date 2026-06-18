@@ -5,10 +5,18 @@ import type { LottieComponentProps } from "lottie-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LaunchOverlayFrame } from "@/components/launch-overlay-frame";
+import { safeTopHero } from "@/lib/safe-area";
 import { cn } from "@/lib/utils";
 
 const ANIMATION_PATH = "/OFitSplashAnimation.json";
 const WORDMARK_PATH = "/only-fit-wordmark.png";
+/** Must match web/public/OFitSplashAnimation.json composition size. */
+const LOTTIE_COMP_W = 126;
+const LOTTIE_COMP_H = 178;
+const LOTTIE_DISPLAY_W = 126;
+const LOTTIE_DISPLAY_H = Math.round(
+  LOTTIE_DISPLAY_W * (LOTTIE_COMP_H / LOTTIE_COMP_W),
+);
 const WORDMARK_FADE_MS = 700;
 const PAUSE_MS = 500;
 const EXIT_FADE_MS = 500;
@@ -84,18 +92,22 @@ export function SplashScreen({
   return (
     <LaunchOverlayFrame
       exiting={phase === "exiting"}
-      className="items-center justify-center"
+      className={cn("items-center justify-center", safeTopHero)}
       aria-hidden={phase === "exiting"}
     >
       <div className="flex flex-col items-center justify-center px-6">
-        <div className="flex h-[126px] w-[126px] items-center justify-center">
+        <div
+          className="splash-lottie-stage flex items-center justify-center overflow-visible"
+          style={{ width: LOTTIE_DISPLAY_W, height: LOTTIE_DISPLAY_H }}
+        >
           {animationData && LottiePlayer ? (
             <LottiePlayer
               animationData={animationData}
               loop={false}
               autoplay
               onComplete={handleAnimationComplete}
-              className="h-full w-full"
+              className="splash-lottie-player h-full w-full"
+              rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
             />
           ) : null}
         </div>

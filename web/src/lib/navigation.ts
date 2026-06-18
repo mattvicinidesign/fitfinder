@@ -20,7 +20,7 @@ export const RESUME_REVIEW_ROUTE = "/resume-review";
 
 export const APP_NAV: NavItem[] = [
   { href: "/home", label: "Home", icon: Home },
-  { href: RESUME_REVIEW_ROUTE, label: "Resume Review", icon: ClipboardCheck },
+  { href: RESUME_REVIEW_ROUTE, label: "Score", icon: ClipboardCheck },
   { href: ANALYZE_ROUTE, label: "Analyze", icon: ScanSearch },
   { href: "/history", label: "History", icon: Clock },
   { href: "/stats", label: "Stats", icon: BarChart2 },
