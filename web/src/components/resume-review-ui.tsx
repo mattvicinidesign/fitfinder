@@ -1,10 +1,10 @@
 import { AlertTriangle, Check, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
+import { ResumeReviewAnimatedScore } from "@/components/resume-review-animated-score";
 import { Card } from "@/components/ui/card";
 import { getResumeReviewCategoryIcon, getResumeReviewCategoryLabel } from "@/lib/resume-review-categories";
 import {
   clampResumeReviewScore,
-  RESUME_REVIEW_SCORE_GRADIENT_HORIZONTAL,
 } from "@/lib/resume-review-score-colors";
 import type { ReactNode } from "react";
 import type {
@@ -16,15 +16,15 @@ import { cn } from "@/lib/utils";
 
 /** Shared layout for the four resume review category score cards. */
 export const resumeReviewCategoryCardLayout = {
-  card: "flex h-full flex-col gap-0 py-4 ring-border/60",
-  link: "relative flex min-h-0 flex-1 flex-col px-3 py-3 outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring",
+  card: "flex h-full flex-col gap-0 overflow-visible py-4 ring-border/60",
+  link: "relative flex min-h-0 flex-1 flex-col overflow-visible px-3 py-3 outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring",
   chevron: "absolute right-3 top-3 size-4 shrink-0 text-muted-foreground",
-  stack: "flex flex-col gap-3 pr-5 pt-1",
+  stack: "flex min-w-0 flex-col gap-3 pr-5 pt-1",
   icon: "size-9 shrink-0 text-primary",
-  scoreRow: "flex min-h-10 items-center gap-2",
+  scoreRow: "flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1.5",
   score:
-    "text-[40px] font-bold leading-none tabular-nums tracking-tight text-foreground",
-  scoreAccessory: "shrink-0",
+    "shrink-0 text-[40px] font-bold leading-none tabular-nums tracking-tight text-foreground",
+  scoreAccessory: "max-w-full shrink-0",
   label: "text-[15px] font-semibold leading-snug text-foreground",
   explanation: "text-[13px] leading-snug text-muted-foreground",
   footer: "space-y-2 px-3 pt-2",
@@ -34,23 +34,30 @@ export function ResumeReviewCategoryScoreCard({
   categoryKey,
   href,
   ariaLabel,
-  scoreLabel,
+  score,
+  animate = false,
+  animateDelay = 0,
   label,
   explanation,
   scoreAccessory,
   aboveScore,
   belowLabel,
+  afterLabel,
   footer,
 }: {
   categoryKey: ResumeReviewCategoryKey;
   href: string;
   ariaLabel: string;
-  scoreLabel: string;
+  score: number;
+  animate?: boolean;
+  animateDelay?: number;
   label: string;
-  explanation: string;
+  explanation?: string;
   scoreAccessory?: ReactNode;
   aboveScore?: ReactNode;
   belowLabel?: ReactNode;
+  /** Renders below the label instead of the explanation subtext. */
+  afterLabel?: ReactNode;
   footer?: ReactNode;
 }) {
   const Icon = getResumeReviewCategoryIcon(categoryKey);
@@ -62,21 +69,42 @@ export function ResumeReviewCategoryScoreCard({
         <ChevronRight className={layout.chevron} aria-hidden />
 
         <div className={layout.stack}>
-          <Icon className={layout.icon} strokeWidth={2.1} aria-hidden />
+          <Icon className={layout.icon} strokeWidth={1.5} aria-hidden />
 
           {aboveScore}
 
-          <div className={layout.scoreRow}>
-            <p className={layout.score}>{scoreLabel}</p>
+          <div
+            className={cn(
+              layout.scoreRow,
+              scoreAccessory && "flex-nowrap items-center",
+            )}
+          >
+            {animate ? (
+              <ResumeReviewAnimatedScore
+                score={score}
+                animate
+                animateDelay={animateDelay}
+              />
+            ) : (
+              <p className={layout.score}>
+                {formatResumeReviewScorePercent(score)}
+              </p>
+            )}
             {scoreAccessory ? (
-              <div className={layout.scoreAccessory}>{scoreAccessory}</div>
+              <div className={cn(layout.scoreAccessory, "flex items-center")}>
+                {scoreAccessory}
+              </div>
             ) : null}
           </div>
 
           {belowLabel}
 
           <p className={layout.label}>{label}</p>
-          <p className={layout.explanation}>{explanation}</p>
+          {afterLabel ?? (
+            explanation ? (
+              <p className={layout.explanation}>{explanation}</p>
+            ) : null
+          )}
         </div>
       </Link>
       {footer}
@@ -104,7 +132,7 @@ export function ScoreProgressBar({
 
   return (
     <div
-      className={cn("relative h-1.5 overflow-hidden rounded-full bg-muted", className)}
+      className={cn("relative h-1.5 overflow-hidden rounded-full bg-border", className)}
       role="progressbar"
       aria-valuenow={clamped}
       aria-valuemin={0}
@@ -112,15 +140,9 @@ export function ScoreProgressBar({
       aria-label={label}
     >
       <div
-        className="absolute inset-0"
-        style={{ background: RESUME_REVIEW_SCORE_GRADIENT_HORIZONTAL }}
+        className="absolute inset-y-0 left-0 rounded-full bg-primary"
+        style={{ width: `${clamped}%` }}
       />
-      {clamped < 100 ? (
-        <div
-          className="absolute inset-y-0 right-0 bg-background/90"
-          style={{ width: `${100 - clamped}%` }}
-        />
-      ) : null}
     </div>
   );
 }
@@ -176,6 +198,14 @@ export function sortResumeReviewFindings(
   );
 }
 
+export function partitionResumeReviewFindings(findings: ResumeReviewFinding[]) {
+  const sorted = sortResumeReviewFindings(findings);
+  return {
+    strengths: sorted.filter((finding) => finding.status === "pass"),
+    needsImprovement: sorted.filter((finding) => finding.status !== "pass"),
+  };
+}
+
 export function FindingRow({ finding }: { finding: ResumeReviewFinding }) {
   const Icon =
     finding.status === "pass"
@@ -198,10 +228,38 @@ export function FindingRow({ finding }: { finding: ResumeReviewFinding }) {
   );
 }
 
+export function ImprovementAlertRow({ title }: { title: string }) {
+  return (
+    <li className="flex items-start gap-2.5 text-[15px] leading-snug">
+      <AlertTriangle
+        className="mt-0.5 size-4 shrink-0 text-amber-400"
+        aria-hidden
+      />
+      <span className="font-medium text-foreground/90">{title}</span>
+    </li>
+  );
+}
+
+export function NextStepRow({ text }: { text: string }) {
+  return (
+    <li className="flex items-start gap-2.5 text-[15px] leading-snug">
+      <span
+        className="mt-[0.45rem] size-1.5 shrink-0 rounded-full bg-primary"
+        aria-hidden
+      />
+      <span className="text-foreground/90">{text}</span>
+    </li>
+  );
+}
+
 export function ResumeReviewCategoryRow({
   category,
+  animate = false,
+  animateDelay = 0,
 }: {
   category: ResumeReviewCategory;
+  animate?: boolean;
+  animateDelay?: number;
 }) {
   const label = getResumeReviewCategoryLabel(category.key);
   const scoreLabel = formatResumeReviewScorePercent(category.score);
@@ -211,7 +269,9 @@ export function ResumeReviewCategoryRow({
       categoryKey={category.key}
       href={`/resume-review/${category.key}`}
       ariaLabel={`${label}, ${scoreLabel}. ${category.explanation}`}
-      scoreLabel={scoreLabel}
+      score={category.score}
+      animate={animate}
+      animateDelay={animateDelay}
       label={label}
       explanation={category.explanation}
     />

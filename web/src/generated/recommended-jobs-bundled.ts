@@ -13,16 +13,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
-    "id": "21627492",
-    "title": "Staff Product Designer, New Verticals Fulfillment (Dasher Experience)",
-    "company": "DoorDash",
-    "location": "Los Angeles, CA, New York, NY, San Francisco, CA, Seattle, WA",
-    "level": "Mid Level",
-    "publishedAt": "2026-05-23T19:13:05Z",
-    "applyUrl": "https://www.themuse.com/jobs/doordash/staff-product-designer-new-verticals-fulfillment-dasher-experience",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000097/small_logo.png?v=b9f90222099555b55a519f48ead6fd8c771278a73658bd12292e119cda6e9c5a"
-  },
-  {
     "id": "21720376",
     "title": "Senior Product Designer I",
     "company": "The Coca-Cola Company",
@@ -51,16 +41,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-15T19:13:03Z",
     "applyUrl": "https://www.themuse.com/jobs/bankofamerica/experience-design-xd-iv-product-design-bank-of-america-experience-design",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
-  },
-  {
-    "id": "21646584",
-    "title": "Senior Product Design Manager, Integrity",
-    "company": "DoorDash",
-    "location": "New York, NY, San Francisco, CA, Seattle, WA",
-    "level": "Senior Level",
-    "publishedAt": "2026-05-23T19:12:57Z",
-    "applyUrl": "https://www.themuse.com/jobs/doordash/senior-product-design-manager-integrity-54a0a7",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000097/small_logo.png?v=b9f90222099555b55a519f48ead6fd8c771278a73658bd12292e119cda6e9c5a"
   },
   {
     "id": "21856910",
@@ -143,6 +123,16 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
+    "id": "21727110",
+    "title": "UI Designer - Unpublished R&D Product (Contract)",
+    "company": "Riot Games",
+    "location": "Guangzhou, China",
+    "level": "Mid Level",
+    "publishedAt": "2026-05-19T18:30:31Z",
+    "applyUrl": "https://www.themuse.com/jobs/riotgames/ui-designer-unpublished-rd-product-contract",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
+  },
+  {
     "id": "21649313",
     "title": "Mechanical Engineer - Manufacturing Machinery, Satellites (Starlink)",
     "company": "SpaceX",
@@ -183,6 +173,26 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
+    "id": "21038917",
+    "title": "Staff Product Designer",
+    "company": "GlossGenius",
+    "location": "New York, NY",
+    "level": "Senior Level",
+    "publishedAt": "2026-05-13T18:46:40Z",
+    "applyUrl": "https://www.themuse.com/jobs/glossgenius/staff-product-designer-44678c",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
+  },
+  {
+    "id": "21820506",
+    "title": "Product Design Consultant (Contract, 3–6 Months)",
+    "company": "Nanit",
+    "location": "New York, NY",
+    "level": "Senior Level",
+    "publishedAt": "2026-06-11T18:29:09Z",
+    "applyUrl": "https://www.themuse.com/jobs/nanit/product-design-consultant-contract-36-months",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000106/small_logo.png?v=5d4d6dac86a0ea7229ffbf5eb4358bd1490c38bd69c72f7a8f37d9f6bbde9601"
+  },
+  {
     "id": "21852947",
     "title": "Controls Technician (Starship Launch Pad)",
     "company": "SpaceX",
@@ -190,16 +200,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "level": "Mid Level",
     "publishedAt": "2026-06-17T23:33:47Z",
     "applyUrl": "https://www.themuse.com/jobs/spacex/controls-technician-starship-launch-pad-b72b3f",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21852953",
-    "title": "Propulsion Technician (Raptor)",
-    "company": "SpaceX",
-    "location": "El Segundo, CA",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-16T23:35:17Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/propulsion-technician-raptor-27fce2",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   }
 ] as RecommendedJob[];

@@ -12,6 +12,10 @@ export const safeTopFloating = "top-[max(1rem,env(safe-area-inset-top))]";
 /** Back-button / compact screen headers (Analyze, Report). */
 export const safeTopCompact = "pt-[max(0.5rem,env(safe-area-inset-top))]";
 
+/** Full-bleed sheet headers — safe inset plus pt-4, same as category detail sheets. */
+export const safeTopSheetHeader =
+  "pt-[calc(max(0.5rem,env(safe-area-inset-top))+1rem)]";
+
 /** Large-title list screens (Saved, History, Profile title). */
 export const safeTopTitle = "pt-[max(0.75rem,env(safe-area-inset-top))]";
 

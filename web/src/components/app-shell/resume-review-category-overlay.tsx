@@ -73,7 +73,7 @@ export function ResumeReviewCategoryOverlayProvider({
   }, [showSheet, closeCategory]);
 
   const overlay = showSheet ? (
-    <div className="absolute inset-0 z-50 flex min-h-0 flex-col justify-end overflow-hidden">
+    <div className="absolute inset-0 z-50 overflow-hidden">
       {underlay ? (
         <div className="absolute inset-0 overflow-hidden" aria-hidden>
           {underlay}
@@ -88,7 +88,8 @@ export function ResumeReviewCategoryOverlayProvider({
       <ResumeReviewCategorySheetCloseProvider onClose={closeCategory}>
         <div
           className={cn(
-            "relative flex max-h-[92%] min-h-0 w-full flex-col overflow-hidden",
+            "absolute inset-x-0 bottom-0 flex min-h-0 flex-col overflow-hidden",
+            "top-[max(0.5rem,env(safe-area-inset-top))]",
             "rounded-t-2xl border border-border/60 bg-background shadow-[0_-8px_32px_rgba(0,0,0,0.35)]",
             "bottom-sheet-slide-up",
           )}

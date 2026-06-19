@@ -1,21 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useResumeReviewCategorySheetClose } from "@/components/app-shell/resume-review-category-sheet-context";
+import {
+  AtsKeywordOptimizeConfirmModal,
+  AtsKeywordOptimizeLoadingOverlay,
+} from "@/components/ats-keyword-optimize-modals";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
+import { AiGradientPillButton, AiGradientPillBadge } from "@/components/ai-gradient-pill-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   FindingRow,
   formatResumeReviewScorePercent,
+  ImprovementAlertRow,
+  NextStepRow,
+  partitionResumeReviewFindings,
   ScoreProgressBar,
-  sortResumeReviewFindings,
 } from "@/components/resume-review-ui";
 import { ResumeReviewResourcesSection } from "@/components/resume-review-resources-section";
-import { safeBottomOverlay } from "@/lib/safe-area";
+import { safeBottomCta, safeBottomOverlay } from "@/lib/safe-area";
 import {
   applyAtsKeywordOptimization,
   clearAtsKeywordOptimization,
@@ -23,6 +30,8 @@ import {
   isAtsOptimizationApplied,
   isAtsScanPendingReview,
   loadAtsKeywordOptimization,
+  saveAtsKeywordOptimization,
+  simulateAtsKeywordOptimization,
 } from "@/lib/resume-review-ats-optimization";
 import {
   getResumeReviewCategory,
@@ -30,10 +39,18 @@ import {
   getResumeReviewImprovementForCategory,
   isResumeReviewCategoryKey,
 } from "@/lib/resume-review-categories";
-import { loadResumeReview, saveResumeReview } from "@/lib/resume-review-cache";
-import { patchResumeReviewAtsScore } from "@/lib/patch-resume-review-ats-score";
+import { loadResumeReview, loadResumeReviewFileName, saveResumeReview } from "@/lib/resume-review-cache";
+import {
+  ATS_OPTIMIZED_CATEGORY_EXPLANATION,
+  patchResumeReviewAtsScore,
+} from "@/lib/patch-resume-review-ats-score";
 import { goBackToResumeReview } from "@/lib/navigate-app";
-import { resumeReviewScoreTextClass } from "@/lib/resume-review-score-colors";
+import {
+  expandPreviewImprovementTitles,
+  expandPreviewNeedsImprovementFindings,
+  expandPreviewNextSteps,
+  expandPreviewStrengths,
+} from "@/lib/resume-review-category-preview";
 import type { AtsKeywordChangeDecision, AtsKeywordOptimization, ResumeReviewCategoryKey } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -74,6 +91,9 @@ export function ResumeReviewCategoryScreen({
   const [optimization, setOptimization] = useState<AtsKeywordOptimization | null>(
     null,
   );
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [loadingOpen, setLoadingOpen] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
@@ -86,20 +106,52 @@ export function ResumeReviewCategoryScreen({
     goBackToResumeReview(router);
   }, [hasValidCategory, router]);
 
+  const runOptimization = useCallback(async () => {
+    if (!review) return;
+    const ats = review.categories.find((category) => category.key === "ats");
+    if (!ats) return;
+    setConfirmOpen(false);
+    setLoadingOpen(true);
+    setLoadingStep(0);
+
+    try {
+      const result = await simulateAtsKeywordOptimization({
+        originalATSScore: optimization?.originalATSScore ?? ats.score,
+        onStep: setLoadingStep,
+      });
+
+      saveAtsKeywordOptimization(review.id, result);
+      setOptimization(result);
+      setPreviewOpen(true);
+    } catch {
+      toast.error("Could not optimize keywords. Try again.");
+    } finally {
+      setLoadingOpen(false);
+    }
+  }, [review, optimization?.originalATSScore]);
+
   if (!review || !validKey || !category) {
     return null;
   }
 
   const isAts = validKey === "ats";
+  const atsCategory = review.categories.find((category) => category.key === "ats");
   const atsApplied = isAts && isAtsOptimizationApplied(optimization);
   const atsPendingReview = isAts && isAtsScanPendingReview(optimization);
+  const showFloatingOptimize =
+    isAts && Boolean(atsCategory) && !atsApplied && !atsPendingReview;
+  const showFloatingAtsActions = atsApplied;
+  const showFloatingBottom = showFloatingOptimize || showFloatingAtsActions;
   const displayScore = atsApplied
     ? optimization!.optimizedATSScore
     : category.score;
 
   const handleDownload = () => {
     if (!isAtsOptimizationApplied(optimization)) return;
-    downloadOptimizedResume(optimization!.optimizedResumeText, "resume");
+    void downloadOptimizedResume(
+      optimization!.optimizedResumeText,
+      loadResumeReviewFileName() ?? "resume.pdf",
+    );
     toast.success("Optimized resume downloaded.");
   };
 
@@ -123,8 +175,30 @@ export function ResumeReviewCategoryScreen({
     setPreviewOpen(false);
   };
 
+  const activeCategoryKey = validKey as ResumeReviewCategoryKey;
+  const { strengths: rawStrengths, needsImprovement: rawNeedsImprovement } =
+    partitionResumeReviewFindings(category.findings);
+  const strengths = expandPreviewStrengths(rawStrengths, activeCategoryKey);
+  const needsImprovement = expandPreviewNeedsImprovementFindings(
+    rawNeedsImprovement,
+    activeCategoryKey,
+  );
+  const showImprovement = Boolean(improvement && !atsApplied);
+  const improvementTitles = expandPreviewImprovementTitles(
+    showImprovement ? [improvement!.title] : [],
+    activeCategoryKey,
+  );
+  const hasNeedsImprovementContent =
+    needsImprovement.length > 0 || improvementTitles.length > 0;
+  const nextSteps = expandPreviewNextSteps(
+    showImprovement && improvement!.detail?.trim()
+      ? [improvement!.detail.trim()]
+      : [],
+    activeCategoryKey,
+  );
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <header className="shrink-0 border-b border-border/60 px-4 pb-3 pt-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -132,7 +206,9 @@ export function ResumeReviewCategoryScreen({
               {getResumeReviewCategoryLabel(validKey as ResumeReviewCategoryKey)}
             </h1>
             <p className="mt-1.5 text-[15px] leading-snug text-muted-foreground">
-              {category.explanation}
+              {atsApplied
+                ? ATS_OPTIMIZED_CATEGORY_EXPLANATION
+                : category.explanation}
             </p>
           </div>
           <button
@@ -145,32 +221,17 @@ export function ResumeReviewCategoryScreen({
           </button>
         </div>
 
-        {atsApplied ? (
-          <div className="mt-3 flex items-center gap-2 text-[14px] tabular-nums text-muted-foreground">
-            <span className="line-through">
-              {formatResumeReviewScorePercent(optimization!.originalATSScore)}
-            </span>
-            <span aria-hidden>→</span>
-            <span className="font-semibold text-foreground">
-              {formatResumeReviewScorePercent(displayScore)}
-            </span>
-            {!optimization!.improvementDismissed ? (
-              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[12px] font-semibold text-emerald-400">
-                +{optimization!.improvementPercentage}%
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-
-        <div className="mt-4">
-          <span
-            className={cn(
-              "text-[34px] font-bold tabular-nums leading-none",
-              resumeReviewScoreTextClass(displayScore),
-            )}
-          >
+        <div className="mt-4 flex items-center gap-2">
+          <span className="text-[34px] font-bold tabular-nums leading-none text-foreground">
             {formatResumeReviewScorePercent(displayScore)}
           </span>
+          {atsApplied &&
+          !optimization!.improvementDismissed &&
+          optimization!.improvementPercentage > 0 ? (
+            <AiGradientPillBadge>
+              +{optimization!.improvementPercentage}%
+            </AiGradientPillBadge>
+          ) : null}
         </div>
         <ScoreProgressBar
           score={displayScore}
@@ -183,6 +244,7 @@ export function ResumeReviewCategoryScreen({
         className={cn(
           "min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y",
           safeBottomOverlay,
+          showFloatingBottom && "pb-36",
         )}
       >
         <div className="space-y-6 px-4 py-6 pb-8">
@@ -223,18 +285,6 @@ export function ResumeReviewCategoryScreen({
                       ))}
                     </ul>
                   </div>
-                  <div className="flex flex-col gap-2 pt-1">
-                    <Button type="button" onClick={handleDownload}>
-                      Download Optimized Resume
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setPreviewOpen(true)}
-                    >
-                      Preview Changes
-                    </Button>
-                  </div>
                 </CardContent>
               </Card>
             </section>
@@ -261,45 +311,66 @@ export function ResumeReviewCategoryScreen({
           ) : null}
 
           <section className="space-y-3">
-            <h2 className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Findings
+            <h2 className="text-[15px] font-semibold text-foreground">
+              What looks good
             </h2>
             <Card className="gap-0 py-0 ring-border/60">
               <CardContent className="px-4 py-3">
-                {category.findings.length > 0 ? (
+                {strengths.length > 0 ? (
                   <ul className="space-y-2.5">
-                    {sortResumeReviewFindings(category.findings).map((finding) => (
+                    {strengths.map((finding) => (
                       <FindingRow key={finding.label} finding={finding} />
                     ))}
                   </ul>
                 ) : (
                   <p className="text-[15px] text-muted-foreground">
-                    No detailed findings for this category.
+                    No strengths flagged for this category yet.
                   </p>
                 )}
               </CardContent>
             </Card>
           </section>
 
-          {improvement && !atsApplied ? (
+          <section className="space-y-3">
+            <h2 className="text-[15px] font-semibold text-foreground">
+              What needs improvement
+            </h2>
+            {hasNeedsImprovementContent ? (
+              <Card className="gap-0 py-0 ring-border/60">
+                <CardContent className="px-4 py-3">
+                  <ul className="space-y-2.5">
+                    {needsImprovement.map((finding, index) => (
+                      <FindingRow key={`${finding.label}-${index}`} finding={finding} />
+                    ))}
+                    {improvementTitles.map((title, index) => (
+                      <ImprovementAlertRow key={`${title}-${index}`} title={title} />
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="gap-0 py-0 ring-border/60">
+                <CardContent className="px-4 py-3">
+                  <p className="text-[15px] text-muted-foreground">
+                    Nothing flagged for improvement in this category.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </section>
+
+          {nextSteps.length > 0 ? (
             <section className="space-y-3">
-              <h2 className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Top improvement
+              <h2 className="text-[15px] font-semibold text-foreground">
+                What to do next
               </h2>
-              <Card className="gap-2 border-primary/20 bg-primary/[0.06] py-4 ring-primary/15">
-                <CardContent className="space-y-1 px-4">
-                  <p className="text-[17px] font-semibold leading-snug">
-                    {improvement.title}
-                  </p>
-                  <p className="text-[14px] font-medium text-emerald-400">
-                    +{improvement.estimatedMatchImprovementPercent}% match
-                    improvement
-                  </p>
-                  {improvement.detail ? (
-                    <p className="text-[15px] leading-snug text-muted-foreground">
-                      {improvement.detail}
-                    </p>
-                  ) : null}
+              <Card className="gap-0 py-0 ring-border/60">
+                <CardContent className="px-4 py-3">
+                  <ul className="space-y-2.5">
+                    {nextSteps.map((step, index) => (
+                      <NextStepRow key={`${step}-${index}`} text={step} />
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
             </section>
@@ -311,6 +382,60 @@ export function ResumeReviewCategoryScreen({
         </div>
       </div>
 
+      {showFloatingBottom ? (
+        <>
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-background from-[28%] via-background/80 via-[58%] to-transparent",
+              showFloatingAtsActions ? "h-36" : "h-24",
+            )}
+          />
+          <div
+            className={cn(
+              "absolute inset-x-0 bottom-0 z-20 px-4 pt-3",
+              safeBottomCta,
+              showFloatingAtsActions && "flex flex-col gap-2",
+            )}
+          >
+            {showFloatingAtsActions ? (
+              <>
+                <AiGradientPillButton
+                  size="large"
+                  showIcon={false}
+                  className="w-full"
+                  onClick={handleDownload}
+                >
+                  Download Optimized Resume
+                </AiGradientPillButton>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 w-full rounded-xl text-[17px] font-semibold bg-background/95 backdrop-blur-sm"
+                  onClick={() => setPreviewOpen(true)}
+                >
+                  Preview Changes
+                </Button>
+              </>
+            ) : (
+              <AiGradientPillButton
+                onClick={() => setConfirmOpen(true)}
+                showIcon={false}
+                badge="Beta"
+              >
+                Optimize
+              </AiGradientPillButton>
+            )}
+          </div>
+        </>
+      ) : null}
+
+      <AtsKeywordOptimizeConfirmModal
+        open={confirmOpen}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => void runOptimization()}
+      />
+      <AtsKeywordOptimizeLoadingOverlay open={loadingOpen} stepIndex={loadingStep} />
       {optimization?.scanCompleted ? (
         <AtsKeywordPreviewDrawer
           open={previewOpen}

@@ -7,6 +7,19 @@ import { getAppOverlayRoot } from "@/lib/overlay-portal";
 import { ATS_OPTIMIZE_CONFIRM_EXAMPLES } from "@/lib/resume-review-ats-optimization";
 import { cn } from "@/lib/utils";
 
+const ATS_OPTIMIZE_MODAL_SHELL =
+  "absolute inset-0 z-50 flex items-start justify-center bg-black/55 px-4 pb-4 pt-[max(2.5rem,env(safe-area-inset-top))] sm:pt-[10vh]";
+
+const ATS_OPTIMIZE_MODAL_CARD =
+  "w-full max-w-md rounded-2xl border border-border/70 bg-card p-5 shadow-xl";
+
+const ATS_OPTIMIZE_STEPS = [
+  "Analyzing Resume",
+  "Identifying Weak Keywords",
+  "Applying ATS Enhancements",
+  "Preparing Preview",
+] as const;
+
 export function AtsKeywordOptimizeConfirmModal({
   open,
   onCancel,
@@ -35,14 +48,14 @@ export function AtsKeywordOptimizeConfirmModal({
 
   return createPortal(
     <div
-      className="absolute inset-0 z-50 flex items-end justify-center bg-black/55 p-4 sm:items-center"
+      className={ATS_OPTIMIZE_MODAL_SHELL}
       role="dialog"
       aria-modal="true"
       aria-labelledby="ats-optimize-title"
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-border/70 bg-card p-5 shadow-xl"
+        className={ATS_OPTIMIZE_MODAL_CARD}
         onClick={(event) => event.stopPropagation()}
       >
         <h2
@@ -51,10 +64,8 @@ export function AtsKeywordOptimizeConfirmModal({
         >
           Optimize Resume Keywords?
         </h2>
-        <p className="mt-3 text-[15px] leading-snug text-muted-foreground">
-          This will analyze your resume and replace weak or non-standard wording
-          with ATS-friendly terminology to improve keyword recognition and
-          applicant tracking system compatibility.
+        <p className="mt-2 truncate text-[14px] leading-snug text-muted-foreground">
+          Replaces weak wording with ATS-friendly keywords.
         </p>
 
         <div className="mt-4 space-y-2 rounded-xl bg-muted/40 px-3 py-3">
@@ -109,50 +120,51 @@ export function AtsKeywordOptimizeLoadingOverlay({
 
   if (!open || !mounted) return null;
 
-  const steps = [
-    "Analyzing Resume",
-    "Identifying Weak Keywords",
-    "Applying ATS Enhancements",
-    "Preparing Preview",
-  ];
+  const currentStep =
+    ATS_OPTIMIZE_STEPS[stepIndex] ?? ATS_OPTIMIZE_STEPS[ATS_OPTIMIZE_STEPS.length - 1];
 
   return createPortal(
     <div
-      className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-background/95 px-6 backdrop-blur-sm"
+      className={ATS_OPTIMIZE_MODAL_SHELL}
       role="status"
       aria-live="polite"
       aria-label="Optimizing resume keywords"
     >
-      <div className="relative size-16">
-        <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-primary/20 border-t-primary" />
-      </div>
-      <p className="mt-6 text-[20px] font-semibold text-foreground">
-        {steps[stepIndex] ?? steps[steps.length - 1]}
-      </p>
-      <div className="mt-5 flex w-full max-w-xs flex-col gap-2">
-        {steps.map((step, index) => (
-          <div
-            key={step}
-            className={cn(
-              "flex items-center gap-2 text-[14px]",
-              index <= stepIndex
-                ? "text-foreground"
-                : "text-muted-foreground/60",
-            )}
-          >
-            <span
-              className={cn(
-                "size-2 rounded-full",
-                index < stepIndex
-                  ? "bg-emerald-400"
-                  : index === stepIndex
-                    ? "bg-primary animate-pulse"
-                    : "bg-muted",
-              )}
-            />
-            {step}
+      <div className={ATS_OPTIMIZE_MODAL_CARD}>
+        <div className="flex flex-col items-center text-center">
+          <div className="relative size-12">
+            <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-primary/20 border-t-primary" />
           </div>
-        ))}
+          <p className="mt-4 text-[18px] font-semibold text-foreground">
+            {currentStep}
+          </p>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2">
+          {ATS_OPTIMIZE_STEPS.map((step, index) => (
+            <div
+              key={step}
+              className={cn(
+                "flex items-center gap-2 text-[14px]",
+                index <= stepIndex
+                  ? "text-foreground"
+                  : "text-muted-foreground/60",
+              )}
+            >
+              <span
+                className={cn(
+                  "size-2 shrink-0 rounded-full",
+                  index < stepIndex
+                    ? "bg-emerald-400"
+                    : index === stepIndex
+                      ? "animate-pulse bg-primary"
+                      : "bg-muted",
+                )}
+              />
+              {step}
+            </div>
+          ))}
+        </div>
       </div>
     </div>,
     getAppOverlayRoot(),

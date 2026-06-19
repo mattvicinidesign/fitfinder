@@ -64,7 +64,7 @@ function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
   return (
     <div className="min-w-0 flex-1 pb-1">
       <div className="flex items-center gap-1.5">
-        <p className="text-[13px] font-semibold uppercase tracking-[0.12em]">
+        <p className="text-[13px] font-bold uppercase tracking-[0.05em]">
           Avg Fit Score
         </p>
         <InfoTooltip

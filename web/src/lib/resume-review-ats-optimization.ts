@@ -6,7 +6,7 @@ import {
 
 const CACHE_PREFIX = "fitfinder:resume-review:ats-optimization:";
 
-export const ATS_PREVIEW_KEYWORD_CHANGE_COUNT = 10;
+export const ATS_PREVIEW_KEYWORD_CHANGE_COUNT = 32;
 
 export const ATS_OPTIMIZE_LOADING_STEPS = [
   "Analyzing Resume",
@@ -40,10 +40,25 @@ const KEYWORD_REPLACEMENT_POOL: AtsKeywordChange[] = [
   { before: "Many", after: "Multiple" },
   { before: "Stuff", after: "Initiatives" },
   { before: "Things", after: "Deliverables" },
+  { before: "Started", after: "Initiated" },
+  { before: "Finished", after: "Completed" },
+  { before: "Got", after: "Achieved" },
+  { before: "Wrote", after: "Authored" },
+  { before: "Showed", after: "Presented" },
+  { before: "Met With", after: "Consulted With" },
+  { before: "Figured Out", after: "Determined" },
+  { before: "Worked In", after: "Operated Within" },
+  { before: "Put Together", after: "Assembled" },
+  { before: "Came Up With", after: "Conceptualized" },
+  { before: "Dealt With", after: "Addressed" },
+  { before: "Worked Closely", after: "Partnered Closely" },
+  { before: "In Charge Of", after: "Accountable For" },
+  { before: "Big", after: "Large-Scale" },
+  { before: "Small", after: "Focused" },
 ];
 
 const DEFAULT_RESUME_TEXT = `SUMMARY
-Experienced product designer who worked with cross-functional teams to deliver user-centered solutions.
+Experienced product designer who worked with cross-functional teams to deliver user-centered solutions. Responsible for lots of initiatives and helped improve core product metrics.
 
 EXPERIENCE
 Senior Product Designer | Acme Corp
@@ -51,9 +66,20 @@ Senior Product Designer | Acme Corp
 - Responsible for end-to-end product flows and user research.
 - Worked on mobile and web experiences with engineering partners.
 - Created prototypes and built reusable UI patterns.
+- Handled stakeholder reviews and talked to leadership about roadmap priorities.
+- Used analytics tools to look at funnel drop-off and fixed usability issues.
+- Set up design critiques and ran weekly syncs with PM and engineering.
+- Started a component audit and finished documentation for the design system.
+- Got buy-in for a new navigation model and wrote specs for implementation.
+- Showed work in exec reviews and met with research to validate concepts.
+- Put together onboarding flows and came up with test plans for experiments.
+- Dealt with legacy constraints while working in a fast-moving SaaS environment.
+- Worked closely with brand on marketing pages and things like landing templates.
+- In charge of accessibility reviews and many small UI polish passes.
+- Built dashboards for big customer accounts and small self-serve trials.
 
 SKILLS
-Figma, user research, prototyping, design systems, collaboration.`;
+Figma, user research, prototyping, design systems, collaboration, stuff, things.`;
 
 function normalizeAtsKeywordOptimization(
   raw: unknown,
@@ -241,7 +267,7 @@ export async function simulateAtsKeywordOptimization(input: {
 }): Promise<AtsKeywordOptimization> {
   const originalResumeText =
     input.resumeText?.trim() || DEFAULT_RESUME_TEXT;
-  const keywordChanges = pickKeywordChanges(24);
+  const keywordChanges = pickKeywordChanges(KEYWORD_REPLACEMENT_POOL.length);
   const optimizedATSScore = computeOptimizedScore(input.originalATSScore);
   const improvementPercentage = optimizedATSScore - input.originalATSScore;
 
@@ -291,18 +317,7 @@ export function applyAtsKeywordOptimization(
   return next;
 }
 
-export function downloadOptimizedResume(
-  text: string,
-  fileName = "optimized-resume.txt",
-) {
-  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName.replace(/\.(pdf|docx?)$/i, "") + "-optimized.txt";
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
+export { downloadOptimizedResume } from "@/lib/optimized-resume-download";
 
 export function dismissAtsImprovementBadge(
   reviewId: string,

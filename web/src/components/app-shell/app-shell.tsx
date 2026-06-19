@@ -180,6 +180,7 @@ function AppShellChrome({ children }: { children: React.ReactNode }) {
     pathname === "/home" ||
     pathname === "/profile" ||
     pathname === "/onboarding" ||
+    pathname === "/resume-review" ||
     isAnalyzeFlow;
   const showAnySheet = showProfileSheet || showCategorySheet;
   const hideTabBar = isAnalyzeFlow;

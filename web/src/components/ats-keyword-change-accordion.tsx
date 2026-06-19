@@ -30,13 +30,19 @@ function SnippetColumn({
         className={cn(
           "rounded-lg p-2.5 text-[13px] leading-snug",
           variant === "before"
-            ? "bg-muted/40 text-foreground/85"
-            : "bg-primary/[0.06] text-foreground/90",
+            ? "bg-rose-500/[0.06] text-foreground/85"
+            : "bg-emerald-500/[0.06] text-foreground/90",
         )}
       >
         {parts.map((part, index) =>
           part.toLowerCase() === highlight.toLowerCase() ? (
-            <span key={`${part}-${index}`} className="font-semibold text-foreground">
+            <span
+              key={`${part}-${index}`}
+              className={cn(
+                "font-semibold",
+                variant === "before" ? "text-rose-400" : "text-emerald-400",
+              )}
+            >
               {part}
             </span>
           ) : (
@@ -70,16 +76,33 @@ export function AtsKeywordChangeAccordion({
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
 
+  const isExpanded = open;
+
   return (
     <li
       className={cn(
-        "overflow-hidden rounded-lg border bg-card",
-        decision === "approved" && "border-emerald-500/40",
-        decision === "rejected" && "border-border/60 opacity-70",
-        decision === "pending" && "border-border/60",
+        "overflow-hidden rounded-xl border transition-[border-color,background-color,box-shadow,opacity] duration-200",
+        isExpanded &&
+          decision === "approved" &&
+          "border-emerald-500/50 bg-emerald-500/[0.05] ring-1 ring-emerald-500/20",
+        isExpanded &&
+          decision === "rejected" &&
+          "border-border/70 bg-muted/20 opacity-90 ring-1 ring-border/40",
+        isExpanded &&
+          decision === "pending" &&
+          "border-primary/45 bg-primary/[0.05] ring-1 ring-primary/20",
+        !isExpanded && decision === "approved" && "border-emerald-500/35 bg-card",
+        !isExpanded && decision === "rejected" && "border-border/60 bg-card opacity-70",
+        !isExpanded && decision === "pending" && "border-border/60 bg-card",
       )}
     >
-      <div className="flex items-center gap-2 px-3 py-2.5">
+      <div
+        className={cn(
+          "flex items-center gap-2 px-3 py-2.5 transition-colors",
+          isExpanded && "bg-primary/[0.03]",
+          isExpanded && decision === "approved" && "bg-emerald-500/[0.04]",
+        )}
+      >
         <button
           type="button"
           className="min-w-0 flex-1 text-left text-[14px] leading-snug"
@@ -103,12 +126,13 @@ export function AtsKeywordChangeAccordion({
               onClick={(event) => {
                 event.stopPropagation();
                 onApprove?.();
+                if (open) setOpen(false);
               }}
               className={cn(
                 "rounded-md p-1.5 transition-colors",
                 decision === "approved"
                   ? "bg-emerald-500/15 text-emerald-400"
-                  : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                  : "text-emerald-400 hover:bg-emerald-500/10",
               )}
             >
               <Check className="size-4" strokeWidth={2.5} />
@@ -120,12 +144,13 @@ export function AtsKeywordChangeAccordion({
               onClick={(event) => {
                 event.stopPropagation();
                 onReject?.();
+                if (open) setOpen(false);
               }}
               className={cn(
                 "rounded-md p-1.5 transition-colors",
                 decision === "rejected"
                   ? "bg-rose-500/15 text-rose-400"
-                  : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                  : "text-rose-400 hover:bg-rose-500/10",
               )}
             >
               <X className="size-4" strokeWidth={2.5} />
@@ -146,7 +171,15 @@ export function AtsKeywordChangeAccordion({
 
         <button
           type="button"
-          className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted/40"
+          className={cn(
+            "shrink-0 rounded-md p-1 transition-colors",
+            isExpanded
+              ? "bg-primary/15 text-primary"
+              : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+            isExpanded &&
+              decision === "approved" &&
+              "bg-emerald-500/15 text-emerald-400",
+          )}
           aria-label={open ? "Collapse details" : "Expand details"}
           onClick={() => setOpen((value) => !value)}
         >
@@ -165,7 +198,14 @@ export function AtsKeywordChangeAccordion({
           id={panelId}
           role="region"
           aria-label={`${before} to ${after} example`}
-          className="border-t border-border/60 px-3 pb-3 pt-2"
+          className={cn(
+            "border-t px-3 pb-3 pt-2",
+            decision === "approved"
+              ? "border-emerald-500/25 bg-emerald-500/[0.03]"
+              : decision === "rejected"
+                ? "border-border/60 bg-muted/10"
+                : "border-primary/20 bg-primary/[0.03]",
+          )}
         >
           <div className="flex flex-col gap-3 sm:flex-row">
             <SnippetColumn

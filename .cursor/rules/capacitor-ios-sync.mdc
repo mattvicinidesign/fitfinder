@@ -7,23 +7,25 @@ alwaysApply: true
 
 Fit Finder has **one UI** in `web/src/`. iOS loads the built static export from `web/ios/App/App/public/` (via Capacitor). Edits to `web/src/` do **not** reach the simulator/device until you sync.
 
-## Non-negotiable workflow
+## Sync workflow
 
-After **any** change under `web/` (components, styles, lib, routes, `public/`, `capacitor.config.ts`, etc.):
+Edits under `web/` do **not** reach the simulator/device until you sync.
 
-1. Finish the code change.
-2. **Immediately** run (same turn, before telling the user you're done):
+**During an active iteration** (multiple UI tweaks in one session): batch code changes and run **one** `cap:sync` at the end — do not sync after every individual edit.
+
+**Before finishing a task** that touched `web/`: run sync once (same turn, before telling the user you're done):
 
 ```bash
 cd web && npm run cap:sync
 ```
 
-3. Confirm sync succeeded (exit code 0). If it fails, fix and re-run — do not skip.
-4. In your reply, state explicitly that `cap:sync` ran (one line is enough).
+Confirm sync succeeded (exit code 0). If it fails, fix and re-run — do not skip.
 
-**Do not** end a task that touched `web/` without running `cap:sync`. **Do not** ask the user to sync later. **Do not** assume a prior sync covers new edits.
+**Do not** end a task that touched `web/` without running `cap:sync`. **Do not** ask the user to sync later. **Do not** assume a prior sync covers new edits made after it.
 
 Use `npm run cap:sync` only (runs `build:capacitor` then copies to iOS). Never `npx cap sync ios` alone — that copies stale `out/` without rebuilding.
+
+For quick UI checks, use `npm run dev` (preview) — no sync needed until native verification.
 
 ## When to skip
 

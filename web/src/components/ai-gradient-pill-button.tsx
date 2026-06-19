@@ -8,11 +8,39 @@ import {
 } from "@/lib/resume-review-score-colors";
 import { cn } from "@/lib/utils";
 
+export function AiGradientPillBadge({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "ai-gradient-pill-shimmer relative shrink-0 rounded-full p-px",
+        className,
+      )}
+      style={{ background: RESUME_REVIEW_AI_BUTTON_BORDER_GRADIENT }}
+    >
+      <div className="relative z-[1] flex h-7 items-center justify-center rounded-full bg-background px-2.5 text-[11px] font-semibold whitespace-nowrap">
+        <span
+          className="bg-clip-text text-transparent"
+          style={{ backgroundImage: RESUME_REVIEW_AI_BUTTON_TEXT_GRADIENT }}
+        >
+          {children}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function AiGradientPillButton({
   children,
   onClick,
   badge,
   compact = false,
+  size = "default",
   showIcon = true,
   className,
 }: {
@@ -20,6 +48,7 @@ export function AiGradientPillButton({
   onClick: () => void;
   badge?: string;
   compact?: boolean;
+  size?: "default" | "large";
   showIcon?: boolean;
   className?: string;
 }) {
@@ -41,7 +70,9 @@ export function AiGradientPillButton({
           "relative z-[1] flex items-center justify-center rounded-full bg-background font-semibold transition-opacity hover:opacity-90 active:opacity-80",
           compact
             ? cn("h-7 gap-1 px-2.5 text-[11px]", !showIcon && "px-2.5")
-            : "h-9 w-full gap-2 px-4 text-sm",
+            : size === "large"
+              ? "h-12 w-full gap-2 px-4 text-[17px] shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
+              : "h-9 w-full gap-2 px-4 text-sm",
         )}
       >
         {showIcon ? (

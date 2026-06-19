@@ -35,6 +35,8 @@ export function GlassTabBar() {
   const tabRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const draggingRef = useRef(false);
   const didDragRef = useRef(false);
+  const pointerActiveRef = useRef(false);
+  const capturedPointerIdRef = useRef<number | null>(null);
   const pointerStartRef = useRef({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [tabCenters, setTabCenters] = useState<number[]>([]);
@@ -179,15 +181,22 @@ export function GlassTabBar() {
 
   const shouldSuppressClick = useCallback(() => didDragRef.current, []);
 
+  const releaseCapturedPointer = useCallback(() => {
+    if (capturedPointerIdRef.current == null) return;
+    containerRef.current?.releasePointerCapture(capturedPointerIdRef.current);
+    capturedPointerIdRef.current = null;
+  }, []);
+
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (reduceMotion) return;
+    if (event.button !== 0) return;
     didDragRef.current = false;
+    pointerActiveRef.current = true;
     pointerStartRef.current = { x: event.clientX, y: event.clientY };
-    containerRef.current?.setPointerCapture(event.pointerId);
   };
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (reduceMotion) return;
+    if (reduceMotion || !pointerActiveRef.current) return;
 
     if (!draggingRef.current) {
       const dx = event.clientX - pointerStartRef.current.x;
@@ -196,13 +205,16 @@ export function GlassTabBar() {
       draggingRef.current = true;
       didDragRef.current = true;
       setIsDragging(true);
+      capturedPointerIdRef.current = event.pointerId;
+      containerRef.current?.setPointerCapture(event.pointerId);
     }
 
     setLensX(lensXFromClient(event.clientX));
   };
 
   const onPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    containerRef.current?.releasePointerCapture(event.pointerId);
+    pointerActiveRef.current = false;
+    releaseCapturedPointer();
     if (draggingRef.current) {
       draggingRef.current = false;
       setIsDragging(false);
@@ -223,6 +235,8 @@ export function GlassTabBar() {
   };
 
   const onPointerCancel = () => {
+    pointerActiveRef.current = false;
+    releaseCapturedPointer();
     draggingRef.current = false;
     didDragRef.current = false;
     setIsDragging(false);

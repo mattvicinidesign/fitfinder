@@ -7,10 +7,10 @@ import {
   AtsKeywordOptimizeLoadingOverlay,
 } from "@/components/ats-keyword-optimize-modals";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
+import { AiGradientPillButton } from "@/components/ai-gradient-pill-button";
 import { ResumeReviewAtsCategoryCard } from "@/components/resume-review-ats-category-card";
 import { ResumeReviewScoreGauge } from "@/components/resume-review-score-gauge";
 import { ResumeReviewCategoryRow } from "@/components/resume-review-ui";
-import { Button } from "@/components/ui/button";
 import { safeBottomCta } from "@/lib/safe-area";
 import { cn } from "@/lib/utils";
 import { patchResumeReviewAtsScore } from "@/lib/patch-resume-review-ats-score";
@@ -71,9 +71,9 @@ export function ResumeReviewResultView({
 
   const handleDownload = useCallback(() => {
     if (!optimization || !isAtsOptimizationApplied(optimization)) return;
-    downloadOptimizedResume(
+    void downloadOptimizedResume(
       optimization.optimizedResumeText,
-      fileName ?? "resume",
+      fileName ?? loadResumeReviewFileName() ?? "resume.pdf",
     );
     toast.success("Optimized resume downloaded.");
   }, [optimization, fileName]);
@@ -156,7 +156,7 @@ export function ResumeReviewResultView({
             Category scores
           </h2>
           <div className="grid grid-cols-2 items-start gap-3 px-4">
-            {review.categories.map((category) =>
+            {review.categories.map((category, index) =>
               category.key === "ats" ? (
                 <ResumeReviewAtsCategoryCard
                   key={category.key}
@@ -164,9 +164,16 @@ export function ResumeReviewResultView({
                   optimization={optimization}
                   onOptimizeKeywords={() => setConfirmOpen(true)}
                   onPreviewChanges={() => setPreviewOpen(true)}
+                  animate={animateGauge}
+                  animateDelay={index * 75}
                 />
               ) : (
-                <ResumeReviewCategoryRow key={category.key} category={category} />
+                <ResumeReviewCategoryRow
+                  key={category.key}
+                  category={category}
+                  animate={animateGauge}
+                  animateDelay={index * 75}
+                />
               ),
             )}
           </div>
@@ -186,13 +193,14 @@ export function ResumeReviewResultView({
               safeBottomCta,
             )}
           >
-            <Button
-              type="button"
-              className="pointer-events-auto h-12 w-full rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
+            <AiGradientPillButton
+              size="large"
+              showIcon={false}
+              className="pointer-events-auto w-full"
               onClick={handleDownload}
             >
               Download Optimized Resume
-            </Button>
+            </AiGradientPillButton>
           </div>
         </>
       ) : null}

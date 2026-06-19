@@ -1,6 +1,11 @@
 import type { ResumeReviewResult } from "@/lib/types";
+import { patchResumeReviewAtsScore } from "@/lib/patch-resume-review-ats-score";
+import {
+  isAtsOptimizationApplied,
+  loadAtsKeywordOptimization,
+  clearAllAtsKeywordOptimizations,
+} from "@/lib/resume-review-ats-optimization";
 import { normalizeResumeReviewScores } from "@/lib/resume-review-scores";
-import { clearAllAtsKeywordOptimizations } from "@/lib/resume-review-ats-optimization";
 
 const CACHE_KEY = "fitfinder:resume-review:last";
 const FILE_NAME_KEY = "fitfinder:resume-review:last-filename";
@@ -18,7 +23,12 @@ export function loadResumeReview(): ResumeReviewResult | null {
   const raw = sessionStorage.getItem(CACHE_KEY);
   if (!raw) return null;
   try {
-    return normalizeResumeReviewScores(JSON.parse(raw) as ResumeReviewResult);
+    let review = normalizeResumeReviewScores(JSON.parse(raw) as ResumeReviewResult);
+    const optimization = loadAtsKeywordOptimization(review.id);
+    if (optimization && isAtsOptimizationApplied(optimization)) {
+      review = patchResumeReviewAtsScore(review, optimization.optimizedATSScore);
+    }
+    return review;
   } catch {
     return null;
   }

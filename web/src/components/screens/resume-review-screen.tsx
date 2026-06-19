@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { IosLargeTitle } from "@/components/ui/ios-large-title";
+import { screenShellClass } from "@/components/ui/sticky-bottom-cta";
+import { ResumeReviewIntro } from "@/components/resume-review-intro";
 import { ResumeReviewResultView } from "@/components/resume-review-result";
 import { ResumeReviewUploadZone } from "@/components/resume-review-upload-zone";
 import { reviewResume } from "@/lib/api";
@@ -64,7 +66,7 @@ export function ResumeReviewScreen() {
   };
 
   return (
-    <>
+    <div className={screenShellClass}>
       <IosLargeTitle
         title="Score"
         subtitle="Your resume health at a glance."
@@ -81,30 +83,37 @@ export function ResumeReviewScreen() {
         }
       />
 
-      <div className="py-4 space-y-6">
-        {reviewing ? (
-          <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
-            <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
-            <p className="text-[17px] font-medium text-foreground">
-              Analyzing your resume…
-            </p>
-            <p className="max-w-[16rem] text-[14px] text-muted-foreground">
-              Checking content, structure, ATS compatibility, and completeness.
-            </p>
-          </div>
-        ) : review ? (
+      {reviewing ? (
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-4 py-16 text-center">
+          <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
+          <p className="text-[17px] font-medium text-foreground">
+            Analyzing your resume…
+          </p>
+          <p className="max-w-[16rem] text-[14px] text-muted-foreground">
+            Checking content, structure, ATS compatibility, and completeness.
+          </p>
+        </div>
+      ) : review ? (
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y py-4">
           <ResumeReviewResultView
             review={review}
             fileName={fileName}
             animateGauge={animateGauge}
             onGaugeAnimationComplete={() => setAnimateGauge(false)}
           />
-        ) : (
-          <ResumeReviewUploadZone onReady={({ resumeId, fileName: name }) => {
-            void runReview(resumeId, name);
-          }} />
-        )}
-      </div>
-    </>
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-x-visible overflow-y-auto overscroll-contain touch-pan-y px-4 pb-4 pt-1">
+          <ResumeReviewIntro />
+          <ResumeReviewUploadZone
+            pinnedBottom
+            className="!px-0"
+            onReady={({ resumeId, fileName: name }) => {
+              void runReview(resumeId, name);
+            }}
+          />
+        </div>
+      )}
+    </div>
   );
 }

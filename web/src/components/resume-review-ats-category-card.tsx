@@ -1,6 +1,6 @@
 "use client";
 
-import { AiGradientPillButton } from "@/components/ai-gradient-pill-button";
+import { AiGradientPillButton, AiGradientPillBadge } from "@/components/ai-gradient-pill-button";
 import { Button } from "@/components/ui/button";
 import {
   formatResumeReviewScorePercent,
@@ -12,12 +12,20 @@ import {
   isAtsOptimizationApplied,
   isAtsScanPendingReview,
 } from "@/lib/resume-review-ats-optimization";
+import { ATS_OPTIMIZED_CATEGORY_EXPLANATION } from "@/lib/patch-resume-review-ats-score";
 import type { AtsKeywordOptimization, ResumeReviewCategory } from "@/lib/types";
 import type { MouseEvent, ReactNode } from "react";
 
-function ScoreAccessoryWrap({ children }: { children: ReactNode }) {
+function ScoreAccessoryWrap({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <div
+      className={className}
       onClick={(event: MouseEvent) => {
         event.preventDefault();
         event.stopPropagation();
@@ -34,11 +42,15 @@ export function ResumeReviewAtsCategoryCard({
   optimization,
   onOptimizeKeywords,
   onPreviewChanges,
+  animate = false,
+  animateDelay = 0,
 }: {
   category: ResumeReviewCategory;
   optimization: AtsKeywordOptimization | null;
   onOptimizeKeywords: () => void;
   onPreviewChanges: () => void;
+  animate?: boolean;
+  animateDelay?: number;
 }) {
   const label = getResumeReviewCategoryLabel("ats");
   const isApplied = isAtsOptimizationApplied(optimization);
@@ -55,19 +67,24 @@ export function ResumeReviewAtsCategoryCard({
   const layout = resumeReviewCategoryCardLayout;
 
   let scoreAccessory: ReactNode;
+  let afterLabel: ReactNode;
   if (showOptimizeButton) {
-    scoreAccessory = (
-      <ScoreAccessoryWrap>
-        <AiGradientPillButton compact onClick={onOptimizeKeywords}>
+    afterLabel = (
+      <ScoreAccessoryWrap className="w-full min-w-0">
+        <AiGradientPillButton
+          onClick={onOptimizeKeywords}
+          showIcon={false}
+          badge="Beta"
+        >
           Optimize
         </AiGradientPillButton>
       </ScoreAccessoryWrap>
     );
   } else if (showImprovementBadge) {
     scoreAccessory = (
-      <span className="inline-flex h-7 shrink-0 items-center rounded-full bg-emerald-500/15 px-2.5 text-[11px] font-semibold whitespace-nowrap text-emerald-400">
-        +{optimization!.improvementPercentage}% Increase
-      </span>
+      <AiGradientPillBadge>
+        +{optimization!.improvementPercentage}%
+      </AiGradientPillBadge>
     );
   }
 
@@ -76,10 +93,19 @@ export function ResumeReviewAtsCategoryCard({
       categoryKey="ats"
       href="/resume-review/ats"
       ariaLabel={`${label}, ${scoreLabel}. ${category.explanation}`}
-      scoreLabel={scoreLabel}
+      score={displayScore}
+      animate={animate}
+      animateDelay={animateDelay}
       label={label}
-      explanation={category.explanation}
+      explanation={
+        showOptimizeButton
+          ? undefined
+          : isApplied
+            ? ATS_OPTIMIZED_CATEGORY_EXPLANATION
+            : category.explanation
+      }
       scoreAccessory={scoreAccessory}
+      afterLabel={afterLabel}
       footer={
         isPendingReview ? (
           <div className={layout.footer}>

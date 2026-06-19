@@ -11,9 +11,16 @@ interface Props {
   onReady: (payload: { resumeId: string; fileName: string }) => void;
   disabled?: boolean;
   className?: string;
+  /** Compact card pinned to the bottom of the empty state. */
+  pinnedBottom?: boolean;
 }
 
-export function ResumeReviewUploadZone({ onReady, disabled, className }: Props) {
+export function ResumeReviewUploadZone({
+  onReady,
+  disabled,
+  className,
+  pinnedBottom = false,
+}: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -82,7 +89,8 @@ export function ResumeReviewUploadZone({ onReady, disabled, className }: Props) 
           handleFiles(e.dataTransfer.files);
         }}
         className={cn(
-          "flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors",
+          "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 text-center transition-colors",
+          pinnedBottom ? "py-6" : "min-h-[220px] py-10",
           dragOver
             ? "border-primary/60 bg-primary/10"
             : "border-border/80 bg-card/40 hover:border-primary/40 hover:bg-card/70",
@@ -92,20 +100,14 @@ export function ResumeReviewUploadZone({ onReady, disabled, className }: Props) 
         {busy ? (
           <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
         ) : (
-          <FileUp className="size-10 text-muted-foreground" aria-hidden />
+          <FileUp className="size-10 text-muted-foreground" strokeWidth={1.5} aria-hidden />
         )}
-        <div className="space-y-1.5">
-          <h2 className="text-[22px] font-semibold tracking-tight text-foreground">
-            Review Your Resume
-          </h2>
-          <p className="max-w-[18rem] text-[15px] leading-snug text-muted-foreground">
-            Get an ATS, structure, and content analysis in seconds.
-          </p>
-        </div>
-        <span className="mt-1 rounded-xl bg-primary px-5 py-2.5 text-[15px] font-semibold text-primary-foreground">
+        <span className="rounded-xl bg-primary px-5 py-2.5 text-[15px] font-semibold text-primary-foreground">
           {busy ? statusLabel : "Upload Resume"}
         </span>
-        <p className="text-[13px] text-muted-foreground">PDF or DOCX · drag and drop</p>
+        {!busy ? (
+          <p className="text-[13px] text-muted-foreground">PDF or DOCX</p>
+        ) : null}
       </div>
     </div>
   );

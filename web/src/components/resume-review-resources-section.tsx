@@ -1,9 +1,9 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
-import { getResumeReviewCategoryIcon } from "@/lib/resume-review-categories";
 import {
   getResumeReviewResourcesForCategory,
+  type ResumeReviewResource,
 } from "@/lib/resume-review-resources";
 import { isNativePlatform } from "@/lib/platform";
 import { openExternalUrl } from "@/lib/open-external-url";
@@ -11,36 +11,27 @@ import type { ResumeReviewCategoryKey } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { MouseEvent } from "react";
 
-function ResourceBanner({
-  title,
-  description,
-  url,
-  cta,
-  categoryKey,
-}: {
-  title: string;
-  description: string;
-  url: string;
-  cta: string;
-  categoryKey: ResumeReviewCategoryKey;
-}) {
-  const Icon = getResumeReviewCategoryIcon(categoryKey);
+function ResourceBanner({ resource }: { resource: ResumeReviewResource }) {
+  const Icon = resource.icon;
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (!isNativePlatform()) return;
     event.preventDefault();
-    void openExternalUrl(url);
+    void openExternalUrl(resource.url);
   };
 
   return (
     <a
-      href={url}
+      href={resource.url}
       onClick={handleClick}
       {...(!isNativePlatform() && {
         target: "_blank",
         rel: "noopener noreferrer",
       })}
-      className="block min-w-[min(100%,18.5rem)] shrink-0 snap-start rounded-2xl bg-gradient-to-br from-primary to-[#023e8a] p-5 text-white shadow-sm outline-offset-2 transition-transform active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-ring"
+      className={cn(
+        "block w-[17.5rem] max-w-[calc(100%-3rem)] shrink-0 snap-start rounded-2xl p-5 text-white shadow-sm outline-offset-2 transition-transform active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-ring",
+        resource.gradientClass,
+      )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex size-9 items-center justify-center rounded-lg bg-white/15">
@@ -50,12 +41,14 @@ function ResourceBanner({
       </div>
 
       <h3 className="mt-4 text-[20px] font-bold leading-snug tracking-tight">
-        {title}
+        {resource.title}
       </h3>
-      <p className="mt-2 text-[14px] leading-snug text-white/85">{description}</p>
+      <p className="mt-2 text-[14px] leading-snug text-white/85">
+        {resource.description}
+      </p>
 
       <span className="mt-4 inline-flex rounded-full bg-[#f4f0e8] px-4 py-2 text-[14px] font-semibold text-[#1e3a2f]">
-        {cta}
+        {resource.cta}
       </span>
     </a>
   );
@@ -74,24 +67,17 @@ export function ResumeReviewResourcesSection({
   return (
     <section
       className={cn("space-y-2", className)}
-      aria-label="Resume resources"
+      aria-label="Relevant topics"
     >
-      <h2 className="text-[13px] font-normal uppercase tracking-wide text-muted-foreground">
-        Resources
+      <h2 className="text-[15px] font-semibold text-foreground">
+        Relevant Topics
       </h2>
       <div
         className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label="Resume improvement resources"
       >
         {resources.map((resource) => (
-          <ResourceBanner
-            key={resource.id}
-            title={resource.title}
-            description={resource.description}
-            url={resource.url}
-            cta={resource.cta}
-            categoryKey={resource.categoryKey}
-          />
+          <ResourceBanner key={resource.id} resource={resource} />
         ))}
       </div>
     </section>
