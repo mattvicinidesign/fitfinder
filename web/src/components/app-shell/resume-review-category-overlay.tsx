@@ -79,19 +79,11 @@ export function ResumeReviewCategoryOverlayProvider({
           {underlay}
         </div>
       ) : null}
-      <button
-        type="button"
-        aria-label="Close category details"
-        className="bottom-sheet-backdrop-fade-in absolute inset-0 bg-black/55"
-        onClick={closeCategory}
-      />
       <ResumeReviewCategorySheetCloseProvider onClose={closeCategory}>
         <div
           className={cn(
-            "absolute inset-x-0 bottom-0 flex min-h-0 flex-col overflow-hidden",
-            "top-[max(0.5rem,env(safe-area-inset-top))]",
-            "rounded-t-2xl border border-border/60 bg-background shadow-[0_-8px_32px_rgba(0,0,0,0.35)]",
-            "bottom-sheet-slide-up",
+            "absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-background",
+            "shadow-[0_-8px_32px_rgba(0,0,0,0.35)] bottom-sheet-slide-up",
           )}
           role="dialog"
           aria-modal="true"

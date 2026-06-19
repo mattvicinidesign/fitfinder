@@ -25,6 +25,7 @@ import {
   simulateAtsKeywordOptimization,
 } from "@/lib/resume-review-ats-optimization";
 import { loadResumeReviewFileName, saveResumeReview } from "@/lib/resume-review-cache";
+import { isNativePlatform } from "@/lib/platform";
 import { getResumeReviewMasterScore } from "@/lib/resume-review-scores";
 import type { AtsKeywordChangeDecision, AtsKeywordOptimization, ResumeReviewResult } from "@/lib/types";
 
@@ -74,8 +75,17 @@ export function ResumeReviewResultView({
     void downloadOptimizedResume(
       optimization.optimizedResumeText,
       fileName ?? loadResumeReviewFileName() ?? "resume.pdf",
-    );
-    toast.success("Optimized resume downloaded.");
+    )
+      .then(() => {
+        toast.success(
+          isNativePlatform()
+            ? "Choose where to save your resume."
+            : "Optimized resume downloaded.",
+        );
+      })
+      .catch(() => {
+        toast.error("Could not export the resume. Try again.");
+      });
   }, [optimization, fileName]);
 
   const atsOptimized = Boolean(

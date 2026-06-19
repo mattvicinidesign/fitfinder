@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { getAppOverlayRoot } from "@/lib/overlay-portal";
+import { APP_PORTAL_OVERLAY_Z } from "@/lib/overlay-z-index";
 import { ATS_OPTIMIZE_CONFIRM_EXAMPLES } from "@/lib/resume-review-ats-optimization";
 import { cn } from "@/lib/utils";
 
-const ATS_OPTIMIZE_MODAL_SHELL =
-  "absolute inset-0 z-50 flex items-start justify-center bg-black/55 px-4 pb-4 pt-[max(2.5rem,env(safe-area-inset-top))] sm:pt-[10vh]";
+const ATS_OPTIMIZE_MODAL_SHELL = cn(
+  "absolute inset-0 flex items-center justify-center bg-black/55 px-4 py-4",
+  APP_PORTAL_OVERLAY_Z,
+);
 
 const ATS_OPTIMIZE_MODAL_CARD =
   "w-full max-w-md rounded-2xl border border-border/70 bg-card p-5 shadow-xl";

@@ -10,7 +10,7 @@ import {
   AtsKeywordOptimizeLoadingOverlay,
 } from "@/components/ats-keyword-optimize-modals";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
-import { AiGradientPillButton, AiGradientPillBadge } from "@/components/ai-gradient-pill-button";
+import { AiGradientPillButton } from "@/components/ai-gradient-pill-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -22,7 +22,7 @@ import {
   ScoreProgressBar,
 } from "@/components/resume-review-ui";
 import { ResumeReviewResourcesSection } from "@/components/resume-review-resources-section";
-import { safeBottomCta, safeBottomOverlay } from "@/lib/safe-area";
+import { safeBottomCta, safeBottomOverlay, safeTopSheetHeader } from "@/lib/safe-area";
 import {
   applyAtsKeywordOptimization,
   clearAtsKeywordOptimization,
@@ -45,6 +45,7 @@ import {
   patchResumeReviewAtsScore,
 } from "@/lib/patch-resume-review-ats-score";
 import { goBackToResumeReview } from "@/lib/navigate-app";
+import { isNativePlatform } from "@/lib/platform";
 import {
   expandPreviewImprovementTitles,
   expandPreviewNeedsImprovementFindings,
@@ -151,8 +152,17 @@ export function ResumeReviewCategoryScreen({
     void downloadOptimizedResume(
       optimization!.optimizedResumeText,
       loadResumeReviewFileName() ?? "resume.pdf",
-    );
-    toast.success("Optimized resume downloaded.");
+    )
+      .then(() => {
+        toast.success(
+          isNativePlatform()
+            ? "Choose where to save your resume."
+            : "Optimized resume downloaded.",
+        );
+      })
+      .catch(() => {
+        toast.error("Could not export the resume. Try again.");
+      });
   };
 
   const handleApplyOptimization = (decisions: AtsKeywordChangeDecision[]) => {
@@ -199,7 +209,12 @@ export function ResumeReviewCategoryScreen({
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      <header className="shrink-0 border-b border-border/60 px-4 pb-3 pt-4">
+      <header
+        className={cn(
+          "shrink-0 border-b border-border/60 px-4 pb-3",
+          safeTopSheetHeader,
+        )}
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <h1 className="text-[22px] font-bold leading-tight tracking-tight">
@@ -225,13 +240,6 @@ export function ResumeReviewCategoryScreen({
           <span className="text-[34px] font-bold tabular-nums leading-none text-foreground">
             {formatResumeReviewScorePercent(displayScore)}
           </span>
-          {atsApplied &&
-          !optimization!.improvementDismissed &&
-          optimization!.improvementPercentage > 0 ? (
-            <AiGradientPillBadge>
-              +{optimization!.improvementPercentage}%
-            </AiGradientPillBadge>
-          ) : null}
         </div>
         <ScoreProgressBar
           score={displayScore}
@@ -244,7 +252,7 @@ export function ResumeReviewCategoryScreen({
         className={cn(
           "min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y",
           safeBottomOverlay,
-          showFloatingBottom && "pb-36",
+          showFloatingBottom && "pb-28",
         )}
       >
         <div className="space-y-6 px-4 py-6 pb-8">
@@ -388,35 +396,24 @@ export function ResumeReviewCategoryScreen({
             aria-hidden
             className={cn(
               "pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-background from-[28%] via-background/80 via-[58%] to-transparent",
-              showFloatingAtsActions ? "h-36" : "h-24",
+              showFloatingAtsActions ? "h-28" : "h-24",
             )}
           />
           <div
             className={cn(
               "absolute inset-x-0 bottom-0 z-20 px-4 pt-3",
               safeBottomCta,
-              showFloatingAtsActions && "flex flex-col gap-2",
             )}
           >
             {showFloatingAtsActions ? (
-              <>
-                <AiGradientPillButton
-                  size="large"
-                  showIcon={false}
-                  className="w-full"
-                  onClick={handleDownload}
-                >
-                  Download Optimized Resume
-                </AiGradientPillButton>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-12 w-full rounded-xl text-[17px] font-semibold bg-background/95 backdrop-blur-sm"
-                  onClick={() => setPreviewOpen(true)}
-                >
-                  Preview Changes
-                </Button>
-              </>
+              <AiGradientPillButton
+                size="large"
+                showIcon={false}
+                className="w-full"
+                onClick={handleDownload}
+              >
+                Download Optimized Resume
+              </AiGradientPillButton>
             ) : (
               <AiGradientPillButton
                 onClick={() => setConfirmOpen(true)}

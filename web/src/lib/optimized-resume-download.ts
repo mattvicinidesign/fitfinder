@@ -1,5 +1,7 @@
 "use client";
 
+import { isNativePlatform } from "@/lib/platform";
+
 export type OptimizedResumeOutputFormat = "pdf" | "docx" | "txt";
 
 export function getOptimizedResumeOutputFormat(
@@ -91,6 +93,27 @@ async function createOptimizedResumeDocxBlob(text: string): Promise<Blob> {
   return Packer.toBlob(document);
 }
 
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("Could not read file data."));
+        return;
+      }
+      const base64 = result.split(",")[1];
+      if (!base64) {
+        reject(new Error("Could not encode file data."));
+        return;
+      }
+      resolve(base64);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Could not read file."));
+    reader.readAsDataURL(blob);
+  });
+}
+
 function triggerBrowserDownload(blob: Blob, downloadName: string) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -98,6 +121,26 @@ function triggerBrowserDownload(blob: Blob, downloadName: string) {
   anchor.download = downloadName;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+async function shareNativeDownload(blob: Blob, downloadName: string): Promise<void> {
+  const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+    import("@capacitor/filesystem"),
+    import("@capacitor/share"),
+  ]);
+
+  const base64 = await blobToBase64(blob);
+  const saved = await Filesystem.writeFile({
+    path: downloadName,
+    data: base64,
+    directory: Directory.Cache,
+  });
+
+  await Share.share({
+    title: downloadName,
+    url: saved.uri,
+    dialogTitle: "Save optimized resume",
+  });
 }
 
 /** Download optimized resume text in the same format family as the uploaded file. */
@@ -119,6 +162,11 @@ export async function downloadOptimizedResume(
     default:
       blob = new Blob([text], { type: "text/plain;charset=utf-8" });
       break;
+  }
+
+  if (isNativePlatform()) {
+    await shareNativeDownload(blob, downloadName);
+    return;
   }
 
   triggerBrowserDownload(blob, downloadName);

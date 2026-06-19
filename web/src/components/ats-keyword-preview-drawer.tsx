@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import { AtsKeywordChangeAccordion } from "@/components/ats-keyword-change-accordion";
 import { Button } from "@/components/ui/button";
 import { getAppOverlayRoot } from "@/lib/overlay-portal";
+import { APP_PORTAL_OVERLAY_Z } from "@/lib/overlay-z-index";
 import { buildAtsKeywordChangeSnippets } from "@/lib/ats-keyword-change-snippets";
 import {
   allKeywordChangesReviewed,
@@ -96,7 +97,10 @@ export function AtsKeywordPreviewDrawer({
 
   return createPortal(
     <div
-      className="absolute inset-0 z-50 flex min-h-0 flex-col overflow-hidden bg-background"
+      className={cn(
+        "absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-background",
+        APP_PORTAL_OVERLAY_Z,
+      )}
       role="dialog"
       aria-modal="true"
       aria-labelledby="ats-preview-title"

@@ -436,7 +436,7 @@ export function ProfileScreen() {
 
       {deleteConfirmOpen ? (
         <div
-          className={`fixed inset-0 z-50 flex items-end justify-center px-4 sm:items-center ${safeBottomOverlay}`}
+          className={`fixed inset-0 z-[60] flex items-end justify-center px-4 sm:items-center ${safeBottomOverlay}`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-account-title"

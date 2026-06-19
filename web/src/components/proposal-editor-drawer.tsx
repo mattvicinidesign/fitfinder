@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getAppOverlayRoot } from "@/lib/overlay-portal";
+import { APP_PORTAL_OVERLAY_Z } from "@/lib/overlay-z-index";
 import { downloadProposalPdf } from "@/lib/proposal-pdf";
 import { safeBottomOverlay } from "@/lib/safe-area";
 import type { ProposalGeneration } from "@/lib/types";
@@ -95,7 +96,10 @@ export function ProposalEditorDrawer({
 
   return createPortal(
     <div
-      className="absolute inset-0 z-50 flex min-h-0 flex-col justify-end overflow-hidden overscroll-none touch-pan-y"
+      className={cn(
+        "absolute inset-0 flex min-h-0 flex-col justify-end overflow-hidden overscroll-none touch-pan-y",
+        APP_PORTAL_OVERLAY_Z,
+      )}
       role="dialog"
       aria-modal="true"
       aria-labelledby="proposal-editor-title"
