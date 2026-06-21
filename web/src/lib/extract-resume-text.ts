@@ -36,18 +36,51 @@ async function extractPdfText(file: File): Promise<string> {
 
   const data = new Uint8Array(await file.arrayBuffer());
   const pdf = await pdfjs.getDocument({ data }).promise;
-  const parts: string[] = [];
+  const allLines: string[] = [];
 
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
     const page = await pdf.getPage(pageNum);
     const content = await page.getTextContent();
-    const pageText = content.items
-      .map((item) => ("str" in item ? item.str : ""))
-      .join(" ");
-    if (pageText.trim()) parts.push(pageText);
+
+    type PdfTextItem = { str: string; x: number; y: number };
+    const items: PdfTextItem[] = [];
+
+    for (const item of content.items) {
+      if (!("str" in item) || !item.str.trim()) continue;
+      const transform = item.transform;
+      items.push({
+        str: item.str,
+        x: transform[4] ?? 0,
+        y: transform[5] ?? 0,
+      });
+    }
+
+    items.sort((a, b) => {
+      const yDiff = b.y - a.y;
+      if (Math.abs(yDiff) > 3) return yDiff;
+      return a.x - b.x;
+    });
+
+    let currentLine: string[] = [];
+    let lastY: number | null = null;
+
+    for (const item of items) {
+      if (lastY !== null && Math.abs(item.y - lastY) > 4) {
+        if (currentLine.length > 0) {
+          allLines.push(currentLine.join(" ").replace(/\s+/g, " ").trim());
+        }
+        currentLine = [];
+      }
+      currentLine.push(item.str);
+      lastY = item.y;
+    }
+
+    if (currentLine.length > 0) {
+      allLines.push(currentLine.join(" ").replace(/\s+/g, " ").trim());
+    }
   }
 
-  return parts.join("\n\n").trim();
+  return allLines.filter(Boolean).join("\n").trim();
 }
 
 async function extractDocxText(file: File): Promise<string> {

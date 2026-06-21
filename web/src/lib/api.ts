@@ -10,6 +10,7 @@ import { invokeFunction } from "@/lib/invoke-function";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import type {
   AnalysisResult,
+  AtsKeywordOptimization,
   ParsedJob,
   ParsedResume,
   ProposalGeneration,
@@ -128,4 +129,29 @@ export async function reviewResume(
     { ...args } as unknown as Record<string, unknown>,
   );
   return data.review;
+}
+
+export interface OptimizeAtsKeywordsArgs {
+  resumeId?: string | null;
+  resumeText?: string | null;
+  originalATSScore: number;
+}
+
+export async function optimizeAtsKeywords(
+  args: OptimizeAtsKeywordsArgs,
+): Promise<
+  Omit<
+    AtsKeywordOptimization,
+    "keywordChangeDecisions" | "completedAt" | "improvementDismissed"
+  >
+> {
+  const data = await invoke<{ optimization: AtsKeywordOptimization }>(
+    "optimize-ats-keywords",
+    {
+      resumeId: args.resumeId ?? undefined,
+      resumeText: args.resumeText ?? undefined,
+      originalATSScore: args.originalATSScore,
+    },
+  );
+  return data.optimization;
 }

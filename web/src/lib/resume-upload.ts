@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { parseResume } from "@/lib/api";
 import { extractResumeTextFromFile } from "@/lib/extract-resume-text";
 import {
+  cacheResumeText,
   trackResumeParse,
   waitForResumeParse,
 } from "@/lib/resume-parse-tracker";
@@ -53,6 +54,9 @@ export async function uploadResume(file: File): Promise<{
   if (insertError) throw new Error(insertError.message);
 
   const resumeText = await extractTextForParse(file);
+  if (resumeText) {
+    cacheResumeText(row.id, resumeText);
+  }
   trackResumeParse(
     row.id,
     parseResume(

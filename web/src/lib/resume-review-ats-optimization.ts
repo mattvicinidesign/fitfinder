@@ -1,12 +1,22 @@
-import type { AtsKeywordChange, AtsKeywordChangeDecision, AtsKeywordOptimization } from "@/lib/types";
+"use client";
+
+import type { AtsKeywordChangeDecision, AtsKeywordOptimization } from "@/lib/types";
 import {
-  applyKeywordChangeAtOccurrence,
+  ATS_NO_KEYWORDS_MESSAGE,
+  ATS_PREVIEW_KEYWORD_CHANGE_COUNT,
+  ATS_OPTIMIZE_CONFIRM_EXAMPLES,
+  buildAtsOptimizationScanResult,
+  buildOptimizedResumeText,
+  classifyAtsSafetyScore,
+  computeOptimizedAtsScore,
   occurrenceIndexForChange,
-} from "@/lib/ats-keyword-change-snippets";
+} from "@/lib/ats-keyword-optimization-core";
+import { optimizeAtsKeywords } from "@/lib/api";
+import { getCachedResumeText } from "@/lib/resume-parse-tracker";
 
 const CACHE_PREFIX = "fitfinder:resume-review:ats-optimization:";
 
-export const ATS_PREVIEW_KEYWORD_CHANGE_COUNT = 32;
+export { ATS_PREVIEW_KEYWORD_CHANGE_COUNT, ATS_OPTIMIZE_CONFIRM_EXAMPLES };
 
 export const ATS_OPTIMIZE_LOADING_STEPS = [
   "Analyzing Resume",
@@ -14,72 +24,6 @@ export const ATS_OPTIMIZE_LOADING_STEPS = [
   "Applying ATS Enhancements",
   "Preparing Preview",
 ] as const;
-
-const KEYWORD_REPLACEMENT_POOL: AtsKeywordChange[] = [
-  { before: "Worked With", after: "Collaborated With" },
-  { before: "Made", after: "Developed" },
-  { before: "Helped", after: "Led" },
-  { before: "Helped", after: "Supported" },
-  { before: "Responsible For", after: "Managed" },
-  { before: "Created", after: "Designed" },
-  { before: "Built", after: "Developed" },
-  { before: "Did", after: "Executed" },
-  { before: "Worked On", after: "Delivered" },
-  { before: "Handled", after: "Oversaw" },
-  { before: "Used", after: "Leveraged" },
-  { before: "Fixed", after: "Resolved" },
-  { before: "Changed", after: "Optimized" },
-  { before: "Looked At", after: "Analyzed" },
-  { before: "Talked To", after: "Partnered With" },
-  { before: "Set Up", after: "Implemented" },
-  { before: "Ran", after: "Led" },
-  { before: "Tried To", after: "Drove" },
-  { before: "Good At", after: "Proficient In" },
-  { before: "Know", after: "Expert In" },
-  { before: "Lots Of", after: "Extensive" },
-  { before: "Many", after: "Multiple" },
-  { before: "Stuff", after: "Initiatives" },
-  { before: "Things", after: "Deliverables" },
-  { before: "Started", after: "Initiated" },
-  { before: "Finished", after: "Completed" },
-  { before: "Got", after: "Achieved" },
-  { before: "Wrote", after: "Authored" },
-  { before: "Showed", after: "Presented" },
-  { before: "Met With", after: "Consulted With" },
-  { before: "Figured Out", after: "Determined" },
-  { before: "Worked In", after: "Operated Within" },
-  { before: "Put Together", after: "Assembled" },
-  { before: "Came Up With", after: "Conceptualized" },
-  { before: "Dealt With", after: "Addressed" },
-  { before: "Worked Closely", after: "Partnered Closely" },
-  { before: "In Charge Of", after: "Accountable For" },
-  { before: "Big", after: "Large-Scale" },
-  { before: "Small", after: "Focused" },
-];
-
-const DEFAULT_RESUME_TEXT = `SUMMARY
-Experienced product designer who worked with cross-functional teams to deliver user-centered solutions. Responsible for lots of initiatives and helped improve core product metrics.
-
-EXPERIENCE
-Senior Product Designer | Acme Corp
-- Made design systems and helped improve onboarding conversion.
-- Responsible for end-to-end product flows and user research.
-- Worked on mobile and web experiences with engineering partners.
-- Created prototypes and built reusable UI patterns.
-- Handled stakeholder reviews and talked to leadership about roadmap priorities.
-- Used analytics tools to look at funnel drop-off and fixed usability issues.
-- Set up design critiques and ran weekly syncs with PM and engineering.
-- Started a component audit and finished documentation for the design system.
-- Got buy-in for a new navigation model and wrote specs for implementation.
-- Showed work in exec reviews and met with research to validate concepts.
-- Put together onboarding flows and came up with test plans for experiments.
-- Dealt with legacy constraints while working in a fast-moving SaaS environment.
-- Worked closely with brand on marketing pages and things like landing templates.
-- In charge of accessibility reviews and many small UI polish passes.
-- Built dashboards for big customer accounts and small self-serve trials.
-
-SKILLS
-Figma, user research, prototyping, design systems, collaboration, stuff, things.`;
 
 function normalizeAtsKeywordOptimization(
   raw: unknown,
@@ -105,8 +49,24 @@ function normalizeAtsKeywordOptimization(
     optimizedResumeText: String(record.optimizedResumeText ?? ""),
     originalResumeText: String(record.originalResumeText ?? ""),
     keywordChanges: Array.isArray(record.keywordChanges)
-      ? (record.keywordChanges as AtsKeywordChange[])
+      ? (record.keywordChanges as AtsKeywordOptimization["keywordChanges"])
       : [],
+    totalKeywordEdits:
+      typeof record.totalKeywordEdits === "number"
+        ? record.totalKeywordEdits
+        : Array.isArray(record.keywordChanges)
+          ? record.keywordChanges.length
+          : 0,
+    atsSafetyScore:
+      record.atsSafetyScore === "low" ||
+      record.atsSafetyScore === "medium" ||
+      record.atsSafetyScore === "high"
+        ? record.atsSafetyScore
+        : undefined,
+    modificationRatio:
+      typeof record.modificationRatio === "number"
+        ? record.modificationRatio
+        : undefined,
     keywordChangeDecisions: Array.isArray(record.keywordChangeDecisions)
       ? (record.keywordChangeDecisions as AtsKeywordChangeDecision[])
       : undefined,
@@ -170,27 +130,6 @@ export function clearAllAtsKeywordOptimizations(): void {
   }
 }
 
-function applyKeywordReplacements(
-  text: string,
-  changes: AtsKeywordChange[],
-): string {
-  let out = text;
-  for (const change of changes) {
-    const pattern = new RegExp(change.before.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
-    out = out.replace(pattern, change.after);
-  }
-  return out;
-}
-
-function pickKeywordChanges(count = 24): AtsKeywordChange[] {
-  return KEYWORD_REPLACEMENT_POOL.slice(0, count);
-}
-
-function computeOptimizedScore(originalScore: number): number {
-  const boost = Math.max(12, Math.min(20, Math.round((100 - originalScore) * 0.22)));
-  return Math.min(100, originalScore + boost);
-}
-
 export function createPendingKeywordChangeDecisions(
   count = ATS_PREVIEW_KEYWORD_CHANGE_COUNT,
 ): AtsKeywordChangeDecision[] {
@@ -204,40 +143,34 @@ export function buildResumeWithApprovedChanges(
   optimizedResumeText: string;
   optimizedATSScore: number;
   improvementPercentage: number;
-  approvedChanges: AtsKeywordChange[];
+  approvedChanges: AtsKeywordOptimization["keywordChanges"];
 } {
   const previewChanges = optimization.keywordChanges.slice(
     0,
     ATS_PREVIEW_KEYWORD_CHANGE_COUNT,
   );
-  const approvedChanges: AtsKeywordChange[] = [];
-  let text = optimization.originalResumeText;
+  const approvedIndices = previewChanges.flatMap((_, index) =>
+    decisions[index] === "approved" ? [index] : [],
+  );
 
-  previewChanges.forEach((change, index) => {
-    if (decisions[index] !== "approved") return;
-    const occurrence = occurrenceIndexForChange(previewChanges, index);
-    text = applyKeywordChangeAtOccurrence(text, change, occurrence);
-    approvedChanges.push(change);
-  });
+  const optimizedResumeText = buildOptimizedResumeText(
+    optimization.originalResumeText,
+    previewChanges,
+    approvedIndices,
+  );
 
-  const approvedCount = previewChanges.filter(
-    (_, index) => decisions[index] === "approved",
-  ).length;
-  const fullBoost = optimization.optimizedATSScore - optimization.originalATSScore;
-  const improvementPercentage =
-    previewChanges.length > 0
-      ? Math.round(fullBoost * (approvedCount / previewChanges.length))
-      : 0;
-  const optimizedATSScore = Math.min(
-    100,
-    optimization.originalATSScore + improvementPercentage,
+  const approvedCount = approvedIndices.length;
+  const { optimizedATSScore, improvementPercentage } = computeOptimizedAtsScore(
+    optimization.originalATSScore,
+    approvedCount,
+    previewChanges.length,
   );
 
   return {
-    optimizedResumeText: text,
+    optimizedResumeText,
     optimizedATSScore,
     improvementPercentage,
-    approvedChanges,
+    approvedChanges: approvedIndices.map((index) => previewChanges[index]!),
   };
 }
 
@@ -263,36 +196,49 @@ export function sleep(ms: number) {
 export async function simulateAtsKeywordOptimization(input: {
   originalATSScore: number;
   resumeText?: string | null;
+  resumeId?: string | null;
   onStep?: (stepIndex: number) => void;
 }): Promise<AtsKeywordOptimization> {
-  const originalResumeText =
-    input.resumeText?.trim() || DEFAULT_RESUME_TEXT;
-  const keywordChanges = pickKeywordChanges(KEYWORD_REPLACEMENT_POOL.length);
-  const optimizedATSScore = computeOptimizedScore(input.originalATSScore);
-  const improvementPercentage = optimizedATSScore - input.originalATSScore;
-
   for (let i = 0; i < ATS_OPTIMIZE_LOADING_STEPS.length; i += 1) {
     input.onStep?.(i);
-    await sleep(900);
+    await sleep(i === 0 ? 600 : 900);
   }
 
-  const optimizedResumeText = applyKeywordReplacements(
-    originalResumeText,
-    keywordChanges,
+  const resumeText =
+    input.resumeText?.trim() ||
+    (input.resumeId ? getCachedResumeText(input.resumeId) : null);
+
+  let scan: Omit<
+    AtsKeywordOptimization,
+    "keywordChangeDecisions" | "completedAt" | "improvementDismissed"
+  >;
+
+  try {
+    scan = await optimizeAtsKeywords({
+      resumeId: input.resumeId ?? undefined,
+      resumeText: resumeText ?? undefined,
+      originalATSScore: input.originalATSScore,
+    });
+  } catch (error) {
+    if (!resumeText) throw error;
+    const local = buildAtsOptimizationScanResult(
+      resumeText,
+      input.originalATSScore,
+    );
+    if (local.keywordChanges.length === 0) {
+      throw new Error(ATS_NO_KEYWORDS_MESSAGE);
+    }
+    scan = local;
+  }
+
+  const previewCount = Math.min(
+    scan.keywordChanges.length,
+    ATS_PREVIEW_KEYWORD_CHANGE_COUNT,
   );
 
   return {
-    originalATSScore: input.originalATSScore,
-    optimizedATSScore,
-    improvementPercentage,
-    scanCompleted: true,
-    optimizationApplied: false,
-    optimizedResumeText,
-    originalResumeText,
-    keywordChanges,
-    keywordChangeDecisions: createPendingKeywordChangeDecisions(
-      Math.min(keywordChanges.length, ATS_PREVIEW_KEYWORD_CHANGE_COUNT),
-    ),
+    ...scan,
+    keywordChangeDecisions: createPendingKeywordChangeDecisions(previewCount),
     completedAt: new Date().toISOString(),
     improvementDismissed: false,
   };
@@ -304,11 +250,14 @@ export function applyAtsKeywordOptimization(
   decisions: AtsKeywordChangeDecision[],
 ): AtsKeywordOptimization {
   const built = buildResumeWithApprovedChanges(optimization, decisions);
+  const approvedCount = built.approvedChanges.length;
   const next: AtsKeywordOptimization = {
     ...optimization,
     optimizedResumeText: built.optimizedResumeText,
     optimizedATSScore: built.optimizedATSScore,
     improvementPercentage: built.improvementPercentage,
+    totalKeywordEdits: approvedCount,
+    atsSafetyScore: classifyAtsSafetyScore(approvedCount),
     keywordChangeDecisions: decisions.slice(0, ATS_PREVIEW_KEYWORD_CHANGE_COUNT),
     optimizationApplied: true,
     completedAt: new Date().toISOString(),
@@ -327,10 +276,3 @@ export function dismissAtsImprovementBadge(
   saveAtsKeywordOptimization(reviewId, next);
   return next;
 }
-
-export const ATS_OPTIMIZE_CONFIRM_EXAMPLES: AtsKeywordChange[] = [
-  { before: "Worked With", after: "Collaborated With" },
-  { before: "Made", after: "Developed" },
-  { before: "Helped", after: "Led / Supported" },
-  { before: "Responsible For", after: "Managed" },
-];

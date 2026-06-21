@@ -6,6 +6,7 @@ import {
   AtsKeywordOptimizeConfirmModal,
   AtsKeywordOptimizeLoadingOverlay,
 } from "@/components/ats-keyword-optimize-modals";
+import { showAtsOptimizeError } from "@/lib/ats-optimize-toast";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
 import { AiGradientPillButton } from "@/components/ai-gradient-pill-button";
 import { ResumeReviewAtsCategoryCard } from "@/components/resume-review-ats-category-card";
@@ -101,18 +102,19 @@ export function ResumeReviewResultView({
     try {
       const result = await simulateAtsKeywordOptimization({
         originalATSScore: optimization?.originalATSScore ?? atsCategory.score,
+        resumeId: review.resumeId,
         onStep: setLoadingStep,
       });
 
       saveAtsKeywordOptimization(review.id, result);
       setOptimization(result);
       setPreviewOpen(true);
-    } catch {
-      toast.error("Could not optimize keywords. Try again.");
+    } catch (error) {
+      showAtsOptimizeError(error);
     } finally {
       setLoadingOpen(false);
     }
-  }, [atsCategory, optimization?.originalATSScore, review.id]);
+  }, [atsCategory, optimization?.originalATSScore, review.id, review.resumeId]);
 
   const handleApplyOptimization = useCallback(
     (decisions: AtsKeywordChangeDecision[]) => {

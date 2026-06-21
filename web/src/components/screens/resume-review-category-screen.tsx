@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { toast } from "sonner";
+import { showAtsOptimizeError } from "@/lib/ats-optimize-toast";
 import { useResumeReviewCategorySheetClose } from "@/components/app-shell/resume-review-category-sheet-context";
 import {
   AtsKeywordOptimizeConfirmModal,
@@ -118,14 +119,15 @@ export function ResumeReviewCategoryScreen({
     try {
       const result = await simulateAtsKeywordOptimization({
         originalATSScore: optimization?.originalATSScore ?? ats.score,
+        resumeId: review.resumeId,
         onStep: setLoadingStep,
       });
 
       saveAtsKeywordOptimization(review.id, result);
       setOptimization(result);
       setPreviewOpen(true);
-    } catch {
-      toast.error("Could not optimize keywords. Try again.");
+    } catch (error) {
+      showAtsOptimizeError(error);
     } finally {
       setLoadingOpen(false);
     }

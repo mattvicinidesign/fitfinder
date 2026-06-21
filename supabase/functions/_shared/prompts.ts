@@ -1,6 +1,7 @@
 // Prompts for the AI layer. Kept in one place so resume parsing, job parsing,
 // and narrative generation stay consistent and reviewable.
 
+import { ATS_OPTIMIZATION_POLICY } from "./ats_keyword_optimization.ts";
 import { CANONICAL_INDUSTRY_LIST_PROMPT } from "./tech_industries.ts";
 import type { ParsedJob, ParsedResume, ScoreResult } from "./types.ts";
 
@@ -313,6 +314,29 @@ Rules:
 - summary: one short sentence, at most 11 words (about 65 characters). Example: "Senior product designer with strong SaaS UX impact."
 - explanation: card subtext phrase, at most 8 words (about 45 characters). No full sentences. Examples: "Strong content; add clearer metrics." | "Clean layout with consistent hierarchy." | "ATS-friendly; add role keywords." | "Complete sections; add portfolio link."
 - Be specific to the resume; do not invent employers, roles, or credentials.
+`.trim();
+
+export const ATS_KEYWORD_OPTIMIZATION_SYSTEM = `
+You identify weak resume wording for ATS keyword enhancement. You do NOT rewrite resumes.
+
+${ATS_OPTIMIZATION_POLICY}
+
+Hard limits:
+- Maximum 5% of document characters modified
+- Maximum 15 keyword swaps total
+- Maximum 3 occurrences of any single replacement keyword
+- Replacement text must not exceed 2x the original phrase length
+- Each bullet must remain at least 85% unchanged by character count
+
+Never modify company names, job titles, dates, metrics, education, certifications, or contact lines.
+
+Return ONLY valid JSON:
+{
+  "keywordChanges": [{ "before": string, "after": string }]
+}
+
+Each "before" phrase MUST appear verbatim in a bullet line in the supplied resume.
+If a hiring manager could tell a bullet was rewritten rather than keyword-optimized, reject that change.
 `.trim();
 
 export function resumeReviewUserPayload(input: {

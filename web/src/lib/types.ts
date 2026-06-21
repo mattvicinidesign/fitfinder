@@ -281,6 +281,8 @@ export interface AtsKeywordChange {
 
 export type AtsKeywordChangeDecision = "pending" | "approved" | "rejected";
 
+export type AtsSafetyScore = "low" | "medium" | "high";
+
 /** ATS keyword optimization result — ATS Compatibility only. */
 export interface AtsKeywordOptimization {
   originalATSScore: number;
@@ -293,7 +295,13 @@ export interface AtsKeywordOptimization {
   optimizedResumeText: string;
   originalResumeText: string;
   keywordChanges: AtsKeywordChange[];
-  /** Review decisions for the first 10 preview changes. */
+  /** Total keyword edits proposed by the scan. */
+  totalKeywordEdits?: number;
+  /** Impact classification based on edit count (1–5 low, 6–10 medium, 11–15 high). */
+  atsSafetyScore?: AtsSafetyScore;
+  /** Fraction of document characters targeted by keyword swaps. */
+  modificationRatio?: number;
+  /** Review decisions for preview changes. */
   keywordChangeDecisions?: AtsKeywordChangeDecision[];
   completedAt: string;
   improvementDismissed: boolean;

@@ -67,8 +67,9 @@ export function AtsKeywordOptimizeConfirmModal({
         >
           Optimize Resume Keywords?
         </h2>
-        <p className="mt-2 truncate text-[14px] leading-snug text-muted-foreground">
-          Replaces weak wording with ATS-friendly keywords.
+        <p className="mt-2 text-[14px] leading-snug text-muted-foreground">
+          Up to 15 keyword swaps inside existing bullets only. Your structure,
+          companies, titles, dates, and metrics stay exactly the same.
         </p>
 
         <div className="mt-4 space-y-2 rounded-xl bg-muted/40 px-3 py-3">

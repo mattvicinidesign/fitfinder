@@ -14,6 +14,7 @@ import {
   createPendingKeywordChangeDecisions,
   hasApprovedKeywordChanges,
 } from "@/lib/resume-review-ats-optimization";
+import { formatAtsSafetyScoreLabel } from "@/lib/ats-keyword-optimization-core";
 import { safeBottomOverlay, safeTopSheetHeader } from "@/lib/safe-area";
 import type { AtsKeywordChangeDecision, AtsKeywordOptimization } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -89,6 +90,12 @@ export function AtsKeywordPreviewDrawer({
     allKeywordChangesReviewed(decisions, previewChanges.length) &&
     hasApprovedKeywordChanges(decisions);
 
+  const safetyLabel = optimization.atsSafetyScore
+    ? formatAtsSafetyScoreLabel(optimization.atsSafetyScore)
+    : null;
+  const totalEdits =
+    optimization.totalKeywordEdits ?? optimization.keywordChanges.length;
+
   const approveAll = useCallback(() => {
     setDecisions(previewChanges.map(() => "approved" as const));
   }, [previewChanges]);
@@ -117,7 +124,17 @@ export function AtsKeywordPreviewDrawer({
           </h2>
           {isReview ? (
             <p className="mt-1.5 text-[15px] leading-snug text-muted-foreground">
-              Review and approve keyword updates.
+              Keyword-only edits inside existing bullets. Structure, companies,
+              titles, dates, and metrics stay unchanged.
+            </p>
+          ) : null}
+          {totalEdits > 0 ? (
+            <p className="mt-2 text-[13px] leading-snug text-muted-foreground">
+              {totalEdits} keyword edit{totalEdits === 1 ? "" : "s"}
+              {safetyLabel ? ` · ${safetyLabel}` : ""}
+              {optimization.improvementPercentage > 0
+                ? ` · Est. +${optimization.improvementPercentage}% ATS`
+                : ""}
             </p>
           ) : null}
         </div>

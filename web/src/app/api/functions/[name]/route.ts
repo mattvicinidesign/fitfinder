@@ -7,6 +7,7 @@ const ALLOWED = new Set([
   "parse-job",
   "generate-proposal",
   "review-resume",
+  "optimize-ats-keywords",
   "delete-account",
 ]);
 
