@@ -15,6 +15,8 @@ import {
   hasApprovedKeywordChanges,
 } from "@/lib/resume-review-ats-optimization";
 import { formatAtsSafetyScoreLabel } from "@/lib/ats-keyword-optimization-core";
+import { getAtsDiscoverySummary, formatRejectionReasonLabel } from "@/lib/ats-discovery-stats";
+import { isAtsOptimizerDebugEnabled } from "@/lib/ats-optimizer-debug";
 import { safeBottomOverlay, safeTopSheetHeader } from "@/lib/safe-area";
 import type { AtsKeywordChangeDecision, AtsKeywordOptimization } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -95,6 +97,10 @@ export function AtsKeywordPreviewDrawer({
     : null;
   const totalEdits =
     optimization.totalKeywordEdits ?? optimization.keywordChanges.length;
+  const discoverySummary = useMemo(
+    () => getAtsDiscoverySummary(optimization),
+    [optimization],
+  );
 
   const approveAll = useCallback(() => {
     setDecisions(previewChanges.map(() => "approved" as const));
@@ -128,13 +134,36 @@ export function AtsKeywordPreviewDrawer({
               titles, dates, and metrics stay unchanged.
             </p>
           ) : null}
-          {totalEdits > 0 ? (
+          {discoverySummary.found > 0 ? (
             <p className="mt-2 text-[13px] leading-snug text-muted-foreground">
-              {totalEdits} keyword edit{totalEdits === 1 ? "" : "s"}
+              Found {discoverySummary.found} opportunit
+              {discoverySummary.found === 1 ? "y" : "ies"}
+              {readyToReviewLabel(discoverySummary.readyToReview)}
+              {optimization.optimizationApplied
+                ? ` · Applied ${discoverySummary.applied}`
+                : discoverySummary.rejected > 0
+                  ? ` · Rejected ${discoverySummary.rejected}`
+                  : ""}
               {safetyLabel ? ` · ${safetyLabel}` : ""}
               {optimization.improvementPercentage > 0
                 ? ` · Est. +${optimization.improvementPercentage}% ATS`
                 : ""}
+            </p>
+          ) : null}
+          {discoverySummary.reviewRejectionSummary ? (
+            <p className="mt-1 text-[12px] leading-snug text-muted-foreground/90">
+              Review rejections: {discoverySummary.reviewRejectionSummary}
+            </p>
+          ) : null}
+          {discoverySummary.discoveryRejectionSummary ? (
+            <p className="mt-1 text-[12px] leading-snug text-muted-foreground/90">
+              Discovery rejections: {discoverySummary.discoveryRejectionSummary}
+            </p>
+          ) : null}
+          {optimization.optimizationApplied &&
+          discoverySummary.applyRejectionSummary ? (
+            <p className="mt-1 text-[12px] leading-snug text-muted-foreground/90">
+              {discoverySummary.applyRejectionSummary}
             </p>
           ) : null}
         </div>
@@ -180,6 +209,40 @@ export function AtsKeywordPreviewDrawer({
             </div>
           </div>
           <ul className="space-y-2 pb-5 pt-1">
+            {previewChanges.length === 0 ? (
+              <li className="rounded-xl border border-border/70 bg-muted/20 px-4 py-5 text-[14px] leading-relaxed text-muted-foreground">
+                {discoverySummary.found > 0 && discoverySummary.readyToReview === 0
+                  ? `${discoverySummary.found} opportunities were discovered, but none passed review validation. See debug rejections below.`
+                  : discoverySummary.found > 0
+                    ? `${discoverySummary.readyToReview} swaps are ready for your review. Export validation runs after you approve.`
+                    : "No keyword opportunities were found."}
+              </li>
+            ) : null}
+            {isAtsOptimizerDebugEnabled() &&
+            (optimization.rejectedCandidates?.length ?? 0) > 0 ? (
+              <li className="rounded-xl border border-dashed border-border/80 bg-muted/10 px-4 py-4">
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Debug — rejected candidates
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {optimization.rejectedCandidates!.slice(0, 24).map((entry, index) => (
+                    <li
+                      key={`${entry.before}-${entry.after}-${entry.reason}-${index}`}
+                      className="text-[13px] leading-snug text-muted-foreground"
+                    >
+                      <span className="font-medium text-foreground">
+                        {entry.before} → {entry.after}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · Rejected: {formatRejectionReasonLabel(entry.reason)} (
+                        {entry.stage})
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ) : null}
             {previewChanges.map((change, index) => (
               <AtsKeywordChangeAccordion
                 key={`${change.before}-${change.after}-${index}`}
@@ -255,4 +318,9 @@ export function AtsKeywordPreviewDrawer({
     </div>,
     getAppOverlayRoot(),
   );
+}
+
+function readyToReviewLabel(count: number): string {
+  if (count <= 0) return " · 0 ready to review";
+  return ` · ${count} ready to review`;
 }

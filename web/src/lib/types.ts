@@ -303,6 +303,88 @@ export interface AtsKeywordOptimization {
   modificationRatio?: number;
   /** Review decisions for preview changes. */
   keywordChangeDecisions?: AtsKeywordChangeDecision[];
+  /** Structural fidelity score after applying approved swaps (≥95 required). */
+  layoutPreservationScore?: number;
+  /** True when swaps failed validation and the original text was kept. */
+  layoutReverted?: boolean;
+  /** Typography fidelity score after applying approved swaps (≥95 required). */
+  typographyPreservationScore?: number;
+  /** True when typography validation failed and the original text was kept. */
+  typographyReverted?: boolean;
+  /** Substitutions that passed all validation layers. */
+  appliedKeywordChanges?: AtsKeywordChange[];
+  /** Total raw opportunities discovered before validation. */
+  keywordOpportunitiesFound?: number;
+  /** Candidates that passed review-stage validation. */
+  reviewCandidates?: number;
+  /** Rejection counts from the discovery validation phase. */
+  discoveryRejectionCounts?: Record<
+    | "width_tolerance"
+    | "typography"
+    | "duplicate_keyword_limit"
+    | "saturation_limit"
+    | "layout_preservation"
+    | "length_ratio"
+    | "golden_rule"
+    | "buzzword",
+    number
+  >;
+  /** Rejection counts from the review validation phase. */
+  reviewRejectionCounts?: Record<
+    | "width_tolerance"
+    | "typography"
+    | "duplicate_keyword_limit"
+    | "saturation_limit"
+    | "layout_preservation"
+    | "length_ratio"
+    | "golden_rule"
+    | "buzzword",
+    number
+  >;
+  /** Candidates rejected during discovery/review with reasons (debug). */
+  rejectedCandidates?: Array<{
+    before: string;
+    after: string;
+    reason:
+      | "width_tolerance"
+      | "typography"
+      | "duplicate_keyword_limit"
+      | "saturation_limit"
+      | "layout_preservation"
+      | "length_ratio"
+      | "golden_rule"
+      | "buzzword";
+    stage: "discovery" | "review";
+  }>;
+  /** Structured discovery / review / export stats. */
+  atsDiagnostics?: {
+    opportunitiesFound: number;
+    reviewCandidates: number;
+    approvedCandidates: number;
+    rejected: Record<
+      | "width_tolerance"
+      | "typography"
+      | "duplicate_keyword_limit"
+      | "saturation_limit"
+      | "layout_preservation"
+      | "length_ratio"
+      | "golden_rule"
+      | "buzzword",
+      number
+    >;
+  };
+  /** Rejection counts from the apply phase (after user approval). */
+  applyRejectionCounts?: Record<
+    | "width_tolerance"
+    | "typography"
+    | "duplicate_keyword_limit"
+    | "saturation_limit"
+    | "layout_preservation"
+    | "length_ratio"
+    | "golden_rule"
+    | "buzzword",
+    number
+  >;
   completedAt: string;
   improvementDismissed: boolean;
 }

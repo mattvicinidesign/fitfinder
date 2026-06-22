@@ -12,6 +12,7 @@ import {
   occurrenceIndexForChange,
 } from "@/lib/ats-keyword-optimization-core";
 import { optimizeAtsKeywords } from "@/lib/api";
+import { logAtsApplyStats } from "@/lib/ats-discovery-stats";
 import { getCachedResumeText } from "@/lib/resume-parse-tracker";
 
 const CACHE_PREFIX = "fitfinder:resume-review:ats-optimization:";
@@ -70,6 +71,49 @@ function normalizeAtsKeywordOptimization(
     keywordChangeDecisions: Array.isArray(record.keywordChangeDecisions)
       ? (record.keywordChangeDecisions as AtsKeywordChangeDecision[])
       : undefined,
+    layoutPreservationScore:
+      typeof record.layoutPreservationScore === "number"
+        ? record.layoutPreservationScore
+        : undefined,
+    layoutReverted: record.layoutReverted === true,
+    typographyPreservationScore:
+      typeof record.typographyPreservationScore === "number"
+        ? record.typographyPreservationScore
+        : undefined,
+    typographyReverted: record.typographyReverted === true,
+    appliedKeywordChanges: Array.isArray(record.appliedKeywordChanges)
+      ? (record.appliedKeywordChanges as AtsKeywordOptimization["keywordChanges"])
+      : undefined,
+    keywordOpportunitiesFound:
+      typeof record.keywordOpportunitiesFound === "number"
+        ? record.keywordOpportunitiesFound
+        : undefined,
+    discoveryRejectionCounts:
+      record.discoveryRejectionCounts &&
+      typeof record.discoveryRejectionCounts === "object"
+        ? (record.discoveryRejectionCounts as AtsKeywordOptimization["discoveryRejectionCounts"])
+        : undefined,
+    reviewRejectionCounts:
+      record.reviewRejectionCounts &&
+      typeof record.reviewRejectionCounts === "object"
+        ? (record.reviewRejectionCounts as AtsKeywordOptimization["reviewRejectionCounts"])
+        : undefined,
+    rejectedCandidates: Array.isArray(record.rejectedCandidates)
+      ? (record.rejectedCandidates as AtsKeywordOptimization["rejectedCandidates"])
+      : undefined,
+    atsDiagnostics:
+      record.atsDiagnostics && typeof record.atsDiagnostics === "object"
+        ? (record.atsDiagnostics as AtsKeywordOptimization["atsDiagnostics"])
+        : undefined,
+    reviewCandidates:
+      typeof record.reviewCandidates === "number"
+        ? record.reviewCandidates
+        : undefined,
+    applyRejectionCounts:
+      record.applyRejectionCounts &&
+      typeof record.applyRejectionCounts === "object"
+        ? (record.applyRejectionCounts as AtsKeywordOptimization["applyRejectionCounts"])
+        : undefined,
     completedAt: String(record.completedAt ?? new Date().toISOString()),
     improvementDismissed: record.improvementDismissed === true,
   };
@@ -144,6 +188,12 @@ export function buildResumeWithApprovedChanges(
   optimizedATSScore: number;
   improvementPercentage: number;
   approvedChanges: AtsKeywordOptimization["keywordChanges"];
+  layoutPreservationScore: number;
+  typographyPreservationScore: number;
+  layoutReverted: boolean;
+  typographyReverted: boolean;
+  appliedChanges: AtsKeywordOptimization["keywordChanges"];
+  applyRejectionCounts: AtsKeywordOptimization["applyRejectionCounts"];
 } {
   const previewChanges = optimization.keywordChanges.slice(
     0,
@@ -153,24 +203,30 @@ export function buildResumeWithApprovedChanges(
     decisions[index] === "approved" ? [index] : [],
   );
 
-  const optimizedResumeText = buildOptimizedResumeText(
+  const built = buildOptimizedResumeText(
     optimization.originalResumeText,
     previewChanges,
     approvedIndices,
   );
 
-  const approvedCount = approvedIndices.length;
+  const appliedCount = built.appliedChanges.length;
   const { optimizedATSScore, improvementPercentage } = computeOptimizedAtsScore(
     optimization.originalATSScore,
-    approvedCount,
+    appliedCount,
     previewChanges.length,
   );
 
   return {
-    optimizedResumeText,
+    optimizedResumeText: built.optimizedResumeText,
     optimizedATSScore,
     improvementPercentage,
     approvedChanges: approvedIndices.map((index) => previewChanges[index]!),
+    layoutPreservationScore: built.layoutPreservationScore,
+    typographyPreservationScore: built.typographyPreservationScore,
+    layoutReverted: built.reverted,
+    typographyReverted: built.reverted,
+    appliedChanges: built.appliedChanges,
+    applyRejectionCounts: built.applyRejectionCounts,
   };
 }
 
@@ -213,22 +269,28 @@ export async function simulateAtsKeywordOptimization(input: {
     "keywordChangeDecisions" | "completedAt" | "improvementDismissed"
   >;
 
-  try {
-    scan = await optimizeAtsKeywords({
-      resumeId: input.resumeId ?? undefined,
-      resumeText: resumeText ?? undefined,
-      originalATSScore: input.originalATSScore,
-    });
-  } catch (error) {
-    if (!resumeText) throw error;
-    const local = buildAtsOptimizationScanResult(
+  if (resumeText) {
+    scan = buildAtsOptimizationScanResult(
       resumeText,
       input.originalATSScore,
     );
-    if (local.keywordChanges.length === 0) {
+    if (scan.keywordOpportunitiesFound === 0) {
       throw new Error(ATS_NO_KEYWORDS_MESSAGE);
     }
-    scan = local;
+  } else {
+    try {
+      scan = await optimizeAtsKeywords({
+        resumeId: input.resumeId ?? undefined,
+        resumeText: undefined,
+        originalATSScore: input.originalATSScore,
+      });
+    } catch (error) {
+      throw error;
+    }
+
+    if ((scan.keywordOpportunitiesFound ?? 0) === 0) {
+      throw new Error(ATS_NO_KEYWORDS_MESSAGE);
+    }
   }
 
   const previewCount = Math.min(
@@ -250,23 +312,99 @@ export function applyAtsKeywordOptimization(
   decisions: AtsKeywordChangeDecision[],
 ): AtsKeywordOptimization {
   const built = buildResumeWithApprovedChanges(optimization, decisions);
-  const approvedCount = built.approvedChanges.length;
   const next: AtsKeywordOptimization = {
     ...optimization,
     optimizedResumeText: built.optimizedResumeText,
     optimizedATSScore: built.optimizedATSScore,
     improvementPercentage: built.improvementPercentage,
-    totalKeywordEdits: approvedCount,
-    atsSafetyScore: classifyAtsSafetyScore(approvedCount),
+    totalKeywordEdits: built.appliedChanges.length,
+    atsSafetyScore: classifyAtsSafetyScore(built.appliedChanges.length),
     keywordChangeDecisions: decisions.slice(0, ATS_PREVIEW_KEYWORD_CHANGE_COUNT),
+    layoutPreservationScore: built.layoutPreservationScore,
+    layoutReverted: built.layoutReverted,
+    typographyPreservationScore: built.typographyPreservationScore,
+    typographyReverted: built.typographyReverted,
+    appliedKeywordChanges: built.appliedChanges,
+    applyRejectionCounts: built.applyRejectionCounts,
+    atsDiagnostics: optimization.atsDiagnostics
+      ? {
+          ...optimization.atsDiagnostics,
+          approvedCandidates: built.appliedChanges.length,
+        }
+      : {
+          opportunitiesFound:
+            optimization.keywordOpportunitiesFound ??
+            optimization.keywordChanges.length,
+          reviewCandidates: optimization.keywordChanges.length,
+          approvedCandidates: built.appliedChanges.length,
+          rejected: built.applyRejectionCounts ?? {
+            width_tolerance: 0,
+            typography: 0,
+            duplicate_keyword_limit: 0,
+            saturation_limit: 0,
+            layout_preservation: 0,
+            length_ratio: 0,
+            golden_rule: 0,
+            buzzword: 0,
+          },
+        },
     optimizationApplied: true,
     completedAt: new Date().toISOString(),
   };
   saveAtsKeywordOptimization(reviewId, next);
+  logAtsApplyStats(next);
   return next;
 }
 
-export { downloadOptimizedResume } from "@/lib/optimized-resume-download";
+export { downloadOptimizedResume, buildOptimizedResumeDownloadInput } from "@/lib/optimized-resume-download";
+
+export async function downloadAppliedAtsOptimization(input: {
+  optimization: AtsKeywordOptimization;
+  sourceFileName: string;
+  resumeId?: string | null;
+}): Promise<void> {
+  const { downloadOptimizedResume, buildOptimizedResumeDownloadInput } =
+    await import("@/lib/optimized-resume-download");
+  const { isNativePlatform } = await import("@/lib/platform");
+  const { toast } = await import("sonner");
+
+  const { layoutPreserved, typographyPreserved } = await downloadOptimizedResume(
+    buildOptimizedResumeDownloadInput(
+      input.optimization,
+      input.sourceFileName,
+      input.resumeId,
+    ),
+  );
+
+  if (input.optimization.layoutReverted) {
+    toast.info(
+      "Exported your original resume — changes could not be applied safely.",
+    );
+    return;
+  }
+
+  if ((input.optimization.appliedKeywordChanges?.length ?? 0) === 0) {
+    toast.warning("No keyword changes could be applied to your file.");
+    return;
+  }
+
+  if (!typographyPreserved) {
+    toast.info(
+      "Some keyword swaps were skipped to preserve visual formatting.",
+    );
+    return;
+  }
+
+  toast.success(
+    isNativePlatform()
+      ? layoutPreserved
+        ? "Choose where to save your resume."
+        : "Choose where to save your resume (plain text export)."
+      : layoutPreserved
+        ? "Optimized resume downloaded."
+        : "Resume downloaded as plain text.",
+  );
+}
 
 export function dismissAtsImprovementBadge(
   reviewId: string,

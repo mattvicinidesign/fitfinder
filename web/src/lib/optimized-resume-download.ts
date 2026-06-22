@@ -1,6 +1,20 @@
 "use client";
 
 import { isNativePlatform } from "@/lib/platform";
+import { fetchResumeFileFromStorage } from "@/lib/fetch-resume-file";
+import { patchDocxBlob } from "@/lib/patch-resume-docx";
+import { patchPdfBlob } from "@/lib/patch-resume-pdf";
+import { extractPdfRunsFromFile } from "@/lib/extract-resume-pdf-runs";
+import {
+  getCachedResumeFile,
+  getCachedResumeFileMeta,
+  getCachedResumePdfRuns,
+} from "@/lib/resume-file-cache";
+import type { AtsKeywordChange, AtsKeywordOptimization } from "@/lib/types";
+import {
+  ATS_PREVIEW_KEYWORD_CHANGE_COUNT,
+  passesVisualWidthTolerance,
+} from "@/lib/ats-keyword-optimization-core";
 
 export type OptimizedResumeOutputFormat = "pdf" | "docx" | "txt";
 
@@ -25,72 +39,6 @@ export function buildOptimizedResumeDownloadName(
   const ext =
     format === "pdf" ? "pdf" : format === "docx" ? "docx" : "txt";
   return `${base}-optimized.${ext}`;
-}
-
-function writePdfLines(
-  doc: import("jspdf").jsPDF,
-  text: string,
-  margin: number,
-  contentWidth: number,
-  startY: number,
-  lineHeight: number,
-): number {
-  const pageHeight = doc.internal.pageSize.getHeight();
-  let y = startY;
-
-  const ensureSpace = (needed: number) => {
-    if (y + needed > pageHeight - margin) {
-      doc.addPage();
-      y = margin;
-    }
-  };
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(31, 41, 55);
-
-  for (const line of text.replace(/\r\n/g, "\n").split("\n")) {
-    if (!line.trim()) {
-      y += lineHeight * 0.45;
-      continue;
-    }
-    const wrapped = doc.splitTextToSize(line, contentWidth) as string[];
-    for (const wrappedLine of wrapped) {
-      ensureSpace(lineHeight);
-      doc.text(wrappedLine, margin, y);
-      y += lineHeight;
-    }
-  }
-
-  return y;
-}
-
-async function createOptimizedResumePdfBlob(text: string): Promise<Blob> {
-  const { jsPDF } = await import("jspdf");
-  const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const margin = 56;
-  const contentWidth = doc.internal.pageSize.getWidth() - margin * 2;
-  writePdfLines(doc, text, margin, contentWidth, margin, 15);
-  return doc.output("blob");
-}
-
-async function createOptimizedResumeDocxBlob(text: string): Promise<Blob> {
-  const { Document, Packer, Paragraph, TextRun } = await import("docx");
-  const lines = text.replace(/\r\n/g, "\n").split("\n");
-  const paragraphs =
-    lines.length > 0
-      ? lines.map(
-          (line) =>
-            new Paragraph({
-              children: [new TextRun({ text: line || " ", size: 22 })],
-            }),
-        )
-      : [new Paragraph({ children: [new TextRun(" ")] })];
-
-  const document = new Document({
-    sections: [{ children: paragraphs }],
-  });
-  return Packer.toBlob(document);
 }
 
 function blobToBase64(blob: Blob): Promise<string> {
@@ -143,31 +91,194 @@ async function shareNativeDownload(blob: Blob, downloadName: string): Promise<vo
   });
 }
 
-/** Download optimized resume text in the same format family as the uploaded file. */
-export async function downloadOptimizedResume(
-  text: string,
-  sourceFileName = "resume.pdf",
-): Promise<void> {
-  const format = getOptimizedResumeOutputFormat(sourceFileName);
-  const downloadName = buildOptimizedResumeDownloadName(sourceFileName, format);
+async function resolveOriginalFile(
+  resumeId: string | null | undefined,
+  sourceFileName: string,
+): Promise<{ blob: Blob; fileName: string } | null> {
+  if (resumeId) {
+    const cached = await getCachedResumeFile(resumeId);
+    const meta = await getCachedResumeFileMeta(resumeId);
+    if (cached) {
+      return {
+        blob: cached,
+        fileName: meta?.fileName ?? sourceFileName,
+      };
+    }
 
-  let blob: Blob;
-  switch (format) {
-    case "pdf":
-      blob = await createOptimizedResumePdfBlob(text);
-      break;
-    case "docx":
-      blob = await createOptimizedResumeDocxBlob(text);
-      break;
-    default:
-      blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-      break;
+    const remote = await fetchResumeFileFromStorage(resumeId);
+    if (remote) return remote;
   }
+
+  return null;
+}
+
+async function createLayoutPreservingBlob(input: {
+  patchedText: string;
+  sourceFileName: string;
+  resumeId?: string | null;
+  substitutions: AtsKeywordChange[];
+}): Promise<{
+  blob: Blob;
+  downloadName: string;
+  layoutPreserved: boolean;
+  typographyPreserved: boolean;
+}> {
+  const format = getOptimizedResumeOutputFormat(input.sourceFileName);
+  const downloadName = buildOptimizedResumeDownloadName(
+    input.sourceFileName,
+    format,
+  );
+
+  const original = await resolveOriginalFile(input.resumeId, input.sourceFileName);
+
+  if (!original) {
+    return {
+      blob: new Blob([input.patchedText], { type: "text/plain;charset=utf-8" }),
+      downloadName,
+      layoutPreserved: false,
+      typographyPreserved: false,
+    };
+  }
+
+  if (format === "docx") {
+    const widthSafe = input.substitutions.filter((substitution) =>
+      passesVisualWidthTolerance(substitution),
+    );
+    const blob = await patchDocxBlob(original.blob, widthSafe);
+    return {
+      blob,
+      downloadName,
+      layoutPreserved: true,
+      typographyPreserved: widthSafe.length === input.substitutions.length,
+    };
+  }
+
+  if (format === "pdf") {
+    let runs =
+      (input.resumeId ? await getCachedResumePdfRuns(input.resumeId) : null) ??
+      [];
+    if (runs.length === 0) {
+      try {
+        const extracted = await extractPdfRunsFromFile(
+          new File([original.blob], original.fileName, {
+            type: original.blob.type || "application/pdf",
+          }),
+        );
+        runs = extracted.runs;
+      } catch {
+        runs = [];
+      }
+    }
+
+    if (input.substitutions.length === 0) {
+      return {
+        blob: original.blob,
+        downloadName: original.fileName,
+        layoutPreserved: true,
+        typographyPreserved: true,
+      };
+    }
+
+    if (runs.length === 0) {
+      return {
+        blob: new Blob([input.patchedText], { type: "text/plain;charset=utf-8" }),
+        downloadName: buildOptimizedResumeDownloadName(
+          input.sourceFileName,
+          "txt",
+        ),
+        layoutPreserved: false,
+        typographyPreserved: false,
+      };
+    }
+
+    const patched = await patchPdfBlob(original.blob, input.substitutions, runs);
+    return {
+      blob: patched.blob,
+      downloadName,
+      layoutPreserved: true,
+      typographyPreserved:
+        patched.rejectedSubstitutions.length === 0 &&
+        patched.appliedSubstitutions.length === input.substitutions.length,
+    };
+  }
+
+  return {
+    blob: new Blob([input.patchedText], { type: "text/plain;charset=utf-8" }),
+    downloadName,
+    layoutPreserved: true,
+    typographyPreserved: true,
+  };
+}
+
+export type DownloadOptimizedResumeInput = {
+  patchedText: string;
+  originalText: string;
+  sourceFileName?: string;
+  resumeId?: string | null;
+  substitutions: AtsKeywordChange[];
+  layoutReverted?: boolean;
+};
+
+export function buildOptimizedResumeDownloadInput(
+  optimization: AtsKeywordOptimization,
+  sourceFileName: string,
+  resumeId?: string | null,
+): DownloadOptimizedResumeInput {
+  const preview = optimization.keywordChanges.slice(
+    0,
+    ATS_PREVIEW_KEYWORD_CHANGE_COUNT,
+  );
+  const decisions = optimization.keywordChangeDecisions ?? [];
+  const approvedFromDecisions = preview.filter(
+    (_, index) => decisions[index] === "approved",
+  );
+  const substitutions =
+    optimization.appliedKeywordChanges ??
+    (optimization.layoutReverted ? [] : approvedFromDecisions);
+
+  return {
+    patchedText: optimization.optimizedResumeText,
+    originalText: optimization.originalResumeText,
+    sourceFileName,
+    resumeId,
+    substitutions,
+    layoutReverted: optimization.layoutReverted === true,
+  };
+}
+
+/** Export optimized resume by patching the canonical file — never rebuilding layout. */
+export async function downloadOptimizedResume(
+  input: DownloadOptimizedResumeInput | string,
+  legacySourceFileName = "resume.pdf",
+): Promise<{ layoutPreserved: boolean; typographyPreserved: boolean }> {
+  const resolved: DownloadOptimizedResumeInput =
+    typeof input === "string"
+      ? {
+          patchedText: input,
+          originalText: input,
+          sourceFileName: legacySourceFileName,
+          substitutions: [],
+        }
+      : input;
+
+  const sourceFileName = resolved.sourceFileName ?? legacySourceFileName;
+  const exportText = resolved.layoutReverted
+    ? resolved.originalText
+    : resolved.patchedText;
+
+  const { blob, downloadName, layoutPreserved, typographyPreserved } =
+    await createLayoutPreservingBlob({
+      patchedText: exportText,
+      sourceFileName,
+      resumeId: resolved.resumeId,
+      substitutions: resolved.layoutReverted ? [] : resolved.substitutions,
+    });
 
   if (isNativePlatform()) {
     await shareNativeDownload(blob, downloadName);
-    return;
+    return { layoutPreserved, typographyPreserved };
   }
 
   triggerBrowserDownload(blob, downloadName);
+  return { layoutPreserved, typographyPreserved };
 }

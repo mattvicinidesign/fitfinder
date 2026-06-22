@@ -3,6 +3,11 @@
 import { createClient } from "@/lib/supabase/client";
 import { parseResume } from "@/lib/api";
 import { extractResumeTextFromFile } from "@/lib/extract-resume-text";
+import { extractPdfRunsFromFile } from "@/lib/extract-resume-pdf-runs";
+import {
+  cacheResumeFile,
+  cacheResumePdfRuns,
+} from "@/lib/resume-file-cache";
 import {
   cacheResumeText,
   trackResumeParse,
@@ -57,6 +62,26 @@ export async function uploadResume(file: File): Promise<{
   if (resumeText) {
     cacheResumeText(row.id, resumeText);
   }
+
+  try {
+    const lowerName = file.name.toLowerCase();
+    if (lowerName.endsWith(".pdf")) {
+      const extracted = await extractPdfRunsFromFile(file);
+      await cacheResumeFile(row.id, file, {
+        fileName: file.name,
+        pageCount: extracted.pageCount,
+      });
+      await cacheResumePdfRuns(row.id, extracted.runs);
+    } else {
+      await cacheResumeFile(row.id, file, {
+        fileName: file.name,
+        pageCount: 1,
+      });
+    }
+  } catch {
+    // File cache is best-effort; download can fall back to Supabase Storage.
+  }
+
   trackResumeParse(
     row.id,
     parseResume(

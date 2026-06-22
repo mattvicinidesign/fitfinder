@@ -18,6 +18,8 @@ import { patchResumeReviewAtsScore } from "@/lib/patch-resume-review-ats-score";
 import {
   applyAtsKeywordOptimization,
   clearAtsKeywordOptimization,
+  buildOptimizedResumeDownloadInput,
+  downloadAppliedAtsOptimization,
   downloadOptimizedResume,
   isAtsOptimizationApplied,
   isAtsScanPendingReview,
@@ -73,21 +75,42 @@ export function ResumeReviewResultView({
 
   const handleDownload = useCallback(() => {
     if (!optimization || !isAtsOptimizationApplied(optimization)) return;
+    const sourceFileName =
+      fileName ?? loadResumeReviewFileName() ?? "resume.pdf";
     void downloadOptimizedResume(
-      optimization.optimizedResumeText,
-      fileName ?? loadResumeReviewFileName() ?? "resume.pdf",
+      buildOptimizedResumeDownloadInput(
+        optimization,
+        sourceFileName,
+        review.resumeId,
+      ),
     )
-      .then(() => {
+      .then(({ layoutPreserved, typographyPreserved }) => {
+        if (optimization.layoutReverted || optimization.typographyReverted) {
+          toast.info(
+            "Exported your original resume — changes could not be applied safely.",
+          );
+          return;
+        }
+        if (!typographyPreserved) {
+          toast.info(
+            "Some keyword swaps were skipped to preserve visual formatting.",
+          );
+          return;
+        }
         toast.success(
           isNativePlatform()
-            ? "Choose where to save your resume."
-            : "Optimized resume downloaded.",
+            ? layoutPreserved
+              ? "Choose where to save your resume."
+              : "Choose where to save your resume (plain text export)."
+            : layoutPreserved
+              ? "Optimized resume downloaded."
+              : "Resume downloaded as plain text.",
         );
       })
       .catch(() => {
         toast.error("Could not export the resume. Try again.");
       });
-  }, [optimization, fileName]);
+  }, [optimization, fileName, review.resumeId]);
 
   const atsOptimized = Boolean(
     optimization && isAtsOptimizationApplied(optimization),
@@ -128,9 +151,18 @@ export function ResumeReviewResultView({
       setReview(patchedReview);
       setOptimization(applied);
       setPreviewOpen(false);
-      toast.success("Optimized resume built.");
+
+      const sourceFileName =
+        fileName ?? loadResumeReviewFileName() ?? "resume.pdf";
+      void downloadAppliedAtsOptimization({
+        optimization: applied,
+        sourceFileName,
+        resumeId: review.resumeId,
+      }).catch(() => {
+        toast.error("Could not export the resume. Try again.");
+      });
     },
-    [optimization, review],
+    [optimization, review, fileName],
   );
 
   const handleDiscardPending = useCallback(() => {

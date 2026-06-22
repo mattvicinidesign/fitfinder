@@ -48,7 +48,7 @@ Deno.serve(async (req: Request) => {
 
     const scan = buildAtsOptimizationScanResult(resumeText, originalATSScore);
 
-    if (scan.keywordChanges.length === 0) {
+    if (scan.keywordOpportunitiesFound === 0) {
       return error(ATS_NO_KEYWORDS_MESSAGE, 422);
     }
 
