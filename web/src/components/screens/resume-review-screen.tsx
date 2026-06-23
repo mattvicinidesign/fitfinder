@@ -8,7 +8,7 @@ import { ResumeReviewIntro } from "@/components/resume-review-intro";
 import { ResumeReviewResultView } from "@/components/resume-review-result";
 import { ResumeReviewUploadZone } from "@/components/resume-review-upload-zone";
 import { reviewResume } from "@/lib/api";
-import { getCachedParsedResume } from "@/lib/resume-parse-tracker";
+import { getCachedParsedResume, resolveResumeIdForOptimization, resolveResumeTextForOptimization } from "@/lib/resume-parse-tracker";
 import {
   clearResumeReview,
   loadResumeReview,
@@ -32,6 +32,9 @@ export function ResumeReviewScreen() {
     if (cached) {
       setReview(cached);
       setFileName(loadResumeReviewFileName());
+      void resolveResumeIdForOptimization(cached.resumeId).then((resumeId) => {
+        if (resumeId) void resolveResumeTextForOptimization(resumeId);
+      });
     }
   }, []);
 
@@ -47,8 +50,9 @@ export function ResumeReviewScreen() {
       const result = await reviewResume({ resumeId, parsedResume });
       setAnimateGauge(true);
       setReview(result);
-      saveResumeReview(result);
+      saveResumeReview(result, resumeId);
       saveResumeReviewFileName(name);
+      void resolveResumeTextForOptimization(resumeId);
     } catch (e) {
       toast.error(
         e instanceof Error ? e.message : "Could not review this resume.",

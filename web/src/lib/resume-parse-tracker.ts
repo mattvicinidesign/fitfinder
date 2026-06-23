@@ -1,4 +1,5 @@
 import type { ParsedResume } from "@/lib/types";
+import { createClient } from "@/lib/supabase/client";
 
 const inflight = new Map<string, Promise<void>>();
 const errors = new Map<string, Error>();
@@ -16,6 +17,9 @@ export function cacheResumeText(resumeId: string, text: string): void {
   if (typeof sessionStorage !== "undefined") {
     sessionStorage.setItem(`${TEXT_CACHE_PREFIX}${resumeId}`, trimmed);
   }
+  void import("@/lib/resume-file-cache").then(({ cacheResumePlainText }) =>
+    cacheResumePlainText(resumeId, trimmed),
+  );
 }
 
 export function getCachedResumeText(resumeId: string): string | null {
@@ -27,6 +31,119 @@ export function getCachedResumeText(resumeId: string): string | null {
     textCache.set(resumeId, stored);
     return stored;
   }
+  return null;
+}
+
+/** Resolve the Storage resume row id for ATS flows (cached review may omit resumeId). */
+export async function resolveResumeIdForOptimization(
+  explicitId?: string | null,
+): Promise<string | null> {
+  const trimmed = explicitId?.trim();
+  if (trimmed) return trimmed;
+
+  const { loadResumeReview, loadResumeReviewResumeId } = await import(
+    "@/lib/resume-review-cache"
+  );
+  const stored = loadResumeReviewResumeId();
+  if (stored) return stored;
+
+  const review = loadResumeReview();
+  if (review?.resumeId) return review.resumeId;
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("resumes")
+    .select("id")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data?.id ?? null;
+}
+
+/** Rehydrate plain text when session cache was cleared (native QA refresh / cold start). */
+export async function resolveResumeTextForOptimization(
+  resumeId: string,
+): Promise<string | null> {
+  const cached = getCachedResumeText(resumeId);
+  if (cached) return cached;
+
+  const {
+    getCachedResumePlainText,
+    getCachedResumePdfRuns,
+    getCachedResumeFile,
+  } = await import("@/lib/resume-file-cache");
+
+  const persisted = await getCachedResumePlainText(resumeId);
+  if (persisted) {
+    cacheResumeText(resumeId, persisted);
+    return persisted;
+  }
+
+  const runs = await getCachedResumePdfRuns(resumeId);
+  if (runs?.length) {
+    const { plainTextFromPdfRuns } = await import("@/lib/extract-resume-pdf-runs");
+    const text = plainTextFromPdfRuns(runs);
+    if (text) {
+      cacheResumeText(resumeId, text);
+      return text;
+    }
+  }
+
+  const localFile = await getCachedResumeFile(resumeId);
+  if (localFile) {
+    try {
+      const { extractResumeTextFromFile } = await import("@/lib/extract-resume-text");
+      const text = (await extractResumeTextFromFile(localFile)).trim();
+      if (text) {
+        cacheResumeText(resumeId, text);
+        return text;
+      }
+    } catch {
+      // Fall through to Storage fetch.
+    }
+  }
+
+  try {
+    const { fetchResumeFileFromStorage } = await import("@/lib/fetch-resume-file");
+    const remote = await fetchResumeFileFromStorage(resumeId);
+    if (remote) {
+      const { extractResumeTextFromFile } = await import("@/lib/extract-resume-text");
+      const text = (
+        await extractResumeTextFromFile(
+          new File([remote.blob], remote.fileName, {
+            type: remote.blob.type || "application/octet-stream",
+          }),
+        )
+      ).trim();
+      if (text) {
+        cacheResumeText(resumeId, text);
+        return text;
+      }
+    }
+  } catch {
+    // Fall through to server extraction.
+  }
+
+  try {
+    const { fetchResumeTextFromServer } = await import("@/lib/api");
+    const serverText = await fetchResumeTextFromServer(resumeId);
+    if (serverText) {
+      cacheResumeText(resumeId, serverText);
+      return serverText;
+    }
+  } catch (error) {
+    throw error instanceof Error
+      ? error
+      : new Error("Could not load resume text from the server.");
+  }
+
   return null;
 }
 

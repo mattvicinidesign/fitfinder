@@ -32,7 +32,10 @@ The UI calls `web/src/lib/api.ts`, which invokes:
 - `POST /functions/v1/parse-resume`
 - `POST /functions/v1/parse-job`
 - `POST /functions/v1/analyze`
+- `POST /functions/v1/review-resume` — resume-only health score (Score tab)
 - `POST /functions/v1/generate-proposal` — tailored Application Assistant proposals on fit reports
+
+`parse-resume` and `review-resume` accept `{ resumeId, textOnly: true }` to extract plain text from Storage without an OpenAI call (used when native session cache is cleared).
 
 **Do not reimplement scoring in the Next.js app.** Job postings are normalized in
 `supabase/functions/_shared/normalize_parsed_job.ts` inside `analyze` and
@@ -104,7 +107,9 @@ behave as **web** (`isNativePlatform()` is false). iOS uses the same bundle afte
 | Touch / scroll | Standard browser scrolling | `data-capacitor="native"` locks horizontal pan; vertical scroll on screen shells only; carousel uses `pan-x` |
 
 After **any** `web/` UI change, run `cd web && npm run cap:sync` before testing in Xcode, then commit and push to `main` for Vercel.
-After **backend** changes, deploy Edge Functions (`supabase functions deploy analyze generate-proposal`) and apply new migrations (`supabase db push`). Redeploy `analyze` after edits to `_shared/normalize_parsed_job.ts` or the analyze orchestrator.
+After **backend** changes, deploy Edge Functions (`supabase functions deploy analyze review-resume parse-resume generate-proposal`) and apply new migrations (`supabase db push`). Redeploy `analyze` after edits to `_shared/normalize_parsed_job.ts` or the analyze orchestrator.
+
+**Resume Score & ATS optimize:** `/resume-review` (Score tab) uploads a resume for a health breakdown (content, structure, ATS, completeness). **Optimize** proposes keyword swaps; approved edits patch the **original file** (PDF → PDF, DOCX → DOCX) with layout-preserving line redraws via pdf-lib — not a plain-text rebuild. On iOS, resume text is rehydrated from IndexedDB, Storage, or `review-resume` with `textOnly: true` when session cache is empty. Capacitor builds copy `pdf.worker.min.mjs` into `public/` at build time (`scripts/copy-pdf-worker.mjs`) so PDF parsing works in WKWebView.
 
 **Application Assistant:** On a fit report, generate a tailored proposal from resume + job data. Portfolio URL is extracted from the stored resume (not project URLs), inserted between intro paragraphs, and included in PDF export. Regenerate from the proposal modal.
 
@@ -122,7 +127,7 @@ Migrations: `0009_profile_preferred_employer_rating.sql`, `0010_profile_preferre
 
 **Report UI:** Missing posting values show as **blue** “Not Specified” pills (not scored). Green = match, red = mismatch.
 
-**Splash QA** (web): top-right **QA** floater — simulate first launch, returning user, or replay splash. Enabled on web by default; iOS requires `NEXT_PUBLIC_ENABLE_SPLASH_QA=true` at `cap:sync` time.
+**Splash QA** (web): top-right **QA** floater — simulate first launch, returning user, replay splash, or **Hard refresh** (clears Fit Finder session keys). Enabled on web by default; iOS requires `NEXT_PUBLIC_ENABLE_SPLASH_QA=true` at `cap:sync` time.
 
 Verify both build targets:
 

@@ -7,8 +7,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/prepare-recommended-jobs-bundled.mjs && next build",
-    "build:capacitor": "node scripts/prepare-recommended-jobs-bundled.mjs && CAPACITOR_BUILD=true next build",
+    "build": "node scripts/copy-pdf-worker.mjs && node scripts/prepare-recommended-jobs-bundled.mjs && next build",
+    "build:capacitor": "node scripts/copy-pdf-worker.mjs && node scripts/prepare-recommended-jobs-bundled.mjs && CAPACITOR_BUILD=true next build",
     "postbuild:capacitor": "npx cap sync ios",
     "start": "next start",
     "lint": "eslint",

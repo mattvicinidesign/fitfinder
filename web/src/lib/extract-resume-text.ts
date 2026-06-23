@@ -29,10 +29,8 @@ export async function extractResumeTextFromFile(file: File): Promise<string> {
 
 async function extractPdfText(file: File): Promise<string> {
   const pdfjs = await import("pdfjs-dist");
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url,
-  ).toString();
+  const { configurePdfJsWorker } = await import("@/lib/pdfjs-worker");
+  configurePdfJsWorker(pdfjs);
 
   const data = new Uint8Array(await file.arrayBuffer());
   const pdf = await pdfjs.getDocument({ data }).promise;

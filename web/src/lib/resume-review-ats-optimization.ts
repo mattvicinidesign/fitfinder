@@ -13,13 +13,12 @@ import {
   occurrenceIndexForChange,
   validateReplacementIntegrity,
 } from "@/lib/ats-keyword-optimization-core";
-import { optimizeAtsKeywords } from "@/lib/api";
 import { logAtsApplyStats } from "@/lib/ats-discovery-stats";
 import {
   clearReplacementAudit,
   logReplacementAudit,
 } from "@/lib/ats-optimizer-debug";
-import { getCachedResumeText } from "@/lib/resume-parse-tracker";
+import { getCachedResumeText, resolveResumeIdForOptimization, resolveResumeTextForOptimization } from "@/lib/resume-parse-tracker";
 
 const CACHE_PREFIX = "fitfinder:resume-review:ats-optimization:";
 /** Bump when cached optimization shape / apply logic changes — clears stale sessionStorage. */
@@ -378,37 +377,32 @@ export async function simulateAtsKeywordOptimization(input: {
     await sleep(i === 0 ? 600 : 900);
   }
 
+  const resumeId = await resolveResumeIdForOptimization(input.resumeId);
   const resumeText =
     input.resumeText?.trim() ||
-    (input.resumeId ? getCachedResumeText(input.resumeId) : null);
+    (resumeId
+      ? (getCachedResumeText(resumeId) ??
+        (await resolveResumeTextForOptimization(resumeId)))
+      : null);
 
-  let scan: Omit<
-    AtsKeywordOptimization,
-    "keywordChangeDecisions" | "completedAt" | "improvementDismissed"
-  >;
-
-  if (resumeText) {
-    scan = buildAtsOptimizationScanResult(
-      resumeText,
-      input.originalATSScore,
+  if (!resumeId) {
+    throw new Error(
+      "Could not find your resume file. Tap Replace and upload the resume again.",
     );
-    if (scan.keywordOpportunitiesFound === 0) {
-      throw new Error(ATS_NO_KEYWORDS_MESSAGE);
-    }
-  } else {
-    try {
-      scan = await optimizeAtsKeywords({
-        resumeId: input.resumeId ?? undefined,
-        resumeText: undefined,
-        originalATSScore: input.originalATSScore,
-      });
-    } catch (error) {
-      throw error;
-    }
+  }
 
-    if ((scan.keywordOpportunitiesFound ?? 0) === 0) {
-      throw new Error(ATS_NO_KEYWORDS_MESSAGE);
-    }
+  if (!resumeText) {
+    throw new Error(
+      "Could not read your resume text. Tap Replace and upload the resume again.",
+    );
+  }
+
+  const scan = buildAtsOptimizationScanResult(
+    resumeText,
+    input.originalATSScore,
+  );
+  if (scan.keywordOpportunitiesFound === 0) {
+    throw new Error(ATS_NO_KEYWORDS_MESSAGE);
   }
 
   const previewCount = Math.min(
@@ -525,10 +519,10 @@ export async function downloadAppliedAtsOptimization(input: {
     isNativePlatform()
       ? layoutPreserved
         ? "Choose where to save your resume."
-        : "Choose where to save your resume (plain text export)."
+        : "Choose where to save your resume (original file format; layout edits skipped)."
       : layoutPreserved
         ? "Optimized resume downloaded."
-        : "Resume downloaded as plain text.",
+        : "Resume downloaded in the original format (layout edits skipped).",
   );
 }
 

@@ -4,8 +4,10 @@ import { isNativePlatform } from "@/lib/platform";
 import { fetchResumeFileFromStorage } from "@/lib/fetch-resume-file";
 import { patchDocxBlob } from "@/lib/patch-resume-docx";
 import { patchPdfBlob } from "@/lib/patch-resume-pdf";
-import { extractPdfRunsFromFile } from "@/lib/extract-resume-pdf-runs";
+import { extractPdfRunsFromFile, type PdfTextRun } from "@/lib/extract-resume-pdf-runs";
+import { resolveResumeIdForOptimization } from "@/lib/resume-parse-tracker";
 import {
+  cacheResumePdfRuns,
   getCachedResumeFile,
   getCachedResumeFileMeta,
   getCachedResumePdfRuns,
@@ -82,6 +84,7 @@ async function shareNativeDownload(blob: Blob, downloadName: string): Promise<vo
     path: downloadName,
     data: base64,
     directory: Directory.Cache,
+    recursive: true,
   });
 
   await Share.share({
@@ -91,25 +94,67 @@ async function shareNativeDownload(blob: Blob, downloadName: string): Promise<vo
   });
 }
 
+function plainTextBlob(text: string): Blob {
+  return new Blob([text], { type: "text/plain;charset=utf-8" });
+}
+
+function pdfBlob(bytes: Blob | ArrayBuffer | Uint8Array): Blob {
+  const data =
+    bytes instanceof Blob ? bytes : new Blob([bytes as BlobPart]);
+  if (data.type === "application/pdf") return data;
+  return new Blob([data], { type: "application/pdf" });
+}
+
+async function resolvePdfRunsForExport(
+  resumeId: string | null | undefined,
+  file: File,
+): Promise<PdfTextRun[]> {
+  if (resumeId) {
+    const cached = await getCachedResumePdfRuns(resumeId);
+    if (cached?.length) return cached;
+  }
+
+  const extracted = await extractPdfRunsFromFile(file);
+  if (resumeId && extracted.runs.length > 0) {
+    await cacheResumePdfRuns(resumeId, extracted.runs);
+  }
+  return extracted.runs;
+}
+
 async function resolveOriginalFile(
   resumeId: string | null | undefined,
   sourceFileName: string,
 ): Promise<{ blob: Blob; fileName: string } | null> {
-  if (resumeId) {
-    const cached = await getCachedResumeFile(resumeId);
-    const meta = await getCachedResumeFileMeta(resumeId);
-    if (cached) {
-      return {
-        blob: cached,
-        fileName: meta?.fileName ?? sourceFileName,
-      };
-    }
+  const resolvedId = resumeId ?? (await resolveResumeIdForOptimization());
 
-    const remote = await fetchResumeFileFromStorage(resumeId);
-    if (remote) return remote;
+  if (!resolvedId) return null;
+
+  const cached = await getCachedResumeFile(resolvedId);
+  const meta = await getCachedResumeFileMeta(resolvedId);
+  if (cached) {
+    return {
+      blob: cached,
+      fileName: meta?.fileName ?? sourceFileName,
+    };
   }
 
-  return null;
+  const remote = await fetchResumeFileFromStorage(resolvedId);
+  if (!remote) return null;
+
+  try {
+    const { cacheResumeFile } = await import("@/lib/resume-file-cache");
+    await cacheResumeFile(
+      resolvedId,
+      new File([remote.blob], remote.fileName, {
+        type: remote.blob.type || "application/octet-stream",
+      }),
+      { fileName: remote.fileName, pageCount: 1 },
+    );
+  } catch {
+    // Best-effort — export can still proceed from the Storage blob.
+  }
+
+  return remote;
 }
 
 async function createLayoutPreservingBlob(input: {
@@ -129,12 +174,23 @@ async function createLayoutPreservingBlob(input: {
     format,
   );
 
-  const original = await resolveOriginalFile(input.resumeId, input.sourceFileName);
+  const resumeId =
+    input.resumeId ?? (await resolveResumeIdForOptimization());
+  const original = await resolveOriginalFile(resumeId, input.sourceFileName);
 
   if (!original) {
+    if (format === "txt") {
+      return {
+        blob: plainTextBlob(input.patchedText),
+        downloadName,
+        layoutPreserved: false,
+        typographyPreserved: false,
+      };
+    }
+
     return {
-      blob: new Blob([input.patchedText], { type: "text/plain;charset=utf-8" }),
-      downloadName,
+      blob: plainTextBlob(input.patchedText),
+      downloadName: buildOptimizedResumeDownloadName(input.sourceFileName, "txt"),
       layoutPreserved: false,
       typographyPreserved: false,
     };
@@ -154,38 +210,30 @@ async function createLayoutPreservingBlob(input: {
   }
 
   if (format === "pdf") {
-    let runs =
-      (input.resumeId ? await getCachedResumePdfRuns(input.resumeId) : null) ??
-      [];
-    if (runs.length === 0) {
-      try {
-        const extracted = await extractPdfRunsFromFile(
-          new File([original.blob], original.fileName, {
-            type: original.blob.type || "application/pdf",
-          }),
-        );
-        runs = extracted.runs;
-      } catch {
-        runs = [];
-      }
-    }
+    const sourceFile = new File([original.blob], original.fileName, {
+      type: original.blob.type || "application/pdf",
+    });
 
     if (input.substitutions.length === 0) {
       return {
-        blob: original.blob,
-        downloadName: original.fileName,
+        blob: pdfBlob(original.blob),
+        downloadName,
         layoutPreserved: true,
         typographyPreserved: true,
       };
     }
 
+    let runs: PdfTextRun[] = [];
+    try {
+      runs = await resolvePdfRunsForExport(resumeId, sourceFile);
+    } catch {
+      runs = [];
+    }
+
     if (runs.length === 0) {
       return {
-        blob: new Blob([input.patchedText], { type: "text/plain;charset=utf-8" }),
-        downloadName: buildOptimizedResumeDownloadName(
-          input.sourceFileName,
-          "txt",
-        ),
+        blob: pdfBlob(original.blob),
+        downloadName,
         layoutPreserved: false,
         typographyPreserved: false,
       };
@@ -198,7 +246,7 @@ async function createLayoutPreservingBlob(input: {
       input.patchedText,
     );
     return {
-      blob: patched.blob,
+      blob: pdfBlob(patched.blob),
       downloadName,
       layoutPreserved: true,
       typographyPreserved:
@@ -208,7 +256,7 @@ async function createLayoutPreservingBlob(input: {
   }
 
   return {
-    blob: new Blob([input.patchedText], { type: "text/plain;charset=utf-8" }),
+    blob: plainTextBlob(input.patchedText),
     downloadName,
     layoutPreserved: true,
     typographyPreserved: true,
@@ -270,12 +318,13 @@ export async function downloadOptimizedResume(
   const exportText = resolved.layoutReverted
     ? resolved.originalText
     : resolved.patchedText;
+  const resumeId = await resolveResumeIdForOptimization(resolved.resumeId);
 
   const { blob, downloadName, layoutPreserved, typographyPreserved } =
     await createLayoutPreservingBlob({
       patchedText: exportText,
       sourceFileName,
-      resumeId: resolved.resumeId,
+      resumeId,
       substitutions: resolved.layoutReverted ? [] : resolved.substitutions,
     });
 

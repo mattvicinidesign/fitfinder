@@ -17,6 +17,10 @@ import { safeBottomCta } from "@/lib/safe-area";
 import { cn } from "@/lib/utils";
 import { patchResumeReviewAtsScore } from "@/lib/patch-resume-review-ats-score";
 import {
+  resolveResumeIdForOptimization,
+  resolveResumeTextForOptimization,
+} from "@/lib/resume-parse-tracker";
+import {
   applyAtsKeywordOptimization,
   clearAtsKeywordOptimization,
   buildOptimizedResumeDownloadInput,
@@ -71,6 +75,12 @@ export function ResumeReviewResultView({
     }
   }, [initialReview]);
 
+  useEffect(() => {
+    void resolveResumeIdForOptimization(review.resumeId).then((resumeId) => {
+      if (resumeId) void resolveResumeTextForOptimization(resumeId);
+    });
+  }, [review.resumeId]);
+
   const atsCategory = review.categories.find((category) => category.key === "ats");
   const masterScore = getResumeReviewMasterScore(review);
   const resolvedFileName = fileName ?? loadResumeReviewFileName();
@@ -103,10 +113,10 @@ export function ResumeReviewResultView({
           isNativePlatform()
             ? layoutPreserved
               ? "Choose where to save your resume."
-              : "Choose where to save your resume (plain text export)."
+              : "Choose where to save your resume (original file format; layout edits skipped)."
             : layoutPreserved
               ? "Optimized resume downloaded."
-              : "Resume downloaded as plain text.",
+              : "Resume downloaded in the original format (layout edits skipped).",
         );
       })
       .catch(() => {

@@ -56,12 +56,39 @@ async function invoke<T>(
 
 export type ParseResumeArgs =
   | { resumeText: string; resumeId?: string }
-  | { resumeId: string };
+  | { resumeId: string; textOnly?: boolean }
+  | { resumeId: string; textOnly: true };
 
 export function parseResume(
   args: ParseResumeArgs,
-): Promise<{ parsedResume: ParsedResume }> {
+): Promise<{ parsedResume: ParsedResume; resumeText?: string }> {
   return invoke("parse-resume", args as unknown as Record<string, unknown>);
+}
+
+/** Server-side text extraction from Storage — no OpenAI parse (native cache miss). */
+export async function fetchResumeTextFromServer(
+  resumeId: string,
+): Promise<string | null> {
+  const TEXT_EXTRACT_TIMEOUT_MS = 45_000;
+  let lastError: Error | null = null;
+
+  for (const name of ["review-resume", "parse-resume"] as const) {
+    try {
+      const data = await invokeFunction<{ resumeText?: string }>(
+        name,
+        { resumeId, textOnly: true },
+        TEXT_EXTRACT_TIMEOUT_MS,
+      );
+      const text = data.resumeText?.trim();
+      if (text) return text;
+    } catch (error) {
+      lastError =
+        error instanceof Error ? error : new Error("Could not load resume text.");
+    }
+  }
+
+  if (lastError) throw lastError;
+  return null;
 }
 
 export function parseJob(jobText: string): Promise<{ parsedJob: ParsedJob }> {
@@ -124,10 +151,15 @@ export interface ReviewResumeArgs {
 export async function reviewResume(
   args: ReviewResumeArgs,
 ): Promise<ResumeReviewResult> {
-  const data = await invoke<{ review: ResumeReviewResult }>(
+  const data = await invoke<{ review: ResumeReviewResult; resumeText?: string }>(
     "review-resume",
     { ...args } as unknown as Record<string, unknown>,
   );
+  const resumeId = "resumeId" in args ? args.resumeId : undefined;
+  if (resumeId && data.resumeText?.trim()) {
+    const { cacheResumeText } = await import("@/lib/resume-parse-tracker");
+    cacheResumeText(resumeId, data.resumeText);
+  }
   return data.review;
 }
 

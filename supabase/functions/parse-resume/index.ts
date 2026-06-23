@@ -1,8 +1,9 @@
 // POST /functions/v1/parse-resume
-// Body: { resumeText?: string, resumeId?: string }
+// Body: { resumeText?: string, resumeId?: string, textOnly?: boolean }
 // Parses raw resume text into a ParsedResume. Pass resumeText directly, or
 // resumeId to load the file from Storage (PDF, Word, or text) and extract text
-// on the server. If resumeId is provided, the result is persisted (subject to RLS).
+// on the server. Set textOnly: true with resumeId to return resumeText only (no OpenAI).
+// If resumeId is provided without textOnly, the result is persisted (subject to RLS).
 
 import { extractResumeTextFromStorage } from "../_shared/extractResumeText.ts";
 import { completeJSON } from "../_shared/openai.ts";
@@ -61,7 +62,12 @@ Deno.serve(async (req: Request) => {
     const supabase = createUserClient(req);
     const userId = await requireUser(supabase);
 
-    const { resumeText: inlineText, resumeId } = await req.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}));
+    const {
+      resumeText: inlineText,
+      resumeId,
+      textOnly = false,
+    } = body ?? {};
 
     let resumeText =
       typeof inlineText === "string" ? inlineText.trim() : "";
@@ -84,6 +90,10 @@ Deno.serve(async (req: Request) => {
 
     if (!resumeText) {
       return error("resumeText or resumeId is required");
+    }
+
+    if (textOnly === true) {
+      return json({ resumeText });
     }
 
     const parsedRaw = await completeJSON<ParsedResume>([

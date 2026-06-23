@@ -4,10 +4,11 @@ import type { PdfTextRun } from "@/lib/extract-resume-pdf-runs";
 import { normalizePdfTextRun } from "@/lib/extract-resume-pdf-runs";
 
 const DB_NAME = "fitfinder-resume-files";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const FILE_STORE = "files";
 const META_STORE = "meta";
 const RUNS_STORE = "pdf-runs";
+const TEXT_STORE = "plain-text";
 
 export type CachedResumeFileMeta = {
   resumeId: string;
@@ -34,6 +35,9 @@ function openDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(RUNS_STORE)) {
         db.createObjectStore(RUNS_STORE);
+      }
+      if (!db.objectStoreNames.contains(TEXT_STORE)) {
+        db.createObjectStore(TEXT_STORE);
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -93,7 +97,31 @@ export async function getCachedResumeFileMeta(
 }
 
 export async function getCachedResumeFile(resumeId: string): Promise<File | null> {
-  return getValue<File>(FILE_STORE, resumeId);
+  const stored = await getValue<Blob | File>(FILE_STORE, resumeId);
+  if (!stored) return null;
+  if (stored instanceof File) return stored;
+
+  const meta = await getCachedResumeFileMeta(resumeId);
+  if (!meta) return null;
+
+  return new File([stored], meta.fileName, {
+    type: meta.mimeType || stored.type || "application/octet-stream",
+  });
+}
+
+export async function cacheResumePlainText(
+  resumeId: string,
+  text: string,
+): Promise<void> {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  await putValue(TEXT_STORE, resumeId, trimmed);
+}
+
+export async function getCachedResumePlainText(
+  resumeId: string,
+): Promise<string | null> {
+  return getValue<string>(TEXT_STORE, resumeId);
 }
 
 export async function getCachedResumePdfRuns(

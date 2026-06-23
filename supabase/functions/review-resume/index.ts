@@ -38,6 +38,7 @@ Deno.serve(async (req: Request) => {
       resumeId = null,
       resumeText: inlineResumeText = null,
       parsedResume = null,
+      textOnly = false,
     } = body ?? {};
 
     const resume = normalizeParsedResume({
@@ -58,6 +59,10 @@ Deno.serve(async (req: Request) => {
       return error("Resume text is required. Upload a resume or pass resumeText.");
     }
 
+    if (textOnly === true) {
+      return json({ resumeText });
+    }
+
     const draft = await completeJSON<Record<string, unknown>>([
       { role: "system", content: RESUME_REVIEW_SYSTEM },
       {
@@ -75,7 +80,7 @@ Deno.serve(async (req: Request) => {
       return error("The resume review service returned an empty result. Try again.", 502);
     }
 
-    return json({ review });
+    return json({ review, resumeText });
   } catch (e) {
     if (e instanceof Response) return e;
     return error((e as Error).message, 500);

@@ -79,6 +79,11 @@ npm run dev
 `ResumeFilePicker` uses standard HTML file inputs, which work in the iOS WebView
 for **Files** and **camera roll** (`accept` for documents and `image/*`).
 
+**Resume Score exports:** Optimized downloads keep the upload format (PDF stays PDF).
+The app caches the original file and PDF text runs in IndexedDB, re-fetches from
+Storage when needed, and bundles `pdf.worker.min.mjs` for in-app PDF parsing on
+native (`npm run build:capacitor` copies it from `pdfjs-dist`).
+
 ## Deploy web (Vercel)
 
 See **[VERCEL.md](./VERCEL.md)** for the full import checklist.

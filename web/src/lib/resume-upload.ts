@@ -7,6 +7,7 @@ import { extractPdfRunsFromFile } from "@/lib/extract-resume-pdf-runs";
 import {
   cacheResumeFile,
   cacheResumePdfRuns,
+  cacheResumePlainText,
 } from "@/lib/resume-file-cache";
 import {
   cacheResumeText,
@@ -58,28 +59,44 @@ export async function uploadResume(file: File): Promise<{
     .single();
   if (insertError) throw new Error(insertError.message);
 
-  const resumeText = await extractTextForParse(file);
-  if (resumeText) {
-    cacheResumeText(row.id, resumeText);
-  }
+  const lowerName = file.name.toLowerCase();
+  let resumeText = "";
 
-  try {
-    const lowerName = file.name.toLowerCase();
-    if (lowerName.endsWith(".pdf")) {
+  if (lowerName.endsWith(".pdf")) {
+    try {
       const extracted = await extractPdfRunsFromFile(file);
+      resumeText = extracted.text;
       await cacheResumeFile(row.id, file, {
         fileName: file.name,
         pageCount: extracted.pageCount,
       });
       await cacheResumePdfRuns(row.id, extracted.runs);
-    } else {
+    } catch {
+      resumeText = await extractTextForParse(file);
+      try {
+        await cacheResumeFile(row.id, file, {
+          fileName: file.name,
+          pageCount: 1,
+        });
+      } catch {
+        // File cache is best-effort.
+      }
+    }
+  } else {
+    resumeText = await extractTextForParse(file);
+    try {
       await cacheResumeFile(row.id, file, {
         fileName: file.name,
         pageCount: 1,
       });
+    } catch {
+      // File cache is best-effort.
     }
-  } catch {
-    // File cache is best-effort; download can fall back to Supabase Storage.
+  }
+
+  if (resumeText) {
+    cacheResumeText(row.id, resumeText);
+    void cacheResumePlainText(row.id, resumeText);
   }
 
   trackResumeParse(

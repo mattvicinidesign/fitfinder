@@ -186,10 +186,10 @@ export function ResumeReviewCategoryScreen({
           isNativePlatform()
             ? layoutPreserved
               ? "Choose where to save your resume."
-              : "Choose where to save your resume (plain text export)."
+              : "Choose where to save your resume (original file format; layout edits skipped)."
             : layoutPreserved
               ? "Optimized resume downloaded."
-              : "Resume downloaded as plain text.",
+              : "Resume downloaded in the original format (layout edits skipped).",
         );
       })
       .catch(() => {
