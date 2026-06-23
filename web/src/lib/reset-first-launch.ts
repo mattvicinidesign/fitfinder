@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { clearOnboardingState } from "@/lib/app-session";
+import { QA_LAUNCH_SIMULATION_KEY } from "@/lib/splash-qa";
 
 const FITFINDER_KEY_PREFIX = "fitfinder";
 
@@ -33,6 +34,10 @@ export async function resetAppFirstLaunch(): Promise<void> {
     await supabase.auth.signOut();
   } catch {
     // Best-effort — storage clear is enough for launch UX.
+  }
+
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.setItem(QA_LAUNCH_SIMULATION_KEY, "first");
   }
 
   const url = new URL(window.location.href);

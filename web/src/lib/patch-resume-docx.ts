@@ -15,10 +15,13 @@ function patchDocxXmlTextNodes(
   before: string,
   after: string,
 ): string {
-  const pattern = new RegExp(
-    before.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-    "i",
-  );
+  const parts = before
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const body = parts.length > 0 ? parts.join("\\s+") : before.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`(?<![\\w-])${body}(?![\\w-])`, "i");
 
   return xml.replace(
     /(<w:t(?:\s[^>]*)?>)([^<]*)(<\/w:t>)/g,

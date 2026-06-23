@@ -24,6 +24,9 @@ export function AppSessionBridge() {
 
   useLayoutEffect(() => {
     ensureSampleAnalysisDataSeeded();
+    void import("@/lib/splash-qa").then(({ stripQaHardRefreshParam }) => {
+      stripQaHardRefreshParam();
+    });
   }, []);
 
   useLayoutEffect(() => {
@@ -37,6 +40,9 @@ export function AppSessionBridge() {
 
   useEffect(() => {
     void (async () => {
+      const { isQaLaunchSimulationPending } = await import("@/lib/splash-qa");
+      if (isQaLaunchSimulationPending()) return;
+
       const supabase = createClient();
       const {
         data: { session },

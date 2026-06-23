@@ -30,6 +30,7 @@ import {
   buildOptimizedResumeDownloadInput,
   downloadAppliedAtsOptimization,
   downloadOptimizedResume,
+  getAppliedKeywordChangesForDisplay,
   isAtsOptimizationApplied,
   isAtsScanPendingReview,
   loadAtsKeywordOptimization,
@@ -99,6 +100,12 @@ export function ResumeReviewCategoryScreen({
   const [loadingOpen, setLoadingOpen] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState<"review" | "applied">("review");
+
+  const openAppliedReview = useCallback(() => {
+    setPreviewMode("applied");
+    setPreviewOpen(true);
+  }, []);
 
   useEffect(() => {
     if (!reviewId) return;
@@ -127,6 +134,7 @@ export function ResumeReviewCategoryScreen({
 
       saveAtsKeywordOptimization(review.id, result);
       setOptimization(result);
+      setPreviewMode("review");
       setPreviewOpen(true);
     } catch (error) {
       showAtsOptimizeError(error);
@@ -191,23 +199,27 @@ export function ResumeReviewCategoryScreen({
 
   const handleApplyOptimization = (decisions: AtsKeywordChangeDecision[]) => {
     if (!review || !optimization) return;
-    const applied = applyAtsKeywordOptimization(review.id, optimization, decisions);
-    const patchedReview = patchResumeReviewAtsScore(
-      review,
-      applied.optimizedATSScore,
-    );
-    saveResumeReview(patchedReview);
-    setOptimization(applied);
-    setPreviewOpen(false);
+    try {
+      const applied = applyAtsKeywordOptimization(review.id, optimization, decisions);
+      const patchedReview = patchResumeReviewAtsScore(
+        review,
+        applied.optimizedATSScore,
+      );
+      saveResumeReview(patchedReview);
+      setOptimization(applied);
+      setPreviewOpen(false);
 
-    const sourceFileName = loadResumeReviewFileName() ?? "resume.pdf";
-    void downloadAppliedAtsOptimization({
-      optimization: applied,
-      sourceFileName,
-      resumeId: review.resumeId,
-    }).catch(() => {
-      toast.error("Could not export the resume. Try again.");
-    });
+      const sourceFileName = loadResumeReviewFileName() ?? "resume.pdf";
+      void downloadAppliedAtsOptimization({
+        optimization: applied,
+        sourceFileName,
+        resumeId: review.resumeId,
+      }).catch(() => {
+        toast.error("Could not export the resume. Try again.");
+      });
+    } catch (error) {
+      showAtsOptimizeError(error);
+    }
   };
 
   const handleDiscardPending = () => {
@@ -296,26 +308,26 @@ export function ResumeReviewCategoryScreen({
               <Card className="gap-0 py-0 ring-border/60">
                 <CardContent className="space-y-4 px-4 py-4">
                   <p className="text-[15px] text-foreground">
-                    Keywords Improved:{" "}
+                    Keywords applied:{" "}
                     <span className="font-semibold tabular-nums">
-                      {optimization!.keywordChangeDecisions?.filter(
-                        (decision) => decision === "approved",
-                      ).length ?? 0}
+                      {getAppliedKeywordChangesForDisplay(optimization!).length}
                     </span>
                   </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={openAppliedReview}
+                  >
+                    Review replacements
+                  </Button>
                   <div className="space-y-2">
                     <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Examples
                     </p>
                     <ul className="space-y-2">
-                      {optimization!.keywordChanges
-                        .slice(0, 10)
-                        .filter(
-                          (_, index) =>
-                            optimization!.keywordChangeDecisions?.[index] ===
-                            "approved",
-                        )
-                        .slice(0, 10)
+                      {getAppliedKeywordChangesForDisplay(optimization!)
+                        .slice(0, 3)
                         .map((change, index) => (
                         <KeywordChangeRow
                           key={`${change.before}-${change.after}-${index}`}
@@ -342,7 +354,10 @@ export function ResumeReviewCategoryScreen({
                     </span>{" "}
                     keyword updates. Review them before building your resume.
                   </p>
-                  <Button type="button" onClick={() => setPreviewOpen(true)}>
+                  <Button type="button" onClick={() => {
+                    setPreviewMode("review");
+                    setPreviewOpen(true);
+                  }}>
                     Review changes
                   </Button>
                 </CardContent>
@@ -438,14 +453,24 @@ export function ResumeReviewCategoryScreen({
             )}
           >
             {showFloatingAtsActions ? (
-              <AiGradientPillButton
-                size="large"
-                showIcon={false}
-                className="w-full"
-                onClick={handleDownload}
-              >
-                Download Optimized Resume
-              </AiGradientPillButton>
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full bg-background/95"
+                  onClick={openAppliedReview}
+                >
+                  Review replacements
+                </Button>
+                <AiGradientPillButton
+                  size="large"
+                  showIcon={false}
+                  className="w-full"
+                  onClick={handleDownload}
+                >
+                  Download Optimized Resume
+                </AiGradientPillButton>
+              </div>
             ) : (
               <AiGradientPillButton
                 onClick={() => setConfirmOpen(true)}
@@ -470,7 +495,7 @@ export function ResumeReviewCategoryScreen({
           open={previewOpen}
           onClose={() => setPreviewOpen(false)}
           optimization={optimization}
-          mode={isAtsScanPendingReview(optimization) ? "review" : "view"}
+          mode={previewMode}
           onApply={handleApplyOptimization}
           onDiscard={handleDiscardPending}
         />

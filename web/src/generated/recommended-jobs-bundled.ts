@@ -3,16 +3,6 @@ import type { RecommendedJob } from "@/lib/types";
 
 export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
   {
-    "id": "21805888",
-    "title": "Product Designer II - Merchant",
-    "company": "Uber",
-    "location": "Bangalore, India",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-19T01:05:54Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/product-designer-ii-merchant-6a0625",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
-  },
-  {
     "id": "21811147",
     "title": "Product Designer II - Consumer Discovery",
     "company": "Uber",
@@ -21,16 +11,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-09T00:11:59Z",
     "applyUrl": "https://www.themuse.com/jobs/uber/product-designer-ii-consumer-discovery",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
-  },
-  {
-    "id": "21720376",
-    "title": "Senior Product Designer I",
-    "company": "The Coca-Cola Company",
-    "location": "Atlanta, GA",
-    "level": "Senior Level",
-    "publishedAt": "2026-05-15T23:32:33Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-product-designer-i",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
     "id": "14137481",
@@ -53,6 +33,16 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
   },
   {
+    "id": "21874874",
+    "title": "Director, Commercial Strategy and Operations, Innovation Lead",
+    "company": "The Coca-Cola Company",
+    "location": "Atlanta, GA",
+    "level": "Senior Level",
+    "publishedAt": "2026-06-22T23:39:10Z",
+    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/director-commercial-strategy-and-operations-innovation-lead-47782a",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+  },
+  {
     "id": "21311098",
     "title": "Graphic Designer, Merchandising",
     "company": "SpaceX",
@@ -63,14 +53,14 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
-    "id": "21856910",
-    "title": "Senior Manager, Product, GDI",
-    "company": "The Coca-Cola Company",
-    "location": "Atlanta, GA",
+    "id": "21866908",
+    "title": "Staff Security Strategist GRC",
+    "company": "Uber",
+    "location": "Sunnyvale, CA",
     "level": "Senior Level",
-    "publishedAt": "2026-06-16T23:35:56Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-manager-product-gdi-d8b203",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+    "publishedAt": "2026-06-19T01:05:54Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/staff-security-strategist-grc",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
     "id": "21856908",
@@ -143,6 +133,16 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
+    "id": "21727110",
+    "title": "UI Designer - Unpublished R&D Product (Contract)",
+    "company": "Riot Games",
+    "location": "Guangzhou, China",
+    "level": "Mid Level",
+    "publishedAt": "2026-05-19T18:30:31Z",
+    "applyUrl": "https://www.themuse.com/jobs/riotgames/ui-designer-unpublished-rd-product-contract",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
+  },
+  {
     "id": "21649313",
     "title": "Mechanical Engineer - Manufacturing Machinery, Satellites (Starlink)",
     "company": "SpaceX",
@@ -173,14 +173,14 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
-    "id": "21720371",
+    "id": "21038917",
     "title": "Staff Product Designer",
-    "company": "The Coca-Cola Company",
-    "location": "Atlanta, GA",
+    "company": "GlossGenius",
+    "location": "New York, NY",
     "level": "Senior Level",
-    "publishedAt": "2026-05-15T23:32:33Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/staff-product-designer",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+    "publishedAt": "2026-05-13T18:46:40Z",
+    "applyUrl": "https://www.themuse.com/jobs/glossgenius/staff-product-designer-44678c",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
   },
   {
     "id": "21820506",
@@ -193,13 +193,13 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000106/small_logo.png?v=5d4d6dac86a0ea7229ffbf5eb4358bd1490c38bd69c72f7a8f37d9f6bbde9601"
   },
   {
-    "id": "21866908",
-    "title": "Staff Security Strategist GRC",
-    "company": "Uber",
-    "location": "Sunnyvale, CA",
+    "id": "21775680",
+    "title": "Senior Director, Product Design",
+    "company": "Nanit",
+    "location": "New York, NY",
     "level": "Senior Level",
-    "publishedAt": "2026-06-19T01:05:54Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/staff-security-strategist-grc",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
+    "publishedAt": "2026-06-10T18:29:07Z",
+    "applyUrl": "https://www.themuse.com/jobs/nanit/senior-director-product-design",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000106/small_logo.png?v=5d4d6dac86a0ea7229ffbf5eb4358bd1490c38bd69c72f7a8f37d9f6bbde9601"
   }
 ] as RecommendedJob[];

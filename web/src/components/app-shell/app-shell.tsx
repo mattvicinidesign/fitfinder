@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PROTECTED_PREFIXES } from "@/lib/navigation";
@@ -20,6 +20,7 @@ import { ResumeReviewScreen } from "@/components/screens/resume-review-screen";
 import { SkeletonAppShell } from "@/components/ui/skeletons";
 import { ensureGuestSession } from "@/lib/ensure-guest-session";
 import { isNativePlatform } from "@/lib/platform";
+import { isQaLaunchSimulationPending } from "@/lib/splash-qa";
 import { toast } from "sonner";
 
 /**
@@ -31,6 +32,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const underlyingRef = useRef<React.ReactNode>(null);
   const profileContentRef = useRef<React.ReactNode>(null);
   const resumeReviewUnderlayRef = useRef<React.ReactNode>(null);
@@ -57,6 +59,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
   const shouldBootstrapGuest = needsAuth || isPreview;
 
+  useLayoutEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     const supabase = createClient();
 
@@ -76,6 +82,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!ready || !shouldBootstrapGuest || signedIn) return;
+    if (isQaLaunchSimulationPending()) return;
     if (isNativePlatform() && !hasCompletedWelcome()) return;
 
     let cancelled = false;
@@ -98,7 +105,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [ready, shouldBootstrapGuest, signedIn, pathname, router]);
 
   const launchGateActive =
-    isNativePlatform() && !hasCompletedWelcome();
+    mounted && isNativePlatform() && !hasCompletedWelcome();
 
   if (launchGateActive) {
     return null;

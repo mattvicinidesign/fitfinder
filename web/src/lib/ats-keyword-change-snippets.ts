@@ -61,3 +61,33 @@ export function buildAtsKeywordChangeSnippets(
     ),
   );
 }
+
+export function buildAppliedKeywordChangeSnippets(
+  originalText: string,
+  optimizedText: string,
+  changes: AtsKeywordChange[],
+): AtsKeywordChangeSnippet[] {
+  const originalLines = originalText.split("\n");
+  const optimizedLines = optimizedText.split("\n");
+
+  return changes.map((change, index) => {
+    const occurrence = occurrenceIndexForChange(changes, index);
+    const beforeSnippet =
+      typeof change.lineIndex === "number" &&
+      originalLines[change.lineIndex]?.trim()
+        ? originalLines[change.lineIndex]!.trim()
+        : findLineSnippet(originalText, change.before, occurrence);
+
+    const afterSnippet =
+      typeof change.lineIndex === "number" &&
+      optimizedLines[change.lineIndex]?.trim()
+        ? optimizedLines[change.lineIndex]!.trim()
+        : findLineSnippet(optimizedText, change.after, occurrence) ||
+          beforeSnippet.replace(
+            new RegExp(escapeRegExp(change.before), "i"),
+            change.after,
+          );
+
+    return { beforeSnippet, afterSnippet };
+  });
+}

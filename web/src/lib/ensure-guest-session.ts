@@ -3,6 +3,7 @@ import {
   markAppSessionActive,
   markLaunchFlowComplete,
 } from "@/lib/app-session";
+import { isQaLaunchSimulationPending } from "@/lib/splash-qa";
 
 const GUEST_SIGN_IN_TIMEOUT_MS = 15_000;
 
@@ -26,14 +27,23 @@ function withTimeout<T>(
 }
 
 /** Start an anonymous Supabase session when the app needs auth but has none. */
-export async function ensureGuestSession(): Promise<{ error: string | null }> {
+export async function ensureGuestSession(options?: {
+  /** User explicitly finished onboarding (welcome) — always persist launch state. */
+  completeLaunchFlow?: boolean;
+}): Promise<{ error: string | null }> {
+  const completeLaunchFlow = options?.completeLaunchFlow ?? false;
+  const shouldMarkLaunchComplete =
+    completeLaunchFlow || !isQaLaunchSimulationPending();
+
   const supabase = createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
   if (session?.user) {
-    markLaunchFlowComplete();
+    if (shouldMarkLaunchComplete) {
+      markLaunchFlowComplete();
+    }
     markAppSessionActive();
     return { error: null };
   }
@@ -63,6 +73,11 @@ export async function ensureGuestSession(): Promise<{ error: string | null }> {
 
   if (!nextSession) {
     return { error: "Could not start guest session." };
+  }
+
+  if (!shouldMarkLaunchComplete) {
+    markAppSessionActive();
+    return { error: null };
   }
 
   markLaunchFlowComplete();

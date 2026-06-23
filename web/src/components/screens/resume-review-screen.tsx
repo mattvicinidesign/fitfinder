@@ -16,7 +16,7 @@ import {
   saveResumeReview,
   saveResumeReviewFileName,
 } from "@/lib/resume-review-cache";
-import { clearAtsKeywordOptimization } from "@/lib/resume-review-ats-optimization";
+import { clearAtsKeywordOptimization, ensureAtsOptimizationCacheFresh } from "@/lib/resume-review-ats-optimization";
 import type { ResumeReviewResult } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -27,6 +27,7 @@ export function ResumeReviewScreen() {
   const [animateGauge, setAnimateGauge] = useState(false);
 
   useEffect(() => {
+    ensureAtsOptimizationCacheFresh();
     const cached = loadResumeReview();
     if (cached) {
       setReview(cached);

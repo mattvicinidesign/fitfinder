@@ -191,7 +191,12 @@ async function createLayoutPreservingBlob(input: {
       };
     }
 
-    const patched = await patchPdfBlob(original.blob, input.substitutions, runs);
+    const patched = await patchPdfBlob(
+      original.blob,
+      input.substitutions,
+      runs,
+      input.patchedText,
+    );
     return {
       blob: patched.blob,
       downloadName,

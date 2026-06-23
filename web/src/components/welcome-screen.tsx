@@ -32,7 +32,7 @@ export function WelcomeScreen({ onExit, onSignUp }: WelcomeScreenProps) {
     setBusy("guest");
 
     try {
-      const result = await ensureGuestSession();
+      const result = await ensureGuestSession({ completeLaunchFlow: true });
 
       if (result.error) {
         toast.error(result.error);

@@ -5,6 +5,10 @@ export interface AtsKeywordChange {
   after: string;
   /** abs(replacementWidth - originalWidth) / originalWidth for this swap. */
   visualWidthDeltaPercent?: number;
+  /** Source line in the original resume (stable apply target). */
+  lineIndex?: number;
+  /** Match index within the source line. */
+  matchIndex?: number;
 }
 
 export type AtsSafetyScore = "low" | "medium" | "high";
@@ -318,6 +322,56 @@ const DATE_PATTERN =
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function buildPhraseBoundaryPattern(
+  before: string,
+  flags: string = "i",
+): RegExp {
+  const parts = before.trim().split(/\s+/).filter(Boolean).map(escapeRegExp);
+  const body = parts.length > 0 ? parts.join("\\s+") : escapeRegExp(before);
+  return new RegExp(`(?<![\\w-])${body}(?![\\w-])`, flags);
+}
+
+function preserveCaseFromMatchedPhrase(matched: string, after: string): string {
+  if (matched === matched.toUpperCase()) return after.toUpperCase();
+  if (matched[0] === matched[0]?.toUpperCase()) {
+    return after.charAt(0).toUpperCase() + after.slice(1);
+  }
+  return after;
+}
+
+export function countPhraseBoundaryMatches(text: string, phrase: string): number {
+  const pattern = buildPhraseBoundaryPattern(phrase, "gi");
+  return (text.match(pattern) ?? []).length;
+}
+
+export function validateReplacementIntegrity(
+  originalSentence: string,
+  resultingSentence: string,
+  change: AtsKeywordChange,
+): { passed: boolean; failures: string[] } {
+  const failures: string[] = [];
+  if (buildPhraseBoundaryPattern(change.before, "i").test(resultingSentence)) {
+    failures.push(`Original phrase "${change.before}" still present`);
+  }
+
+  const afterCount = countPhraseBoundaryMatches(resultingSentence, change.after);
+  if (afterCount === 0) {
+    failures.push(`Replacement "${change.after}" missing`);
+  } else if (afterCount > 1) {
+    failures.push(`Replacement "${change.after}" appears ${afterCount} times`);
+  }
+
+  const beforePattern = buildPhraseBoundaryPattern(change.before, "i");
+  const afterPattern = buildPhraseBoundaryPattern(change.after, "i");
+  const origOutside = originalSentence.replace(beforePattern, "\u0000");
+  const resultOutside = resultingSentence.replace(afterPattern, "\u0000");
+  if (origOutside !== resultOutside) {
+    failures.push("Adjacent text changed unexpectedly");
+  }
+
+  return { passed: failures.length === 0, failures };
 }
 
 export function isBulletLine(line: string): boolean {
@@ -828,8 +882,10 @@ function containsBlockedBuzzwords(after: string, originalResume: string): boolea
 }
 
 function applySingleSwapOnLine(line: string, change: AtsKeywordChange): string {
-  const pattern = new RegExp(escapeRegExp(change.before), "i");
-  return line.replace(pattern, change.after);
+  const pattern = buildPhraseBoundaryPattern(change.before, "i");
+  return line.replace(pattern, (match) =>
+    preserveCaseFromMatchedPhrase(match, change.after),
+  );
 }
 
 function lineIsSingleKeywordSwap(
@@ -840,18 +896,8 @@ function lineIsSingleKeywordSwap(
   if (original === modified) return true;
 
   for (const change of pool) {
-    const pattern = new RegExp(escapeRegExp(change.before), "i");
-    const match = original.match(pattern);
-    if (!match || match.index == null) continue;
-
-    const idx = match.index;
-    const matched = match[0];
-    const expected =
-      original.slice(0, idx) +
-      change.after +
-      original.slice(idx + matched.length);
-
-    if (expected === modified) return true;
+    if (!buildPhraseBoundaryPattern(change.before, "i").test(original)) continue;
+    if (applySingleSwapOnLine(original, change) === modified) return true;
   }
 
   return false;
@@ -1205,6 +1251,8 @@ export function scanResumeWithDiscovery(
       withVisualWidthDelta({
         before: candidate.before,
         after: candidate.after,
+        lineIndex: candidate.lineIndex,
+        matchIndex: candidate.matchIndex,
       }),
     );
 
@@ -1277,14 +1325,81 @@ export function applyKeywordChangeAtOccurrence(
   change: AtsKeywordChange,
   occurrence: number,
 ): string {
-  const pattern = new RegExp(escapeRegExp(change.before), "gi");
+  const pattern = buildPhraseBoundaryPattern(change.before, "gi");
   let matchIndex = 0;
 
   return text.replace(pattern, (match) => {
     const current = matchIndex;
     matchIndex += 1;
-    return current === occurrence ? change.after : match;
+    return current === occurrence
+      ? preserveCaseFromMatchedPhrase(match, change.after)
+      : match;
   });
+}
+
+function applyKeywordChangeOnLineAtMatch(
+  line: string,
+  change: AtsKeywordChange,
+  matchIndex: number,
+): string {
+  const pattern = buildPhraseBoundaryPattern(change.before, "gi");
+  const matches: RegExpExecArray[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(line)) !== null) {
+    matches.push(match);
+  }
+
+  // Discovery stores match.index (character offset within the line).
+  const byCharIndex = matches.find((entry) => entry.index === matchIndex);
+  const target = byCharIndex ?? matches[matchIndex];
+  if (!target || target.index == null) return line;
+
+  return (
+    line.slice(0, target.index) +
+    preserveCaseFromMatchedPhrase(target[0], change.after) +
+    line.slice(target.index + target[0].length)
+  );
+}
+
+function findLineAndMatchForOccurrence(
+  text: string,
+  change: AtsKeywordChange,
+  occurrence: number,
+): { lineIndex: number; matchIndex: number } | null {
+  const lines = text.split("\n");
+  const pattern = buildPhraseBoundaryPattern(change.before, "gi");
+  let globalOcc = 0;
+
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex]!;
+    const linePattern = new RegExp(pattern.source, pattern.flags);
+    let match: RegExpExecArray | null;
+
+    while ((match = linePattern.exec(line)) !== null) {
+      if (globalOcc === occurrence) {
+        return { lineIndex, matchIndex: match.index };
+      }
+      globalOcc += 1;
+    }
+  }
+
+  return null;
+}
+
+function resolveChangeTarget(
+  originalText: string,
+  change: AtsKeywordChange,
+  occurrence: number,
+): { lineIndex: number; matchIndex: number } | null {
+  if (
+    typeof change.lineIndex === "number" &&
+    typeof change.matchIndex === "number"
+  ) {
+    return { lineIndex: change.lineIndex, matchIndex: change.matchIndex };
+  }
+
+  return findLineAndMatchForOccurrence(originalText, change, occurrence);
 }
 
 export function buildOptimizedResumeText(
@@ -1309,35 +1424,56 @@ export function buildOptimizedResumeText(
   for (const index of approvedIndices) {
     const change = changes[index];
     if (!change) continue;
-    if (!passesStageWidthTolerance(change, "export")) {
+    if (!passesStageWidthTolerance(change, "review")) {
       applyRejectionCounts.width_tolerance += 1;
       continue;
     }
 
     const occurrence = occurrenceIndexForChange(changes, index);
-    const candidateText = applyKeywordChangeAtOccurrence(text, change, occurrence);
-
-    const originalLines = text.split("\n");
-    const candidateLines = candidateText.split("\n");
-    let rejected = false;
-    for (let lineIndex = 0; lineIndex < originalLines.length; lineIndex += 1) {
-      const originalLine = originalLines[lineIndex]!;
-      const candidateLine = candidateLines[lineIndex] ?? originalLine;
-      if (originalLine === candidateLine) continue;
-      if (
-        !passesReviewGoldenRule(originalLine, candidateLine, change) ||
-        detectAbnormalWhitespace(originalLine, candidateLine)
-      ) {
-        rejected = true;
-        break;
-      }
-    }
-    if (rejected) {
+    const target = resolveChangeTarget(originalText, change, occurrence);
+    if (!target) {
       applyRejectionCounts.typography += 1;
       continue;
     }
 
-    text = candidateText;
+    const currentLines = text.split("\n");
+    if (target.lineIndex < 0 || target.lineIndex >= currentLines.length) {
+      applyRejectionCounts.typography += 1;
+      continue;
+    }
+
+    const originalLine = currentLines[target.lineIndex]!;
+    const candidateLine = applyKeywordChangeOnLineAtMatch(
+      originalLine,
+      change,
+      target.matchIndex,
+    );
+
+    if (candidateLine === originalLine) {
+      applyRejectionCounts.typography += 1;
+      continue;
+    }
+
+    if (
+      !passesReviewGoldenRule(originalLine, candidateLine, change) ||
+      detectAbnormalWhitespace(originalLine, candidateLine)
+    ) {
+      applyRejectionCounts.typography += 1;
+      continue;
+    }
+
+    const integrity = validateReplacementIntegrity(
+      originalLine,
+      candidateLine,
+      change,
+    );
+    if (!integrity.passed) {
+      applyRejectionCounts.typography += 1;
+      continue;
+    }
+
+    currentLines[target.lineIndex] = candidateLine;
+    text = currentLines.join("\n");
     appliedChanges.push(withVisualWidthDelta(change));
   }
 

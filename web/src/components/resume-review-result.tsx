@@ -9,6 +9,7 @@ import {
 import { showAtsOptimizeError } from "@/lib/ats-optimize-toast";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
 import { AiGradientPillButton } from "@/components/ai-gradient-pill-button";
+import { Button } from "@/components/ui/button";
 import { ResumeReviewAtsCategoryCard } from "@/components/resume-review-ats-category-card";
 import { ResumeReviewScoreGauge } from "@/components/resume-review-score-gauge";
 import { ResumeReviewCategoryRow } from "@/components/resume-review-ui";
@@ -51,6 +52,7 @@ export function ResumeReviewResultView({
   const [loadingOpen, setLoadingOpen] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState<"review" | "applied">("review");
 
   useEffect(() => {
     setReview(initialReview);
@@ -131,6 +133,7 @@ export function ResumeReviewResultView({
 
       saveAtsKeywordOptimization(review.id, result);
       setOptimization(result);
+      setPreviewMode("review");
       setPreviewOpen(true);
     } catch (error) {
       showAtsOptimizeError(error);
@@ -142,25 +145,33 @@ export function ResumeReviewResultView({
   const handleApplyOptimization = useCallback(
     (decisions: AtsKeywordChangeDecision[]) => {
       if (!optimization) return;
-      const applied = applyAtsKeywordOptimization(review.id, optimization, decisions);
-      const patchedReview = patchResumeReviewAtsScore(
-        review,
-        applied.optimizedATSScore,
-      );
-      saveResumeReview(patchedReview);
-      setReview(patchedReview);
-      setOptimization(applied);
-      setPreviewOpen(false);
+      try {
+        const applied = applyAtsKeywordOptimization(
+          review.id,
+          optimization,
+          decisions,
+        );
+        const patchedReview = patchResumeReviewAtsScore(
+          review,
+          applied.optimizedATSScore,
+        );
+        saveResumeReview(patchedReview);
+        setReview(patchedReview);
+        setOptimization(applied);
+        setPreviewOpen(false);
 
-      const sourceFileName =
-        fileName ?? loadResumeReviewFileName() ?? "resume.pdf";
-      void downloadAppliedAtsOptimization({
-        optimization: applied,
-        sourceFileName,
-        resumeId: review.resumeId,
-      }).catch(() => {
-        toast.error("Could not export the resume. Try again.");
-      });
+        const sourceFileName =
+          fileName ?? loadResumeReviewFileName() ?? "resume.pdf";
+        void downloadAppliedAtsOptimization({
+          optimization: applied,
+          sourceFileName,
+          resumeId: review.resumeId,
+        }).catch(() => {
+          toast.error("Could not export the resume. Try again.");
+        });
+      } catch (error) {
+        showAtsOptimizeError(error);
+      }
     },
     [optimization, review, fileName],
   );
@@ -207,7 +218,14 @@ export function ResumeReviewResultView({
                   category={category}
                   optimization={optimization}
                   onOptimizeKeywords={() => setConfirmOpen(true)}
-                  onPreviewChanges={() => setPreviewOpen(true)}
+                  onPreviewChanges={() => {
+                    setPreviewMode("review");
+                    setPreviewOpen(true);
+                  }}
+                  onReviewApplied={() => {
+                    setPreviewMode("applied");
+                    setPreviewOpen(true);
+                  }}
                   animate={animateGauge}
                   animateDelay={index * 75}
                 />
@@ -232,11 +250,22 @@ export function ResumeReviewResultView({
           />
           <div
             className={cn(
-              "pointer-events-none fixed inset-x-0 z-30 mx-auto max-w-[480px] px-4 pt-3",
+              "pointer-events-none fixed inset-x-0 z-30 mx-auto max-w-[480px] space-y-2 px-4 pt-3",
               "bottom-[calc(58px+max(0px,env(safe-area-inset-bottom))+0.75rem)]",
               safeBottomCta,
             )}
           >
+            <Button
+              type="button"
+              variant="outline"
+              className="pointer-events-auto w-full bg-background/95"
+              onClick={() => {
+                setPreviewMode("applied");
+                setPreviewOpen(true);
+              }}
+            >
+              Review replacements
+            </Button>
             <AiGradientPillButton
               size="large"
               showIcon={false}
@@ -260,9 +289,7 @@ export function ResumeReviewResultView({
           open={previewOpen}
           onClose={() => setPreviewOpen(false)}
           optimization={optimization}
-          mode={
-            isAtsScanPendingReview(optimization) ? "review" : "view"
-          }
+          mode={previewMode}
           onApply={handleApplyOptimization}
           onDiscard={handleDiscardPending}
         />

@@ -7,15 +7,24 @@ import {
   ATS_OPTIMIZE_CONFIRM_EXAMPLES,
   buildAtsOptimizationScanResult,
   buildOptimizedResumeText,
+  buildPhraseBoundaryPattern,
   classifyAtsSafetyScore,
   computeOptimizedAtsScore,
   occurrenceIndexForChange,
+  validateReplacementIntegrity,
 } from "@/lib/ats-keyword-optimization-core";
 import { optimizeAtsKeywords } from "@/lib/api";
 import { logAtsApplyStats } from "@/lib/ats-discovery-stats";
+import {
+  clearReplacementAudit,
+  logReplacementAudit,
+} from "@/lib/ats-optimizer-debug";
 import { getCachedResumeText } from "@/lib/resume-parse-tracker";
 
 const CACHE_PREFIX = "fitfinder:resume-review:ats-optimization:";
+/** Bump when cached optimization shape / apply logic changes — clears stale sessionStorage. */
+const ATS_OPTIMIZATION_CACHE_VERSION = 3;
+const ATS_CACHE_VERSION_KEY = "fitfinder:ats-optimization-cache-version";
 
 export { ATS_PREVIEW_KEYWORD_CHANGE_COUNT, ATS_OPTIMIZE_CONFIRM_EXAMPLES };
 
@@ -134,19 +143,99 @@ export function isAtsScanPendingReview(
   );
 }
 
+export function getAppliedKeywordChangesForDisplay(
+  optimization: AtsKeywordOptimization,
+): AtsKeywordOptimization["keywordChanges"] {
+  if (optimization.appliedKeywordChanges?.length) {
+    return optimization.appliedKeywordChanges;
+  }
+
+  const preview = optimization.keywordChanges.slice(
+    0,
+    ATS_PREVIEW_KEYWORD_CHANGE_COUNT,
+  );
+  const decisions = optimization.keywordChangeDecisions ?? [];
+  return preview.filter((_, index) => decisions[index] === "approved");
+}
+
 function cacheKey(reviewId: string) {
   return `${CACHE_PREFIX}${reviewId}`;
+}
+
+function isStaleAtsOptimization(optimization: AtsKeywordOptimization): boolean {
+  if (optimization.keywordChanges.length === 0) return false;
+  return optimization.keywordChanges.some(
+    (change) =>
+      typeof change.lineIndex !== "number" ||
+      typeof change.matchIndex !== "number",
+  );
+}
+
+function isBrokenAppliedOptimization(
+  optimization: AtsKeywordOptimization,
+): boolean {
+  if (!optimization.optimizationApplied) return false;
+  const approvedCount = (optimization.keywordChangeDecisions ?? []).filter(
+    (decision) => decision === "approved",
+  ).length;
+  const appliedCount = optimization.appliedKeywordChanges?.length ?? 0;
+  return approvedCount > 0 && appliedCount === 0;
+}
+
+/** Drop ATS optimization sessionStorage from older builds (missing line targets, failed apply). */
+export function ensureAtsOptimizationCacheFresh(): void {
+  if (typeof sessionStorage === "undefined") return;
+
+  const storedVersion = sessionStorage.getItem(ATS_CACHE_VERSION_KEY);
+  if (storedVersion !== String(ATS_OPTIMIZATION_CACHE_VERSION)) {
+    clearAllAtsKeywordOptimizations();
+    sessionStorage.setItem(
+      ATS_CACHE_VERSION_KEY,
+      String(ATS_OPTIMIZATION_CACHE_VERSION),
+    );
+    return;
+  }
+
+  for (let i = sessionStorage.length - 1; i >= 0; i -= 1) {
+    const key = sessionStorage.key(i);
+    if (!key?.startsWith(CACHE_PREFIX)) continue;
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = normalizeAtsKeywordOptimization(JSON.parse(raw));
+      if (
+        !parsed ||
+        isStaleAtsOptimization(parsed) ||
+        isBrokenAppliedOptimization(parsed)
+      ) {
+        sessionStorage.removeItem(key);
+      }
+    } catch {
+      sessionStorage.removeItem(key);
+    }
+  }
 }
 
 export function loadAtsKeywordOptimization(
   reviewId: string | null | undefined,
 ): AtsKeywordOptimization | null {
   if (!reviewId || typeof sessionStorage === "undefined") return null;
+  ensureAtsOptimizationCacheFresh();
   const raw = sessionStorage.getItem(cacheKey(reviewId));
   if (!raw) return null;
   try {
-    return normalizeAtsKeywordOptimization(JSON.parse(raw));
+    const parsed = normalizeAtsKeywordOptimization(JSON.parse(raw));
+    if (
+      !parsed ||
+      isStaleAtsOptimization(parsed) ||
+      isBrokenAppliedOptimization(parsed)
+    ) {
+      sessionStorage.removeItem(cacheKey(reviewId));
+      return null;
+    }
+    return parsed;
   } catch {
+    sessionStorage.removeItem(cacheKey(reviewId));
     return null;
   }
 }
@@ -208,6 +297,35 @@ export function buildResumeWithApprovedChanges(
     previewChanges,
     approvedIndices,
   );
+
+  clearReplacementAudit();
+  for (const change of built.appliedChanges) {
+    const pattern = buildPhraseBoundaryPattern(change.before, "i");
+    const originalLine =
+      optimization.originalResumeText
+        .split("\n")
+        .find((line) => pattern.test(line)) ?? "";
+    const resultingLine =
+      built.optimizedResumeText
+        .split("\n")
+        .find((line) =>
+          buildPhraseBoundaryPattern(change.after, "i").test(line),
+        ) ?? originalLine;
+    const integrity = validateReplacementIntegrity(
+      originalLine,
+      resultingLine,
+      change,
+    );
+    logReplacementAudit({
+      stage: "text_apply",
+      replacement: `${change.before} → ${change.after}`,
+      originalSentence: originalLine,
+      resultingSentence: resultingLine,
+      finalRenderedSentence: resultingLine,
+      integrityPassed: integrity.passed,
+      failures: integrity.failures,
+    });
+  }
 
   const appliedCount = built.appliedChanges.length;
   const { optimizedATSScore, improvementPercentage } = computeOptimizedAtsScore(
@@ -312,6 +430,14 @@ export function applyAtsKeywordOptimization(
   decisions: AtsKeywordChangeDecision[],
 ): AtsKeywordOptimization {
   const built = buildResumeWithApprovedChanges(optimization, decisions);
+  const approvedCount = decisions.filter((d) => d === "approved").length;
+
+  if (approvedCount > 0 && built.appliedChanges.length === 0) {
+    throw new Error(
+      "None of the approved keyword swaps could be applied. Try re-running optimization.",
+    );
+  }
+
   const next: AtsKeywordOptimization = {
     ...optimization,
     optimizedResumeText: built.optimizedResumeText,

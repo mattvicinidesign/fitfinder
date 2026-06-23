@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  hardRefreshFromQa,
   isSplashQaEnabled,
   resetFirstLaunchFromQa,
   simulateFirstLaunch,
@@ -23,6 +24,21 @@ export function SplashQaPanel() {
     console.log("QA: Replay Splash");
     setOpen(false);
     splashQa?.replaySplash();
+  }
+
+  function handleSimulateFirstLaunch() {
+    setOpen(false);
+    simulateFirstLaunch();
+  }
+
+  function handleSimulateReturningUser() {
+    setOpen(false);
+    simulateReturningUser();
+  }
+
+  function handleHardRefresh() {
+    setOpen(false);
+    hardRefreshFromQa();
   }
 
   const qaButtonClass =
@@ -47,7 +63,7 @@ export function SplashQaPanel() {
               type="button"
               variant="outline"
               className={qaButtonClass}
-              onClick={simulateFirstLaunch}
+              onClick={handleSimulateFirstLaunch}
             >
               Simulate first launch
             </Button>
@@ -55,7 +71,7 @@ export function SplashQaPanel() {
               type="button"
               variant="outline"
               className={qaButtonClass}
-              onClick={simulateReturningUser}
+              onClick={handleSimulateReturningUser}
             >
               Simulate returning user
             </Button>
@@ -66,6 +82,14 @@ export function SplashQaPanel() {
               onClick={handleReplaySplash}
             >
               Replay splash now
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className={qaButtonClass}
+              onClick={handleHardRefresh}
+            >
+              Hard refresh
             </Button>
             <Button
               type="button"

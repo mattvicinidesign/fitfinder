@@ -119,6 +119,10 @@ export function clearOnboardingState(): void {
     localStorage.removeItem(SPLASH_STORAGE_KEY);
     localStorage.removeItem(WELCOME_STORAGE_KEY);
   }
+  if (canUseSessionStorage()) {
+    sessionStorage.removeItem(SPLASH_STORAGE_KEY);
+    sessionStorage.removeItem(WELCOME_STORAGE_KEY);
+  }
   clearOnboardingProgress();
   clearAppSessionActive();
 }

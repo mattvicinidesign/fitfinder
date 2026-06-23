@@ -31,7 +31,7 @@ import {
   markOnboardingWelcomeRestored,
   resolvePostSplashDestination,
 } from "@/lib/onboarding-progress";
-import { isSplashQaEnabled } from "@/lib/splash-qa";
+import { isSplashQaEnabled, clearQaLaunchSimulation, getQaLaunchSimulationMode } from "@/lib/splash-qa";
 import { markAppShellVisible } from "@/lib/app-shell-visible";
 import { cn } from "@/lib/utils";
 
@@ -69,20 +69,14 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
       !isAuthDeepLinkPending(),
   );
   const pathnameRef = useRef(pathname);
-  const [phase, setPhase] = useState<SplashGatePhase>(() => {
-    if (typeof window === "undefined") return "pending";
-    if (!hasCompletedSplash()) return "splash";
-    if (isColdAppStart() && !isAuthDeepLinkPending()) return "splash";
-    return "pending";
-  });
+  const [mounted, setMounted] = useState(false);
+  const [phase, setPhase] = useState<SplashGatePhase>("pending");
   const phaseRef = useRef<SplashGatePhase>(phase);
   const [replayKey, setReplayKey] = useState(0);
-  const [showWordmark, setShowWordmark] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return !hasCompletedSplash();
-  });
+  const [showWordmark, setShowWordmark] = useState(false);
 
-  const appVisible = phase === "ready" || phase === "replay";
+  const resolvedPhase = mounted ? phase : "pending";
+  const appVisible = resolvedPhase === "ready";
 
   const beginSignupPhase = useCallback(
     (targetPathname: string) => {
@@ -125,6 +119,8 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
   );
 
   const beginWelcomeExit = useCallback((_target: string) => {
+    markWelcomeComplete();
+    clearQaLaunchSimulation();
     setPhase("ready");
   }, []);
 
@@ -144,61 +140,80 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
   }, [appVisible]);
 
   useLayoutEffect(() => {
-    if (pathname.startsWith("/auth/callback")) {
-      setPhase("ready");
-      return;
-    }
-
-    if (coldLaunchHandled.current) {
-      if (
-        isSignupFlowRequested() &&
-        phaseRef.current !== "splash" &&
-        phaseRef.current !== "pending"
-      ) {
-        beginSignupPhase(pathname);
+    try {
+      if (pathname.startsWith("/auth/callback")) {
+        setPhase("ready");
+        return;
       }
-      return;
+
+      if (coldLaunchHandled.current) {
+        if (
+          isSignupFlowRequested() &&
+          phaseRef.current !== "splash" &&
+          phaseRef.current !== "pending"
+        ) {
+          beginSignupPhase(pathname);
+        }
+        return;
+      }
+      coldLaunchHandled.current = true;
+
+      const qaSimulation = isSplashQaEnabled()
+        ? getQaLaunchSimulationMode()
+        : null;
+
+      if (qaSimulation === "first") {
+        coldStartSplashRef.current = false;
+        setShowWordmark(true);
+        setPhase("splash");
+        return;
+      }
+
+      const splashSeen = hasCompletedSplash();
+      const forceReturningSplash =
+        isSplashQaEnabled() &&
+        typeof sessionStorage !== "undefined" &&
+        sessionStorage.getItem(QA_RETURNING_SPLASH_KEY) === "true";
+
+      if (!splashSeen) {
+        coldStartSplashRef.current = false;
+        setShowWordmark(true);
+        setPhase("splash");
+        return;
+      }
+
+      if (forceReturningSplash) {
+        sessionStorage.removeItem(QA_RETURNING_SPLASH_KEY);
+      }
+
+      if (isAuthDeepLinkPending()) {
+        setPhase("ready");
+        return;
+      }
+
+      if (isColdAppStart()) {
+        coldStartSplashRef.current = true;
+        setShowWordmark(false);
+        setPhase("splash");
+        return;
+      }
+
+      routeAfterSplash(pathname);
+    } finally {
+      setMounted(true);
     }
-    coldLaunchHandled.current = true;
-
-    const splashSeen = hasCompletedSplash();
-    const forceReturningSplash =
-      isSplashQaEnabled() &&
-      typeof sessionStorage !== "undefined" &&
-      sessionStorage.getItem(QA_RETURNING_SPLASH_KEY) === "true";
-
-    if (!splashSeen) {
-      coldStartSplashRef.current = false;
-      setShowWordmark(true);
-      setPhase("splash");
-      return;
-    }
-
-    if (forceReturningSplash) {
-      sessionStorage.removeItem(QA_RETURNING_SPLASH_KEY);
-    }
-
-    if (isAuthDeepLinkPending()) {
-      setPhase("ready");
-      return;
-    }
-
-    if (isColdAppStart()) {
-      coldStartSplashRef.current = true;
-      setShowWordmark(false);
-      setPhase("splash");
-      return;
-    }
-
-    routeAfterSplash(pathname);
   }, [beginSignupPhase, pathname, routeAfterSplash]);
 
   const handleSplashComplete = useCallback(
     (mode: SplashCompleteMode) => {
       const currentPath = pathnameRef.current;
+      const qaSimulation = isSplashQaEnabled()
+        ? getQaLaunchSimulationMode()
+        : null;
 
       if (mode === "first") {
         markSplashComplete();
+        clearQaLaunchSimulation();
         if (isSignupFlowRequested()) {
           beginSignupPhase(currentPath);
           return;
@@ -215,6 +230,10 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
       if (mode === "replay") {
         setPhase("ready");
         return;
+      }
+
+      if (qaSimulation === "returning") {
+        clearQaLaunchSimulation();
       }
 
       if (coldStartSplashRef.current) {
@@ -244,9 +263,11 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   const showSplashOverlay =
-    phase === "pending" || phase === "splash" || phase === "replay";
-  const isLaunchSplash = phase === "splash";
-  const isReplaySplash = phase === "replay";
+    resolvedPhase === "pending" ||
+    resolvedPhase === "splash" ||
+    resolvedPhase === "replay";
+  const isLaunchSplash = resolvedPhase === "splash";
+  const isReplaySplash = resolvedPhase === "replay";
   const isFirstLaunchSplash = isLaunchSplash && showWordmark;
 
   return (
@@ -257,13 +278,13 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
       >
         {children}
       </div>
-      {phase === "welcome" ? (
+      {mounted && resolvedPhase === "welcome" ? (
         <WelcomeScreen
           onExit={beginWelcomeExit}
           onSignUp={handleSignUpFromWelcome}
         />
       ) : null}
-      {phase === "signup" ? (
+      {mounted && resolvedPhase === "signup" ? (
         <LaunchOverlayFrame className="overflow-hidden">
           <SignUpScreen embedded onBackToWelcome={handleBackToWelcome} />
         </LaunchOverlayFrame>
@@ -287,7 +308,7 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
           <LaunchOverlayFrame aria-hidden />
         )
       ) : null}
-      {isSplashQaEnabled() ? <SplashQaPanel /> : null}
+      {isSplashQaEnabled() && mounted ? <SplashQaPanel /> : null}
     </SplashQaProvider>
   );
 }

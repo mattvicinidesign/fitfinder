@@ -7,16 +7,20 @@ import { AtsKeywordChangeAccordion } from "@/components/ats-keyword-change-accor
 import { Button } from "@/components/ui/button";
 import { getAppOverlayRoot } from "@/lib/overlay-portal";
 import { APP_PORTAL_OVERLAY_Z } from "@/lib/overlay-z-index";
-import { buildAtsKeywordChangeSnippets } from "@/lib/ats-keyword-change-snippets";
+import { buildAtsKeywordChangeSnippets, buildAppliedKeywordChangeSnippets } from "@/lib/ats-keyword-change-snippets";
 import {
   allKeywordChangesReviewed,
   ATS_PREVIEW_KEYWORD_CHANGE_COUNT,
   createPendingKeywordChangeDecisions,
+  getAppliedKeywordChangesForDisplay,
   hasApprovedKeywordChanges,
 } from "@/lib/resume-review-ats-optimization";
 import { formatAtsSafetyScoreLabel } from "@/lib/ats-keyword-optimization-core";
 import { getAtsDiscoverySummary, formatRejectionReasonLabel } from "@/lib/ats-discovery-stats";
-import { isAtsOptimizerDebugEnabled } from "@/lib/ats-optimizer-debug";
+import {
+  isAtsOptimizerDebugEnabled,
+  readReplacementAudit,
+} from "@/lib/ats-optimizer-debug";
 import { safeBottomOverlay, safeTopSheetHeader } from "@/lib/safe-area";
 import type { AtsKeywordChangeDecision, AtsKeywordOptimization } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -25,33 +29,52 @@ export function AtsKeywordPreviewDrawer({
   open,
   onClose,
   optimization,
-  mode = "view",
+  mode = "review",
   onApply,
   onDiscard,
 }: {
   open: boolean;
   onClose: () => void;
   optimization: AtsKeywordOptimization;
-  mode?: "review" | "view";
+  mode?: "review" | "applied";
   onApply?: (decisions: AtsKeywordChangeDecision[]) => void;
   onDiscard?: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
   const isReview = mode === "review";
+  const isApplied = mode === "applied";
 
   const previewChanges = useMemo(
     () => optimization.keywordChanges.slice(0, ATS_PREVIEW_KEYWORD_CHANGE_COUNT),
     [optimization.keywordChanges],
   );
 
-  const changeSnippets = useMemo(
-    () =>
-      buildAtsKeywordChangeSnippets(
-        optimization.originalResumeText,
-        previewChanges,
-      ),
-    [optimization.originalResumeText, previewChanges],
+  const appliedChanges = useMemo(
+    () => getAppliedKeywordChangesForDisplay(optimization),
+    [optimization],
   );
+
+  const displayChanges = isApplied ? appliedChanges : previewChanges;
+
+  const changeSnippets = useMemo(() => {
+    if (isApplied) {
+      return buildAppliedKeywordChangeSnippets(
+        optimization.originalResumeText,
+        optimization.optimizedResumeText,
+        appliedChanges,
+      );
+    }
+    return buildAtsKeywordChangeSnippets(
+      optimization.originalResumeText,
+      previewChanges,
+    );
+  }, [
+    appliedChanges,
+    isApplied,
+    optimization.originalResumeText,
+    optimization.optimizedResumeText,
+    previewChanges,
+  ]);
 
   const [decisions, setDecisions] = useState<AtsKeywordChangeDecision[]>(() =>
     optimization.keywordChangeDecisions ??
@@ -101,6 +124,10 @@ export function AtsKeywordPreviewDrawer({
     () => getAtsDiscoverySummary(optimization),
     [optimization],
   );
+  const replacementAudit = useMemo(
+    () => (isAtsOptimizerDebugEnabled() ? readReplacementAudit() : []),
+    [open, optimization.completedAt, isApplied],
+  );
 
   const approveAll = useCallback(() => {
     setDecisions(previewChanges.map(() => "approved" as const));
@@ -126,12 +153,17 @@ export function AtsKeywordPreviewDrawer({
       >
         <div className="min-w-0 flex-1">
           <h2 id="ats-preview-title" className="text-[22px] font-bold leading-tight tracking-tight">
-            Verify Changes
+            {isApplied ? "Applied keyword changes" : "Verify Changes"}
           </h2>
           {isReview ? (
             <p className="mt-1.5 text-[15px] leading-snug text-muted-foreground">
               Keyword-only edits inside existing bullets. Structure, companies,
               titles, dates, and metrics stay unchanged.
+            </p>
+          ) : isApplied ? (
+            <p className="mt-1.5 text-[15px] leading-snug text-muted-foreground">
+              These swaps were written to your optimized resume export. Compare
+              each before and after line to confirm accuracy.
             </p>
           ) : null}
           {discoverySummary.found > 0 ? (
@@ -187,7 +219,7 @@ export function AtsKeywordPreviewDrawer({
           <div className="sticky top-0 z-10 -mx-4 mb-2 border-b border-border/60 bg-background px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Keyword updates
+                {isApplied ? "Replacements in your export" : "Keyword updates"}
               </h3>
               {isReview ? (
                 <div className="flex items-center gap-2">
@@ -209,13 +241,44 @@ export function AtsKeywordPreviewDrawer({
             </div>
           </div>
           <ul className="space-y-2 pb-5 pt-1">
-            {previewChanges.length === 0 ? (
+            {displayChanges.length === 0 ? (
               <li className="rounded-xl border border-border/70 bg-muted/20 px-4 py-5 text-[14px] leading-relaxed text-muted-foreground">
-                {discoverySummary.found > 0 && discoverySummary.readyToReview === 0
+                {isApplied
+                  ? "No keyword replacements were applied to your export."
+                  : discoverySummary.found > 0 && discoverySummary.readyToReview === 0
                   ? `${discoverySummary.found} opportunities were discovered, but none passed review validation. See debug rejections below.`
                   : discoverySummary.found > 0
                     ? `${discoverySummary.readyToReview} swaps are ready for your review. Export validation runs after you approve.`
                     : "No keyword opportunities were found."}
+              </li>
+            ) : null}
+            {isAtsOptimizerDebugEnabled() && replacementAudit.length > 0 ? (
+              <li className="rounded-xl border border-dashed border-border/80 bg-muted/10 px-4 py-4">
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Debug — replacement audit
+                </p>
+                <ul className="mt-3 space-y-3">
+                  {replacementAudit.slice(0, 12).map((entry, index) => (
+                    <li
+                      key={`${entry.stage}-${entry.replacement}-${entry.loggedAt}-${index}`}
+                      className="space-y-1 text-[13px] leading-snug text-muted-foreground"
+                    >
+                      <p className="font-medium text-foreground">
+                        [{entry.stage}] {entry.replacement}{" "}
+                        {entry.integrityPassed ? "✓" : "✗"}
+                      </p>
+                      <p>Original: {entry.originalSentence}</p>
+                      <p>Result: {entry.resultingSentence}</p>
+                      {entry.finalRenderedSentence &&
+                      entry.finalRenderedSentence !== entry.resultingSentence ? (
+                        <p>Rendered: {entry.finalRenderedSentence}</p>
+                      ) : null}
+                      {entry.failures.length > 0 ? (
+                        <p className="text-rose-400">{entry.failures.join("; ")}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
               </li>
             ) : null}
             {isAtsOptimizerDebugEnabled() &&
@@ -243,13 +306,13 @@ export function AtsKeywordPreviewDrawer({
                 </ul>
               </li>
             ) : null}
-            {previewChanges.map((change, index) => (
+            {displayChanges.map((change, index) => (
               <AtsKeywordChangeAccordion
                 key={`${change.before}-${change.after}-${index}`}
                 before={change.before}
                 after={change.after}
                 snippet={changeSnippets[index]!}
-                decision={decisions[index] ?? "pending"}
+                decision={isApplied ? "approved" : (decisions[index] ?? "pending")}
                 reviewMode={isReview}
                 onApprove={() => {
                   setDecisions((current) => {

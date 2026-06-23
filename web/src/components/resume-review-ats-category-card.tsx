@@ -42,6 +42,7 @@ export function ResumeReviewAtsCategoryCard({
   optimization,
   onOptimizeKeywords,
   onPreviewChanges,
+  onReviewApplied,
   animate = false,
   animateDelay = 0,
 }: {
@@ -49,6 +50,7 @@ export function ResumeReviewAtsCategoryCard({
   optimization: AtsKeywordOptimization | null;
   onOptimizeKeywords: () => void;
   onPreviewChanges: () => void;
+  onReviewApplied?: () => void;
   animate?: boolean;
   animateDelay?: number;
 }) {
@@ -116,6 +118,18 @@ export function ResumeReviewAtsCategoryCard({
               onClick={onPreviewChanges}
             >
               Review changes
+            </Button>
+          </div>
+        ) : isApplied ? (
+          <div className={layout.footer}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={onReviewApplied}
+            >
+              Review replacements
             </Button>
           </div>
         ) : undefined

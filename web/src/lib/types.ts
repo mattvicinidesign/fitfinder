@@ -277,6 +277,9 @@ export interface ResumeReviewImprovement {
 export interface AtsKeywordChange {
   before: string;
   after: string;
+  visualWidthDeltaPercent?: number;
+  lineIndex?: number;
+  matchIndex?: number;
 }
 
 export type AtsKeywordChangeDecision = "pending" | "approved" | "rejected";
