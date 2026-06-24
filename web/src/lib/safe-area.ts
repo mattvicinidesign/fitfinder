@@ -16,7 +16,7 @@ export const safeTopCompact = "pt-[max(0.5rem,env(safe-area-inset-top))]";
 export const safeTopSheetHeader =
   "pt-[calc(max(0.5rem,env(safe-area-inset-top))+1rem)]";
 
-/** Large-title list screens (Saved, History, Profile title). */
+/** Large-title list screens (Saved, Profile title). */
 export const safeTopTitle = "pt-[max(0.75rem,env(safe-area-inset-top))]";
 
 /** Launch overlays (splash, welcome, signup). */

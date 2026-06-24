@@ -4,7 +4,13 @@ import { useRef, useState } from "react";
 import { FileUp, CheckCircle2, Loader2 } from "lucide-react";
 import { uploadResume } from "@/lib/resume-upload";
 import { waitForResumeParse } from "@/lib/resume-parse-tracker";
-import { ANALYZE_FIELD_CLASS } from "@/components/analyze-form-styles";
+import {
+  RESUME_UPLOAD_ACCEPT,
+  RESUME_UPLOAD_CTA_CLASS,
+  RESUME_UPLOAD_HINT,
+  RESUME_UPLOAD_TITLE,
+  resumeUploadZoneClassName,
+} from "@/components/resume-upload-styles";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -65,17 +71,15 @@ export function ResumeFilePicker({
         ref={fileRef}
         type="file"
         className="hidden"
-        accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+        accept={RESUME_UPLOAD_ACCEPT}
         onChange={(e) => handleFiles(e.target.files)}
       />
       <button
         type="button"
         disabled={disabled || busy}
         onClick={() => fileRef.current?.click()}
-        className={cn(
-          ANALYZE_FIELD_CLASS,
-          "flex h-full w-full flex-col items-center justify-center gap-2 py-8 text-center hover:bg-muted/55 disabled:cursor-not-allowed disabled:opacity-60",
-          className,
+        className={resumeUploadZoneClassName(
+          cn("h-full", className),
         )}
       >
         {fileName ? (
@@ -101,12 +105,14 @@ export function ResumeFilePicker({
             ) : (
               <FileUp className="size-8 text-muted-foreground" />
             )}
-            <span className="text-[17px] font-medium text-foreground">
-              {uploading ? "Uploading…" : "Upload your resume"}
+            <span className={RESUME_UPLOAD_CTA_CLASS}>
+              {uploading ? "Uploading…" : RESUME_UPLOAD_TITLE}
             </span>
-            <span className="text-[13px] text-muted-foreground">
-              PDF, Word (.doc, .docx), or .txt
-            </span>
+            {!uploading ? (
+              <span className="text-[13px] text-muted-foreground">
+                {RESUME_UPLOAD_HINT}
+              </span>
+            ) : null}
           </>
         )}
       </button>

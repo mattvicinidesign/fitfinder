@@ -85,11 +85,11 @@ in `App.xcodeproj`, `LSRequiresIPhoneOS` in Info.plist, no `UISupportedInterface
 | Viewport | Navigation |
 | -------- | ---------- |
 | Desktop  | Centered phone-width column + bottom tab bar |
-| Mobile / iOS | Bottom tab bar (Home, Saved, History, Stats, Profile) |
+| Mobile / iOS | Bottom tab bar (Home, Score, Analyze, Stats, Profile) |
 
 **Analyze Fit** is the primary CTA on Home (`/analyze`), not a tab.
 
-Same routes everywhere: `/home`, `/analyze`, `/saved`, `/history`, `/stats`, `/profile`.
+Same routes everywhere: `/home`, `/analyze`, `/saved`, `/stats`, `/profile`, `/resume-review`.
 
 ## Platform parity (web + iOS + Cursor preview)
 

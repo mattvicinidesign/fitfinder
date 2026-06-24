@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ReportBackButton } from "@/components/report-back-button";
 import { useSearchParams } from "next/navigation";
 import { AnalysisResultView } from "@/components/analysis-result";
-import { SaveReportButton } from "@/components/save-job-button";
+import { ApplicationAssistantSection } from "@/components/application-assistant-section";
 import {
   fetchProfileDesiredCompensation,
   fetchProfileQualifiedIndustries,
@@ -25,10 +25,13 @@ import {
   resolveReportMinimumHourlyRate,
 } from "@/lib/report-profile-prefs";
 import type { Compensation } from "@/lib/types";
+import { normalizeAnalysisResult } from "@/lib/normalize-score";
+import { reportRoleTitle } from "@/lib/analysis-report-cache";
+import { cn } from "@/lib/utils";
 import { SkeletonAnalysisReport } from "@/components/ui/skeletons";
+import { ReportSummaryHeader } from "@/components/report-summary-header";
 import {
   screenShellClass,
-  StickyBottomCta,
   StickyScreenBody,
   StickyScreenHeader,
 } from "@/components/ui/sticky-bottom-cta";
@@ -156,9 +159,64 @@ export function AnalysisReportScreen() {
     entry,
   );
 
+  const profileDesired =
+    entry.profileDesiredCompensation ?? profileDesiredCompensation;
+  const profileIndustries =
+    entry.profileQualifiedIndustries ?? profileQualifiedIndustries;
+  const profileSkills = entry.profileQualifiedSkills ?? profileQualifiedSkills;
+  const profileCountryResolved = entry.profileCountry ?? profileCountry;
+  const profileTimezoneResolved = entry.profileTimezone ?? profileTimezone;
+
+  const normalized = normalizeAnalysisResult(entry.result, {
+    profileDesiredCompensation: profileDesired,
+    profileQualifiedIndustries: profileIndustries,
+    profileQualifiedSkills: profileSkills,
+    profileCountry: profileCountryResolved,
+    profileTimezone: profileTimezoneResolved,
+  });
+  const jobDescription =
+    normalized.jobDescription ?? entry.result.jobDescription ?? null;
+  const displayJobTitle = reportRoleTitle({
+    ...entry.result,
+    jobDescription,
+    parsedJob: normalized.parsedJob,
+  });
+
   return (
     <ReportShell
-      footer={<SaveReportButton analysisId={entry.analysisId} />}
+      header={
+        <ReportSummaryHeader
+          jobTitle={displayJobTitle}
+          score={normalized.score}
+          parsedJob={normalized.parsedJob}
+          parsedResume={normalized.parsedResume}
+          profileDesiredCompensation={profileDesired}
+          profileQualifiedIndustries={profileIndustries}
+          profileQualifiedSkills={profileSkills}
+          profileCountry={profileCountryResolved}
+          profileTimezone={profileTimezoneResolved}
+          profilePreferredCompanyTypes={resolvedCompanyTypes}
+          profilePreferredMinimumEmployerRating={resolvedMinRating}
+          profilePreferredRegions={resolvedRegions}
+          profilePreferredProjectTypes={resolvedProjectTypes}
+          profileMinimumHourlyRate={resolvedMinimumHourlyRate}
+          jobDescription={jobDescription}
+          companyName={entry.result.companyName}
+          postingContext={normalized.postingContext}
+        />
+      }
+      footer={
+        <ApplicationAssistantSection
+          reportId={reportId}
+          resumeId={entry.resumeId ?? null}
+          parsedJob={normalized.parsedJob}
+          parsedResume={normalized.parsedResume}
+          narrative={entry.result.narrative}
+          jobDescription={jobDescription}
+          jobTitle={displayJobTitle}
+          companyName={entry.result.companyName}
+        />
+      }
     >
       <div className="pb-6">
         <AnalysisResultView
@@ -166,17 +224,12 @@ export function AnalysisReportScreen() {
           analysisId={entry.analysisId}
           reportId={reportId}
           resumeId={entry.resumeId ?? null}
-          profileDesiredCompensation={
-            entry.profileDesiredCompensation ?? profileDesiredCompensation
-          }
-          profileQualifiedIndustries={
-            entry.profileQualifiedIndustries ?? profileQualifiedIndustries
-          }
-          profileQualifiedSkills={
-            entry.profileQualifiedSkills ?? profileQualifiedSkills
-          }
-          profileCountry={entry.profileCountry ?? profileCountry}
-          profileTimezone={entry.profileTimezone ?? profileTimezone}
+          showSummaryHeader={false}
+          profileDesiredCompensation={profileDesired}
+          profileQualifiedIndustries={profileIndustries}
+          profileQualifiedSkills={profileSkills}
+          profileCountry={profileCountryResolved}
+          profileTimezone={profileTimezoneResolved}
           profilePreferredCompanyTypes={resolvedCompanyTypes}
           profilePreferredMinimumEmployerRating={resolvedMinRating}
           profilePreferredRegions={resolvedRegions}
@@ -190,18 +243,30 @@ export function AnalysisReportScreen() {
 
 function ReportShell({
   children,
+  header,
   footer,
 }: {
   children: React.ReactNode;
+  header?: React.ReactNode;
   footer?: React.ReactNode;
 }) {
   return (
     <div className={screenShellClass}>
-      <StickyScreenHeader className={`px-4 pb-2.5 ${safeTopCompact}`}>
+      <StickyScreenHeader
+        className={cn(
+          "border-b border-border/50 bg-background/95 px-4 pb-3 backdrop-blur-md",
+          safeTopCompact,
+        )}
+      >
         <ReportBackButton />
+        {header}
       </StickyScreenHeader>
-      <StickyScreenBody className={screenGutterX}>{children}</StickyScreenBody>
-      {footer ? <StickyBottomCta>{footer}</StickyBottomCta> : null}
+      <StickyScreenBody
+        className={cn(screenGutterX, footer ? "pb-24" : undefined)}
+      >
+        {children}
+      </StickyScreenBody>
+      {footer}
     </div>
   );
 }

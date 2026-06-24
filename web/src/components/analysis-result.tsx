@@ -1,8 +1,7 @@
 "use client";
 
-import { ApplicationAssistantSection } from "@/components/application-assistant-section";
 import { QualificationBreakdown } from "@/components/qualification-breakdown";
-import { ReportJobTitleMeta } from "@/components/report-job-title-meta";
+import { ReportSummaryHeader } from "@/components/report-summary-header";
 import {
   ReportRevealProvider,
   ReportRevealSection,
@@ -26,6 +25,7 @@ export function AnalysisResultView({
   profilePreferredRegions = null,
   profilePreferredProjectTypes = null,
   profileMinimumHourlyRate = null,
+  showSummaryHeader = true,
 }: {
   result: AnalysisResult;
   analysisId?: string | null;
@@ -42,6 +42,7 @@ export function AnalysisResultView({
   profilePreferredRegions?: string[] | null;
   profilePreferredProjectTypes?: string[] | null;
   profileMinimumHourlyRate?: number | null;
+  showSummaryHeader?: boolean;
 }) {
   const normalized = normalizeAnalysisResult(result, {
     profileDesiredCompensation,
@@ -63,15 +64,10 @@ export function AnalysisResultView({
     <ReportRevealProvider>
       <div className="space-y-6">
         <div className="space-y-4">
-          <ReportRevealSection>
-            <div className="space-y-2">
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                Job Fit Report Summary
-              </p>
-              <p className="text-[22px] font-semibold leading-tight tracking-tight text-foreground">
-                {displayJobTitle}
-              </p>
-              <ReportJobTitleMeta
+          {showSummaryHeader ? (
+            <ReportRevealSection>
+              <ReportSummaryHeader
+                jobTitle={displayJobTitle}
                 score={score}
                 parsedJob={parsedJob}
                 parsedResume={parsedResume}
@@ -88,12 +84,11 @@ export function AnalysisResultView({
                 profilePreferredProjectTypes={profilePreferredProjectTypes}
                 profileMinimumHourlyRate={profileMinimumHourlyRate}
                 jobDescription={jobDescription}
-                jobTitle={displayJobTitle}
                 companyName={result.companyName}
                 postingContext={postingContext}
               />
-            </div>
-          </ReportRevealSection>
+            </ReportRevealSection>
+          ) : null}
           <QualificationBreakdown
             score={score}
             postingContext={postingContext}
@@ -116,17 +111,6 @@ export function AnalysisResultView({
             profileMinimumHourlyRate={profileMinimumHourlyRate}
           />
         </div>
-
-        <ApplicationAssistantSection
-          reportId={reportId ?? analysisId}
-          resumeId={resumeId}
-          parsedJob={parsedJob}
-          parsedResume={parsedResume}
-          narrative={result.narrative}
-          jobDescription={jobDescription}
-          jobTitle={displayJobTitle}
-          companyName={result.companyName}
-        />
       </div>
     </ReportRevealProvider>
   );

@@ -4,6 +4,13 @@ import { useRef, useState } from "react";
 import { FileUp, Loader2 } from "lucide-react";
 import { uploadResume } from "@/lib/resume-upload";
 import { waitForResumeParse } from "@/lib/resume-parse-tracker";
+import {
+  RESUME_UPLOAD_ACCEPT,
+  RESUME_UPLOAD_CTA_CLASS,
+  RESUME_UPLOAD_HINT,
+  RESUME_UPLOAD_TITLE,
+  resumeUploadZoneClassName,
+} from "@/components/resume-upload-styles";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -53,7 +60,7 @@ export function ResumeReviewUploadZone({
     phase === "uploading"
       ? "Uploading…"
       : phase === "parsing"
-        ? "Reading resume…"
+        ? "Parsing resume…"
         : null;
 
   return (
@@ -62,19 +69,13 @@ export function ResumeReviewUploadZone({
         ref={fileRef}
         type="file"
         className="hidden"
-        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        accept={RESUME_UPLOAD_ACCEPT}
         onChange={(e) => handleFiles(e.target.files)}
       />
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
+        disabled={busy || disabled}
         aria-label="Upload resume for review"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            if (!busy && !disabled) fileRef.current?.click();
-          }
-        }}
         onClick={() => {
           if (!busy && !disabled) fileRef.current?.click();
         }}
@@ -88,27 +89,27 @@ export function ResumeReviewUploadZone({
           setDragOver(false);
           handleFiles(e.dataTransfer.files);
         }}
-        className={cn(
-          "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 text-center transition-colors",
-          pinnedBottom ? "py-6" : "min-h-[220px] py-10",
-          dragOver
-            ? "border-primary/60 bg-primary/10"
-            : "border-border/80 bg-card/40 hover:border-primary/40 hover:bg-card/70",
-          (busy || disabled) && "pointer-events-none opacity-60",
+        className={resumeUploadZoneClassName(
+          cn(
+            pinnedBottom ? "py-6" : "min-h-[220px]",
+            dragOver && "border-primary/50 bg-muted/55",
+          ),
         )}
       >
         {busy ? (
-          <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
+          <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
         ) : (
-          <FileUp className="size-10 text-muted-foreground" strokeWidth={1.5} aria-hidden />
+          <FileUp className="size-8 text-muted-foreground" aria-hidden />
         )}
-        <span className="rounded-xl bg-primary px-5 py-2.5 text-[15px] font-semibold text-primary-foreground">
-          {busy ? statusLabel : "Upload Resume"}
+        <span className={RESUME_UPLOAD_CTA_CLASS}>
+          {busy ? statusLabel : RESUME_UPLOAD_TITLE}
         </span>
         {!busy ? (
-          <p className="text-[13px] text-muted-foreground">PDF or DOCX</p>
+          <span className="text-[13px] text-muted-foreground">
+            {RESUME_UPLOAD_HINT}
+          </span>
         ) : null}
-      </div>
+      </button>
     </div>
   );
 }

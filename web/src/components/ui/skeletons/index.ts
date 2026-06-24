@@ -4,6 +4,7 @@ export { SkeletonCard, SkeletonCardBlock } from "@/components/ui/skeletons/skele
 export { SkeletonButton } from "@/components/ui/skeletons/skeleton-button";
 export { SkeletonAvatar } from "@/components/ui/skeletons/skeleton-avatar";
 export { SkeletonChart } from "@/components/ui/skeletons/skeleton-chart";
+export { SkeletonStatsDashboard } from "@/components/ui/skeletons/skeleton-stats-dashboard";
 export {
   SkeletonAnalysisCard,
   SkeletonAnalysisList,

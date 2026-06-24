@@ -15,12 +15,6 @@ const COPY = {
     cta: "Create a Profile",
     href: "/home?signup=1",
   },
-  history: {
-    title: "View your analysis history",
-    body: "Create a free account to keep a history of every job you analyze.",
-    cta: "Create a Free Account",
-    href: "/home?signup=1",
-  },
 } as const;
 
 /**

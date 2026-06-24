@@ -36,7 +36,7 @@ import { ReportLink } from "@/components/report-link";
 import { openAnalysisReport } from "@/lib/report-return";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { SkeletonAnalysisReport, SkeletonPrimitive } from "@/components/ui/skeletons";
+import { AnalysisLoadingOverlay } from "@/components/analysis-loading-overlay";
 import {
   screenShellClass,
   StickyBottomCta,
@@ -301,9 +301,6 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           <h1 className="text-[34px] font-bold leading-tight tracking-tight">
             Analyze
           </h1>
-          <p className="mt-1 text-[15px] text-muted-foreground leading-snug">
-            Upload your resume and paste a job to score your fit.
-          </p>
         </StickyScreenHeader>
       )}
 
@@ -311,7 +308,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         onSubmit={run}
         className="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
-        <StickyScreenBody className="py-4">
+        <StickyScreenBody className="py-4 pb-24">
         <section
           className={cn(
             ANALYZE_SECTION_CLASS,
@@ -435,10 +432,10 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           ) : null}
         </StickyScreenBody>
 
-        <StickyBottomCta>
+        <StickyBottomCta variant="floating" scrollFade>
           <Button
             type="submit"
-            className="w-full h-12 gap-2 text-[17px] rounded-xl"
+            className="h-12 w-full gap-2 rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
             disabled={busy || demo}
           >
             {busy ? (
@@ -453,19 +450,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         </StickyBottomCta>
       </form>
 
-      {busy ? (
-        <div
-          className="absolute inset-0 z-20 flex flex-col overflow-y-auto bg-background"
-          aria-busy="true"
-          aria-label="Generating analysis report"
-        >
-          <div className={`sticky top-0 z-10 shrink-0 border-b border-border/60 bg-background px-4 pb-3 ${safeTopCompact}`}>
-            <SkeletonPrimitive className="h-4 w-40" />
-            <p className="mt-2 text-[13px] text-muted-foreground">{status}</p>
-          </div>
-          <SkeletonAnalysisReport />
-        </div>
-      ) : null}
+      {busy && status ? <AnalysisLoadingOverlay status={status} /> : null}
     </div>
   );
 }

@@ -427,7 +427,7 @@ export function pickRecentActivityList(
   return filled.length > 0 ? filled : getSampleAnalyses().slice(0, limit);
 }
 
-/** Saved/history — openable DB rows first, else sample saved list. */
+/** Saved list — openable DB rows first, else sample saved list. */
 export function pickAnalysisListWithSamples<T extends AnalysisRecord & { report_id?: string }>(
   rows: T[],
   samples: T[],

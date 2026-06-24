@@ -74,7 +74,6 @@ export function ResumeReviewScreen() {
     <div className={screenShellClass}>
       <IosLargeTitle
         title="Score"
-        subtitle="Your resume health at a glance."
         trailing={
           review ? (
             <button

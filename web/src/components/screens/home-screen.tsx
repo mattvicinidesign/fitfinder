@@ -43,7 +43,6 @@ import { homeHeroContentInset, screenGutterX } from "@/lib/screen-gutter";
 import type { AnalysisRecord } from "@/lib/types";
 
 const RECENT_LIMIT = 20;
-const VIEW_ALL_HREF = "/history";
 
 type HomeHeaderPlayState = "pending" | "animating" | "entered";
 
@@ -85,7 +84,11 @@ function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
           }
         />
       </div>
-      <MetricScore as="p" size="hero" className="mt-1 text-primary-foreground">
+      <MetricScore
+        as="p"
+        size="hero"
+        className="mt-1 font-bold text-primary-foreground"
+      >
         {stats.averageFitOnTen?.toFixed(1) ?? "—"}
       </MetricScore>
       <p className="mt-2.5 text-[12px] font-semibold leading-snug text-primary-foreground">
@@ -342,30 +345,22 @@ export function HomeScreen() {
                   No reports match your search.
                 </p>
               ) : (
-                <>
-                  <IosGroupedSection fullWidth>
-                    {filteredAnalyses.map((a) => (
-                      <ReportLink
-                        key={a.id}
+                <IosGroupedSection fullWidth>
+                  {filteredAnalyses.map((a) => (
+                    <ReportLink
+                      key={a.id}
+                      analysis={a}
+                      from="/home"
+                      className="block transition-colors hover:bg-muted/30 active:bg-muted/40"
+                    >
+                      <IosAnalysisListRow
                         analysis={a}
-                        from="/home"
-                        className="block transition-colors hover:bg-muted/30 active:bg-muted/40"
-                      >
-                        <IosAnalysisListRow
-                          analysis={a}
-                          subtitle={activityMetaLine(a)}
-                          className="px-0"
-                        />
-                      </ReportLink>
-                    ))}
-                  </IosGroupedSection>
-                  <Link
-                    href={VIEW_ALL_HREF}
-                    className="block pt-3 text-center text-[13px] font-medium text-primary hover:underline"
-                  >
-                    View all
-                  </Link>
-                </>
+                        subtitle={activityMetaLine(a)}
+                        className="px-0"
+                      />
+                    </ReportLink>
+                  ))}
+                </IosGroupedSection>
               )}
             </section>
               </>

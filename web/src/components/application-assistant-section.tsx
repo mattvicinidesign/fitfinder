@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { ProposalEditorDrawer } from "@/components/proposal-editor-drawer";
-import { ReportRevealSection } from "@/components/report-reveal-section";
 import { Button } from "@/components/ui/button";
+import { StickyBottomCta } from "@/components/ui/sticky-bottom-cta";
 import { generateProposal } from "@/lib/api";
 import { fetchUserDisplayName } from "@/lib/profile";
 import { resolvePortfolioUrl } from "@/lib/portfolio-url";
 import { injectPortfolioInIntroduction } from "@/lib/proposal-format";
 import { loadProposal, saveProposal } from "@/lib/proposal-cache";
+import { cn } from "@/lib/utils";
 import type {
   Narrative,
   ParsedJob,
@@ -54,7 +55,6 @@ export function ApplicationAssistantSection({
     };
   }, []);
 
-  // Restore a cached proposal for this report (session-scoped).
   useEffect(() => {
     const key = reportId ?? null;
     if (loadedKeyRef.current === key) return;
@@ -109,6 +109,7 @@ export function ApplicationAssistantSection({
       setProposal(patched);
       setProposalText(text);
       saveProposal(reportId, patched);
+      setDrawerOpen(true);
       if (mode === "regenerate") toast.success("Proposal regenerated.");
     } catch (e) {
       toast.error(
@@ -132,56 +133,37 @@ export function ApplicationAssistantSection({
 
   return (
     <>
-      <ReportRevealSection>
-        <section
-          className="rounded-xl border border-border/80 bg-muted/35 px-3.5 py-3.5"
-          aria-labelledby="application-assistant-title"
+      <StickyBottomCta variant="floating" scrollFade>
+        <Button
+          type="button"
+          className={cn(
+            "h-12 w-full gap-2 rounded-xl text-[17px] font-semibold",
+            "shadow-[0_8px_28px_rgba(0,0,0,0.45)]",
+          )}
+          onClick={() => {
+            if (hasProposal) setDrawerOpen(true);
+            else void runGeneration("generate");
+          }}
+          disabled={generating}
+          aria-busy={generating && !hasProposal}
+          aria-label={
+            hasProposal ? "View generated proposal" : "Generate proposal"
+          }
         >
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-              <Sparkles className="size-5" aria-hidden />
-            </div>
-            <div className="min-w-0 flex-1 space-y-1">
-              <h2
-                id="application-assistant-title"
-                className="text-[16px] font-semibold leading-snug text-foreground"
-              >
-                Application Assistant
-              </h2>
-              <p className="text-[13px] text-muted-foreground leading-snug">
-                Generate a personalized proposal based on your resume and the
-                target job.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-3.5">
-            <Button
-              type="button"
-              className="h-11 w-full gap-2 rounded-xl"
-              onClick={() => {
-                if (hasProposal) setDrawerOpen(true);
-                else void runGeneration("generate");
-              }}
-              disabled={generating}
-              aria-busy={generating && !hasProposal}
-            >
-              {generating && !hasProposal ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : hasProposal ? (
-                <FileText className="size-4" aria-hidden />
-              ) : (
-                <Sparkles className="size-4" aria-hidden />
-              )}
-              {generating && !hasProposal
-                ? "Generating…"
-                : hasProposal
-                  ? "View Proposal"
-                  : "Generate Proposal"}
-            </Button>
-          </div>
-        </section>
-      </ReportRevealSection>
+          {generating && !hasProposal ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : hasProposal ? (
+            <FileText className="size-4" aria-hidden />
+          ) : (
+            <Sparkles className="size-4" aria-hidden />
+          )}
+          {generating && !hasProposal
+            ? "Generating…"
+            : hasProposal
+              ? "View Proposal"
+              : "Generate Proposal"}
+        </Button>
+      </StickyBottomCta>
 
       {hasProposal ? (
         <ProposalEditorDrawer

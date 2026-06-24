@@ -133,19 +133,3 @@ export function SaveJobButton({ analysisId }: { analysisId: string | null }) {
     </Button>
   );
 }
-
-/** Full-width bottom CTA for the analysis report screen. */
-export function SaveReportButton({ analysisId }: { analysisId: string | null }) {
-  const { saved, busy, checked, toggle } = useSaveJob(analysisId);
-
-  return (
-    <Button
-      type="button"
-      className="w-full h-12 text-[17px] rounded-xl"
-      disabled={!analysisId || busy || !checked}
-      onClick={() => void toggle()}
-    >
-      {busy ? "Saving…" : saved ? "Saved" : "Save Report"}
-    </Button>
-  );
-}

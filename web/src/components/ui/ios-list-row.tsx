@@ -5,7 +5,7 @@ import { resolveActivityFitScore, type RecentActivityItem } from "@/lib/recent-a
 import { scoreColor } from "@/lib/score";
 import type { AnalysisRecord } from "@/lib/types";
 
-/** Single analysis row — iOS list style (canonical on Saved / History). */
+/** Single analysis row — iOS list style (canonical on Saved). */
 export function IosAnalysisListRow({
   analysis: a,
   subtitle,

@@ -15,7 +15,6 @@ src/
 │       ├── layout.tsx        # AppShell (sidebar + bottom tabs)
 │       ├── analyze/
 │       ├── saved/
-│       ├── history/
 │       ├── compare/
 │       └── profile/
 ├── components/
@@ -38,7 +37,7 @@ src/
 
 - **One layout:** centered `max-w-[480px]` phone column on desktop (letterbox only differs).
 - **One navigation:** iOS tab bar on **all** platforms — no sidebar, no desktop header nav.
-- **One component set:** screens live in `components/screens/` (Analyze, Saved, History, Compare, Profile).
+- **One component set:** screens live in `components/screens/` (Analyze, Saved, Compare, Profile).
 - **Fit Finder Preview:** `/preview` — same chrome + `AnalyzeScreen` with sample data (no separate preview modes).
 
 `APP_NAV` in `lib/navigation.ts` is the single source of truth for tabs.
