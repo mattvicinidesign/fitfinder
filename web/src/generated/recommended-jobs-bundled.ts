@@ -33,14 +33,14 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
   },
   {
-    "id": "21874874",
-    "title": "Director, Commercial Strategy and Operations, Innovation Lead",
-    "company": "The Coca-Cola Company",
-    "location": "Atlanta, GA",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-22T23:39:10Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/director-commercial-strategy-and-operations-innovation-lead-47782a",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+    "id": "21875106",
+    "title": "Safety Investigation Specialist II",
+    "company": "Uber",
+    "location": "Gajuwaka, India",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-23T01:03:01Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/safety-investigation-specialist-ii-66930a",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
     "id": "21311098",
@@ -61,16 +61,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-19T01:05:54Z",
     "applyUrl": "https://www.themuse.com/jobs/uber/staff-security-strategist-grc",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
-  },
-  {
-    "id": "21856908",
-    "title": "Senior Manager, Packaging Design Adaptation",
-    "company": "The Coca-Cola Company",
-    "location": "Atlanta, GA",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-16T23:35:56Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-manager-packaging-design-adaptation-b0624f",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
     "id": "21852459",
@@ -201,5 +191,15 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-10T18:29:07Z",
     "applyUrl": "https://www.themuse.com/jobs/nanit/senior-director-product-design",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000106/small_logo.png?v=5d4d6dac86a0ea7229ffbf5eb4358bd1490c38bd69c72f7a8f37d9f6bbde9601"
+  },
+  {
+    "id": "21852947",
+    "title": "Controls Technician (Starship Launch Pad)",
+    "company": "SpaceX",
+    "location": "Brownsville, TX",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-17T23:33:47Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/controls-technician-starship-launch-pad-b72b3f",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   }
 ] as RecommendedJob[];

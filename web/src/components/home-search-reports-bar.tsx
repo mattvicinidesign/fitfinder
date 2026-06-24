@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { Sparkles, X } from "lucide-react";
 import {
@@ -37,18 +37,34 @@ export function HomeSearchReportsBar({
   value,
   onChange,
   typewriterEnabled = true,
+  active: controlledActive,
+  onActiveChange,
+  onFocusChange,
+  children,
 }: {
   className?: string;
   value: string;
   onChange: (value: string) => void;
   /** When false, placeholder stays static until the home hero finishes entering. */
   typewriterEnabled?: boolean;
+  active?: boolean;
+  onActiveChange?: (active: boolean) => void;
+  onFocusChange?: (focused: boolean) => void;
+  children?: ReactNode;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
-  const [active, setActive] = useState(false);
+  const [uncontrolledActive, setUncontrolledActive] = useState(false);
   const [displayText, setDisplayText] = useState("");
   const [showCursor, setShowCursor] = useState(false);
+
+  const isControlled = controlledActive !== undefined;
+  const active = isControlled ? controlledActive : uncontrolledActive;
+
+  const setActive = (next: boolean) => {
+    if (!isControlled) setUncontrolledActive(next);
+    onActiveChange?.(next);
+  };
 
   const isSearching = active || value.length > 0;
 
@@ -97,34 +113,37 @@ export function HomeSearchReportsBar({
   };
 
   const handleBlur = () => {
-    if (!value.trim()) setActive(false);
+    onFocusChange?.(false);
+    window.setTimeout(() => {
+      if (!value.trim()) setActive(false);
+    }, 120);
   };
 
   return (
-    <div
-      role={isSearching ? undefined : "button"}
-      tabIndex={isSearching ? undefined : 0}
-      aria-label={isSearching ? undefined : PLACEHOLDER_TEXT}
-      onClick={!isSearching ? activate : undefined}
-      onKeyDown={
-        !isSearching
-          ? (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                activate();
+    <div className={cn("relative", className)}>
+      <div
+        role={isSearching ? undefined : "button"}
+        tabIndex={isSearching ? undefined : 0}
+        aria-label={isSearching ? undefined : PLACEHOLDER_TEXT}
+        onClick={!isSearching ? activate : undefined}
+        onKeyDown={
+          !isSearching
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  activate();
+                }
               }
-            }
-          : undefined
-      }
-      className={cn(
-        "relative flex items-center gap-3 rounded-2xl px-4 py-4 shadow-lg ring-1 backdrop-blur-md transition-[background-color,box-shadow,ring-color]",
-        isSearching
-          ? "bg-[#0f1419]/78 ring-white/20"
-          : "bg-[#0f1419]/45 ring-white/15",
-        !isSearching && "cursor-text",
-        className,
-      )}
-    >
+            : undefined
+        }
+        className={cn(
+          "relative flex items-center gap-3 rounded-2xl px-4 py-4 shadow-lg ring-1 backdrop-blur-md transition-[background-color,box-shadow,ring-color]",
+          isSearching
+            ? "bg-[#0f1419]/78 ring-white/20"
+            : "bg-[#0f1419]/45 ring-white/15",
+          !isSearching && "cursor-text",
+        )}
+      >
       <Image
         src="/only-fit-wordmark.png"
         alt=""
@@ -144,6 +163,10 @@ export function HomeSearchReportsBar({
           spellCheck={false}
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          onFocus={() => {
+            setActive(true);
+            onFocusChange?.(true);
+          }}
           onBlur={handleBlur}
           placeholder={PLACEHOLDER_TEXT}
           aria-label={PLACEHOLDER_TEXT}
@@ -178,6 +201,8 @@ export function HomeSearchReportsBar({
       ) : (
         <AiModeButton />
       )}
+      </div>
+      {children}
     </div>
   );
 }

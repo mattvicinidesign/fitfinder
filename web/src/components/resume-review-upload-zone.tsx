@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileUp, Loader2 } from "lucide-react";
 import { uploadResume } from "@/lib/resume-upload";
 import { waitForResumeParse } from "@/lib/resume-parse-tracker";
 import {
@@ -96,11 +95,6 @@ export function ResumeReviewUploadZone({
           ),
         )}
       >
-        {busy ? (
-          <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
-        ) : (
-          <FileUp className="size-8 text-muted-foreground" aria-hidden />
-        )}
         <span className={RESUME_UPLOAD_CTA_CLASS}>
           {busy ? statusLabel : RESUME_UPLOAD_TITLE}
         </span>

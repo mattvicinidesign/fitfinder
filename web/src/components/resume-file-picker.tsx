@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileUp, CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { uploadResume } from "@/lib/resume-upload";
 import { waitForResumeParse } from "@/lib/resume-parse-tracker";
 import {
@@ -100,11 +100,6 @@ export function ResumeFilePicker({
           </>
         ) : (
           <>
-            {uploading ? (
-              <Loader2 className="size-8 animate-spin text-muted-foreground" />
-            ) : (
-              <FileUp className="size-8 text-muted-foreground" />
-            )}
             <span className={RESUME_UPLOAD_CTA_CLASS}>
               {uploading ? "Uploading…" : RESUME_UPLOAD_TITLE}
             </span>

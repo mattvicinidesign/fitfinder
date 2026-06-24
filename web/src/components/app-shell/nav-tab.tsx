@@ -2,8 +2,7 @@
 
 import { forwardRef } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useProfileOverlay } from "@/components/app-shell/profile-overlay";
+import { usePathname } from "next/navigation";
 import { triggerNavHaptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/lib/navigation";
@@ -27,12 +26,9 @@ export const NavTab = forwardRef<HTMLAnchorElement, NavTabProps>(function NavTab
   ref,
 ) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { openProfile } = useProfileOverlay();
   const prefix = item.href + "/";
   const active = pathname === item.href || pathname.startsWith(prefix);
   const Icon = item.icon;
-  const isProfileTab = item.href === "/profile";
   const emphasized = active || lensHighlight;
 
   function handleClick(event: React.MouseEvent<HTMLAnchorElement>) {
@@ -43,19 +39,6 @@ export const NavTab = forwardRef<HTMLAnchorElement, NavTabProps>(function NavTab
 
     onSelect?.();
     triggerNavHaptic();
-
-    if (isProfileTab) {
-      if (pathname !== "/profile") {
-        event.preventDefault();
-        openProfile(pathname);
-      }
-      return;
-    }
-
-    if (pathname === "/profile") {
-      event.preventDefault();
-      router.replace(item.href);
-    }
   }
 
   return (
@@ -64,7 +47,7 @@ export const NavTab = forwardRef<HTMLAnchorElement, NavTabProps>(function NavTab
       href={item.href}
       onClick={handleClick}
       className={cn(
-        "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5",
+        "flex min-w-0 flex-1 flex-col items-center justify-center gap-2 px-0.5",
         emphasized ? "text-primary" : "text-muted-foreground",
       )}
     >

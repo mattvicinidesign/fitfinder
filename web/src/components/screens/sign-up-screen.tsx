@@ -4,6 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AppFrame } from "@/components/app-shell/app-frame";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  FORM_FIELD_GROUP_CLASS,
+  FORM_FIELD_LABEL_CLASS,
+} from "@/components/form-field-styles";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 import { createPreferenceSteps } from "@/components/onboarding/preference-steps";
 import { CheckEmailIllustration } from "@/components/check-email-illustration";
@@ -46,8 +50,8 @@ function AccountField({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-[13px] text-muted-foreground">
+    <div className={FORM_FIELD_GROUP_CLASS}>
+      <Label htmlFor={id} className={FORM_FIELD_LABEL_CLASS}>
         {label}
       </Label>
       <Input

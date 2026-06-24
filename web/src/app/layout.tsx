@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { AppSessionBridge } from "@/components/app-session-bridge";
 import { CapacitorBridge } from "@/components/capacitor-bridge";
@@ -48,14 +49,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${geistMono.variable} ${ibmPlexSans.variable} h-full overflow-x-hidden antialiased`}
     >
       <body className="h-dvh overflow-hidden overflow-x-hidden bg-background text-foreground">
-        <FirstLaunchReset />
-        <CapacitorBridge />
-        <AppSessionBridge />
-        <SplashGate>{children}</SplashGate>
-        <Toaster richColors />
+        <ThemeProvider>
+          <FirstLaunchReset />
+          <CapacitorBridge />
+          <AppSessionBridge />
+          <SplashGate>{children}</SplashGate>
+          <Toaster richColors />
+        </ThemeProvider>
       </body>
     </html>
   );

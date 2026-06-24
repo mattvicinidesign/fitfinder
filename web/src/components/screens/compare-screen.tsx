@@ -8,6 +8,11 @@ import { AnalysisResultView } from "@/components/analysis-result";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
+  FORM_FIELD_GROUP_CLASS,
+  FORM_FIELD_LABEL_CLASS,
+} from "@/components/form-field-styles";
+import { cn } from "@/lib/utils";
+import {
   fetchProfileDesiredCompensation,
   fetchProfileQualifiedIndustries,
   fetchProfileQualifiedSkills,
@@ -160,8 +165,8 @@ export function CompareScreen() {
       <div className="py-4 space-y-6">
         <IosGroupedSection title="Roles">
           <IosGroupedRow className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-[13px] text-muted-foreground">Role A</Label>
+            <div className={FORM_FIELD_GROUP_CLASS}>
+              <Label className={FORM_FIELD_LABEL_CLASS}>Role A</Label>
               <select
                 className="w-full h-11 text-[17px] bg-transparent"
                 value={aId}
@@ -175,8 +180,8 @@ export function CompareScreen() {
                 ))}
               </select>
             </div>
-            <div className="space-y-2 border-t border-border/60 pt-3">
-              <Label className="text-[13px] text-muted-foreground">Role B</Label>
+            <div className={cn(FORM_FIELD_GROUP_CLASS, "border-t border-border/60 pt-3")}>
+              <Label className={FORM_FIELD_LABEL_CLASS}>Role B</Label>
               <select
                 className="w-full h-11 text-[17px] bg-transparent"
                 value={bId}

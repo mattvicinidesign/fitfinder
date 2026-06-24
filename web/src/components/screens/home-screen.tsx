@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { HomeSearchReportsBar } from "@/components/home-search-reports-bar";
+import {
+  filterSearchReportItems,
+  SearchReportsDropdown,
+} from "@/components/search-reports-dropdown";
 import { usePathname } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -35,7 +39,6 @@ import { computeHomeFitStats, type HomeFitStats } from "@/lib/analysis-stats";
 import { cn } from "@/lib/utils";
 import {
   activityMetaLine,
-  matchesReportSearchQuery,
   type RecentActivityItem,
 } from "@/lib/recent-activity";
 import { ReportLink } from "@/components/report-link";
@@ -125,12 +128,19 @@ export function HomeScreen() {
   const searchSentinelRef = useRef<HTMLDivElement>(null);
   const [searchStuck, setSearchStuck] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchActive, setSearchActive] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
 
-  const filteredAnalyses = useMemo(
-    () =>
-      analyses.filter((item) => matchesReportSearchQuery(item, searchQuery)),
+  const searchDropdownItems = useMemo(
+    () => filterSearchReportItems(analyses, searchQuery),
     [analyses, searchQuery],
   );
+
+  const closeSearch = useCallback(() => {
+    setSearchQuery("");
+    setSearchActive(false);
+    setSearchFocused(false);
+  }, []);
 
   useLayoutEffect(() => {
     if (pathname !== "/home" || !appShellVisible) return;
@@ -300,8 +310,20 @@ export function HomeScreen() {
             <HomeSearchReportsBar
               value={searchQuery}
               onChange={setSearchQuery}
+              active={searchActive}
+              onActiveChange={setSearchActive}
+              onFocusChange={setSearchFocused}
               typewriterEnabled={homeContentReady}
-            />
+            >
+              {searchActive && searchFocused ? (
+                <SearchReportsDropdown
+                  items={searchDropdownItems}
+                  query={searchQuery}
+                  loading={loading}
+                  onSelect={closeSearch}
+                />
+              ) : null}
+            </HomeSearchReportsBar>
           </div>
         </div>
 
@@ -340,13 +362,9 @@ export function HomeScreen() {
                   <span className="font-medium text-foreground">Analyze Fit</span>{" "}
                   to run your first fit report.
                 </p>
-              ) : filteredAnalyses.length === 0 ? (
-                <p className="py-10 text-center text-[15px] text-muted-foreground leading-snug">
-                  No reports match your search.
-                </p>
               ) : (
                 <IosGroupedSection fullWidth>
-                  {filteredAnalyses.map((a) => (
+                  {analyses.map((a) => (
                     <ReportLink
                       key={a.id}
                       analysis={a}

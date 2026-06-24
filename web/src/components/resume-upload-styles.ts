@@ -15,7 +15,7 @@ export const RESUME_UPLOAD_CTA_CLASS =
 export function resumeUploadZoneClassName(className?: string) {
   return cn(
     ANALYZE_FIELD_CLASS,
-    "flex w-full cursor-pointer flex-col items-center justify-center gap-3 py-8 text-center transition-colors hover:bg-muted/55 disabled:cursor-not-allowed disabled:opacity-60",
+    "flex w-full cursor-pointer flex-col items-center justify-center gap-2 py-8 text-center transition-colors hover:bg-muted/55 disabled:cursor-not-allowed disabled:opacity-60",
     className,
   );
 }

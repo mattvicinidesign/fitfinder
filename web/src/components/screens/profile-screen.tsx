@@ -1,26 +1,29 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
 import { toast } from "sonner";
-import { useProfileSheetClose } from "@/components/app-shell/profile-sheet-context";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChipMultiSelect, SelectableChip } from "@/components/ui/chip-multi-select";
+import {
+  FORM_FIELD_GROUP_CLASS,
+  FORM_FIELD_LABEL_CLASS,
+  FORM_FIELDS_STACK_CLASS,
+} from "@/components/form-field-styles";
+import { ChipMultiSelect } from "@/components/ui/chip-multi-select";
+import { EmployerRatingSlider } from "@/components/employer-rating-slider";
+import { MinimumHourlyRateSlider } from "@/components/minimum-hourly-rate-slider";
 import {
   COMPANY_TYPE_OPTIONS,
-  EMPLOYER_RATING_PRESETS,
-  HOURLY_RATE_PRESETS,
   PROJECT_TYPE_OPTIONS,
   REGION_OPTIONS,
 } from "@/lib/onboarding-options";
 import {
   emptyUserProfile,
   fetchUserProfile,
-  profilesEqual,
+  generalInfoDirty,
+  isGeneralInfoValid,
   saveUserProfile,
   type UserProfile,
 } from "@/lib/profile";
@@ -28,60 +31,46 @@ import {
   pickLocalProfilePrefs,
   saveLocalProfilePrefs,
 } from "@/lib/local-profile-prefs";
+import { AppearanceModeSetting } from "@/components/appearance-mode-setting";
 import { ResumeFilePicker } from "@/components/resume-file-picker";
-import {
-  fetchUserResumeDocuments,
-  type ResumeDocument,
-} from "@/lib/resume-documents";
 import { deleteAccount } from "@/lib/delete-account";
 import { navigateApp } from "@/lib/navigate-app";
+import { TIMEZONE_OPTIONS } from "@/lib/timezone-options";
 import { cn } from "@/lib/utils";
 import {
-  SkeletonAnalysisList,
   SkeletonProfileScreen,
 } from "@/components/ui/skeletons";
+import { IosLargeTitle } from "@/components/ui/ios-large-title";
 import {
   screenShellClass,
   StickyBottomCta,
   StickyScreenBody,
-  StickyScreenHeader,
 } from "@/components/ui/sticky-bottom-cta";
-import { safeBottomOverlay, safeTopCompact } from "@/lib/safe-area";
+import { safeBottomOverlay } from "@/lib/safe-area";
 
-type ProfileTab = "general" | "preferences" | "documents" | "settings";
+type ProfileTab = "general" | "preferences" | "settings";
 
 const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
   { id: "general", label: "General Info" },
   { id: "preferences", label: "Preferences" },
-  { id: "documents", label: "Documents" },
   { id: "settings", label: "Settings" },
 ];
 
 export function ProfileScreen() {
   const router = useRouter();
-  const closeProfile = useProfileSheetClose();
   const [profileLoading, setProfileLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [profile, setProfile] = useState<UserProfile>(emptyUserProfile());
   const [savedProfile, setSavedProfile] = useState<UserProfile>(emptyUserProfile());
   const [activeTab, setActiveTab] = useState<ProfileTab>("general");
-  const [documents, setDocuments] = useState<ResumeDocument[]>([]);
-  const [documentsLoading, setDocumentsLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isDirty = !profilesEqual(profile, savedProfile);
-  const showFloatingActions =
-    (activeTab === "general" || activeTab === "preferences") && isDirty;
-
-  async function loadDocuments() {
-    setDocumentsLoading(true);
-    const rows = await fetchUserResumeDocuments();
-    setDocuments(rows);
-    setDocumentsLoading(false);
-  }
+  const generalInfoChanged = generalInfoDirty(profile, savedProfile);
+  const canSaveGeneralInfo = isGeneralInfoValid(profile);
+  const showFloatingActions = activeTab === "general" && generalInfoChanged;
 
   useEffect(() => {
     const supabase = createClient();
@@ -102,12 +91,10 @@ export function ProfileScreen() {
         saveLocalProfilePrefs(pickLocalProfilePrefs(existing));
       }
       setProfileLoading(false);
-      void loadDocuments();
     })();
   }, []);
 
   useEffect(() => {
-    if (activeTab === "documents") void loadDocuments();
     scrollRef.current?.scrollTo({ top: 0 });
   }, [activeTab]);
 
@@ -120,6 +107,7 @@ export function ProfileScreen() {
         "preferredCompanyTypes",
         "preferredRegions",
         "preferredProjectTypes",
+        "timezone",
       ];
       if (Object.keys(next).some((key) => prefKeys.includes(key as keyof UserProfile))) {
         saveLocalProfilePrefs(pickLocalProfilePrefs(updated));
@@ -132,12 +120,19 @@ export function ProfileScreen() {
   }
 
   async function save() {
+    if (!isGeneralInfoValid(profile)) return;
+    const normalized: UserProfile = {
+      ...profile,
+      fullName: profile.fullName?.trim() || null,
+      country: profile.country?.trim() || null,
+    };
     setBusy(true);
-    const { error } = await saveUserProfile(profile);
+    const { error } = await saveUserProfile(normalized);
     setBusy(false);
     if (error) toast.error(error);
     else {
-      setSavedProfile(profile);
+      setProfile(normalized);
+      setSavedProfile(normalized);
       toast.success("Profile updated.");
     }
   }
@@ -157,35 +152,15 @@ export function ProfileScreen() {
 
   return (
     <div className={screenShellClass}>
-      <StickyScreenHeader className={`px-4 pb-3 ${safeTopCompact}`}>
-        <div className="relative flex items-start justify-between gap-3">
-          <h1 className="text-[34px] font-bold leading-tight tracking-tight">
-            Profile
-          </h1>
-          <button
-            type="button"
-            onClick={() => closeProfile?.()}
-            aria-label="Close profile"
-            className="-mr-1 mt-1 inline-flex shrink-0 items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-          >
-            <X className="size-5 shrink-0" aria-hidden />
-          </button>
-        </div>
-      </StickyScreenHeader>
+      <IosLargeTitle title="Profile" />
 
       <StickyScreenBody ref={scrollRef} className="py-4">
-        <div key={activeTab} className="space-y-7">
+        <div key={activeTab} className="flex flex-col gap-4">
         <nav
           className="mx-4 flex border-b border-border/60 overflow-x-auto"
           aria-label="Profile sections"
         >
-          {PROFILE_TABS.map((tab) => {
-            const label =
-              tab.id === "documents"
-                ? `Documents (${documents.length})`
-                : tab.label;
-
-            return (
+          {PROFILE_TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -198,7 +173,7 @@ export function ProfileScreen() {
               )}
               aria-current={activeTab === tab.id ? "page" : undefined}
             >
-              {label}
+              {tab.label}
               {activeTab === tab.id ? (
                 <span
                   className="absolute inset-x-1 bottom-0 h-0.5 rounded-full bg-primary"
@@ -206,74 +181,43 @@ export function ProfileScreen() {
                 />
               ) : null}
             </button>
-            );
-          })}
+          ))}
         </nav>
 
         {profileLoading ? (
           <SkeletonProfileScreen />
         ) : activeTab === "general" ? (
-          <div className="space-y-7">
-            <FakeAdvertisement />
-
-            <Section title="About you">
-              <div className="space-y-4">
-                <LabeledInput
-                  label="Name"
-                  placeholder="Your name"
-                  value={profile.fullName ?? ""}
-                  onChange={(v) => patch({ fullName: v })}
-                />
-                <LabeledInput
-                  label="Email"
-                  value={isGuest ? "" : email ?? ""}
-                  placeholder={isGuest ? "Guest session" : "you@example.com"}
-                  readOnly
-                />
-                <LabeledInput
-                  label="Location"
-                  placeholder="City, country"
-                  value={profile.country ?? ""}
-                  onChange={(v) => patch({ country: v })}
-                />
-              </div>
-            </Section>
+          <div className={FORM_FIELDS_STACK_CLASS}>
+            <LabeledInput
+              label="Name"
+              placeholder="Your name"
+              value={profile.fullName ?? ""}
+              onChange={(v) => patch({ fullName: v })}
+            />
+            <LabeledInput
+              label="Email"
+              value={isGuest ? "" : email ?? ""}
+              placeholder={isGuest ? "Guest session" : "you@example.com"}
+              readOnly
+            />
+            <LabeledInput
+              label="Location"
+              placeholder="City, country"
+              value={profile.country ?? ""}
+              onChange={(v) => patch({ country: v })}
+            />
+            <div className={FORM_FIELD_GROUP_CLASS}>
+              <label className={FORM_FIELD_LABEL_CLASS}>Resume</label>
+              <ResumeFilePicker className="min-h-[140px]" onParsed={() => {}} />
+            </div>
           </div>
         ) : activeTab === "preferences" ? (
-          <div className="space-y-7">
-            <Section
-              title="Min hourly rate"
-              subtitle="From onboarding — we flag jobs that pay below your floor."
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-[20px] text-muted-foreground">$</span>
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  placeholder="75"
-                  value={profile.minimumHourlyRate?.toString() ?? ""}
-                  onChange={(e) =>
-                    patch({
-                      minimumHourlyRate: e.target.value
-                        ? Number(e.target.value)
-                        : null,
-                    })
-                  }
-                  className="h-11 w-28 text-[17px]"
-                />
-                <span className="text-[15px] text-muted-foreground">/hr</span>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-3">
-                {HOURLY_RATE_PRESETS.map((rate) => (
-                  <SelectableChip
-                    key={rate}
-                    label={rate >= 150 ? `$${rate}+` : `$${rate}`}
-                    selected={profile.minimumHourlyRate === rate}
-                    onToggle={() => patch({ minimumHourlyRate: rate })}
-                  />
-                ))}
-              </div>
+          <div className={FORM_FIELDS_STACK_CLASS}>
+            <Section title="Min hourly rate">
+              <MinimumHourlyRateSlider
+                value={profile.minimumHourlyRate}
+                onChange={(minimumHourlyRate) => patch({ minimumHourlyRate })}
+              />
             </Section>
 
             <Section title="Employer Type">
@@ -285,41 +229,12 @@ export function ProfileScreen() {
             </Section>
 
             <Section title="Minimum client rating">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    max={5}
-                    step={0.1}
-                    placeholder="4.0"
-                    value={profile.preferredMinimumEmployerRating?.toString() ?? ""}
-                    onChange={(e) => {
-                      const raw = e.target.value.trim();
-                      patch({
-                        preferredMinimumEmployerRating: raw
-                          ? Math.max(0, Math.min(5, Number(raw)))
-                          : null,
-                      });
-                    }}
-                    className="h-11 w-28 text-[17px]"
-                  />
-                  <span className="text-[15px] text-muted-foreground">out of 5</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {EMPLOYER_RATING_PRESETS.map((rating) => (
-                    <SelectableChip
-                      key={rating}
-                      label={rating === 5 ? "5.0" : String(rating)}
-                      selected={profile.preferredMinimumEmployerRating === rating}
-                      onToggle={() =>
-                        patch({ preferredMinimumEmployerRating: rating })
-                      }
-                    />
-                  ))}
-                </div>
-              </div>
+              <EmployerRatingSlider
+                value={profile.preferredMinimumEmployerRating}
+                onChange={(preferredMinimumEmployerRating) =>
+                  patch({ preferredMinimumEmployerRating })
+                }
+              />
             </Section>
 
             <Section title="Project type">
@@ -338,84 +253,54 @@ export function ProfileScreen() {
               />
             </Section>
           </div>
-        ) : activeTab === "documents" ? (
-          <div className="space-y-7">
-            <Section
-              title="Resume"
-              subtitle="Upload a resume to use across your fit analyses."
-            >
-              <ResumeFilePicker
-                className="min-h-[140px]"
-                onParsed={() => void loadDocuments()}
-              />
-            </Section>
-
-            <Section title="Your documents">
-              {documentsLoading ? (
-                <SkeletonAnalysisList count={2} className="mx-0" />
-              ) : documents.length === 0 ? (
-                <p className="text-[15px] text-muted-foreground leading-snug">
-                  No documents yet. Upload a resume above to get started.
-                </p>
-              ) : (
-                <ul className="divide-y divide-border/60 rounded-xl border border-border/60 overflow-hidden">
-                  {documents.map((doc) => (
-                    <li
-                      key={doc.id}
-                      className="flex items-center justify-between gap-3 bg-muted/20 px-4 py-3.5"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-[15px] font-medium truncate">
-                          {doc.fileName}
-                        </p>
-                        <p className="text-[13px] text-muted-foreground">
-                          {new Date(doc.uploadedAt).toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Section>
-          </div>
         ) : (
-          <div className="space-y-7">
-            <Section title="Account">
-              <p className="text-[15px] text-foreground">
-                {isGuest ? "Guest session" : email ?? "Signed in"}
-              </p>
-              {isGuest ? (
-                <p className="text-[13px] text-muted-foreground leading-snug">
-                  Create a profile with your email to save analyses across
-                  devices.
-                </p>
-              ) : null}
+          <div className={FORM_FIELDS_STACK_CLASS}>
+            <Section title="Light / dark mode">
+              <AppearanceModeSetting />
             </Section>
 
-            <Section title="Onboarding">
-              <Link
-                href="/onboarding"
-                className="inline-flex text-[15px] font-medium text-primary hover:underline"
+            <Section title="Timezone">
+              <select
+                value={profile.timezone ?? ""}
+                onChange={(e) =>
+                  patch({ timezone: e.target.value.trim() || null })
+                }
+                className={cn(
+                  "h-11 w-full rounded-md border border-input bg-background px-3 text-[17px] text-foreground",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                )}
+                aria-label="Timezone"
               >
-                Re-run onboarding
-              </Link>
+                <option value="">Select timezone</option>
+                {TIMEZONE_OPTIONS.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz.replace(/_/g, " ")}
+                  </option>
+                ))}
+              </select>
             </Section>
 
-            <Section title="Delete account">
+            <section
+              className={cn(
+                FORM_FIELD_GROUP_CLASS,
+                "rounded-xl border border-destructive/25 bg-destructive/5 p-4",
+              )}
+            >
+              <h2 className={FORM_FIELD_LABEL_CLASS}>Danger zone</h2>
+              <p className="text-[15px] leading-snug text-muted-foreground">
+                Permanently delete your account, profile, analyses, and documents.
+                This cannot be undone.
+              </p>
               <Button
                 type="button"
-                variant="ghost"
-                className="h-11 rounded-xl px-0 text-destructive hover:bg-transparent hover:text-destructive"
+                variant="destructive"
+                className="mt-4 h-11 w-full rounded-xl"
                 disabled={deleting}
                 onClick={() => setDeleteConfirmOpen(true)}
               >
                 Delete account
               </Button>
-            </Section>
+            </section>
           </div>
         )}
         </div>
@@ -426,7 +311,7 @@ export function ProfileScreen() {
           <Button
             type="button"
             className="w-full h-12 rounded-xl"
-            disabled={busy}
+            disabled={busy || !canSaveGeneralInfo}
             onClick={save}
           >
             {busy ? "Saving…" : "Save profile"}
@@ -486,52 +371,16 @@ export function ProfileScreen() {
   );
 }
 
-function FakeAdvertisement() {
-  return (
-    <aside
-      className="mx-4 overflow-hidden rounded-xl border border-border/60 bg-muted/30"
-      aria-label="Advertisement"
-    >
-      <div className="flex items-center justify-between border-b border-border/60 px-3 py-1.5">
-        <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          Sponsored
-        </span>
-        <span className="text-[10px] text-muted-foreground">Ad</span>
-      </div>
-      <div className="px-4 py-3">
-        <p className="text-[15px] font-semibold leading-snug">
-          Land your next role faster with FitFinder Pro
-        </p>
-        <p className="mt-1 text-[13px] text-muted-foreground leading-snug">
-          Unlimited analyses, saved comparisons, and priority scoring — $9/mo.
-        </p>
-        <p className="mt-2 text-[13px] font-medium text-primary">
-          Learn more →
-        </p>
-      </div>
-    </aside>
-  );
-}
-
 function Section({
   title,
-  subtitle,
   children,
 }: {
   title: string;
-  subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="px-4 space-y-3">
-      <div>
-        <h2 className="text-[15px] font-semibold">{title}</h2>
-        {subtitle ? (
-          <p className="text-[13px] text-muted-foreground leading-snug">
-            {subtitle}
-          </p>
-        ) : null}
-      </div>
+    <section className={FORM_FIELD_GROUP_CLASS}>
+      <h2 className={FORM_FIELD_LABEL_CLASS}>{title}</h2>
       {children}
     </section>
   );
@@ -551,8 +400,8 @@ function LabeledInput({
   readOnly?: boolean;
 }) {
   return (
-    <div className="space-y-1.5">
-      <label className="text-[13px] text-muted-foreground">{label}</label>
+    <div className={FORM_FIELD_GROUP_CLASS}>
+      <label className={FORM_FIELD_LABEL_CLASS}>{label}</label>
       <Input
         placeholder={placeholder}
         value={value}

@@ -29,5 +29,10 @@ export const PROJECT_TYPE_OPTIONS = ["Ongoing", "One-Time"] as const;
 /** Example minimum hourly rates used as quick-pick chips. */
 export const HOURLY_RATE_PRESETS = [50, 75, 100, 125, 150] as const;
 
+export const HOURLY_RATE_MIN = 25;
+export const HOURLY_RATE_MAX = 200;
+export const HOURLY_RATE_STEP = 5;
+export const HOURLY_RATE_DEFAULT = 75;
+
 /** Minimum client star rating (0–5) quick picks for onboarding. */
 export const EMPLOYER_RATING_PRESETS = [3, 3.5, 4, 4.5, 5] as const;

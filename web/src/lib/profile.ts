@@ -361,6 +361,16 @@ function sortedStringArray(values: string[]): string[] {
   return [...values].sort();
 }
 
+/** Whether name and location are both non-empty (required for General Info save). */
+export function isGeneralInfoValid(profile: UserProfile): boolean {
+  return Boolean(profile.fullName?.trim() && profile.country?.trim());
+}
+
+/** Whether editable general-info fields differ from the saved snapshot. */
+export function generalInfoDirty(a: UserProfile, b: UserProfile): boolean {
+  return a.fullName !== b.fullName || a.country !== b.country;
+}
+
 /** Whether editable profile fields match (ignores onboardingCompletedAt). */
 export function profilesEqual(a: UserProfile, b: UserProfile): boolean {
   const arraysEqual = (left: string[], right: string[]) =>

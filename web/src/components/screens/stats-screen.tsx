@@ -10,6 +10,10 @@ import { IosLargeTitle } from "@/components/ui/ios-large-title";
 import { StatsDashboard } from "@/components/stats-dashboard";
 import { SkeletonStatsDashboard } from "@/components/ui/skeletons/skeleton-stats-dashboard";
 import {
+  screenShellClass,
+  StickyScreenBody,
+} from "@/components/ui/sticky-bottom-cta";
+import {
   ensureSampleAnalysisDataSeeded,
   getSampleAnalyses,
   pickAnalysisListWithSamples,
@@ -51,21 +55,20 @@ export function StatsScreen() {
   }, []);
 
   return (
-    <>
-      <IosLargeTitle
-        title="Stats"
-        subtitle="Your fit analysis trends at a glance."
-      />
+    <div className={screenShellClass}>
+      <IosLargeTitle title="Stats" />
 
-      {loading || !stats ? (
-        <SkeletonStatsDashboard />
-      ) : stats.totalAnalyses === 0 ? (
-        <p className="px-4 py-12 text-center text-[15px] text-muted-foreground">
-          No analyses yet. Run your first from Analyze to see stats here.
-        </p>
-      ) : (
-        <StatsDashboard analyses={analyses} stats={stats} />
-      )}
-    </>
+      <StickyScreenBody className="py-4">
+        {loading || !stats ? (
+          <SkeletonStatsDashboard />
+        ) : stats.totalAnalyses === 0 ? (
+          <p className="px-4 py-12 text-center text-[15px] text-muted-foreground">
+            No analyses yet. Run your first from Analyze to see stats here.
+          </p>
+        ) : (
+          <StatsDashboard analyses={analyses} stats={stats} />
+        )}
+      </StickyScreenBody>
+    </div>
   );
 }
