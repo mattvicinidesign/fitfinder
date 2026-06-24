@@ -6,7 +6,7 @@ export const RESUME_UPLOAD_ACCEPT =
 
 export const RESUME_UPLOAD_TITLE = "Upload your resume";
 
-export const RESUME_UPLOAD_HINT = "PDF, Word (.doc, .docx), or .txt";
+export const RESUME_UPLOAD_HINT = "PDF, Word, or TXT";
 
 export const RESUME_UPLOAD_CTA_CLASS =
   "rounded-xl bg-primary px-5 py-2.5 text-[15px] font-semibold text-primary-foreground";

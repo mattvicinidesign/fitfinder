@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { toast } from "sonner";
+import { CircleUser, Settings, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,14 +26,18 @@ import {
   fetchUserProfile,
   generalInfoDirty,
   isGeneralInfoValid,
+  isPreferencesValid,
+  isSettingsValid,
+  preferencesDirty,
   saveUserProfile,
+  settingsDirty,
   type UserProfile,
 } from "@/lib/profile";
 import {
   pickLocalProfilePrefs,
   saveLocalProfilePrefs,
 } from "@/lib/local-profile-prefs";
-import { AppearanceModeSetting } from "@/components/appearance-mode-setting";
+import { AppearanceModeSetting, type AppearanceMode } from "@/components/appearance-mode-setting";
 import { ResumeFilePicker } from "@/components/resume-file-picker";
 import { deleteAccount } from "@/lib/delete-account";
 import { navigateApp } from "@/lib/navigate-app";
@@ -50,14 +56,15 @@ import { safeBottomOverlay } from "@/lib/safe-area";
 
 type ProfileTab = "general" | "preferences" | "settings";
 
-const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
-  { id: "general", label: "General Info" },
-  { id: "preferences", label: "Preferences" },
-  { id: "settings", label: "Settings" },
+const PROFILE_TABS: { id: ProfileTab; label: string; icon: LucideIcon }[] = [
+  { id: "general", label: "General Info", icon: CircleUser },
+  { id: "preferences", label: "Preferences", icon: SlidersHorizontal },
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 export function ProfileScreen() {
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
   const [profileLoading, setProfileLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
@@ -67,10 +74,34 @@ export function ProfileScreen() {
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [appearanceMode, setAppearanceMode] = useState<AppearanceMode>("dark");
+  const [savedAppearanceMode, setSavedAppearanceMode] = useState<AppearanceMode>("dark");
   const scrollRef = useRef<HTMLDivElement>(null);
   const generalInfoChanged = generalInfoDirty(profile, savedProfile);
+  const preferencesChanged = preferencesDirty(profile, savedProfile);
+  const settingsTimezoneChanged = settingsDirty(profile, savedProfile);
+  const settingsAppearanceChanged = appearanceMode !== savedAppearanceMode;
+  const settingsChanged = settingsTimezoneChanged || settingsAppearanceChanged;
   const canSaveGeneralInfo = isGeneralInfoValid(profile);
-  const showFloatingActions = activeTab === "general" && generalInfoChanged;
+  const canSavePreferences = isPreferencesValid(profile);
+  const canSaveSettings = isSettingsValid(profile);
+  const tabHasChanges =
+    activeTab === "general"
+      ? generalInfoChanged
+      : activeTab === "preferences"
+        ? preferencesChanged
+        : settingsChanged;
+  const canSave =
+    activeTab === "general"
+      ? canSaveGeneralInfo && generalInfoChanged
+      : activeTab === "preferences"
+        ? canSavePreferences && preferencesChanged
+        : canSaveSettings && settingsChanged;
+  const showSaveButton =
+    !profileLoading &&
+    (activeTab === "general" ||
+      activeTab === "preferences" ||
+      activeTab === "settings");
 
   useEffect(() => {
     const supabase = createClient();
@@ -95,44 +126,43 @@ export function ProfileScreen() {
   }, []);
 
   useEffect(() => {
+    const resolved: AppearanceMode = theme === "light" ? "light" : "dark";
+    setAppearanceMode(resolved);
+    setSavedAppearanceMode(resolved);
+  }, [theme]);
+
+  useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [activeTab]);
 
   function patch(next: Partial<UserProfile>) {
-    setProfile((p) => {
-      const updated = { ...p, ...next };
-      const prefKeys: (keyof UserProfile)[] = [
-        "minimumHourlyRate",
-        "preferredMinimumEmployerRating",
-        "preferredCompanyTypes",
-        "preferredRegions",
-        "preferredProjectTypes",
-        "timezone",
-      ];
-      if (Object.keys(next).some((key) => prefKeys.includes(key as keyof UserProfile))) {
-        saveLocalProfilePrefs(pickLocalProfilePrefs(updated));
-        void saveUserProfile(updated).then(({ error }) => {
-          if (!error) setSavedProfile(updated);
-        });
-      }
-      return updated;
-    });
+    setProfile((p) => ({ ...p, ...next }));
   }
 
   async function save() {
-    if (!isGeneralInfoValid(profile)) return;
+    if (activeTab === "general" && !isGeneralInfoValid(profile)) return;
+    if (activeTab === "preferences" && !isPreferencesValid(profile)) return;
+    if (activeTab === "settings" && !isSettingsValid(profile)) return;
+    if (!tabHasChanges) return;
+
     const normalized: UserProfile = {
       ...profile,
       fullName: profile.fullName?.trim() || null,
       country: profile.country?.trim() || null,
+      timezone: profile.timezone?.trim() || null,
     };
     setBusy(true);
     const { error } = await saveUserProfile(normalized);
     setBusy(false);
     if (error) toast.error(error);
     else {
+      if (activeTab === "settings" && appearanceMode !== savedAppearanceMode) {
+        setTheme(appearanceMode);
+        setSavedAppearanceMode(appearanceMode);
+      }
       setProfile(normalized);
       setSavedProfile(normalized);
+      saveLocalProfilePrefs(pickLocalProfilePrefs(normalized));
       toast.success("Profile updated.");
     }
   }
@@ -155,9 +185,9 @@ export function ProfileScreen() {
       <IosLargeTitle title="Profile" />
 
       <StickyScreenBody ref={scrollRef} className="py-4">
-        <div key={activeTab} className="flex flex-col gap-4">
+        <div key={activeTab} className="flex flex-col gap-8">
         <nav
-          className="mx-4 flex border-b border-border/60 overflow-x-auto"
+          className="mx-4 flex justify-start gap-8 border-b border-border/60 overflow-x-auto"
           aria-label="Profile sections"
         >
           {PROFILE_TABS.map((tab) => (
@@ -166,17 +196,20 @@ export function ProfileScreen() {
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "relative min-w-0 flex-1 shrink-0 px-0.5 pb-2.5 pt-1 text-[12px] font-medium transition-colors sm:text-[13px]",
+                "relative shrink-0 px-0.5 pb-2 pt-1 text-[13px] font-medium transition-colors",
                 activeTab === tab.id
                   ? "text-foreground"
                   : "text-muted-foreground hover:text-foreground",
               )}
               aria-current={activeTab === tab.id ? "page" : undefined}
             >
-              {tab.label}
+              <span className="flex items-center gap-2">
+                <tab.icon className="size-4 shrink-0 stroke-[1.75]" aria-hidden />
+                {tab.label}
+              </span>
               {activeTab === tab.id ? (
                 <span
-                  className="absolute inset-x-1 bottom-0 h-0.5 rounded-full bg-primary"
+                  className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary"
                   aria-hidden
                 />
               ) : null}
@@ -213,12 +246,11 @@ export function ProfileScreen() {
           </div>
         ) : activeTab === "preferences" ? (
           <div className={FORM_FIELDS_STACK_CLASS}>
-            <Section title="Min hourly rate">
-              <MinimumHourlyRateSlider
-                value={profile.minimumHourlyRate}
-                onChange={(minimumHourlyRate) => patch({ minimumHourlyRate })}
-              />
-            </Section>
+            <MinimumHourlyRateSlider
+              label="Minimum hourly rate"
+              value={profile.minimumHourlyRate}
+              onChange={(minimumHourlyRate) => patch({ minimumHourlyRate })}
+            />
 
             <Section title="Employer Type">
               <ChipMultiSelect
@@ -228,14 +260,13 @@ export function ProfileScreen() {
               />
             </Section>
 
-            <Section title="Minimum client rating">
-              <EmployerRatingSlider
-                value={profile.preferredMinimumEmployerRating}
-                onChange={(preferredMinimumEmployerRating) =>
-                  patch({ preferredMinimumEmployerRating })
-                }
-              />
-            </Section>
+            <EmployerRatingSlider
+              label="Minimum client rating"
+              value={profile.preferredMinimumEmployerRating}
+              onChange={(preferredMinimumEmployerRating) =>
+                patch({ preferredMinimumEmployerRating })
+              }
+            />
 
             <Section title="Project type">
               <ChipMultiSelect
@@ -256,7 +287,10 @@ export function ProfileScreen() {
         ) : (
           <div className={FORM_FIELDS_STACK_CLASS}>
             <Section title="Light / dark mode">
-              <AppearanceModeSetting />
+              <AppearanceModeSetting
+                value={appearanceMode}
+                onChange={setAppearanceMode}
+              />
             </Section>
 
             <Section title="Timezone">
@@ -306,12 +340,12 @@ export function ProfileScreen() {
         </div>
       </StickyScreenBody>
 
-      {showFloatingActions ? (
-        <StickyBottomCta>
+      {showSaveButton ? (
+        <StickyBottomCta variant="bare">
           <Button
             type="button"
             className="w-full h-12 rounded-xl"
-            disabled={busy || !canSaveGeneralInfo}
+            disabled={busy || !canSave}
             onClick={save}
           >
             {busy ? "Saving…" : "Save profile"}

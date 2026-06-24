@@ -366,6 +366,43 @@ export function isGeneralInfoValid(profile: UserProfile): boolean {
   return Boolean(profile.fullName?.trim() && profile.country?.trim());
 }
 
+/** Whether preference fields are complete enough to save. */
+export function isPreferencesValid(profile: UserProfile): boolean {
+  return (
+    profile.minimumHourlyRate != null &&
+    profile.minimumHourlyRate > 0 &&
+    profile.preferredMinimumEmployerRating != null &&
+    profile.preferredCompanyTypes.length > 0 &&
+    profile.preferredProjectTypes.length > 0 &&
+    profile.preferredRegions.length > 0
+  );
+}
+
+/** Whether preference fields differ from the saved snapshot. */
+export function preferencesDirty(a: UserProfile, b: UserProfile): boolean {
+  const arraysEqual = (left: string[], right: string[]) =>
+    JSON.stringify(sortedStringArray(left)) ===
+    JSON.stringify(sortedStringArray(right));
+
+  return (
+    a.minimumHourlyRate !== b.minimumHourlyRate ||
+    a.preferredMinimumEmployerRating !== b.preferredMinimumEmployerRating ||
+    !arraysEqual(a.preferredCompanyTypes, b.preferredCompanyTypes) ||
+    !arraysEqual(a.preferredRegions, b.preferredRegions) ||
+    !arraysEqual(a.preferredProjectTypes, b.preferredProjectTypes)
+  );
+}
+
+/** Whether settings fields are complete enough to save. */
+export function isSettingsValid(profile: UserProfile): boolean {
+  return Boolean(profile.timezone?.trim());
+}
+
+/** Whether the timezone field differs from the saved snapshot. */
+export function settingsDirty(a: UserProfile, b: UserProfile): boolean {
+  return a.timezone !== b.timezone;
+}
+
 /** Whether editable general-info fields differ from the saved snapshot. */
 export function generalInfoDirty(a: UserProfile, b: UserProfile): boolean {
   return a.fullName !== b.fullName || a.country !== b.country;

@@ -56,11 +56,12 @@ export function StickyBottomCta({
 }: {
   children: React.ReactNode;
   className?: string;
-  variant?: "bar" | "floating";
+  variant?: "bar" | "floating" | "bare";
   /** Soft gradient above floating CTAs — dims scroll content under the button. */
   scrollFade?: boolean;
 }) {
   const isFloating = variant === "floating";
+  const isBare = variant === "bare";
   const showScrollFade = isFloating && scrollFade;
 
   return (
@@ -79,13 +80,19 @@ export function StickyBottomCta({
           "z-20",
           isFloating
             ? "pointer-events-none absolute inset-x-0 bottom-0 bg-transparent px-4 pb-3 pt-3"
-            : cn(
-                "sticky bottom-0 shrink-0 pt-3",
-                "border-t border-border/50 bg-background/95 backdrop-blur-md",
-                "shadow-[0_-8px_32px_rgba(0,0,0,0.35)]",
-                screenGutterX,
-                safeBottomCta,
-              ),
+            : isBare
+              ? cn(
+                  "sticky bottom-0 shrink-0 bg-transparent pt-3",
+                  screenGutterX,
+                  safeBottomCta,
+                )
+              : cn(
+                  "sticky bottom-0 shrink-0 pt-3",
+                  "border-t border-border/50 bg-background/95 backdrop-blur-md",
+                  "shadow-[0_-8px_32px_rgba(0,0,0,0.35)]",
+                  screenGutterX,
+                  safeBottomCta,
+                ),
           className,
         )}
       >

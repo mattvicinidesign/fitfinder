@@ -1,30 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useTheme } from "next-themes";
 import { SelectableChip } from "@/components/ui/chip-multi-select";
 
-export function AppearanceModeSetting() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+export type AppearanceMode = "light" | "dark";
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const mode = mounted && theme === "light" ? "light" : "dark";
-
+export function AppearanceModeSetting({
+  value,
+  onChange,
+}: {
+  value: AppearanceMode;
+  onChange: (mode: AppearanceMode) => void;
+}) {
   return (
     <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Color mode">
       <SelectableChip
         label="Light"
-        selected={mode === "light"}
-        onToggle={() => setTheme("light")}
+        selected={value === "light"}
+        onToggle={() => onChange("light")}
       />
       <SelectableChip
         label="Dark"
-        selected={mode === "dark"}
-        onToggle={() => setTheme("dark")}
+        selected={value === "dark"}
+        onToggle={() => onChange("dark")}
       />
     </div>
   );
