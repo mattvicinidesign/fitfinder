@@ -96,7 +96,7 @@ async function postFunctionRequest(
       const response = await CapacitorHttp.post({
         url,
         headers,
-        data: body,
+        data: JSON.stringify(body),
         connectTimeout: timeoutMs,
         readTimeout: timeoutMs,
       });

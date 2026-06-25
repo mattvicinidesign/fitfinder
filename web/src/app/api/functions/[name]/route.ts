@@ -8,6 +8,7 @@ const ALLOWED = new Set([
   "generate-proposal",
   "review-resume",
   "optimize-ats-keywords",
+  "export-optimized-resume",
   "delete-account",
 ]);
 

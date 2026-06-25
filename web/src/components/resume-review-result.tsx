@@ -26,6 +26,7 @@ import {
   buildOptimizedResumeDownloadInput,
   downloadAppliedAtsOptimization,
   downloadOptimizedResume,
+  showOptimizedResumeExportToast,
   isAtsOptimizationApplied,
   isAtsScanPendingReview,
   loadAtsKeywordOptimization,
@@ -33,7 +34,6 @@ import {
   simulateAtsKeywordOptimization,
 } from "@/lib/resume-review-ats-optimization";
 import { loadResumeReviewFileName, saveResumeReview } from "@/lib/resume-review-cache";
-import { isNativePlatform } from "@/lib/platform";
 import { getResumeReviewMasterScore } from "@/lib/resume-review-scores";
 import type { AtsKeywordChangeDecision, AtsKeywordOptimization, ResumeReviewResult } from "@/lib/types";
 
@@ -96,31 +96,15 @@ export function ResumeReviewResultView({
         review.resumeId,
       ),
     )
-      .then(({ layoutPreserved, typographyPreserved }) => {
-        if (optimization.layoutReverted || optimization.typographyReverted) {
-          toast.info(
-            "Exported your original resume — changes could not be applied safely.",
-          );
-          return;
-        }
-        if (!typographyPreserved) {
-          toast.info(
-            "Some keyword swaps were skipped to preserve visual formatting.",
-          );
-          return;
-        }
-        toast.success(
-          isNativePlatform()
-            ? layoutPreserved
-              ? "Choose where to save your resume."
-              : "Choose where to save your resume (original file format; layout edits skipped)."
-            : layoutPreserved
-              ? "Optimized resume downloaded."
-              : "Resume downloaded in the original format (layout edits skipped).",
-        );
+      .then((result) => {
+        showOptimizedResumeExportToast(result);
       })
-      .catch(() => {
-        toast.error("Could not export the resume. Try again.");
+      .catch((error) => {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not export the resume. Try again.",
+        );
       });
   }, [optimization, fileName, review.resumeId]);
 
@@ -176,8 +160,12 @@ export function ResumeReviewResultView({
           optimization: applied,
           sourceFileName,
           resumeId: review.resumeId,
-        }).catch(() => {
-          toast.error("Could not export the resume. Try again.");
+        }).catch((error) => {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Could not export the resume. Try again.",
+          );
         });
       } catch (error) {
         showAtsOptimizeError(error);

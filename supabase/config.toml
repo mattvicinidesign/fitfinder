@@ -83,5 +83,8 @@ verify_jwt = true
 [functions.optimize-ats-keywords]
 verify_jwt = true
 
+[functions.export-optimized-resume]
+verify_jwt = true
+
 [functions.delete-account]
 verify_jwt = true

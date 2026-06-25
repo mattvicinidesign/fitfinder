@@ -476,25 +476,23 @@ export function applyAtsKeywordOptimization(
   return next;
 }
 
-export { downloadOptimizedResume, buildOptimizedResumeDownloadInput } from "@/lib/optimized-resume-download";
+export {
+  downloadOptimizedResume,
+  buildOptimizedResumeDownloadInput,
+  showOptimizedResumeExportToast,
+} from "@/lib/optimized-resume-download";
 
 export async function downloadAppliedAtsOptimization(input: {
   optimization: AtsKeywordOptimization;
   sourceFileName: string;
   resumeId?: string | null;
 }): Promise<void> {
-  const { downloadOptimizedResume, buildOptimizedResumeDownloadInput } =
-    await import("@/lib/optimized-resume-download");
-  const { isNativePlatform } = await import("@/lib/platform");
+  const {
+    downloadOptimizedResume,
+    buildOptimizedResumeDownloadInput,
+    showOptimizedResumeExportToast,
+  } = await import("@/lib/optimized-resume-download");
   const { toast } = await import("sonner");
-
-  const { layoutPreserved, typographyPreserved } = await downloadOptimizedResume(
-    buildOptimizedResumeDownloadInput(
-      input.optimization,
-      input.sourceFileName,
-      input.resumeId,
-    ),
-  );
 
   if (input.optimization.layoutReverted) {
     toast.info(
@@ -508,22 +506,21 @@ export async function downloadAppliedAtsOptimization(input: {
     return;
   }
 
-  if (!typographyPreserved) {
-    toast.info(
-      "Some keyword swaps were skipped to preserve visual formatting.",
+  try {
+    const result = await downloadOptimizedResume(
+      buildOptimizedResumeDownloadInput(
+        input.optimization,
+        input.sourceFileName,
+        input.resumeId,
+      ),
     );
-    return;
+    showOptimizedResumeExportToast(result);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not export the resume.";
+    toast.error(message);
+    throw error;
   }
-
-  toast.success(
-    isNativePlatform()
-      ? layoutPreserved
-        ? "Choose where to save your resume."
-        : "Choose where to save your resume (original file format; layout edits skipped)."
-      : layoutPreserved
-        ? "Optimized resume downloaded."
-        : "Resume downloaded in the original format (layout edits skipped).",
-  );
 }
 
 export function dismissAtsImprovementBadge(

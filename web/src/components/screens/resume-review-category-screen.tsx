@@ -30,6 +30,7 @@ import {
   buildOptimizedResumeDownloadInput,
   downloadAppliedAtsOptimization,
   downloadOptimizedResume,
+  showOptimizedResumeExportToast,
   getAppliedKeywordChangesForDisplay,
   isAtsOptimizationApplied,
   isAtsScanPendingReview,
@@ -49,7 +50,6 @@ import {
   patchResumeReviewAtsScore,
 } from "@/lib/patch-resume-review-ats-score";
 import { goBackToResumeReview } from "@/lib/navigate-app";
-import { isNativePlatform } from "@/lib/platform";
 import {
   expandPreviewImprovementTitles,
   expandPreviewNeedsImprovementFindings,
@@ -169,31 +169,15 @@ export function ResumeReviewCategoryScreen({
         review?.resumeId,
       ),
     )
-      .then(({ layoutPreserved, typographyPreserved }) => {
-        if (optimization!.layoutReverted || optimization!.typographyReverted) {
-          toast.info(
-            "Exported your original resume — changes could not be applied safely.",
-          );
-          return;
-        }
-        if (!typographyPreserved) {
-          toast.info(
-            "Some keyword swaps were skipped to preserve visual formatting.",
-          );
-          return;
-        }
-        toast.success(
-          isNativePlatform()
-            ? layoutPreserved
-              ? "Choose where to save your resume."
-              : "Choose where to save your resume (original file format; layout edits skipped)."
-            : layoutPreserved
-              ? "Optimized resume downloaded."
-              : "Resume downloaded in the original format (layout edits skipped).",
-        );
+      .then((result) => {
+        showOptimizedResumeExportToast(result);
       })
-      .catch(() => {
-        toast.error("Could not export the resume. Try again.");
+      .catch((error) => {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not export the resume. Try again.",
+        );
       });
   };
 

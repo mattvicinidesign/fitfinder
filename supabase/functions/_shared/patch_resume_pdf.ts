@@ -1,19 +1,16 @@
-import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, rgb, type PDFFont, type PDFPage } from "npm:pdf-lib@1.17.1";
 import {
   applyKeywordChangeAtOccurrence,
   buildPhraseBoundaryPattern,
   computeVisualWidthDeltaPercent,
   EXPORT_MAX_VISUAL_WIDTH_DELTA_RATIO,
-} from "@/lib/ats-keyword-optimization-core";
-import { mapRunFontName, measureTextWidth } from "@/lib/pdf-typography";
-import {
-  logReplacementAudit,
-} from "@/lib/ats-optimizer-debug";
-import type { PdfTextRun } from "@/lib/extract-resume-pdf-runs";
-import type { AtsKeywordChange } from "@/lib/types";
+} from "./ats_keyword_optimization.ts";
+import { mapRunFontName, measureTextWidth } from "./pdf_typography.ts";
+import type { PdfTextRun } from "./pdf_extract_runs.ts";
+import type { AtsKeywordChange } from "./patch_resume_docx.ts";
 
 export type PdfPatchResult = {
-  blob: Blob;
+  bytes: Uint8Array;
   appliedSubstitutions: AtsKeywordChange[];
   rejectedSubstitutions: AtsKeywordChange[];
 };
@@ -236,14 +233,13 @@ function redrawLine(
   return true;
 }
 
-/** Replace keyword swaps by redrawing whole PDF lines — never partial phrase overlays. */
-export async function patchPdfBlob(
-  blob: Blob,
+export async function patchPdfBytes(
+  bytes: Uint8Array,
   substitutions: AtsKeywordChange[],
   runs: PdfTextRun[],
   optimizedText?: string,
 ): Promise<PdfPatchResult> {
-  const doc = await PDFDocument.load(await blob.arrayBuffer());
+  const doc = await PDFDocument.load(bytes);
   const pages = doc.getPages();
   const fontCache = new Map<string, PDFFont>();
   const lineGroups = groupRunsIntoLines(runs);
@@ -272,22 +268,10 @@ export async function patchPdfBlob(
 
     const font = await getFont(plan.line.runs[0]!);
     const redrawn = redrawLine(page, plan.line, plan.optimizedText, font);
-    const auditBase = {
-      stage: "pdf_export" as const,
-      originalSentence: plan.originalText,
-      resultingSentence: plan.optimizedText,
-      finalRenderedSentence: redrawn ? plan.optimizedText : plan.originalText,
-    };
 
     if (!redrawn) {
       for (const substitution of plan.substitutions) {
         rejectedSubstitutions.push(substitution);
-        logReplacementAudit({
-          ...auditBase,
-          replacement: `${substitution.before} → ${substitution.after}`,
-          integrityPassed: false,
-          failures: ["PDF line redraw rejected (width/layout)"],
-        });
       }
       continue;
     }
@@ -298,12 +282,6 @@ export async function patchPdfBlob(
         appliedKeys.add(subKey);
         appliedSubstitutions.push(substitution);
       }
-      logReplacementAudit({
-        ...auditBase,
-        replacement: `${substitution.before} → ${substitution.after}`,
-        integrityPassed: true,
-        failures: [],
-      });
     }
   }
 
@@ -312,17 +290,20 @@ export async function patchPdfBlob(
       (entry) =>
         entry.before === substitution.before && entry.after === substitution.after,
     );
-    if (!applied && !rejectedSubstitutions.some(
-      (entry) =>
-        entry.before === substitution.before && entry.after === substitution.after,
-    )) {
+    if (
+      !applied &&
+      !rejectedSubstitutions.some(
+        (entry) =>
+          entry.before === substitution.before &&
+          entry.after === substitution.after,
+      )
+    ) {
       rejectedSubstitutions.push(substitution);
     }
   }
 
-  const bytes = await doc.save();
   return {
-    blob: new Blob([bytes as BlobPart], { type: "application/pdf" }),
+    bytes: await doc.save(),
     appliedSubstitutions,
     rejectedSubstitutions,
   };

@@ -37,7 +37,10 @@ export async function extractPdfRunsFromFile(
   file: File,
 ): Promise<PdfExtractionResult> {
   const pdfjs = await import("pdfjs-dist");
-  const { pdfJsWorkerFallbacks } = await import("@/lib/pdfjs-worker");
+  const { configurePdfJsForRuntime, pdfJsWorkerFallbacks } = await import(
+    "@/lib/pdfjs-worker"
+  );
+  await configurePdfJsForRuntime(pdfjs);
   const data = new Uint8Array(await file.arrayBuffer());
 
   let pdf: Awaited<ReturnType<typeof pdfjs.getDocument>["promise"]> | null = null;

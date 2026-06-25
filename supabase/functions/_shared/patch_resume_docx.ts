@@ -1,5 +1,12 @@
-import JSZip from "jszip";
-import type { AtsKeywordChange } from "@/lib/types";
+import JSZip from "npm:jszip@3.10.1";
+
+export type AtsKeywordChange = {
+  before: string;
+  after: string;
+  visualWidthDeltaPercent?: number;
+  lineIndex?: number;
+  matchIndex?: number;
+};
 
 function escapeXml(value: string): string {
   return value
@@ -18,7 +25,9 @@ function patchDocxXmlTextNodes(
     .split(/\s+/)
     .filter(Boolean)
     .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-  const body = parts.length > 0 ? parts.join("\\s+") : before.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const body = parts.length > 0
+    ? parts.join("\\s+")
+    : before.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(`(?<![\\w-])${body}(?![\\w-])`, "i");
 
   return xml.replace(
@@ -31,12 +40,11 @@ function patchDocxXmlTextNodes(
   );
 }
 
-/** Patch keyword substitutions in-place inside the original DOCX XML. */
-export async function patchDocxBlob(
-  blob: Blob,
+export async function patchDocxBytes(
+  bytes: Uint8Array,
   substitutions: AtsKeywordChange[],
-): Promise<Blob> {
-  const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+): Promise<Uint8Array> {
+  const zip = await JSZip.loadAsync(bytes);
   const documentFile = zip.file("word/document.xml");
   if (!documentFile) {
     throw new Error("Invalid DOCX: missing word/document.xml");
@@ -48,5 +56,5 @@ export async function patchDocxBlob(
   }
 
   zip.file("word/document.xml", xml);
-  return zip.generateAsync({ type: "blob" });
+  return zip.generateAsync({ type: "uint8array" });
 }

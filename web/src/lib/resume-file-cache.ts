@@ -74,7 +74,9 @@ export async function cacheResumeFile(
   file: File,
   meta: Omit<CachedResumeFileMeta, "resumeId" | "mimeType">,
 ): Promise<void> {
-  await putValue(FILE_STORE, resumeId, file);
+  // ArrayBuffer survives IndexedDB round-trips more reliably than File on WKWebView.
+  const buffer = await file.arrayBuffer();
+  await putValue(FILE_STORE, resumeId, buffer);
   await putValue<CachedResumeFileMeta>(META_STORE, resumeId, {
     resumeId,
     fileName: meta.fileName,
@@ -97,15 +99,20 @@ export async function getCachedResumeFileMeta(
 }
 
 export async function getCachedResumeFile(resumeId: string): Promise<File | null> {
-  const stored = await getValue<Blob | File>(FILE_STORE, resumeId);
+  const stored = await getValue<ArrayBuffer | Blob | File>(FILE_STORE, resumeId);
   if (!stored) return null;
-  if (stored instanceof File) return stored;
 
   const meta = await getCachedResumeFileMeta(resumeId);
   if (!meta) return null;
 
+  const mimeType = meta.mimeType || "application/octet-stream";
+  if (stored instanceof File) return stored;
+  if (stored instanceof ArrayBuffer) {
+    return new File([stored], meta.fileName, { type: mimeType });
+  }
+
   return new File([stored], meta.fileName, {
-    type: meta.mimeType || stored.type || "application/octet-stream",
+    type: mimeType || stored.type || "application/octet-stream",
   });
 }
 

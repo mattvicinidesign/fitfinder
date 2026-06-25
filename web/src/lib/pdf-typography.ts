@@ -1,5 +1,3 @@
-"use client";
-
 import type { PDFFont } from "pdf-lib";
 import { StandardFonts } from "pdf-lib";
 import {
