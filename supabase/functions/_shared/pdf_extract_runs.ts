@@ -1,6 +1,3 @@
-import { WorkerMessageHandler } from "npm:pdfjs-dist@6.0.227/legacy/build/pdf.worker.mjs";
-import * as pdfjs from "npm:pdfjs-dist@6.0.227/legacy/build/pdf.mjs";
-
 export type PdfTextRun = {
   page: number;
   x: number;
@@ -15,21 +12,29 @@ export type PdfTextRun = {
 
 let pdfJsReady = false;
 
-function ensurePdfJsReady(): void {
-  if (pdfJsReady) return;
-  (
-    globalThis as typeof globalThis & {
-      pdfjsWorker?: { WorkerMessageHandler: unknown };
-    }
-  ).pdfjsWorker = { WorkerMessageHandler };
-  pdfJsReady = true;
+async function ensurePdfJsReady(): Promise<typeof import("npm:pdfjs-dist@6.0.227/legacy/build/pdf.mjs")> {
+  const [{ WorkerMessageHandler }, pdfjs] = await Promise.all([
+    import("npm:pdfjs-dist@6.0.227/legacy/build/pdf.worker.mjs"),
+    import("npm:pdfjs-dist@6.0.227/legacy/build/pdf.mjs"),
+  ]);
+
+  if (!pdfJsReady) {
+    (
+      globalThis as typeof globalThis & {
+        pdfjsWorker?: { WorkerMessageHandler: unknown };
+      }
+    ).pdfjsWorker = { WorkerMessageHandler };
+    pdfJsReady = true;
+  }
+
+  return pdfjs;
 }
 
 /** Extract positioned text runs from a PDF buffer. */
 export async function extractPdfRunsFromBuffer(
   bytes: Uint8Array,
 ): Promise<{ text: string; pageCount: number; runs: PdfTextRun[] }> {
-  ensurePdfJsReady();
+  const pdfjs = await ensurePdfJsReady();
   const pdf = await pdfjs.getDocument({ data: bytes }).promise;
 
   const allLines: string[] = [];

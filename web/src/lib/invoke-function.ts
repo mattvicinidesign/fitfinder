@@ -55,6 +55,13 @@ function isTimeoutError(error: unknown): boolean {
   );
 }
 
+function humanizeFunctionError(message: string): string {
+  if (/function exited due to an error/i.test(message)) {
+    return "Export failed on the server. Try again in a moment.";
+  }
+  return message;
+}
+
 async function authorizedHeaders(): Promise<Record<string, string>> {
   const supabase = createClient();
   await supabase.auth.refreshSession().catch(() => {
@@ -163,7 +170,9 @@ export async function invokeFunction<T>(
       throw new Error("Session expired. Sign in again (guest or email).");
     }
     throw new Error(
-      typeof err === "string" && err.trim() ? err : "Request failed",
+      typeof err === "string" && err.trim()
+        ? humanizeFunctionError(err)
+        : "Request failed",
     );
   }
 

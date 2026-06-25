@@ -61,6 +61,10 @@ export function PreferenceSliderInput({
     setShowTooltip(false);
   }
 
+  function handleValueChange(nextValue: number) {
+    onChange(nextValue);
+  }
+
   return (
     <div className={cn("relative", className)}>
       {showTooltip ? (
@@ -72,19 +76,18 @@ export function PreferenceSliderInput({
         max={max}
         step={step}
         value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        onPointerDown={(event) => {
-          setShowTooltip(true);
-          event.currentTarget.setPointerCapture(event.pointerId);
-        }}
-        onPointerUp={(event) => {
-          hideTooltip();
-          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-            event.currentTarget.releasePointerCapture(event.pointerId);
-          }
-        }}
+        onInput={(event) =>
+          handleValueChange(Number(event.currentTarget.value))
+        }
+        onChange={(event) =>
+          handleValueChange(Number(event.currentTarget.value))
+        }
+        onTouchStart={() => setShowTooltip(true)}
+        onTouchEnd={hideTooltip}
+        onTouchCancel={hideTooltip}
+        onPointerDown={() => setShowTooltip(true)}
+        onPointerUp={hideTooltip}
         onPointerCancel={hideTooltip}
-        onLostPointerCapture={hideTooltip}
         aria-label={ariaLabel}
         aria-valuemin={min}
         aria-valuemax={max}

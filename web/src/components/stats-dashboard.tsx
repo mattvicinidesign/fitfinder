@@ -8,6 +8,7 @@ import {
   type AnalysisStats,
   type RecommendationStat,
 } from "@/lib/analysis-stats";
+import { isNativePlatform } from "@/lib/platform";
 import { formatRelativeTimeAgo } from "@/lib/posting-header-meta";
 import { scoreColor } from "@/lib/score";
 import { cn } from "@/lib/utils";
@@ -78,6 +79,17 @@ function KpiCard({
   );
 }
 
+function summarizeRecommendationLabel(label: string): string {
+  const shortLabels: Record<string, string> = {
+    "Strong Pursuit": "Strong",
+    "Good Opportunity": "Good",
+    "Proceed With Caution": "Caution",
+    "Not Recommended": "Pass",
+    Unlabeled: "Other",
+  };
+  return shortLabels[label] ?? label;
+}
+
 function RecommendationDonut({
   stats,
   total,
@@ -85,16 +97,34 @@ function RecommendationDonut({
   stats: RecommendationStat[];
   total: number;
 }) {
+  const native = isNativePlatform();
+
   return (
-    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6">
-      <div className="relative size-[7.5rem] shrink-0">
+    <div
+      className={cn(
+        native
+          ? "flex items-center justify-start gap-3"
+          : "flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6",
+      )}
+    >
+      <div
+        className={cn(
+          "relative shrink-0",
+          native ? "size-[6.25rem]" : "size-[7.5rem]",
+        )}
+      >
         <div
           className="size-full rounded-full"
           style={{ background: recommendationConicGradient(stats) }}
           aria-hidden
         />
         <div className="absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-background text-center">
-          <span className="text-[22px] font-semibold tabular-nums leading-none">
+          <span
+            className={cn(
+              "font-semibold tabular-nums leading-none",
+              native ? "text-[20px]" : "text-[22px]",
+            )}
+          >
             {total}
           </span>
           <span className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -102,20 +132,35 @@ function RecommendationDonut({
           </span>
         </div>
       </div>
-      <ul className="min-w-0 flex-1 space-y-2">
+      <ul
+        className={cn(
+          "min-w-0 flex-1",
+          native ? "space-y-1.5" : "space-y-2",
+        )}
+      >
         {stats.map((item, index) => (
-          <li key={item.label} className="flex items-center gap-2 text-[13px]">
+          <li
+            key={item.label}
+            className={cn(
+              "flex items-center gap-2",
+              native ? "text-[12px] leading-tight" : "text-[13px]",
+            )}
+          >
             <span
-              className="size-2.5 shrink-0 rounded-full"
+              className="size-2 shrink-0 rounded-full"
               style={{
                 backgroundColor:
                   CHART_SEGMENT_COLORS[index % CHART_SEGMENT_COLORS.length],
               }}
               aria-hidden
             />
-            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            <span className="min-w-0 flex-1 truncate">
+              {native
+                ? summarizeRecommendationLabel(item.label)
+                : item.label}
+            </span>
             <span className="shrink-0 tabular-nums text-muted-foreground">
-              {item.count} · {item.pct}%
+              {native ? `${item.pct}%` : `${item.count} · ${item.pct}%`}
             </span>
           </li>
         ))}

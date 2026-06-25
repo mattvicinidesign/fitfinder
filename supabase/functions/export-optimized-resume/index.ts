@@ -89,6 +89,7 @@ Deno.serve(async (req: Request) => {
       requestedSubstitutionCount: exported.requestedSubstitutionCount,
     });
   } catch (err) {
+    console.error("export-optimized-resume failed:", err);
     const message = err instanceof Error ? err.message : "Could not export resume.";
     return error(message, 500);
   }

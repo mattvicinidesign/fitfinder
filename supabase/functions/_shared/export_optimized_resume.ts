@@ -1,10 +1,8 @@
 import { passesVisualWidthTolerance } from "./ats_keyword_optimization.ts";
-import { extractPdfRunsFromBuffer } from "./pdf_extract_runs.ts";
 import {
   patchDocxBytes,
   type AtsKeywordChange,
 } from "./patch_resume_docx.ts";
-import { patchPdfBytes } from "./patch_resume_pdf.ts";
 
 export type OptimizedResumeOutputFormat = "pdf" | "docx" | "txt";
 
@@ -41,7 +39,7 @@ export type ServerExportResult = {
   requestedSubstitutionCount: number;
 };
 
-async function buildFallbackTextPdfBytes(text: string): Promise<Uint8Array> {
+async function buildTextPdfBytes(text: string): Promise<Uint8Array> {
   const { jsPDF } = await import("npm:jspdf@4.2.1");
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const margin = 56;
@@ -116,33 +114,9 @@ export async function exportOptimizedResumeBytes(input: {
       };
     }
 
-    const { runs } = await extractPdfRunsFromBuffer(input.fileBytes);
-    if (runs.length > 0) {
-      const patched = await patchPdfBytes(
-        input.fileBytes,
-        input.substitutions,
-        runs,
-        input.patchedText,
-      );
-
-      if (patched.appliedSubstitutions.length > 0) {
-        return {
-          bytes: patched.bytes,
-          downloadName,
-          mimeType: "application/pdf",
-          layoutPreserved: true,
-          typographyPreserved:
-            patched.rejectedSubstitutions.length === 0 &&
-            patched.appliedSubstitutions.length === input.substitutions.length,
-          appliedSubstitutionCount: patched.appliedSubstitutions.length,
-          requestedSubstitutionCount,
-        };
-      }
-    }
-
-    const fallbackBytes = await buildFallbackTextPdfBytes(input.patchedText);
+    const bytes = await buildTextPdfBytes(input.patchedText);
     return {
-      bytes: fallbackBytes,
+      bytes,
       downloadName: buildOptimizedResumeDownloadName(input.fileName, "pdf"),
       mimeType: "application/pdf",
       layoutPreserved: false,
@@ -164,9 +138,11 @@ export async function exportOptimizedResumeBytes(input: {
 }
 
 export function bytesToBase64(bytes: Uint8Array): string {
+  const chunkSize = 0x8000;
   let binary = "";
-  for (let i = 0; i < bytes.length; i += 1) {
-    binary += String.fromCharCode(bytes[i]!);
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.subarray(offset, offset + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
   }
   return btoa(binary);
 }

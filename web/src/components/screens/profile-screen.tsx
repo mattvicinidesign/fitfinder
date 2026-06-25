@@ -77,6 +77,7 @@ export function ProfileScreen() {
   const [appearanceMode, setAppearanceMode] = useState<AppearanceMode>("dark");
   const [savedAppearanceMode, setSavedAppearanceMode] = useState<AppearanceMode>("dark");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const appearanceSyncedRef = useRef(false);
   const generalInfoChanged = generalInfoDirty(profile, savedProfile);
   const preferencesChanged = preferencesDirty(profile, savedProfile);
   const settingsTimezoneChanged = settingsDirty(profile, savedProfile);
@@ -85,18 +86,13 @@ export function ProfileScreen() {
   const canSaveGeneralInfo = isGeneralInfoValid(profile);
   const canSavePreferences = isPreferencesValid(profile);
   const canSaveSettings = isSettingsValid(profile);
-  const tabHasChanges =
-    activeTab === "general"
-      ? generalInfoChanged
-      : activeTab === "preferences"
-        ? preferencesChanged
-        : settingsChanged;
   const canSave =
     activeTab === "general"
       ? canSaveGeneralInfo && generalInfoChanged
       : activeTab === "preferences"
         ? canSavePreferences && preferencesChanged
-        : canSaveSettings && settingsChanged;
+        : settingsAppearanceChanged ||
+          (settingsTimezoneChanged && canSaveSettings);
   const showSaveButton =
     !profileLoading &&
     (activeTab === "general" ||
@@ -117,18 +113,23 @@ export function ProfileScreen() {
       setIsGuest(user.is_anonymous ?? false);
       const existing = await fetchUserProfile();
       if (existing) {
-        setProfile(existing);
-        setSavedProfile(existing);
-        saveLocalProfilePrefs(pickLocalProfilePrefs(existing));
+        const loaded = structuredClone(existing);
+        setProfile(loaded);
+        setSavedProfile(structuredClone(existing));
+        saveLocalProfilePrefs(pickLocalProfilePrefs(loaded));
       }
       setProfileLoading(false);
     })();
   }, []);
 
+  // Sync theme once on load — do not overwrite staged appearance edits when
+  // next-themes resolves asynchronously on native.
   useEffect(() => {
+    if (theme === undefined || appearanceSyncedRef.current) return;
     const resolved: AppearanceMode = theme === "light" ? "light" : "dark";
     setAppearanceMode(resolved);
     setSavedAppearanceMode(resolved);
+    appearanceSyncedRef.current = true;
   }, [theme]);
 
   useEffect(() => {
@@ -140,10 +141,16 @@ export function ProfileScreen() {
   }
 
   async function save() {
-    if (activeTab === "general" && !isGeneralInfoValid(profile)) return;
-    if (activeTab === "preferences" && !isPreferencesValid(profile)) return;
-    if (activeTab === "settings" && !isSettingsValid(profile)) return;
-    if (!tabHasChanges) return;
+    if (activeTab === "general") {
+      if (!isGeneralInfoValid(profile) || !generalInfoChanged) return;
+    } else if (activeTab === "preferences") {
+      if (!isPreferencesValid(profile) || !preferencesChanged) return;
+    } else if (activeTab === "settings") {
+      if (!settingsChanged) return;
+      if (settingsTimezoneChanged && !isSettingsValid(profile)) return;
+    } else {
+      return;
+    }
 
     const normalized: UserProfile = {
       ...profile,
@@ -151,20 +158,29 @@ export function ProfileScreen() {
       country: profile.country?.trim() || null,
       timezone: profile.timezone?.trim() || null,
     };
+
     setBusy(true);
-    const { error } = await saveUserProfile(normalized);
-    setBusy(false);
-    if (error) toast.error(error);
-    else {
-      if (activeTab === "settings" && appearanceMode !== savedAppearanceMode) {
-        setTheme(appearanceMode);
-        setSavedAppearanceMode(appearanceMode);
+    let error: string | null = null;
+    if (activeTab === "settings" && settingsAppearanceChanged && !settingsTimezoneChanged) {
+      setTheme(appearanceMode);
+      setSavedAppearanceMode(appearanceMode);
+    } else {
+      const result = await saveUserProfile(normalized);
+      error = result.error;
+      if (!error) {
+        if (activeTab === "settings" && settingsAppearanceChanged) {
+          setTheme(appearanceMode);
+          setSavedAppearanceMode(appearanceMode);
+        }
+        setProfile(normalized);
+        setSavedProfile(structuredClone(normalized));
+        saveLocalProfilePrefs(pickLocalProfilePrefs(normalized));
       }
-      setProfile(normalized);
-      setSavedProfile(normalized);
-      saveLocalProfilePrefs(pickLocalProfilePrefs(normalized));
-      toast.success("Profile updated.");
     }
+    setBusy(false);
+
+    if (error) toast.error(error);
+    else toast.success("Profile updated.");
   }
 
   async function confirmDeleteAccount() {

@@ -384,9 +384,14 @@ export function preferencesDirty(a: UserProfile, b: UserProfile): boolean {
     JSON.stringify(sortedStringArray(left)) ===
     JSON.stringify(sortedStringArray(right));
 
+  const rateA = coerceProfileNumeric(a.minimumHourlyRate);
+  const rateB = coerceProfileNumeric(b.minimumHourlyRate);
+  const ratingA = clampEmployerRatingPreference(a.preferredMinimumEmployerRating);
+  const ratingB = clampEmployerRatingPreference(b.preferredMinimumEmployerRating);
+
   return (
-    a.minimumHourlyRate !== b.minimumHourlyRate ||
-    a.preferredMinimumEmployerRating !== b.preferredMinimumEmployerRating ||
+    rateA !== rateB ||
+    ratingA !== ratingB ||
     !arraysEqual(a.preferredCompanyTypes, b.preferredCompanyTypes) ||
     !arraysEqual(a.preferredRegions, b.preferredRegions) ||
     !arraysEqual(a.preferredProjectTypes, b.preferredProjectTypes)
