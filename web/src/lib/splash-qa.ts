@@ -1,7 +1,9 @@
 import {
+  clearAuthDeepLinkPending,
   clearOnboardingState,
   markReturningUserState,
   QA_RETURNING_SPLASH_KEY,
+  SIGNUP_LAUNCH_KEY,
 } from "@/lib/app-session";
 import { clearAllAtsKeywordOptimizations } from "@/lib/resume-review-ats-optimization";
 import { resetAppFirstLaunch } from "@/lib/reset-first-launch";
@@ -28,20 +30,38 @@ export function isSplashQaEnabled(): boolean {
 }
 
 export function isQaLaunchSimulationPending(): boolean {
-  if (typeof sessionStorage === "undefined") return false;
-  return sessionStorage.getItem(QA_LAUNCH_SIMULATION_KEY) !== null;
+  return getQaLaunchSimulationMode() !== null;
 }
 
 export function getQaLaunchSimulationMode(): "first" | "returning" | null {
-  if (typeof sessionStorage === "undefined") return null;
-  const mode = sessionStorage.getItem(QA_LAUNCH_SIMULATION_KEY);
+  const mode =
+    (typeof sessionStorage !== "undefined"
+      ? sessionStorage.getItem(QA_LAUNCH_SIMULATION_KEY)
+      : null) ??
+    (typeof localStorage !== "undefined"
+      ? localStorage.getItem(QA_LAUNCH_SIMULATION_KEY)
+      : null);
   if (mode === "first" || mode === "returning") return mode;
   return null;
 }
 
+function setQaLaunchSimulationMode(mode: "first" | "returning"): void {
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.setItem(QA_LAUNCH_SIMULATION_KEY, mode);
+  }
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(QA_LAUNCH_SIMULATION_KEY, mode);
+  }
+}
+
 export function clearQaLaunchSimulation(): void {
-  if (typeof sessionStorage === "undefined") return;
-  sessionStorage.removeItem(QA_LAUNCH_SIMULATION_KEY);
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.removeItem(QA_LAUNCH_SIMULATION_KEY);
+    sessionStorage.removeItem(QA_RETURNING_SPLASH_KEY);
+  }
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(QA_LAUNCH_SIMULATION_KEY);
+  }
 }
 
 function qaHardReload(): void {
@@ -64,6 +84,7 @@ function clearFitFinderSessionStorage(): void {
 /** Clear volatile session caches and reload (dev QA — keeps localStorage auth / onboarding). */
 export function hardRefreshFromQa(): void {
   console.log("QA: Hard refresh");
+  clearQaLaunchSimulation();
   clearFitFinderSessionStorage();
   if (typeof window === "undefined") return;
 
@@ -85,17 +106,21 @@ export function stripQaHardRefreshParam(): void {
 export function simulateFirstLaunch(): void {
   console.log("QA: First Launch Simulation");
   clearOnboardingState();
-  if (typeof sessionStorage !== "undefined") {
-    sessionStorage.setItem(QA_LAUNCH_SIMULATION_KEY, "first");
-  }
+  clearQaLaunchSimulation();
+  setQaLaunchSimulationMode("first");
   qaHardReload();
 }
 
 export function simulateReturningUser(): void {
   console.log("QA: Returning User Simulation");
   markReturningUserState();
+  clearAuthDeepLinkPending();
   if (typeof sessionStorage !== "undefined") {
-    sessionStorage.setItem(QA_LAUNCH_SIMULATION_KEY, "returning");
+    sessionStorage.removeItem(SIGNUP_LAUNCH_KEY);
+  }
+  clearQaLaunchSimulation();
+  setQaLaunchSimulationMode("returning");
+  if (typeof sessionStorage !== "undefined") {
     sessionStorage.setItem(QA_RETURNING_SPLASH_KEY, "true");
   }
   qaHardReload();

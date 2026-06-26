@@ -169,6 +169,16 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      if (qaSimulation === "returning") {
+        if (typeof sessionStorage !== "undefined") {
+          sessionStorage.removeItem(QA_RETURNING_SPLASH_KEY);
+        }
+        coldStartSplashRef.current = true;
+        setShowWordmark(false);
+        setPhase("splash");
+        return;
+      }
+
       const splashSeen = hasCompletedSplash();
       const forceReturningSplash =
         isSplashQaEnabled() &&
