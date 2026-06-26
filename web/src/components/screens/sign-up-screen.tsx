@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppFrame } from "@/components/app-shell/app-frame";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,14 +9,17 @@ import {
   FORM_FIELD_LABEL_CLASS,
 } from "@/components/form-field-styles";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
-import { createPreferenceSteps } from "@/components/onboarding/preference-steps";
+import {
+  createPreferenceSteps,
+  createResumeUploadStep,
+} from "@/components/onboarding/preference-steps";
 import { CheckEmailIllustration } from "@/components/check-email-illustration";
-import { createClient } from "@/lib/supabase/client";
-import { getAuthCallbackRedirectUrl } from "@/lib/auth-redirect";
 import { markAuthDeepLinkPending } from "@/lib/app-session";
 import { isNativePlatform } from "@/lib/platform";
 import { emptyUserProfile, type UserProfile } from "@/lib/profile";
 import { savePendingSignup, SIGNUP_COMPLETE_ROUTE } from "@/lib/pending-signup";
+import { ensureGuestSession } from "@/lib/ensure-guest-session";
+import { fetchLatestUserResume } from "@/lib/resume-documents";
 import {
   markLaunchFlowComplete,
   markWelcomeComplete,
@@ -27,7 +30,9 @@ import {
   markOnboardingWelcomeRestored,
   saveOnboardingProgress,
 } from "@/lib/onboarding-progress";
+import { sendSignupVerificationEmail } from "@/lib/signup-auth";
 import { getSignupQaDefaults } from "@/lib/signup-qa";
+import { guessProfileTimezone } from "@/lib/timezone-options";
 import { safeBottomOverlay, safeTopHomeHero } from "@/lib/safe-area";
 import { toast } from "sonner";
 
@@ -128,6 +133,7 @@ export function SignUpScreen({
   const [step, setStep] = useState(initial.step);
   const [busy, setBusy] = useState(false);
   const [emailSent, setEmailSent] = useState(initial.emailSent);
+  const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const progressRef = useRef({
     signupStep: initial.step,
     email: initial.email,
@@ -161,10 +167,18 @@ export function SignUpScreen({
   function patch(next: Partial<UserProfile>) {
     setProfile((current) => {
       const merged = { ...current, ...next };
-      if (step >= 1) persistProgress({ profile: merged });
+      if (step >= 2) persistProgress({ profile: merged });
       return merged;
     });
   }
+
+  const handleResumeParsed = useCallback(
+    ({ fileName }: { resumeId: string; fileName: string }) => {
+      setResumeFileName(fileName);
+      setStep((current) => (current === 1 ? 2 : current));
+    },
+    [],
+  );
 
   const preferenceSteps = useMemo(
     () => createPreferenceSteps(profile, patch),
@@ -205,9 +219,21 @@ export function SignUpScreen({
           </div>
         ),
       },
+      createResumeUploadStep({
+        fileName: resumeFileName,
+        onParsed: handleResumeParsed,
+      }),
       ...preferenceSteps,
     ],
-    [email, preferenceSteps, profile.country, profile.fullName],
+    [
+      email,
+      handleResumeParsed,
+      preferenceSteps,
+      profile.country,
+      profile.fullName,
+      resumeFileName,
+      step,
+    ],
   );
 
   function validateAccountStep(): boolean {
@@ -239,6 +265,23 @@ export function SignUpScreen({
       markOnboardingWelcomeRestored();
     }
   }
+
+  useEffect(() => {
+    void (async () => {
+      const { error } = await ensureGuestSession();
+      if (error) return;
+      const latestResume = await fetchLatestUserResume();
+      if (latestResume) setResumeFileName(latestResume.fileName);
+    })();
+  }, []);
+
+  useEffect(() => {
+    const guessed = guessProfileTimezone();
+    if (!guessed) return;
+    setProfile((current) =>
+      current.timezone ? current : { ...current, timezone: guessed },
+    );
+  }, []);
 
   useEffect(() => {
     progressRef.current = {
@@ -284,6 +327,12 @@ export function SignUpScreen({
       return;
     }
 
+    if (!profile.timezone?.trim()) {
+      toast.error("Select your timezone to continue.");
+      setStep(steps.length - 1);
+      return;
+    }
+
     const trimmedEmail = email.trim();
     const signupProfile: UserProfile = {
       ...profile,
@@ -296,21 +345,15 @@ export function SignUpScreen({
     savePendingSignup({ email: trimmedEmail, profile: signupProfile });
 
     markAuthDeepLinkPending();
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await sendSignupVerificationEmail({
       email: trimmedEmail,
-      options: {
-        emailRedirectTo: getAuthCallbackRedirectUrl(SIGNUP_COMPLETE_ROUTE),
-        data: {
-          full_name: signupProfile.fullName,
-          location: signupProfile.country,
-        },
-      },
+      profile: signupProfile,
+      redirectNext: SIGNUP_COMPLETE_ROUTE,
     });
     setBusy(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(error);
       return;
     }
 

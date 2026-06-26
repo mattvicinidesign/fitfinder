@@ -32,6 +32,7 @@ import {
   ANALYZE_SECTION_LABEL_CLASS,
 } from "@/components/analyze-form-styles";
 import { waitForResumeParse, getCachedParsedResume } from "@/lib/resume-parse-tracker";
+import { fetchLatestUserResume } from "@/lib/resume-documents";
 import { ReportLink } from "@/components/report-link";
 import { openAnalysisReport } from "@/lib/report-return";
 import { cn } from "@/lib/utils";
@@ -175,6 +176,15 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   useEffect(() => {
     if (demo) return;
     setLastReport(getLastAnalysisReport());
+  }, [demo]);
+
+  useEffect(() => {
+    if (demo) return;
+    void fetchLatestUserResume().then((resume) => {
+      if (!resume) return;
+      setResumeId((current) => current ?? resume.id);
+      setResumeFileName((current) => current ?? resume.fileName);
+    });
   }, [demo]);
 
   useEffect(() => {

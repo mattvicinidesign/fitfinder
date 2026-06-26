@@ -5,11 +5,11 @@ export function SkeletonStatsDashboard({ className }: { className?: string }) {
   return (
     <div className={cn("space-y-5 px-4 pb-6", className)}>
       <div className="grid grid-cols-2 gap-3">
-        {Array.from({ length: 4 }).map((_, index) => (
+        {Array.from({ length: 3 }).map((_, index) => (
           <SkeletonPrimitive key={index} className="h-[5.5rem] rounded-xl" />
         ))}
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="flex flex-col gap-3">
         <SkeletonPrimitive className="h-52 rounded-xl" />
         <SkeletonPrimitive className="h-52 rounded-xl" />
       </div>

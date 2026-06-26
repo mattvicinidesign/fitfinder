@@ -32,3 +32,9 @@ export async function fetchUserResumeDocuments(): Promise<ResumeDocument[]> {
     uploadedAt: row.uploaded_at,
   }));
 }
+
+/** Most recently uploaded resume for the signed-in user. */
+export async function fetchLatestUserResume(): Promise<ResumeDocument | null> {
+  const documents = await fetchUserResumeDocuments();
+  return documents[0] ?? null;
+}

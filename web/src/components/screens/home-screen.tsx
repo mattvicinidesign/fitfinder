@@ -74,16 +74,10 @@ function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
           triggerClassName="size-5 text-primary-foreground/65 hover:text-primary-foreground focus-visible:ring-primary-foreground/40 [&_svg]:size-4"
           panelClassName="z-30 w-64"
           text={
-            <>
-              <span className="block">
-                Your average fit score is the mean of fit scores across every job
-                you&apos;ve analyzed, shown on a 0–10 scale.
-              </span>
-              <span className="mt-2 block">
-                An <strong>OnlyFit</strong> is any analysis with a fit score of
-                9.0 or above—the strongest matches in your history.
-              </span>
-            </>
+            <span className="block">
+              Your average fit score is the mean of fit scores across every job
+              you&apos;ve analyzed, shown on a 0–10 scale.
+            </span>
           }
         />
       </div>
@@ -94,20 +88,11 @@ function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
       >
         {stats.averageFitOnTen?.toFixed(1) ?? "—"}
       </MetricScore>
-      <p className="mt-2.5 text-[12px] font-semibold leading-snug text-primary-foreground">
-        <span className="tabular-nums text-emerald-400">
-          {stats.onlyFitPercent}%
-        </span>{" "}
-        <span className="text-emerald-400">OnlyFits</span>
-        {stats.lastAnalysisDateLabel ? (
-          <>
-            {" "}
-            <span className="text-primary-foreground/90">
-              • Updated {stats.lastAnalysisDateLabel}
-            </span>
-          </>
-        ) : null}
-      </p>
+      {stats.lastAnalysisDateLabel ? (
+        <p className="mt-2.5 text-[12px] font-semibold leading-snug text-primary-foreground/90">
+          Updated {stats.lastAnalysisDateLabel}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { ChipMultiSelect } from "@/components/ui/chip-multi-select";
 import { EmployerRatingSlider } from "@/components/employer-rating-slider";
 import { MinimumHourlyRateSlider } from "@/components/minimum-hourly-rate-slider";
+import { ResumeFilePicker } from "@/components/resume-file-picker";
+import { TimezoneSelect } from "@/components/timezone-select";
 import {
   COMPANY_TYPE_OPTIONS,
   PROJECT_TYPE_OPTIONS,
@@ -8,6 +10,25 @@ import {
 } from "@/lib/onboarding-options";
 import type { UserProfile } from "@/lib/profile";
 import type { OnboardingStep } from "@/components/onboarding/onboarding-wizard";
+
+export function createResumeUploadStep(input: {
+  fileName: string | null;
+  onParsed: (payload: { resumeId: string; fileName: string }) => void;
+}): OnboardingStep {
+  return {
+    title: "Upload your resume",
+    subtitle:
+      "We'll use it to score job fit on every analysis. You can skip and add one later.",
+    skippable: true,
+    content: (
+      <ResumeFilePicker
+        className="min-h-[180px]"
+        fileName={input.fileName}
+        onParsed={input.onParsed}
+      />
+    ),
+  };
+}
 
 export function createPreferenceSteps(
   profile: UserProfile,
@@ -59,14 +80,26 @@ export function createPreferenceSteps(
       ),
     },
     {
-      title: "Which regions are you open to?",
-      subtitle: "Feeds location and time-zone alignment.",
+      title: "Where are you based?",
+      subtitle: "Your timezone and regions feed location and time-zone fit on reports.",
       content: (
-        <ChipMultiSelect
-          options={REGION_OPTIONS}
-          value={profile.preferredRegions}
-          onChange={(v) => patch({ preferredRegions: v })}
-        />
+        <div className="space-y-6">
+          <TimezoneSelect
+            id="onboarding-timezone"
+            value={profile.timezone}
+            onChange={(timezone) => patch({ timezone })}
+          />
+          <div className="flex flex-col gap-2">
+            <p className="text-[13px] font-normal uppercase tracking-wide text-muted-foreground">
+              Regions you&apos;re open to
+            </p>
+            <ChipMultiSelect
+              options={REGION_OPTIONS}
+              value={profile.preferredRegions}
+              onChange={(v) => patch({ preferredRegions: v })}
+            />
+          </div>
+        </div>
       ),
     },
   ];

@@ -1,12 +1,7 @@
 import type { AnalysisRecord } from "@/lib/types";
 
-/** Display scale 0–10 = fit_score ÷ 100 stored as 0–100. */
-export const ONLY_FIT_SCORE_MIN = 90;
-
 export interface HomeFitStats {
   averageFitOnTen: number | null;
-  onlyFitCount: number;
-  onlyFitPercent: number;
   analyzedCount: number;
   /** e.g. "June 17, 2026" from the most recent analysis — shown as "Updated …" on home. */
   lastAnalysisDateLabel: string | null;
@@ -58,16 +53,11 @@ function formatLastAnalysisDateLabel(
   }).format(date);
 }
 
-/** Home hero metrics — average fit (0–10) and OnlyFit share across analyzed jobs. */
+/** Home hero metrics — average fit (0–10) across analyzed jobs. */
 export function computeHomeFitStats(analyses: AnalysisRecord[]): HomeFitStats {
   const fitScores = analyses
     .map((row) => row.fit_score)
     .filter((value): value is number => value != null);
-
-  let onlyFitCount = 0;
-  for (const score of fitScores) {
-    if (score >= ONLY_FIT_SCORE_MIN) onlyFitCount++;
-  }
 
   const analyzedCount = analyses.length;
   const averageFitOnTen =
@@ -82,9 +72,6 @@ export function computeHomeFitStats(analyses: AnalysisRecord[]): HomeFitStats {
 
   return {
     averageFitOnTen,
-    onlyFitCount,
-    onlyFitPercent:
-      analyzedCount > 0 ? Math.round((onlyFitCount / analyzedCount) * 100) : 0,
     analyzedCount,
     lastAnalysisDateLabel: formatLastAnalysisDateLabel(analyses),
   };

@@ -13,6 +13,8 @@ export interface OnboardingStep {
   title: string;
   subtitle?: string;
   content: React.ReactNode;
+  /** When true, header skip advances to the next step instead of exiting the flow. */
+  skippable?: boolean;
 }
 
 interface OnboardingWizardProps {
@@ -27,6 +29,7 @@ interface OnboardingWizardProps {
   finishLabel?: string;
   continueLabel?: string;
   skipLabel?: string;
+  skipStepLabel?: string;
   busyLabel?: string;
 }
 
@@ -42,14 +45,24 @@ export function OnboardingWizard({
   finishLabel = "Finish",
   continueLabel = "Continue",
   skipLabel = "Skip for now",
+  skipStepLabel = "Skip",
   busyLabel = "Saving…",
 }: OnboardingWizardProps) {
   const totalSteps = steps.length;
   const current = steps[step];
   const isLast = step === totalSteps - 1;
   const progress = Math.round(((step + 1) / totalSteps) * 100);
+  const stepSkippable = current?.skippable === true && !isLast;
 
   if (!current) return null;
+
+  function handleHeaderSkip() {
+    if (stepSkippable) {
+      onStepChange(step + 1);
+      return;
+    }
+    onSkip?.();
+  }
 
   return (
     <div className={screenShellClass}>
@@ -73,13 +86,13 @@ export function OnboardingWizard({
               Step {step + 1} of {totalSteps}
             </span>
           ) : null}
-          {onSkip ? (
+          {stepSkippable || onSkip ? (
             <button
               type="button"
-              onClick={onSkip}
+              onClick={handleHeaderSkip}
               className="ml-auto text-[13px] font-medium text-muted-foreground hover:text-foreground"
             >
-              {skipLabel}
+              {stepSkippable ? skipStepLabel : skipLabel}
             </button>
           ) : (
             <span className="w-8" aria-hidden />

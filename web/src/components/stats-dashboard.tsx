@@ -4,11 +4,9 @@ import { ReportLink } from "@/components/report-link";
 import { MetricScore } from "@/components/ui/metric-score";
 import { fitScoreOnTen } from "@/components/qualification-score-circle";
 import {
-  computeHomeFitStats,
   type AnalysisStats,
   type RecommendationStat,
 } from "@/lib/analysis-stats";
-import { isNativePlatform } from "@/lib/platform";
 import { formatRelativeTimeAgo } from "@/lib/posting-header-meta";
 import { scoreColor } from "@/lib/score";
 import { cn } from "@/lib/utils";
@@ -97,34 +95,16 @@ function RecommendationDonut({
   stats: RecommendationStat[];
   total: number;
 }) {
-  const native = isNativePlatform();
-
   return (
-    <div
-      className={cn(
-        native
-          ? "flex items-center justify-start gap-3"
-          : "flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6",
-      )}
-    >
-      <div
-        className={cn(
-          "relative shrink-0",
-          native ? "size-[6.25rem]" : "size-[7.5rem]",
-        )}
-      >
+    <div className="flex items-center justify-start gap-3">
+      <div className="relative size-[6.25rem] shrink-0">
         <div
           className="size-full rounded-full"
           style={{ background: recommendationConicGradient(stats) }}
           aria-hidden
         />
         <div className="absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-background text-center">
-          <span
-            className={cn(
-              "font-semibold tabular-nums leading-none",
-              native ? "text-[20px]" : "text-[22px]",
-            )}
-          >
+          <span className="text-[20px] font-semibold tabular-nums leading-none">
             {total}
           </span>
           <span className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -132,19 +112,11 @@ function RecommendationDonut({
           </span>
         </div>
       </div>
-      <ul
-        className={cn(
-          "min-w-0 flex-1",
-          native ? "space-y-1.5" : "space-y-2",
-        )}
-      >
+      <ul className="min-w-0 flex-1 space-y-1.5">
         {stats.map((item, index) => (
           <li
             key={item.label}
-            className={cn(
-              "flex items-center gap-2",
-              native ? "text-[12px] leading-tight" : "text-[13px]",
-            )}
+            className="flex items-center gap-2 text-[12px] leading-tight"
           >
             <span
               className="size-2 shrink-0 rounded-full"
@@ -155,12 +127,10 @@ function RecommendationDonut({
               aria-hidden
             />
             <span className="min-w-0 flex-1 truncate">
-              {native
-                ? summarizeRecommendationLabel(item.label)
-                : item.label}
+              {summarizeRecommendationLabel(item.label)}
             </span>
             <span className="shrink-0 tabular-nums text-muted-foreground">
-              {native ? `${item.pct}%` : `${item.count} · ${item.pct}%`}
+              {item.pct}%
             </span>
           </li>
         ))}
@@ -306,7 +276,6 @@ export function StatsDashboard({
   analyses: StatsRow[];
   stats: AnalysisStats;
 }) {
-  const homeStats = computeHomeFitStats(analyses);
   const tableRows = analyses.slice(0, 12);
 
   return (
@@ -321,18 +290,13 @@ export function StatsDashboard({
           }
         />
         <KpiCard
-          label="OnlyFit rate"
-          value={`${homeStats.onlyFitPercent}%`}
-          hint={`${homeStats.onlyFitCount} at 9.0+`}
-        />
-        <KpiCard
           label="Saved"
           value={String(stats.savedCount)}
           hint="Bookmarked roles"
         />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="flex flex-col gap-3">
         <DashboardPanel title="Recommendations">
           {stats.recommendationStats.length > 0 ? (
             <RecommendationDonut

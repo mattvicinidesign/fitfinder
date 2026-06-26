@@ -43,14 +43,14 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
   },
   {
-    "id": "21311098",
-    "title": "Graphic Designer, Merchandising",
-    "company": "SpaceX",
-    "location": "El Segundo, CA",
+    "id": "21875106",
+    "title": "Safety Investigation Specialist II",
+    "company": "Uber",
+    "location": "Gajuwaka, India",
     "level": "Mid Level",
-    "publishedAt": "2026-06-20T18:31:18Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/graphic-designer-merchandising",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+    "publishedAt": "2026-06-23T01:03:01Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/safety-investigation-specialist-ii-66930a",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
     "id": "21866908",
@@ -193,13 +193,13 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000106/small_logo.png?v=5d4d6dac86a0ea7229ffbf5eb4358bd1490c38bd69c72f7a8f37d9f6bbde9601"
   },
   {
-    "id": "21633158",
-    "title": "Senior Visual Design Artist - Riftbound",
-    "company": "Riot Games",
-    "location": "Shanghai, China",
+    "id": "21884763",
+    "title": "VP, Product",
+    "company": "Rent the Runway",
+    "location": "New York, NY",
     "level": "Senior Level",
-    "publishedAt": "2026-06-24T18:30:09Z",
-    "applyUrl": "https://www.themuse.com/jobs/riotgames/senior-visual-design-artist-riftbound",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
+    "publishedAt": "2026-06-25T18:47:05Z",
+    "applyUrl": "https://www.themuse.com/jobs/renttherunway/vp-product",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000197/small_logo.png"
   }
 ] as RecommendedJob[];

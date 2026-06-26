@@ -39,9 +39,10 @@ import {
 } from "@/lib/local-profile-prefs";
 import { AppearanceModeSetting, type AppearanceMode } from "@/components/appearance-mode-setting";
 import { ResumeFilePicker } from "@/components/resume-file-picker";
+import { TimezoneSelect } from "@/components/timezone-select";
 import { deleteAccount } from "@/lib/delete-account";
 import { navigateApp } from "@/lib/navigate-app";
-import { TIMEZONE_OPTIONS } from "@/lib/timezone-options";
+import { fetchLatestUserResume } from "@/lib/resume-documents";
 import { cn } from "@/lib/utils";
 import {
   SkeletonProfileScreen,
@@ -76,6 +77,7 @@ export function ProfileScreen() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [appearanceMode, setAppearanceMode] = useState<AppearanceMode>("dark");
   const [savedAppearanceMode, setSavedAppearanceMode] = useState<AppearanceMode>("dark");
+  const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const appearanceSyncedRef = useRef(false);
   const generalInfoChanged = generalInfoDirty(profile, savedProfile);
@@ -118,6 +120,8 @@ export function ProfileScreen() {
         setSavedProfile(structuredClone(existing));
         saveLocalProfilePrefs(pickLocalProfilePrefs(loaded));
       }
+      const latestResume = await fetchLatestUserResume();
+      if (latestResume) setResumeFileName(latestResume.fileName);
       setProfileLoading(false);
     })();
   }, []);
@@ -257,7 +261,11 @@ export function ProfileScreen() {
             />
             <div className={FORM_FIELD_GROUP_CLASS}>
               <label className={FORM_FIELD_LABEL_CLASS}>Resume</label>
-              <ResumeFilePicker className="min-h-[140px]" onParsed={() => {}} />
+              <ResumeFilePicker
+                className="min-h-[140px]"
+                fileName={resumeFileName}
+                onParsed={({ fileName }) => setResumeFileName(fileName)}
+              />
             </div>
           </div>
         ) : activeTab === "preferences" ? (
@@ -309,26 +317,11 @@ export function ProfileScreen() {
               />
             </Section>
 
-            <Section title="Timezone">
-              <select
-                value={profile.timezone ?? ""}
-                onChange={(e) =>
-                  patch({ timezone: e.target.value.trim() || null })
-                }
-                className={cn(
-                  "h-11 w-full rounded-md border border-input bg-background px-3 text-[17px] text-foreground",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                )}
-                aria-label="Timezone"
-              >
-                <option value="">Select timezone</option>
-                {TIMEZONE_OPTIONS.map((tz) => (
-                  <option key={tz} value={tz}>
-                    {tz.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>
-            </Section>
+            <TimezoneSelect
+              id="profile-timezone"
+              value={profile.timezone}
+              onChange={(timezone) => patch({ timezone })}
+            />
 
             <section
               className={cn(
