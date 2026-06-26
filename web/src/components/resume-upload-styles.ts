@@ -4,6 +4,9 @@ import { ANALYZE_FIELD_CLASS } from "@/components/analyze-form-styles";
 export const RESUME_UPLOAD_ACCEPT =
   ".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain";
 
+/** iOS WKWebView is more reliable with extension-only accept strings. */
+export const RESUME_UPLOAD_ACCEPT_NATIVE = ".pdf,.doc,.docx,.txt";
+
 export const RESUME_UPLOAD_TITLE = "Upload your resume";
 
 export const RESUME_UPLOAD_HINT = "PDF, Word, or TXT";

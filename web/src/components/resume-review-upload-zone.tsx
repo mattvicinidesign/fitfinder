@@ -5,11 +5,13 @@ import { uploadResume } from "@/lib/resume-upload";
 import { waitForResumeParse } from "@/lib/resume-parse-tracker";
 import {
   RESUME_UPLOAD_ACCEPT,
+  RESUME_UPLOAD_ACCEPT_NATIVE,
   RESUME_UPLOAD_CTA_CLASS,
   RESUME_UPLOAD_HINT,
   RESUME_UPLOAD_TITLE,
   resumeUploadZoneClassName,
 } from "@/components/resume-upload-styles";
+import { isNativePlatform } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -31,8 +33,11 @@ export function ResumeReviewUploadZone({
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<"uploading" | "parsing" | null>(null);
+  const ingestLockRef = useRef(false);
 
   async function processFile(file: File) {
+    if (ingestLockRef.current) return;
+    ingestLockRef.current = true;
     setBusy(true);
     setPhase("uploading");
     try {
@@ -43,6 +48,7 @@ export function ResumeReviewUploadZone({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed.");
     } finally {
+      ingestLockRef.current = false;
       setBusy(false);
       setPhase(null);
       if (fileRef.current) fileRef.current.value = "";
@@ -62,22 +68,20 @@ export function ResumeReviewUploadZone({
         ? "Parsing resume…"
         : null;
 
+  const accept = isNativePlatform()
+    ? RESUME_UPLOAD_ACCEPT_NATIVE
+    : RESUME_UPLOAD_ACCEPT;
+
   return (
     <div className={cn("px-4", className)}>
-      <input
-        ref={fileRef}
-        type="file"
-        className="hidden"
-        accept={RESUME_UPLOAD_ACCEPT}
-        onChange={(e) => handleFiles(e.target.files)}
-      />
-      <button
-        type="button"
-        disabled={busy || disabled}
-        aria-label="Upload resume for review"
-        onClick={() => {
-          if (!busy && !disabled) fileRef.current?.click();
-        }}
+      <label
+        className={resumeUploadZoneClassName(
+          cn(
+            "relative block",
+            pinnedBottom ? "py-6" : "min-h-[220px]",
+            dragOver && "border-primary/50 bg-muted/55",
+          ),
+        )}
         onDragOver={(e) => {
           e.preventDefault();
           if (!busy && !disabled) setDragOver(true);
@@ -88,22 +92,31 @@ export function ResumeReviewUploadZone({
           setDragOver(false);
           handleFiles(e.dataTransfer.files);
         }}
-        className={resumeUploadZoneClassName(
-          cn(
-            pinnedBottom ? "py-6" : "min-h-[220px]",
-            dragOver && "border-primary/50 bg-muted/55",
-          ),
-        )}
       >
-        <span className={RESUME_UPLOAD_CTA_CLASS}>
-          {busy ? statusLabel : RESUME_UPLOAD_TITLE}
-        </span>
-        {!busy ? (
-          <span className="text-[13px] text-muted-foreground">
-            {RESUME_UPLOAD_HINT}
+        <input
+          ref={fileRef}
+          type="file"
+          accept={accept}
+          disabled={busy || disabled}
+          aria-label="Upload resume for review"
+          onChange={(e) => handleFiles(e.target.files)}
+          onInput={(e) => handleFiles(e.currentTarget.files)}
+          className={cn(
+            "absolute inset-0 z-10 h-full w-full cursor-pointer opacity-[0.0001]",
+            (busy || disabled) && "pointer-events-none",
+          )}
+        />
+        <div className="pointer-events-none flex flex-col items-center justify-center gap-2 text-center">
+          <span className={RESUME_UPLOAD_CTA_CLASS}>
+            {busy ? statusLabel : RESUME_UPLOAD_TITLE}
           </span>
-        ) : null}
-      </button>
+          {!busy ? (
+            <span className="text-[13px] text-muted-foreground">
+              {RESUME_UPLOAD_HINT}
+            </span>
+          ) : null}
+        </div>
+      </label>
     </div>
   );
 }

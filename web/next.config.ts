@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import packageJson from "./package.json";
 
 const isCapacitor = process.env.CAPACITOR_BUILD === "true";
 
@@ -33,6 +34,7 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_URL: publicAppUrl,
     NEXT_PUBLIC_ENABLE_SPLASH_QA: splashQaPublicFlag,
+    NEXT_PUBLIC_APP_VERSION: packageJson.version,
   },
   // Static export for Capacitor iOS; standard build for Vercel (SSR + proxy).
   output: isCapacitor ? "export" : undefined,

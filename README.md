@@ -99,7 +99,7 @@ behave as **web** (`isNativePlatform()` is false). iOS uses the same bundle afte
 
 | Concern | Web / preview / Vercel | iOS (Capacitor) |
 | ------- | ---------------------- | --------------- |
-| Edge Functions | `/api/functions/*` proxy | Direct Supabase URL |
+| Edge Functions | `/api/functions/*` proxy (`src/proxy.ts` excludes `/api` so route handlers work in `next dev`) | Direct Supabase URL |
 | Recommended jobs | `GET /api/jobs/recommended` (The Muse, 5m revalidate) | Jobs baked into JS at `cap:sync`; live refresh from Vercel; `@capacitor/browser` for external links |
 | Auth session | Cookies + server PKCE callback | localStorage + client callback + `fitfinder://` |
 | Backend calls | `web/src/lib/invoke-function.ts` | Same module |

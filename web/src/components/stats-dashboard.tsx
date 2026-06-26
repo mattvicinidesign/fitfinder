@@ -294,6 +294,14 @@ export function StatsDashboard({
           value={String(stats.savedCount)}
           hint="Bookmarked roles"
         />
+        <KpiCard
+          label="Strong pursuits"
+          value={String(stats.strongPursuitCount)}
+          hint="Top-tier matches"
+          valueClassName={
+            stats.strongPursuitCount > 0 ? "text-primary" : undefined
+          }
+        />
       </div>
 
       <div className="flex flex-col gap-3">

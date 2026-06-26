@@ -17,6 +17,30 @@ import {
 
 export { waitForResumeParse };
 
+function guessMimeType(fileName: string): string {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (lower.endsWith(".doc")) return "application/msword";
+  if (lower.endsWith(".docx")) {
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
+  if (lower.endsWith(".txt")) return "text/plain";
+  return "application/octet-stream";
+}
+
+/** iCloud / Files on iOS can report size 0 until the blob is read. */
+export async function ensureReadableResumeFile(file: File): Promise<File> {
+  if (file.size > 0) return file;
+  const data = await file.arrayBuffer();
+  if (data.byteLength === 0) {
+    throw new Error(
+      "Could not read that file. Save it on your device or try a PDF export.",
+    );
+  }
+  const name = file.name?.trim() || "resume.pdf";
+  return new File([data], name, { type: file.type || guessMimeType(name) });
+}
+
 async function extractTextForParse(file: File): Promise<string> {
   try {
     return (await extractResumeTextFromFile(file)).trim();
@@ -34,18 +58,19 @@ export async function uploadResume(file: File): Promise<{
   fileUrl: string;
   fileName: string;
 }> {
+  const readable = await ensureReadableResumeFile(file);
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Sign in to upload a resume.");
 
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const safeName = readable.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${user.id}/${Date.now()}-${safeName}`;
 
   const { error: uploadError } = await supabase.storage
     .from("resumes")
-    .upload(path, file, { upsert: false });
+    .upload(path, readable, { upsert: false });
   if (uploadError) throw new Error(uploadError.message);
 
   const {
@@ -59,23 +84,23 @@ export async function uploadResume(file: File): Promise<{
     .single();
   if (insertError) throw new Error(insertError.message);
 
-  const lowerName = file.name.toLowerCase();
+  const lowerName = readable.name.toLowerCase();
   let resumeText = "";
 
   if (lowerName.endsWith(".pdf")) {
     try {
-      const extracted = await extractPdfRunsFromFile(file);
+      const extracted = await extractPdfRunsFromFile(readable);
       resumeText = extracted.text;
-      await cacheResumeFile(row.id, file, {
-        fileName: file.name,
+      await cacheResumeFile(row.id, readable, {
+        fileName: readable.name,
         pageCount: extracted.pageCount,
       });
       await cacheResumePdfRuns(row.id, extracted.runs);
     } catch {
-      resumeText = await extractTextForParse(file);
+      resumeText = await extractTextForParse(readable);
       try {
-        await cacheResumeFile(row.id, file, {
-          fileName: file.name,
+        await cacheResumeFile(row.id, readable, {
+          fileName: readable.name,
           pageCount: 1,
         });
       } catch {
@@ -83,10 +108,10 @@ export async function uploadResume(file: File): Promise<{
       }
     }
   } else {
-    resumeText = await extractTextForParse(file);
+    resumeText = await extractTextForParse(readable);
     try {
-      await cacheResumeFile(row.id, file, {
-        fileName: file.name,
+      await cacheResumeFile(row.id, readable, {
+        fileName: readable.name,
         pageCount: 1,
       });
     } catch {
@@ -111,7 +136,7 @@ export async function uploadResume(file: File): Promise<{
   return {
     resumeId: row.id,
     fileUrl: publicUrl,
-    fileName: file.name,
+    fileName: readable.name,
   };
 }
 

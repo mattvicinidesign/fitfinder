@@ -6,11 +6,13 @@ import { uploadResume } from "@/lib/resume-upload";
 import { waitForResumeParse } from "@/lib/resume-parse-tracker";
 import {
   RESUME_UPLOAD_ACCEPT,
+  RESUME_UPLOAD_ACCEPT_NATIVE,
   RESUME_UPLOAD_CTA_CLASS,
   RESUME_UPLOAD_HINT,
   RESUME_UPLOAD_TITLE,
   resumeUploadZoneClassName,
 } from "@/components/resume-upload-styles";
+import { isNativePlatform } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -24,6 +26,9 @@ interface Props {
 /**
  * Resume upload: PDF, Word, or text file. Shows success only after storage
  * upload and AI parsing both finish.
+ *
+ * iOS WKWebView ignores display:none file inputs — the picker opens but
+ * onChange never fires. Use an opacity-0 overlay input instead.
  */
 export function ResumeFilePicker({
   onParsed,
@@ -34,10 +39,13 @@ export function ResumeFilePicker({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [parsing, setParsing] = useState(false);
+  const ingestLockRef = useRef(false);
 
   async function handleFiles(files: FileList | null) {
     const file = files?.[0];
-    if (!file) return;
+    if (!file || ingestLockRef.current) return;
+
+    ingestLockRef.current = true;
     setUploading(true);
     setParsing(false);
     try {
@@ -50,6 +58,7 @@ export function ResumeFilePicker({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed.");
     } finally {
+      ingestLockRef.current = false;
       setUploading(false);
       setParsing(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -65,23 +74,30 @@ export function ResumeFilePicker({
         ? "Tap to replace"
         : null;
 
+  const accept = isNativePlatform()
+    ? RESUME_UPLOAD_ACCEPT_NATIVE
+    : RESUME_UPLOAD_ACCEPT;
+
   return (
-    <>
+    <label
+      className={resumeUploadZoneClassName(
+        cn("relative block h-full", className),
+      )}
+    >
       <input
         ref={fileRef}
         type="file"
-        className="hidden"
-        accept={RESUME_UPLOAD_ACCEPT}
-        onChange={(e) => handleFiles(e.target.files)}
-      />
-      <button
-        type="button"
+        accept={accept}
         disabled={disabled || busy}
-        onClick={() => fileRef.current?.click()}
-        className={resumeUploadZoneClassName(
-          cn("h-full", className),
+        aria-label={RESUME_UPLOAD_TITLE}
+        onChange={(e) => void handleFiles(e.target.files)}
+        onInput={(e) => void handleFiles(e.currentTarget.files)}
+        className={cn(
+          "absolute inset-0 z-10 h-full w-full cursor-pointer opacity-[0.0001]",
+          (disabled || busy) && "pointer-events-none",
         )}
-      >
+      />
+      <div className="pointer-events-none flex flex-col items-center justify-center gap-2 py-8 text-center">
         {fileName ? (
           <>
             {parsing ? (
@@ -110,7 +126,7 @@ export function ResumeFilePicker({
             ) : null}
           </>
         )}
-      </button>
-    </>
+      </div>
+    </label>
   );
 }

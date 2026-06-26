@@ -2,33 +2,25 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
-import { Sparkles, X } from "lucide-react";
+import { X } from "lucide-react";
 import {
   markSearchReportsTypewriterDone,
   shouldPlaySearchReportsTypewriter,
 } from "@/lib/app-session";
+import { getAppVersionLabel } from "@/lib/app-version";
 import { cn } from "@/lib/utils";
 
 const PLACEHOLDER_TEXT = "Search Reports";
 const TYPEWRITER_CHAR_MS = 68;
 
-function AiModeButton({ className }: { className?: string }) {
+function AppVersionBadge() {
   return (
-    <button
-      type="button"
-      aria-label="AI mode"
-      onClick={(event) => event.stopPropagation()}
-      onMouseDown={(event) => event.stopPropagation()}
-      className={cn(
-        "inline-flex shrink-0 items-center gap-1 rounded-full border border-white/20 bg-white/10 px-2.5 py-1",
-        "text-[12px] font-semibold leading-none text-white/90 transition-colors",
-        "hover:bg-white/15 active:scale-[0.98]",
-        className,
-      )}
+    <span
+      className="inline-flex shrink-0 items-center rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[12px] font-semibold leading-none text-white/70"
+      aria-label={`Software version ${getAppVersionLabel()}`}
     >
-      <Sparkles className="size-3 shrink-0 text-emerald-300" aria-hidden />
-      AI mode
-    </button>
+      {getAppVersionLabel()}
+    </span>
   );
 }
 
@@ -199,7 +191,7 @@ export function HomeSearchReportsBar({
           <X className="size-4" aria-hidden />
         </button>
       ) : (
-        <AiModeButton />
+        <AppVersionBadge />
       )}
       </div>
       {children}

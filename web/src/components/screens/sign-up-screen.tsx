@@ -175,7 +175,6 @@ export function SignUpScreen({
   const handleResumeParsed = useCallback(
     ({ fileName }: { resumeId: string; fileName: string }) => {
       setResumeFileName(fileName);
-      setStep((current) => (current === 1 ? 2 : current));
     },
     [],
   );

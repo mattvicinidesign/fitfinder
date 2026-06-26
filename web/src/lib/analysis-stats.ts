@@ -16,6 +16,7 @@ export interface RecommendationStat {
 export interface AnalysisStats {
   totalAnalyses: number;
   savedCount: number;
+  strongPursuitCount: number;
   averageFit: number | null;
   averageQualification: number | null;
   averageConfidence: number | null;
@@ -99,6 +100,9 @@ export function computeAnalysisStats(
   }
 
   const total = analyses.length;
+  const strongPursuitCount = analyses.filter(
+    (row) => row.recommendation_label?.trim() === "Strong Pursuit",
+  ).length;
   const recommendationStats = [...labelCounts.entries()]
     .map(([label, count]) => ({
       label,
@@ -110,6 +114,7 @@ export function computeAnalysisStats(
   return {
     totalAnalyses: total,
     savedCount,
+    strongPursuitCount,
     averageFit: average(fitScores),
     averageQualification: average(qualificationScores),
     averageConfidence: average(confidenceScores),
