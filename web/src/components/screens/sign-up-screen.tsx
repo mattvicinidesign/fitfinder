@@ -30,7 +30,6 @@ import {
 import {
   clearOnboardingProgress,
   loadOnboardingProgress,
-  markOnboardingWelcomeRestored,
   saveOnboardingProgress,
 } from "@/lib/onboarding-progress";
 import { sendSignupVerificationEmail } from "@/lib/signup-auth";
@@ -107,12 +106,12 @@ function readInitialSignupState() {
   const saved = loadOnboardingProgress();
   const baseProfile = emptyUserProfile();
 
-  if (saved?.phase === "signup" && saved.signupStep >= 1) {
+  if (saved?.phase === "signup" && !saved.emailSent) {
     return {
       profile: { ...baseProfile, ...saved.profile },
       email: saved.email || "",
-      step: saved.signupStep,
-      emailSent: saved.emailSent,
+      step: saved.signupStep ?? 0,
+      emailSent: false,
       isFreshSignup: false,
     };
   }
@@ -162,8 +161,6 @@ export function SignUpScreen({
       profile: updates.profile ?? progressRef.current.profile,
     };
     progressRef.current = next;
-    if (next.signupStep < 1 && !next.emailSent) return;
-
     saveOnboardingProgress({
       phase: "signup",
       ...next,
@@ -173,7 +170,7 @@ export function SignUpScreen({
   function patch(next: Partial<UserProfile>) {
     setProfile((current) => {
       const merged = { ...current, ...next };
-      if (step >= 2) persistProgress({ profile: merged });
+      persistProgress({ profile: merged });
       return merged;
     });
   }
@@ -211,7 +208,7 @@ export function SignUpScreen({
               value={email}
               onChange={(value) => {
                 setEmail(value);
-                if (step >= 1) persistProgress({ email: value });
+                persistProgress({ email: value });
               }}
             />
             <LocationSelect
@@ -282,16 +279,12 @@ export function SignUpScreen({
       return;
     }
     setStep(nextStep);
-    if (nextStep >= 1) {
-      persistProgress({ signupStep: nextStep });
-    } else {
-      markOnboardingWelcomeRestored();
-    }
+    persistProgress({ signupStep: nextStep });
   }
 
   useEffect(() => {
     void (async () => {
-      const { error } = await ensureGuestSession();
+      const { error } = await ensureGuestSession({ deferLaunchCompletion: true });
       if (error) return;
       const latestResume = await fetchLatestUserResume();
       if (latestResume) setResumeFileName(latestResume.fileName);
@@ -327,7 +320,6 @@ export function SignUpScreen({
         const { App } = await import("@capacitor/app");
         const sub = await App.addListener("appStateChange", ({ isActive }) => {
           if (isActive) return;
-          if (progressRef.current.signupStep < 1) return;
           saveOnboardingProgress({
             phase: "signup",
             signupStep: progressRef.current.signupStep,
@@ -408,6 +400,7 @@ export function SignUpScreen({
       finishLabel="Sign Up"
       busyLabel="Sending…"
       continueLabel={continueLabel}
+      compactTopInset={embedded}
     />
   );
 

@@ -30,6 +30,7 @@ import {
 import {
   markOnboardingWelcomeRestored,
   resolvePostSplashDestination,
+  saveOnboardingProgress,
 } from "@/lib/onboarding-progress";
 import { isSplashQaEnabled, clearQaLaunchSimulation, getQaLaunchSimulationMode } from "@/lib/splash-qa";
 import { markAppShellVisible } from "@/lib/app-shell-visible";
@@ -82,6 +83,7 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
     (targetPathname: string) => {
       consumeSignupLaunch();
       clearSignupQuery(targetPathname);
+      saveOnboardingProgress({ phase: "signup", signupStep: 0 });
       setPhase("signup");
     },
     [],
@@ -264,6 +266,7 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleSignUpFromWelcome = useCallback(() => {
+    saveOnboardingProgress({ phase: "signup", signupStep: 0 });
     setPhase("signup");
   }, []);
 

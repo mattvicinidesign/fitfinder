@@ -35,6 +35,8 @@ interface OnboardingWizardProps {
   skipLabel?: string;
   skipStepLabel?: string;
   busyLabel?: string;
+  /** Inside LaunchOverlayFrame — parent already applies safe-area top inset. */
+  compactTopInset?: boolean;
 }
 
 export function OnboardingWizard({
@@ -52,6 +54,7 @@ export function OnboardingWizard({
   skipLabel = "Skip for now",
   skipStepLabel = "Skip",
   busyLabel = "Saving…",
+  compactTopInset = false,
 }: OnboardingWizardProps) {
   const totalSteps = steps.length;
   const current = steps[step];
@@ -82,7 +85,9 @@ export function OnboardingWizard({
 
   return (
     <div className={screenShellClass}>
-      <StickyScreenHeader className={`px-4 pb-3 ${safeTopTitle}`}>
+      <StickyScreenHeader
+        className={`px-4 pb-3 ${compactTopInset ? "pt-3" : safeTopTitle}`}
+      >
         <div className="flex items-center justify-between gap-3">
           {showHeaderBack ? (
             <CircleBackButton

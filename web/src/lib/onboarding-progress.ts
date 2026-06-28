@@ -72,6 +72,12 @@ export function clearOnboardingProgress(): void {
   localStorage.removeItem(ONBOARDING_PROGRESS_KEY);
 }
 
+/** Signup started but email verification not sent yet — resume on cold start. */
+export function hasInProgressSignup(): boolean {
+  const progress = loadOnboardingProgress();
+  return progress?.phase === "signup" && !progress.emailSent;
+}
+
 /** Step 1 = General Details (signup wizard step 0 completed). */
 export function hasCompletedOnboardingStep1(): boolean {
   const progress = loadOnboardingProgress();
@@ -82,7 +88,7 @@ export function hasCompletedOnboardingStep1(): boolean {
 }
 
 export function shouldResumeSignupWizard(): boolean {
-  return hasCompletedOnboardingStep1();
+  return hasInProgressSignup();
 }
 
 export function markOnboardingWelcomeRestored(): void {
@@ -92,13 +98,12 @@ export function markOnboardingWelcomeRestored(): void {
 export function resolvePostSplashDestination(
   signupFlowRequested: boolean,
 ): PostSplashDestination {
-  if (hasCompletedWelcome()) {
-    return signupFlowRequested ? "signup" : "home";
+  if (hasInProgressSignup()) {
+    return "signup";
   }
 
-  const progress = loadOnboardingProgress();
-  if (shouldResumeSignupWizard()) {
-    return "signup";
+  if (hasCompletedWelcome()) {
+    return signupFlowRequested ? "signup" : "home";
   }
 
   if (signupFlowRequested) {

@@ -48,9 +48,14 @@ export function AppSessionBridge() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) return;
+      const { hasInProgressSignup } = await import("@/lib/onboarding-progress");
       const { markAppSessionActive, markLaunchFlowComplete } = await import(
         "@/lib/app-session"
       );
+      if (hasInProgressSignup()) {
+        markAppSessionActive();
+        return;
+      }
       markLaunchFlowComplete();
       markAppSessionActive();
       await applyPendingSignupProfile();

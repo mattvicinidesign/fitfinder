@@ -30,10 +30,14 @@ function withTimeout<T>(
 export async function ensureGuestSession(options?: {
   /** User explicitly finished onboarding (welcome) — always persist launch state. */
   completeLaunchFlow?: boolean;
+  /** Signup wizard in progress — do not mark splash/welcome complete yet. */
+  deferLaunchCompletion?: boolean;
 }): Promise<{ error: string | null }> {
   const completeLaunchFlow = options?.completeLaunchFlow ?? false;
+  const deferLaunchCompletion = options?.deferLaunchCompletion ?? false;
   const shouldMarkLaunchComplete =
-    completeLaunchFlow || !isQaLaunchSimulationPending();
+    !deferLaunchCompletion &&
+    (completeLaunchFlow || !isQaLaunchSimulationPending());
 
   const supabase = createClient();
   const {
