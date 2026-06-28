@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { THEME_BLOCKING_SCRIPT } from "@/lib/theme-script";
 import { Toaster } from "@/components/ui/sonner";
 import { AppSessionBridge } from "@/components/app-session-bridge";
 import { CapacitorBridge } from "@/components/capacitor-bridge";
@@ -50,8 +51,11 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${geistMono.variable} ${ibmPlexSans.variable} h-full overflow-x-hidden antialiased`}
+      className={`${inter.variable} ${geistMono.variable} ${ibmPlexSans.variable} dark h-full overflow-x-hidden antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BLOCKING_SCRIPT }} />
+      </head>
       <body className="h-dvh overflow-hidden overflow-x-hidden bg-background text-foreground">
         <ThemeProvider>
           <FirstLaunchReset />

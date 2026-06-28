@@ -380,7 +380,7 @@ export function HomeScreen() {
             "h-12 w-full rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]",
           )}
         >
-          Analyze Fit
+          Scan Resume
         </Link>
       </StickyBottomCta>
     </div>

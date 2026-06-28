@@ -6,8 +6,8 @@ export const SIGNUP_QA_DEFAULTS = {
   location: "United States",
 } as const;
 
-/** Dev-only prefills for the sign-up account step. */
+/** Signup fields stay empty on first visit — including after QA first-launch resets. */
 export function getSignupQaDefaults() {
   if (!isSplashQaEnabled()) return null;
-  return SIGNUP_QA_DEFAULTS;
+  return null;
 }

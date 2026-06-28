@@ -23,6 +23,39 @@ export const REGION_OPTIONS = [
   "Worldwide",
 ] as const;
 
+/** Profile / signup country — used for country-fit scoring on reports. */
+export const LOCATION_OPTIONS = [
+  "United States",
+  "Canada",
+  "United Kingdom",
+  "Australia",
+  "Germany",
+  "France",
+  "India",
+  "Netherlands",
+  "Spain",
+  "Italy",
+  "Brazil",
+  "Mexico",
+  "Japan",
+  "Singapore",
+  "Ireland",
+  "New Zealand",
+  "Philippines",
+  "Poland",
+  "Ukraine",
+  "Sweden",
+  "Norway",
+  "Denmark",
+  "Finland",
+  "Switzerland",
+  "Austria",
+  "Belgium",
+  "Portugal",
+  "Israel",
+  "South Africa",
+] as const;
+
 /** Ongoing retainer vs one-time project — maps to posting engagement duration. */
 export const PROJECT_TYPE_OPTIONS = ["Ongoing", "One-Time"] as const;
 

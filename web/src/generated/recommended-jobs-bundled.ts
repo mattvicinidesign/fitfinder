@@ -3,16 +3,6 @@ import type { RecommendedJob } from "@/lib/types";
 
 export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
   {
-    "id": "21811147",
-    "title": "Product Designer II - Consumer Discovery",
-    "company": "Uber",
-    "location": "Location not listed",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-09T00:11:59Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/product-designer-ii-consumer-discovery",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
-  },
-  {
     "id": "14137481",
     "title": "UX/UI Designer (Mid level)",
     "company": "Designit",
@@ -33,6 +23,86 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
   },
   {
+    "id": "21893837",
+    "title": "Sr Technical Program Manager",
+    "company": "Uber",
+    "location": "Location not listed",
+    "level": "Senior Level",
+    "publishedAt": "2026-06-27T00:43:47Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/sr-technical-program-manager-a28dbb",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
+  },
+  {
+    "id": "21040163",
+    "title": "Sr. Manufacturing Engineer, Tool & Die Machining (Starlink)",
+    "company": "SpaceX",
+    "location": "Lockhart, TX",
+    "level": "Senior Level",
+    "publishedAt": "2026-06-26T18:34:37Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/sr-manufacturing-engineer-tool-die-machining-starlink-bde375",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21870678",
+    "title": "Process Technician, Injection Molding (Starlink) - 2nd shift",
+    "company": "SpaceX",
+    "location": "Lockhart, TX",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-26T18:34:29Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/process-technician-injection-molding-starlink-2nd-shift",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21649313",
+    "title": "Mechanical Engineer - Manufacturing Machinery, Satellites (Starlink)",
+    "company": "SpaceX",
+    "location": "Redmond, WA",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-26T18:34:25Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/mechanical-engineer-manufacturing-machinery-satellites-starlink",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21429881",
+    "title": "Manufacturing Engineer, Raptor Turbomachinery",
+    "company": "SpaceX",
+    "location": "El Segundo, CA",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-26T18:34:23Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/manufacturing-engineer-raptor-turbomachinery-7927c8",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21870674",
+    "title": "Injection Molding Technician - 2nd Shift",
+    "company": "SpaceX",
+    "location": "Lockhart, TX",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-26T18:34:18Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/injection-molding-technician-2nd-shift",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21789635",
+    "title": "Graphic Designer (Starlink)",
+    "company": "SpaceX",
+    "location": "Lockhart, TX",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-26T18:34:17Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/graphic-designer-starlink",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21633158",
+    "title": "Senior Visual Design Artist - Riftbound",
+    "company": "Riot Games",
+    "location": "Shanghai, China",
+    "level": "Senior Level",
+    "publishedAt": "2026-06-26T18:30:14Z",
+    "applyUrl": "https://www.themuse.com/jobs/riotgames/senior-visual-design-artist-riftbound",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
+  },
+  {
     "id": "21098533",
     "title": "Associate Creative Director",
     "company": "GlossGenius",
@@ -41,16 +111,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-24T18:34:00Z",
     "applyUrl": "https://www.themuse.com/jobs/glossgenius/associate-creative-director",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
-  },
-  {
-    "id": "21875106",
-    "title": "Safety Investigation Specialist II",
-    "company": "Uber",
-    "location": "Gajuwaka, India",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-23T01:03:01Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/safety-investigation-specialist-ii-66930a",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
     "id": "21866908",
@@ -71,36 +131,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-15T23:43:35Z",
     "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-manager-innovation-packaging-equipment-33254e",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
-  },
-  {
-    "id": "21852398",
-    "title": "Automation & Controls Specialist, Tool & Die",
-    "company": "SpaceX",
-    "location": "Lockhart, TX",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-15T23:39:17Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/automation-controls-specialist-tool-die",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21789635",
-    "title": "Graphic Designer (Starlink)",
-    "company": "SpaceX",
-    "location": "Lockhart, TX",
-    "level": "Mid Level",
-    "publishedAt": "2026-05-29T18:34:01Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/graphic-designer-starlink",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21789634",
-    "title": "CMF Designer - Color, Material, and Finish (Starlink)",
-    "company": "SpaceX",
-    "location": "Lockhart, TX",
-    "level": "Mid Level",
-    "publishedAt": "2026-05-29T18:34:00Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/cmf-designer-color-material-and-finish-starlink",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
     "id": "21668812",
@@ -133,34 +163,24 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
   },
   {
-    "id": "21649313",
-    "title": "Mechanical Engineer - Manufacturing Machinery, Satellites (Starlink)",
-    "company": "SpaceX",
-    "location": "Redmond, WA",
+    "id": "21811147",
+    "title": "Product Designer II - Uber Eats, Offers Consumer Experiences",
+    "company": "Uber",
+    "location": "San Francisco, CA",
     "level": "Mid Level",
-    "publishedAt": "2026-05-01T18:34:29Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/mechanical-engineer-manufacturing-machinery-satellites-starlink",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+    "publishedAt": "2026-06-27T00:43:48Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/product-designer-ii-uber-eats-offers-consumer-experiences",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
-    "id": "21388562",
-    "title": "Wastewater Technician (Starlink PCB)",
-    "company": "SpaceX",
-    "location": "Lockhart, TX",
-    "level": "Mid Level",
-    "publishedAt": "2026-04-14T23:32:35Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/wastewater-technician-starlink-pcb-d6cc35",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21418125",
-    "title": "Propulsion Technician (Raptor Production Machining)",
-    "company": "SpaceX",
-    "location": "El Segundo, CA",
-    "level": "Mid Level",
-    "publishedAt": "2026-03-27T18:42:58Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/propulsion-technician-raptor-production-machining",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+    "id": "21889924",
+    "title": "Staff Product Designer",
+    "company": "The Coca-Cola Company",
+    "location": "Atlanta, GA",
+    "level": "Senior Level",
+    "publishedAt": "2026-06-26T18:39:23Z",
+    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/staff-product-designer-730fd2",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
     "id": "21038917",
@@ -181,25 +201,5 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-11T18:29:09Z",
     "applyUrl": "https://www.themuse.com/jobs/nanit/product-design-consultant-contract-36-months",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000106/small_logo.png?v=5d4d6dac86a0ea7229ffbf5eb4358bd1490c38bd69c72f7a8f37d9f6bbde9601"
-  },
-  {
-    "id": "21775680",
-    "title": "Senior Director, Product Design",
-    "company": "Nanit",
-    "location": "New York, NY",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-10T18:29:07Z",
-    "applyUrl": "https://www.themuse.com/jobs/nanit/senior-director-product-design",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000106/small_logo.png?v=5d4d6dac86a0ea7229ffbf5eb4358bd1490c38bd69c72f7a8f37d9f6bbde9601"
-  },
-  {
-    "id": "21884763",
-    "title": "VP, Product",
-    "company": "Rent the Runway",
-    "location": "New York, NY",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-25T18:47:05Z",
-    "applyUrl": "https://www.themuse.com/jobs/renttherunway/vp-product",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000197/small_logo.png"
   }
 ] as RecommendedJob[];

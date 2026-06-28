@@ -11,6 +11,7 @@ import {
   RESUME_UPLOAD_TITLE,
   resumeUploadZoneClassName,
 } from "@/components/resume-upload-styles";
+import { CtaSpinner } from "@/components/ui/cta-spinner";
 import { isNativePlatform } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -61,11 +62,11 @@ export function ResumeReviewUploadZone({
     void processFile(file);
   }
 
-  const statusLabel =
+  const busyLabel =
     phase === "uploading"
-      ? "Uploading…"
+      ? "Uploading resume"
       : phase === "parsing"
-        ? "Parsing resume…"
+        ? "Parsing resume"
         : null;
 
   const accept = isNativePlatform()
@@ -107,8 +108,12 @@ export function ResumeReviewUploadZone({
           )}
         />
         <div className="pointer-events-none flex flex-col items-center justify-center gap-2 text-center">
-          <span className={RESUME_UPLOAD_CTA_CLASS}>
-            {busy ? statusLabel : RESUME_UPLOAD_TITLE}
+          <span
+            className={RESUME_UPLOAD_CTA_CLASS}
+            aria-busy={busy}
+            aria-label={busy ? busyLabel ?? undefined : undefined}
+          >
+            {busy ? <CtaSpinner className="size-8" /> : RESUME_UPLOAD_TITLE}
           </span>
           {!busy ? (
             <span className="text-[13px] text-muted-foreground">

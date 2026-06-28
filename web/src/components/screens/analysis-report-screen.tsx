@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { X } from "lucide-react";
 import { ReportBackButton } from "@/components/report-back-button";
-import { useSearchParams } from "next/navigation";
+import { circleBackButtonClass } from "@/components/ui/circle-back-button";
 import { AnalysisResultView } from "@/components/analysis-result";
 import { ApplicationAssistantSection } from "@/components/application-assistant-section";
 import {
@@ -28,6 +30,7 @@ import type { Compensation } from "@/lib/types";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import { reportRoleTitle } from "@/lib/analysis-report-cache";
 import { cn } from "@/lib/utils";
+import { navigateApp } from "@/lib/navigate-app";
 import { SkeletonAnalysisReport } from "@/components/ui/skeletons";
 import { ReportSummaryHeader } from "@/components/report-summary-header";
 import {
@@ -250,6 +253,8 @@ function ReportShell({
   header?: React.ReactNode;
   footer?: React.ReactNode;
 }) {
+  const router = useRouter();
+
   return (
     <div className={screenShellClass}>
       <StickyScreenHeader
@@ -258,7 +263,17 @@ function ReportShell({
           safeTopCompact,
         )}
       >
-        <ReportBackButton />
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <ReportBackButton />
+          <button
+            type="button"
+            aria-label="Close report"
+            onClick={() => navigateApp("/home", router, "replace")}
+            className={circleBackButtonClass}
+          >
+            <X className="size-5 shrink-0 pointer-events-none" strokeWidth={2.25} aria-hidden />
+          </button>
+        </div>
         {header}
       </StickyScreenHeader>
       <StickyScreenBody

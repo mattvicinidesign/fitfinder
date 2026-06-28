@@ -7,6 +7,7 @@ import { IosGroupedRow, IosGroupedSection } from "@/components/ui/ios-grouped-se
 import { AnalysisResultView } from "@/components/analysis-result";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { FormSelect } from "@/components/form-select";
 import {
   FORM_FIELD_GROUP_CLASS,
   FORM_FIELD_LABEL_CLASS,
@@ -167,8 +168,7 @@ export function CompareScreen() {
           <IosGroupedRow className="space-y-4">
             <div className={FORM_FIELD_GROUP_CLASS}>
               <Label className={FORM_FIELD_LABEL_CLASS}>Role A</Label>
-              <select
-                className="w-full h-11 text-[17px] bg-transparent"
+              <FormSelect
                 value={aId}
                 onChange={(e) => setAId(e.target.value)}
               >
@@ -178,12 +178,11 @@ export function CompareScreen() {
                     {x.job_title ?? "Job"} · {Math.round(x.fit_score ?? 0)} fit
                   </option>
                 ))}
-              </select>
+              </FormSelect>
             </div>
             <div className={cn(FORM_FIELD_GROUP_CLASS, "border-t border-border/60 pt-3")}>
               <Label className={FORM_FIELD_LABEL_CLASS}>Role B</Label>
-              <select
-                className="w-full h-11 text-[17px] bg-transparent"
+              <FormSelect
                 value={bId}
                 onChange={(e) => setBId(e.target.value)}
               >
@@ -193,21 +192,18 @@ export function CompareScreen() {
                     {x.job_title ?? "Job"} · {Math.round(x.fit_score ?? 0)} fit
                   </option>
                 ))}
-              </select>
+              </FormSelect>
             </div>
+            <Button
+              variant="outline"
+              className="w-full h-11 rounded-xl"
+              disabled={busy}
+              onClick={persistComparison}
+            >
+              Save comparison
+            </Button>
           </IosGroupedRow>
         </IosGroupedSection>
-
-        <div className="px-4">
-          <Button
-            variant="outline"
-            className="w-full h-11 rounded-xl"
-            disabled={busy}
-            onClick={persistComparison}
-          >
-            Save comparison
-          </Button>
-        </div>
 
         {resultA ? (
           <div className="px-4 space-y-2">

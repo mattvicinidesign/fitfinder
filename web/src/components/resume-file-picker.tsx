@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import { CtaSpinner } from "@/components/ui/cta-spinner";
 import { uploadResume } from "@/lib/resume-upload";
 import { waitForResumeParse } from "@/lib/resume-parse-tracker";
 import {
@@ -66,13 +67,11 @@ export function ResumeFilePicker({
   }
 
   const busy = uploading || parsing;
-  const statusLabel = uploading
-    ? "Uploading…"
+  const busyLabel = uploading
+    ? "Uploading resume"
     : parsing
-      ? "Parsing resume…"
-      : fileName
-        ? "Tap to replace"
-        : null;
+      ? "Parsing resume"
+      : null;
 
   const accept = isNativePlatform()
     ? RESUME_UPLOAD_ACCEPT_NATIVE
@@ -101,23 +100,27 @@ export function ResumeFilePicker({
         {fileName ? (
           <>
             {parsing ? (
-              <Loader2 className="size-8 animate-spin text-primary" />
+              <CtaSpinner className="size-8" />
             ) : (
               <CheckCircle2 className="size-8 text-primary" />
             )}
             <span className="text-[17px] font-medium text-foreground break-all">
               {fileName}
             </span>
-            {statusLabel ? (
+            {!parsing && !uploading ? (
               <span className="text-[13px] text-muted-foreground">
-                {statusLabel}
+                Tap to replace
               </span>
             ) : null}
           </>
         ) : (
           <>
-            <span className={RESUME_UPLOAD_CTA_CLASS}>
-              {uploading ? "Uploading…" : RESUME_UPLOAD_TITLE}
+            <span
+              className={RESUME_UPLOAD_CTA_CLASS}
+              aria-busy={uploading}
+              aria-label={uploading ? busyLabel ?? undefined : undefined}
+            >
+              {uploading ? <CtaSpinner className="size-8" /> : RESUME_UPLOAD_TITLE}
             </span>
             {!uploading ? (
               <span className="text-[13px] text-muted-foreground">

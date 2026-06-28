@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { CtaSpinner } from "@/components/ui/cta-spinner";
 import { LaunchOverlayFrame } from "@/components/launch-overlay-frame";
 import { WelcomeHeroIllustration } from "@/components/welcome-hero-illustration";
 import { ensureGuestSession } from "@/lib/ensure-guest-session";
@@ -77,18 +78,22 @@ export function WelcomeScreen({ onExit, onSignUp }: WelcomeScreenProps) {
               type="button"
               className="h-12 w-full rounded-xl text-[17px]"
               disabled={busy !== null}
+              aria-busy={busy === "account"}
+              aria-label={busy === "account" ? "Opening sign up" : "Sign up"}
               onClick={handleCreateAccount}
             >
-              {busy === "account" ? "Opening…" : "Sign up"}
+              {busy === "account" ? <CtaSpinner /> : "Sign up"}
             </Button>
             <Button
               type="button"
               variant="outline"
               className="h-12 w-full rounded-xl text-[17px]"
               disabled={busy !== null}
+              aria-busy={busy === "guest"}
+              aria-label={busy === "guest" ? "Starting guest session" : "Use as a guest"}
               onClick={() => void handleContinueAsGuest()}
             >
-              {busy === "guest" ? "Starting…" : "Use as a guest"}
+              {busy === "guest" ? <CtaSpinner /> : "Use as a guest"}
             </Button>
           </div>
         </div>

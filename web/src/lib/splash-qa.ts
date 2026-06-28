@@ -5,6 +5,8 @@ import {
   QA_RETURNING_SPLASH_KEY,
   SIGNUP_LAUNCH_KEY,
 } from "@/lib/app-session";
+import { clearPendingSignup } from "@/lib/pending-signup";
+import { clearProfileHeaderSnapshot } from "@/lib/profile";
 import { clearAllAtsKeywordOptimizations } from "@/lib/resume-review-ats-optimization";
 import { resetAppFirstLaunch } from "@/lib/reset-first-launch";
 
@@ -106,6 +108,8 @@ export function stripQaHardRefreshParam(): void {
 export function simulateFirstLaunch(): void {
   console.log("QA: First Launch Simulation");
   clearOnboardingState();
+  clearPendingSignup();
+  clearProfileHeaderSnapshot();
   clearQaLaunchSimulation();
   setQaLaunchSimulationMode("first");
   qaHardReload();

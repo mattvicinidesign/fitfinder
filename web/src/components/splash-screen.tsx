@@ -120,7 +120,7 @@ export function SplashScreen({
             height={148}
             priority
             className={cn(
-              "mt-8 h-auto w-[100px] max-w-[60vw] transition-all duration-700 ease-out sm:w-[112px]",
+              "mt-2 h-auto w-[100px] max-w-[60vw] transition-all duration-700 ease-out sm:w-[112px]",
               showWordmarkMotion
                 ? "translate-y-0 opacity-100"
                 : "translate-y-2 opacity-0",

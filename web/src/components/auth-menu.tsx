@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { clearProfileHeaderSnapshot } from "@/lib/profile";
 import { requestSignupFlow } from "@/lib/app-session";
 import { ensureGuestSession } from "@/lib/ensure-guest-session";
 
@@ -39,6 +40,7 @@ export function AuthMenu({
   async function signOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    clearProfileHeaderSnapshot();
     await ensureGuestSession();
     router.refresh();
     router.push("/home");

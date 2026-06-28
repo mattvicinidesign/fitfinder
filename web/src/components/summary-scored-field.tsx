@@ -49,6 +49,8 @@ export function SummaryScoredField({
           ) : null}
           {f.badgeLabel}
         </span>
+      ) : f.displayAsInformational ? (
+        <SummaryInfoBadge label={f.badgeLabel} icon={icon} informational />
       ) : isPartial ? (
         <SummaryInfoBadge label={f.badgeLabel} icon={icon} partial />
       ) : f.state === "unknown" ? (

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import {
   FORM_FIELD_GROUP_CLASS,
   FORM_FIELD_LABEL_CLASS,
+  FORM_FIELD_CONTROL_TEXT_CLASS,
 } from "@/components/form-field-styles";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 import {
@@ -14,6 +15,8 @@ import {
   createResumeUploadStep,
 } from "@/components/onboarding/preference-steps";
 import { CheckEmailIllustration } from "@/components/check-email-illustration";
+import { LocationSelect } from "@/components/location-select";
+import { TimezoneSelect } from "@/components/timezone-select";
 import { markAuthDeepLinkPending } from "@/lib/app-session";
 import { isNativePlatform } from "@/lib/platform";
 import { emptyUserProfile, type UserProfile } from "@/lib/profile";
@@ -31,13 +34,20 @@ import {
   saveOnboardingProgress,
 } from "@/lib/onboarding-progress";
 import { sendSignupVerificationEmail } from "@/lib/signup-auth";
-import { getSignupQaDefaults } from "@/lib/signup-qa";
+import {
+  canContinueSignupStep,
+  firstIncompleteSignupStep,
+  isSignupGeneralDetailsComplete,
+} from "@/lib/signup-flow";
 import { guessProfileTimezone } from "@/lib/timezone-options";
 import { safeBottomOverlay, safeTopHomeHero } from "@/lib/safe-area";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const fieldInputClassName =
-  "h-11 text-[17px] px-3.5 bg-transparent border-0 shadow-none focus-visible:ring-0";
+const fieldInputClassName = cn(
+  "h-11 px-3.5 bg-transparent border-0 shadow-none focus-visible:ring-0",
+  FORM_FIELD_CONTROL_TEXT_CLASS,
+);
 
 function AccountField({
   id,
@@ -94,29 +104,25 @@ function EmailSentState({ email }: { email: string }) {
 }
 
 function readInitialSignupState() {
-  const qaDefaults = getSignupQaDefaults();
   const saved = loadOnboardingProgress();
-  const baseProfile = {
-    ...emptyUserProfile(),
-    ...(qaDefaults
-      ? { fullName: qaDefaults.fullName, country: qaDefaults.location }
-      : {}),
-  };
+  const baseProfile = emptyUserProfile();
 
   if (saved?.phase === "signup" && saved.signupStep >= 1) {
     return {
       profile: { ...baseProfile, ...saved.profile },
-      email: saved.email || qaDefaults?.email || "",
+      email: saved.email || "",
       step: saved.signupStep,
       emailSent: saved.emailSent,
+      isFreshSignup: false,
     };
   }
 
   return {
     profile: baseProfile,
-    email: qaDefaults?.email ?? "",
+    email: "",
     step: 0,
     emailSent: false,
+    isFreshSignup: true,
   };
 }
 
@@ -208,12 +214,15 @@ export function SignUpScreen({
                 if (step >= 1) persistProgress({ email: value });
               }}
             />
-            <AccountField
+            <LocationSelect
               id="signup-location"
-              label="Location"
-              placeholder="City, country"
-              value={profile.country ?? ""}
+              value={profile.country}
               onChange={(value) => patch({ country: value })}
+            />
+            <TimezoneSelect
+              id="signup-timezone"
+              value={profile.timezone}
+              onChange={(value) => patch({ timezone: value })}
             />
           </div>
         ),
@@ -230,33 +239,48 @@ export function SignUpScreen({
       preferenceSteps,
       profile.country,
       profile.fullName,
+      profile.timezone,
+      profile.preferredCompanyTypes,
+      profile.preferredProjectTypes,
+      profile.preferredRegions,
       resumeFileName,
       step,
     ],
   );
 
-  function validateAccountStep(): boolean {
-    const name = profile.fullName?.trim();
-    const trimmedEmail = email.trim();
-    const location = profile.country?.trim();
+  const canContinue = canContinueSignupStep(step, profile, email);
 
-    if (!name) {
+  function validateAccountStep(): boolean {
+    if (isSignupGeneralDetailsComplete(profile, email)) return true;
+    if (!profile.fullName?.trim()) {
       toast.error("Enter your name to continue.");
       return false;
     }
-    if (!trimmedEmail) {
+    if (!email.trim()) {
       toast.error("Enter your email to continue.");
       return false;
     }
-    if (!location) {
-      toast.error("Enter your location to continue.");
+    if (!profile.country?.trim()) {
+      toast.error("Select your location to continue.");
       return false;
     }
-    return true;
+    toast.error("Select your timezone to continue.");
+    return false;
   }
 
   function handleStepChange(nextStep: number) {
-    if (step === 0 && nextStep > 0 && !validateAccountStep()) return;
+    if (nextStep > step && !canContinueSignupStep(step, profile, email)) {
+      if (step === 0) {
+        validateAccountStep();
+      } else if (step === 3) {
+        toast.error("Select at least one employer type to continue.");
+      } else if (step === 5) {
+        toast.error("Select at least one project type to continue.");
+      } else if (step === 6) {
+        toast.error("Select at least one region to continue.");
+      }
+      return;
+    }
     setStep(nextStep);
     if (nextStep >= 1) {
       persistProgress({ signupStep: nextStep });
@@ -275,12 +299,13 @@ export function SignUpScreen({
   }, []);
 
   useEffect(() => {
+    if (initial.isFreshSignup) return;
     const guessed = guessProfileTimezone();
     if (!guessed) return;
     setProfile((current) =>
       current.timezone ? current : { ...current, timezone: guessed },
     );
-  }, []);
+  }, [initial.isFreshSignup]);
 
   useEffect(() => {
     progressRef.current = {
@@ -321,14 +346,17 @@ export function SignUpScreen({
   }, [embedded]);
 
   async function finishSignUp() {
-    if (!validateAccountStep()) {
-      setStep(0);
-      return;
-    }
-
-    if (!profile.timezone?.trim()) {
-      toast.error("Select your timezone to continue.");
-      setStep(steps.length - 1);
+    const incompleteStep = firstIncompleteSignupStep(profile, email);
+    if (incompleteStep !== null) {
+      setStep(incompleteStep);
+      if (incompleteStep === 0) validateAccountStep();
+      else if (incompleteStep === 3) {
+        toast.error("Select at least one employer type to continue.");
+      } else if (incompleteStep === 5) {
+        toast.error("Select at least one project type to continue.");
+      } else if (incompleteStep === 6) {
+        toast.error("Select at least one region to continue.");
+      }
       return;
     }
 
@@ -362,6 +390,10 @@ export function SignUpScreen({
     persistProgress({ emailSent: true });
   }
 
+  const resumeStepIndex = 1;
+  const continueLabel =
+    step === resumeStepIndex && !resumeFileName ? "Skip" : "Continue";
+
   const wizard = emailSent ? (
     <EmailSentState email={email.trim()} />
   ) : (
@@ -372,9 +404,10 @@ export function SignUpScreen({
       onFinish={() => void finishSignUp()}
       onBackFromStart={embedded ? onBackToWelcome : undefined}
       busy={busy}
-      finishLabel="Sign up with email"
+      canContinue={canContinue}
+      finishLabel="Sign Up"
       busyLabel="Sending…"
-      continueLabel="Continue"
+      continueLabel={continueLabel}
     />
   );
 

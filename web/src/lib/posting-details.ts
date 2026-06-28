@@ -249,12 +249,7 @@ function durationFallback(job: ParsedJob): string | null {
 }
 
 function hireAreaFallback(job: ParsedJob): string | null {
-  const parts = [
-    trimOrNull(job.countryRequirement),
-    trimOrNull(job.timezoneRequirement),
-  ].filter(Boolean) as string[];
-  if (parts.length === 0) return null;
-  return parts.join(" · ");
+  return trimOrNull(job.countryRequirement);
 }
 
 function hourlyRateFallback(job: ParsedJob): string | null {

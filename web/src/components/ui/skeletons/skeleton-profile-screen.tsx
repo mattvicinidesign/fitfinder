@@ -14,24 +14,22 @@ export function SkeletonProfileScreen() {
         </div>
       </div>
 
-      <div className="space-y-6">
-        <div className="space-y-3">
+      <div className="flex flex-col gap-[32px]">
+        <div className="flex flex-col gap-2">
           <SkeletonPrimitive className="h-3 w-24" />
           <SkeletonPrimitive className="h-11 w-full rounded-lg" />
-          <SkeletonPrimitive className="h-11 w-full rounded-lg" />
         </div>
-        <div className="space-y-3">
+        <div className="flex flex-col gap-2">
           <SkeletonPrimitive className="h-3 w-20" />
           <SkeletonPrimitive className="h-11 w-full rounded-lg" />
+        </div>
+        <div className="flex flex-col gap-2">
+          <SkeletonPrimitive className="h-3 w-28" />
           <SkeletonPrimitive className="h-11 w-full rounded-lg" />
         </div>
-        <div className="space-y-3">
-          <SkeletonPrimitive className="h-3 w-28" />
-          <div className="flex flex-wrap gap-2">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <SkeletonPrimitive key={index} className="h-8 w-20 rounded-full" />
-            ))}
-          </div>
+        <div className="flex flex-col gap-2">
+          <SkeletonPrimitive className="h-3 w-24" />
+          <SkeletonPrimitive className="min-h-[140px] w-full rounded-lg" />
         </div>
       </div>
 

@@ -1,4 +1,7 @@
-import { FORM_FIELD_LABEL_CLASS } from "@/components/form-field-styles";
+import {
+  FORM_FIELD_GROUP_CLASS,
+  FORM_FIELD_LABEL_CLASS,
+} from "@/components/form-field-styles";
 import { cn } from "@/lib/utils";
 
 /** Header + track + tick layout for profile preference sliders. */
@@ -20,7 +23,7 @@ export function PreferenceSliderField({
   className?: string;
 }) {
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn(FORM_FIELD_GROUP_CLASS, className)}>
       <div
         className={cn(
           "flex items-baseline gap-3",

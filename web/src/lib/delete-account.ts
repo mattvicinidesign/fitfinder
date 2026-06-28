@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { clearProfileHeaderSnapshot } from "@/lib/profile";
 import { invokeFunction } from "@/lib/invoke-function";
 
 const RECENT_ACTIVITY_KEY = "fitfinder:recent-activity";
@@ -17,6 +18,8 @@ export async function deleteAccount(): Promise<{ error?: string }> {
   if (typeof localStorage !== "undefined") {
     localStorage.removeItem(RECENT_ACTIVITY_KEY);
   }
+
+  clearProfileHeaderSnapshot();
 
   const supabase = createClient();
   await supabase.auth.signOut();

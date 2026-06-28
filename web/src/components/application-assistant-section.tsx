@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, Loader2, Sparkles } from "lucide-react";
+import { FileText, Sparkles } from "lucide-react";
+import { CtaSpinner } from "@/components/ui/cta-spinner";
 import { toast } from "sonner";
 import { ProposalEditorDrawer } from "@/components/proposal-editor-drawer";
 import { Button } from "@/components/ui/button";
@@ -151,14 +152,14 @@ export function ApplicationAssistantSection({
           }
         >
           {generating && !hasProposal ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden />
+            <CtaSpinner className="size-4" />
           ) : hasProposal ? (
             <FileText className="size-4" aria-hidden />
           ) : (
             <Sparkles className="size-4" aria-hidden />
           )}
           {generating && !hasProposal
-            ? "Generating…"
+            ? null
             : hasProposal
               ? "View Proposal"
               : "Generate Proposal"}

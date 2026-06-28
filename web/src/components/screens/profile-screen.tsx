@@ -2,16 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 import { toast } from "sonner";
 import { CircleUser, Settings, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { CtaSpinner } from "@/components/ui/cta-spinner";
 import { Input } from "@/components/ui/input";
 import {
   FORM_FIELD_GROUP_CLASS,
   FORM_FIELD_LABEL_CLASS,
   FORM_FIELDS_STACK_CLASS,
+  FORM_FIELD_CONTROL_TEXT_CLASS,
 } from "@/components/form-field-styles";
 import { ChipMultiSelect } from "@/components/ui/chip-multi-select";
 import { EmployerRatingSlider } from "@/components/employer-rating-slider";
@@ -22,15 +24,14 @@ import {
   REGION_OPTIONS,
 } from "@/lib/onboarding-options";
 import {
-  emptyUserProfile,
   fetchUserProfile,
   generalInfoDirty,
-  isGeneralInfoValid,
+  initialProfileScreenState,
   isPreferencesValid,
-  isSettingsValid,
   preferencesDirty,
+  readNameFromAuthUser,
+  saveProfileHeaderSnapshot,
   saveUserProfile,
-  settingsDirty,
   type UserProfile,
 } from "@/lib/profile";
 import {
@@ -40,6 +41,7 @@ import {
 import { AppearanceModeSetting, type AppearanceMode } from "@/components/appearance-mode-setting";
 import { ResumeFilePicker } from "@/components/resume-file-picker";
 import { TimezoneSelect } from "@/components/timezone-select";
+import { LocationSelect } from "@/components/location-select";
 import { deleteAccount } from "@/lib/delete-account";
 import { navigateApp } from "@/lib/navigate-app";
 import { fetchLatestUserResume } from "@/lib/resume-documents";
@@ -66,11 +68,12 @@ const PROFILE_TABS: { id: ProfileTab; label: string; icon: LucideIcon }[] = [
 export function ProfileScreen() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const initial = initialProfileScreenState();
   const [profileLoading, setProfileLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
-  const [isGuest, setIsGuest] = useState(false);
-  const [profile, setProfile] = useState<UserProfile>(emptyUserProfile());
-  const [savedProfile, setSavedProfile] = useState<UserProfile>(emptyUserProfile());
+  const [isGuest, setIsGuest] = useState(initial.isGuest);
+  const [profile, setProfile] = useState<UserProfile>(initial.profile);
+  const [savedProfile, setSavedProfile] = useState<UserProfile>(initial.savedProfile);
   const [activeTab, setActiveTab] = useState<ProfileTab>("general");
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -82,43 +85,54 @@ export function ProfileScreen() {
   const appearanceSyncedRef = useRef(false);
   const generalInfoChanged = generalInfoDirty(profile, savedProfile);
   const preferencesChanged = preferencesDirty(profile, savedProfile);
-  const settingsTimezoneChanged = settingsDirty(profile, savedProfile);
   const settingsAppearanceChanged = appearanceMode !== savedAppearanceMode;
-  const settingsChanged = settingsTimezoneChanged || settingsAppearanceChanged;
-  const canSaveGeneralInfo = isGeneralInfoValid(profile);
-  const canSavePreferences = isPreferencesValid(profile);
-  const canSaveSettings = isSettingsValid(profile);
-  const canSave =
-    activeTab === "general"
-      ? canSaveGeneralInfo && generalInfoChanged
-      : activeTab === "preferences"
-        ? canSavePreferences && preferencesChanged
-        : settingsAppearanceChanged ||
-          (settingsTimezoneChanged && canSaveSettings);
   const showSaveButton =
     !profileLoading &&
     (activeTab === "general" ||
       activeTab === "preferences" ||
       activeTab === "settings");
 
+  const profileTitle =
+    isGuest || !profile.fullName?.trim() ? "Profile" : profile.fullName.trim();
+
   useEffect(() => {
     const supabase = createClient();
     void (async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) {
         setProfileLoading(false);
         return;
       }
+
+      const guest = user.is_anonymous ?? false;
       setEmail(user.email ?? null);
-      setIsGuest(user.is_anonymous ?? false);
+      setIsGuest(guest);
+
+      const metaName = readNameFromAuthUser(user);
+      if (metaName) {
+        setProfile((current) =>
+          current.fullName?.trim() ? current : { ...current, fullName: metaName },
+        );
+      }
+
       const existing = await fetchUserProfile();
       if (existing) {
         const loaded = structuredClone(existing);
         setProfile(loaded);
         setSavedProfile(structuredClone(existing));
         saveLocalProfilePrefs(pickLocalProfilePrefs(loaded));
+        saveProfileHeaderSnapshot({
+          fullName: loaded.fullName?.trim() || null,
+          isGuest: guest,
+        });
+      } else {
+        saveProfileHeaderSnapshot({
+          fullName: metaName,
+          isGuest: guest,
+        });
       }
       const latestResume = await fetchLatestUserResume();
       if (latestResume) setResumeFileName(latestResume.fileName);
@@ -127,7 +141,7 @@ export function ProfileScreen() {
   }, []);
 
   // Sync theme once on load — do not overwrite staged appearance edits when
-  // next-themes resolves asynchronously on native.
+  // theme resolves asynchronously on native.
   useEffect(() => {
     if (theme === undefined || appearanceSyncedRef.current) return;
     const resolved: AppearanceMode = theme === "light" ? "light" : "dark";
@@ -146,12 +160,36 @@ export function ProfileScreen() {
 
   async function save() {
     if (activeTab === "general") {
-      if (!isGeneralInfoValid(profile) || !generalInfoChanged) return;
+      if (!generalInfoChanged) {
+        toast.message("No changes to save.");
+        return;
+      }
+      if (!profile.fullName?.trim()) {
+        toast.error("Enter your name to save.");
+        return;
+      }
+      if (!profile.country?.trim()) {
+        toast.error("Select your location to save.");
+        return;
+      }
+      if (!profile.timezone?.trim()) {
+        toast.error("Select your timezone to save.");
+        return;
+      }
     } else if (activeTab === "preferences") {
-      if (!isPreferencesValid(profile) || !preferencesChanged) return;
+      if (!preferencesChanged) {
+        toast.message("No changes to save.");
+        return;
+      }
+      if (!isPreferencesValid(profile)) {
+        toast.error("Complete all preference fields to save.");
+        return;
+      }
     } else if (activeTab === "settings") {
-      if (!settingsChanged) return;
-      if (settingsTimezoneChanged && !isSettingsValid(profile)) return;
+      if (!settingsAppearanceChanged) {
+        toast.message("No changes to save.");
+        return;
+      }
     } else {
       return;
     }
@@ -165,17 +203,13 @@ export function ProfileScreen() {
 
     setBusy(true);
     let error: string | null = null;
-    if (activeTab === "settings" && settingsAppearanceChanged && !settingsTimezoneChanged) {
+    if (activeTab === "settings") {
       setTheme(appearanceMode);
       setSavedAppearanceMode(appearanceMode);
     } else {
       const result = await saveUserProfile(normalized);
       error = result.error;
       if (!error) {
-        if (activeTab === "settings" && settingsAppearanceChanged) {
-          setTheme(appearanceMode);
-          setSavedAppearanceMode(appearanceMode);
-        }
         setProfile(normalized);
         setSavedProfile(structuredClone(normalized));
         saveLocalProfilePrefs(pickLocalProfilePrefs(normalized));
@@ -202,7 +236,7 @@ export function ProfileScreen() {
 
   return (
     <div className={screenShellClass}>
-      <IosLargeTitle title="Profile" />
+      <IosLargeTitle title={profileTitle} />
 
       <StickyScreenBody ref={scrollRef} className="py-4">
         <div key={activeTab} className="flex flex-col gap-8">
@@ -253,11 +287,14 @@ export function ProfileScreen() {
               placeholder={isGuest ? "Guest session" : "you@example.com"}
               readOnly
             />
-            <LabeledInput
-              label="Location"
-              placeholder="City, country"
-              value={profile.country ?? ""}
+            <LocationSelect
+              value={profile.country}
               onChange={(v) => patch({ country: v })}
+            />
+            <TimezoneSelect
+              id="profile-timezone"
+              value={profile.timezone}
+              onChange={(timezone) => patch({ timezone })}
             />
             <div className={FORM_FIELD_GROUP_CLASS}>
               <label className={FORM_FIELD_LABEL_CLASS}>Resume</label>
@@ -317,12 +354,6 @@ export function ProfileScreen() {
               />
             </Section>
 
-            <TimezoneSelect
-              id="profile-timezone"
-              value={profile.timezone}
-              onChange={(timezone) => patch({ timezone })}
-            />
-
             <section
               className={cn(
                 FORM_FIELD_GROUP_CLASS,
@@ -354,10 +385,12 @@ export function ProfileScreen() {
           <Button
             type="button"
             className="w-full h-12 rounded-xl"
-            disabled={busy || !canSave}
+            disabled={busy}
+            aria-busy={busy}
+            aria-label={busy ? "Saving profile" : "Save profile"}
             onClick={save}
           >
-            {busy ? "Saving…" : "Save profile"}
+            {busy ? <CtaSpinner /> : "Save profile"}
           </Button>
         </StickyBottomCta>
       ) : null}
@@ -452,7 +485,8 @@ function LabeledInput({
         disabled={readOnly}
         onChange={readOnly ? undefined : (e) => onChange?.(e.target.value)}
         className={cn(
-          "h-11 text-[17px]",
+          "h-11",
+          FORM_FIELD_CONTROL_TEXT_CLASS,
           readOnly && "cursor-default opacity-100 disabled:opacity-100",
         )}
       />

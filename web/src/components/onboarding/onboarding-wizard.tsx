@@ -1,13 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { CircleBackButton } from "@/components/ui/circle-back-button";
+import { CtaSpinner } from "@/components/ui/cta-spinner";
 import {
   screenShellClass,
   StickyBottomCta,
   StickyScreenBody,
   StickyScreenHeader,
 } from "@/components/ui/sticky-bottom-cta";
-import { safeTopTitle } from "@/lib/safe-area";
+import { safeBottomCta, safeTopTitle } from "@/lib/safe-area";
 
 export interface OnboardingStep {
   title: string;
@@ -26,6 +28,8 @@ interface OnboardingWizardProps {
   onBackFromStart?: () => void;
   busy?: boolean;
   loading?: boolean;
+  /** When false, Continue / Finish is disabled until the step is complete. */
+  canContinue?: boolean;
   finishLabel?: string;
   continueLabel?: string;
   skipLabel?: string;
@@ -42,6 +46,7 @@ export function OnboardingWizard({
   onBackFromStart,
   busy = false,
   loading = false,
+  canContinue = true,
   finishLabel = "Finish",
   continueLabel = "Continue",
   skipLabel = "Skip for now",
@@ -64,49 +69,56 @@ export function OnboardingWizard({
     onSkip?.();
   }
 
+  function handleHeaderBack() {
+    if (step > 0) {
+      onStepChange(step - 1);
+      return;
+    }
+    onBackFromStart?.();
+  }
+
+  const showHeaderBack = step > 0 || (step === 0 && onBackFromStart);
+  const showHeaderSkip = stepSkippable || Boolean(onSkip);
+
   return (
     <div className={screenShellClass}>
       <StickyScreenHeader className={`px-4 pb-3 ${safeTopTitle}`}>
         <div className="flex items-center justify-between gap-3">
-          {step === 0 && onBackFromStart ? (
-            <button
-              type="button"
-              onClick={onBackFromStart}
-              className="text-[13px] font-medium text-primary"
-            >
-              Back
-            </button>
+          {showHeaderBack ? (
+            <CircleBackButton
+              onClick={handleHeaderBack}
+              aria-label={step === 0 ? "Back to welcome" : "Previous step"}
+            />
           ) : (
-            <span className="text-[13px] font-medium text-muted-foreground">
-              Step {step + 1} of {totalSteps}
-            </span>
+            <span className="size-9 shrink-0" aria-hidden />
           )}
-          {step === 0 && onBackFromStart ? (
-            <span className="text-[13px] font-medium text-muted-foreground">
-              Step {step + 1} of {totalSteps}
-            </span>
-          ) : null}
-          {stepSkippable || onSkip ? (
+          {showHeaderSkip ? (
             <button
               type="button"
               onClick={handleHeaderSkip}
-              className="ml-auto text-[13px] font-medium text-muted-foreground hover:text-foreground"
+              className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {stepSkippable ? skipStepLabel : skipLabel}
             </button>
           ) : (
-            <span className="w-8" aria-hidden />
+            <span className="size-9 shrink-0" aria-hidden />
           )}
         </div>
-        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${progress}%` }}
-          />
+
+        <div className="mt-3">
+          <p className="text-[13px] font-medium text-muted-foreground">
+            Step <span className="text-primary">{step + 1}</span> of {totalSteps}
+          </p>
+          <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
       </StickyScreenHeader>
 
-      <StickyScreenBody className="px-4">
+      <StickyScreenBody className="px-4 pb-24">
         <h1 className="text-[26px] font-bold leading-tight tracking-tight">
           {current.title}
         </h1>
@@ -120,27 +132,29 @@ export function OnboardingWizard({
         </div>
       </StickyScreenBody>
 
-      <StickyBottomCta>
-        <div className="flex gap-3">
-          {step > 0 ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 flex-1 rounded-xl"
-              onClick={() => onStepChange(step - 1)}
-            >
-              Back
-            </Button>
-          ) : null}
-          <Button
-            type="button"
-            className="h-12 flex-[2] rounded-xl text-[17px]"
-            disabled={busy}
-            onClick={() => (isLast ? onFinish() : onStepChange(step + 1))}
-          >
-            {isLast ? (busy ? busyLabel : finishLabel) : continueLabel}
-          </Button>
-        </div>
+      <StickyBottomCta variant="floating" className={safeBottomCta}>
+        <Button
+          type="button"
+          className="h-12 w-full rounded-xl text-[17px] shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
+          disabled={busy || !canContinue}
+          aria-busy={busy}
+          aria-label={
+            busy
+              ? busyLabel
+              : isLast
+                ? finishLabel
+                : continueLabel
+          }
+          onClick={() => (isLast ? onFinish() : onStepChange(step + 1))}
+        >
+          {busy ? (
+            <CtaSpinner />
+          ) : isLast ? (
+            finishLabel
+          ) : (
+            continueLabel
+          )}
+        </Button>
       </StickyBottomCta>
     </div>
   );

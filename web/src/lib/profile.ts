@@ -330,7 +330,82 @@ export async function saveUserProfile(
     .from("profiles")
     .upsert(row, { onConflict: "user_id" });
   saveLocalProfilePrefs(pickLocalProfilePrefs(profile));
+  if (!error) {
+    saveProfileHeaderSnapshot({
+      fullName: profile.fullName?.trim() || null,
+      isGuest: user.is_anonymous ?? false,
+    });
+  }
   return { error: error?.message ?? null };
+}
+
+export const PROFILE_HEADER_CACHE_KEY = "fitfinder-profile-header";
+
+export type ProfileHeaderSnapshot = {
+  fullName: string | null;
+  isGuest: boolean;
+};
+
+function canUseProfileHeaderCache(): boolean {
+  return typeof localStorage !== "undefined";
+}
+
+/** Synchronous read for profile screen header — avoids a "Profile" flash before fetch. */
+export function loadProfileHeaderSnapshot(): ProfileHeaderSnapshot | null {
+  if (!canUseProfileHeaderCache()) return null;
+
+  const raw = localStorage.getItem(PROFILE_HEADER_CACHE_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<ProfileHeaderSnapshot>;
+    if (typeof parsed.isGuest !== "boolean") return null;
+    const fullName =
+      typeof parsed.fullName === "string" ? parsed.fullName.trim() || null : null;
+    return { fullName, isGuest: parsed.isGuest };
+  } catch {
+    return null;
+  }
+}
+
+export function saveProfileHeaderSnapshot(snapshot: ProfileHeaderSnapshot): void {
+  if (!canUseProfileHeaderCache()) return;
+  localStorage.setItem(
+    PROFILE_HEADER_CACHE_KEY,
+    JSON.stringify({
+      fullName: snapshot.fullName?.trim() || null,
+      isGuest: snapshot.isGuest,
+    }),
+  );
+}
+
+export function clearProfileHeaderSnapshot(): void {
+  if (!canUseProfileHeaderCache()) return;
+  localStorage.removeItem(PROFILE_HEADER_CACHE_KEY);
+}
+
+/** Seed profile screen state from the header cache before async fetch completes. */
+export function initialProfileScreenState(): {
+  profile: UserProfile;
+  savedProfile: UserProfile;
+  isGuest: boolean;
+} {
+  const snapshot = loadProfileHeaderSnapshot();
+  const base = emptyUserProfile();
+  const profile = snapshot?.fullName
+    ? { ...base, fullName: snapshot.fullName }
+    : base;
+  return {
+    profile: structuredClone(profile),
+    savedProfile: structuredClone(profile),
+    isGuest: snapshot?.isGuest ?? false,
+  };
+}
+
+export function readNameFromAuthUser(user: {
+  user_metadata?: Record<string, unknown>;
+}): string | null {
+  return nameFromAuthMetadata(user);
 }
 
 /** First non-empty display name from profile row, auth metadata, or local signup draft. */
@@ -361,9 +436,13 @@ function sortedStringArray(values: string[]): string[] {
   return [...values].sort();
 }
 
-/** Whether name and location are both non-empty (required for General Info save). */
+/** Whether name, location, and timezone are all non-empty (required for General Info save). */
 export function isGeneralInfoValid(profile: UserProfile): boolean {
-  return Boolean(profile.fullName?.trim() && profile.country?.trim());
+  return Boolean(
+    profile.fullName?.trim() &&
+      profile.country?.trim() &&
+      profile.timezone?.trim(),
+  );
 }
 
 /** Whether preference fields are complete enough to save. */
@@ -410,7 +489,11 @@ export function settingsDirty(a: UserProfile, b: UserProfile): boolean {
 
 /** Whether editable general-info fields differ from the saved snapshot. */
 export function generalInfoDirty(a: UserProfile, b: UserProfile): boolean {
-  return a.fullName !== b.fullName || a.country !== b.country;
+  return (
+    a.fullName !== b.fullName ||
+    a.country !== b.country ||
+    a.timezone !== b.timezone
+  );
 }
 
 /** Whether editable profile fields match (ignores onboardingCompletedAt). */

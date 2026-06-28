@@ -2,13 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy, Download, Loader2, RefreshCw, X } from "lucide-react";
+import { Check, Copy, Loader2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getAppOverlayRoot } from "@/lib/overlay-portal";
 import { APP_PORTAL_OVERLAY_Z } from "@/lib/overlay-z-index";
-import { downloadProposalPdf } from "@/lib/proposal-pdf";
 import { safeBottomOverlay } from "@/lib/safe-area";
 import type { ProposalGeneration } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -75,20 +74,6 @@ export function ProposalEditorDrawer({
       toast.success("Proposal copied to clipboard.");
     } catch {
       toast.error("Couldn't copy. Select the text and copy manually.");
-    }
-  }
-
-  function handleDownload() {
-    try {
-      downloadProposalPdf({
-        candidateName,
-        portfolioUrl: portfolioUrl ?? proposal.sections?.portfolioUrl ?? null,
-        jobTitle,
-        companyName,
-        proposalText,
-      });
-    } catch {
-      toast.error("Couldn't generate the PDF. Try again.");
     }
   }
 
@@ -159,7 +144,7 @@ export function ProposalEditorDrawer({
 
         <div
           className={cn(
-            "grid shrink-0 grid-cols-3 gap-2 border-t border-border/60 bg-card px-3 py-3",
+            "grid shrink-0 grid-cols-2 gap-2 border-t border-border/60 bg-card px-3 py-3",
             safeBottomOverlay,
           )}
         >
@@ -176,16 +161,6 @@ export function ProposalEditorDrawer({
               <Copy className="size-4 shrink-0" aria-hidden />
             )}
             <span className="truncate">{copied ? "Copied" : "Copy"}</span>
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="h-11 min-w-0 gap-1.5 rounded-xl px-2 text-[13px] sm:gap-2 sm:px-3 sm:text-sm"
-            onClick={handleDownload}
-            disabled={regenerating}
-          >
-            <Download className="size-4 shrink-0" aria-hidden />
-            <span className="truncate">PDF</span>
           </Button>
           <Button
             type="button"

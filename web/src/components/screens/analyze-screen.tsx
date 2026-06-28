@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 import { CircleBackLink } from "@/components/ui/circle-back-button";
 import { analyze } from "@/lib/api";
 import {
@@ -22,6 +22,7 @@ import { fetchUserProfile } from "@/lib/profile";
 import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 import type { AnalysisResult, Compensation } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { CtaSpinner } from "@/components/ui/cta-spinner";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AnalysisResultView } from "@/components/analysis-result";
@@ -138,7 +139,6 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   const [resumeId, setResumeId] = useState<string | undefined>(undefined);
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const [jobText, setJobText] = useState("");
-  const [jobLink, setJobLink] = useState("");
   const [jobExpanded, setJobExpanded] = useState(false);
 
   const [status, setStatus] = useState<string | null>(null);
@@ -220,9 +220,8 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
       toast.error("Upload your resume to continue.");
       return;
     }
-    const trimmedLink = jobLink.trim();
-    if (!jobText.trim() && !trimmedLink) {
-      toast.error("Paste a job description or link to analyze.");
+    if (!jobText.trim()) {
+      toast.error("Paste a job description to analyze.");
       return;
     }
     try {
@@ -235,12 +234,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
             : "Trimmed job text to analysis limit.",
         );
       }
-      const jobContent = [
-        cleaned.text,
-        trimmedLink ? `Job posting link: ${trimmedLink}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n\n");
+      const jobContent = cleaned.text;
       setStatus("Parsing resume…");
       await waitForResumeParse(resumeId);
       const parsedResume = getCachedParsedResume(resumeId);
@@ -393,22 +387,6 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           />
         </section>
 
-        <section className={cn(ANALYZE_SECTION_CLASS, "mt-4")}>
-          <h2 className={ANALYZE_SECTION_LABEL_CLASS}>Job link</h2>
-          <Label htmlFor="job-link" className="sr-only">
-            Job link (optional)
-          </Label>
-          <input
-            id="job-link"
-            type="url"
-            inputMode="url"
-            placeholder="Paste a job link (optional)"
-            value={jobLink}
-            onChange={(e) => setJobLink(e.target.value)}
-            className={ANALYZE_FIELD_CLASS}
-          />
-        </section>
-
           {demo ? (
             <div className="px-4 pb-2">
               <p className="text-[13px] text-muted-foreground text-center mb-4">
@@ -447,15 +425,10 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
             type="submit"
             className="h-12 w-full gap-2 rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
             disabled={busy || demo}
+            aria-busy={busy}
+            aria-label={busy ? status ?? "Analyzing fit" : "Analyze fit"}
           >
-            {busy ? (
-              <>
-                <Loader2 className="size-5 animate-spin" aria-hidden />
-                {status}
-              </>
-            ) : (
-              "Analyze fit"
-            )}
+            {busy ? <CtaSpinner /> : "Analyze fit"}
           </Button>
         </StickyBottomCta>
       </form>

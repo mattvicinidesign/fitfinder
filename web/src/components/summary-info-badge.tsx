@@ -17,6 +17,7 @@ export function SummaryInfoBadge({
   positive,
   negative,
   partial,
+  informational,
   className,
 }: {
   label: string;
@@ -29,6 +30,8 @@ export function SummaryInfoBadge({
   negative?: boolean;
   /** Blue highlight for a partial onboarding preference match. */
   partial?: boolean;
+  /** Blue highlight for informational posting facts (not scored). */
+  informational?: boolean;
   className?: string;
 }) {
   return (
@@ -37,9 +40,10 @@ export function SummaryInfoBadge({
         "inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium break-words whitespace-normal text-left leading-snug",
         positive && MATCH_PILL_CLASS,
         !positive && partial && PARTIAL_MATCH_PILL_CLASS,
-        !positive && !partial && negative && MISMATCH_PILL_CLASS,
-        !positive && !negative && !partial && muted && NOT_SPECIFIED_PILL_CLASS,
-        !positive && !negative && !partial && !muted && NEUTRAL_PILL_CLASS,
+        !positive && !partial && informational && PARTIAL_MATCH_PILL_CLASS,
+        !positive && !partial && !informational && negative && MISMATCH_PILL_CLASS,
+        !positive && !negative && !partial && !informational && muted && NOT_SPECIFIED_PILL_CLASS,
+        !positive && !negative && !partial && !informational && !muted && NEUTRAL_PILL_CLASS,
         className,
       )}
       title={label}

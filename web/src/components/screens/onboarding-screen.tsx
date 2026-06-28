@@ -68,14 +68,18 @@ export function OnboardingScreen() {
   );
 
   async function finish() {
-    if (!profile.timezone?.trim()) {
-      toast.error("Select your timezone to continue.");
-      setStep(steps.length - 1);
+    const timezone = profile.timezone?.trim() || guessProfileTimezone();
+    if (!timezone) {
+      toast.error("Set your timezone under Profile → Settings to continue.");
       return;
     }
 
+    const toSave = profile.timezone?.trim()
+      ? profile
+      : { ...profile, timezone };
+
     setBusy(true);
-    const { error } = await saveUserProfile(profile, { markComplete: true });
+    const { error } = await saveUserProfile(toSave, { markComplete: true });
     setBusy(false);
     if (error) {
       toast.error(error);

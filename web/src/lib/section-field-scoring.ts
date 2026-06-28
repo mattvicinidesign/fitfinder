@@ -22,7 +22,6 @@ import {
   clientQualityDatePostedPoints,
   clientQualityEmployerPoints,
   clientQualityHireAreaPoints,
-  clientQualityLocationPoints,
   clientQualityPlatformPoints,
   clientQualityRatingPoints,
   formatClientQualityLocationLabel,
@@ -31,7 +30,6 @@ import {
 import { buildEmployerTypeMatchDetail } from "@/lib/company-type-match";
 import { buildProjectTypeMatchDetail } from "@/lib/project-type-match";
 import { buildEmployerRatingMatchDetail } from "@/lib/employer-rating-match";
-import { buildClientLocationRegionMatchDetail } from "@/lib/preferred-region-match";
 import { buildClientAvgPayMatchDetail } from "@/lib/client-avg-pay-match";
 import { buildEnglishLevelPreferenceDetail } from "@/lib/english-level-match";
 import { detectJobPlatform } from "@/lib/job-platform";
@@ -84,11 +82,14 @@ export interface SectionFieldScore {
   points: number | null;
   /** Posting metadata only — render as plain text, not match/mismatch pills. */
   displayAsPlainText?: boolean;
+  /** Informational only — blue pill, excluded from category score. */
+  displayAsInformational?: boolean;
 }
 
 export interface SectionFieldOptions {
   badgeSubtext?: string | null;
   displayAsPlainText?: boolean;
+  displayAsInformational?: boolean;
 }
 
 /** Posting facts that do not compare resume/profile — plain text in the UI. */
@@ -140,6 +141,7 @@ function field(
     state: identified ? state : "unknown",
     points: identified ? points : null,
     displayAsPlainText: options?.displayAsPlainText ?? false,
+    displayAsInformational: options?.displayAsInformational ?? false,
   };
 }
 
@@ -392,44 +394,17 @@ export function buildClientProfileFields(
       clientOrigin: locationCountry || null,
     }) ?? "";
   const locationIdentified = Boolean(locationValue.trim());
-  const locationRegionMatch = buildClientLocationRegionMatchDetail({
-    locationDisplay: locationIdentified ? locationValue : null,
-    clientOrigin: locationCountry || null,
-    clientCity: locationCity,
-    profilePreferredRegions: ctx.profilePreferredRegions,
-  });
 
-  if (locationIdentified && locationRegionMatch.compareToProfile) {
-    const state: SummaryMatchState =
-      locationRegionMatch.tier === "exact"
-        ? "match"
-        : locationRegionMatch.tier === "partial"
-          ? "partial_match"
-          : "mismatch";
+  if (locationIdentified) {
     fields.push(
       field(
         "clientOrigin",
         CLIENT_QUALITY_FIELD_LABELS.location,
         true,
         locationValue,
-        state,
-        locationRegionMatch.points,
-      ),
-    );
-  } else if (locationIdentified) {
-    const locationPoints = clientQualityLocationPoints(
-      details?.clientOrigin ?? (locationCountry || null),
-      details?.clientCity,
-    );
-    fields.push(
-      field(
-        "clientOrigin",
-        CLIENT_QUALITY_FIELD_LABELS.location,
-        true,
-        locationValue,
-        locationPoints != null && locationPoints >= 50 ? "match" : "mismatch",
-        locationPoints,
-        POSTING_ONLY,
+        "unknown",
+        null,
+        { displayAsInformational: true },
       ),
     );
   } else {

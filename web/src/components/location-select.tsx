@@ -3,14 +3,14 @@ import {
   FORM_FIELD_LABEL_CLASS,
 } from "@/components/form-field-styles";
 import { FormSelect } from "@/components/form-select";
-import { TIMEZONE_OPTIONS } from "@/lib/timezone-options";
+import { LOCATION_OPTIONS } from "@/lib/onboarding-options";
 import { cn } from "@/lib/utils";
 
-export function TimezoneSelect({
+export function LocationSelect({
   value,
   onChange,
-  id = "timezone",
-  label = "Timezone",
+  id = "location",
+  label = "Location",
   className,
 }: {
   value: string | null;
@@ -19,6 +19,11 @@ export function TimezoneSelect({
   label?: string;
   className?: string;
 }) {
+  const trimmed = value?.trim() ?? "";
+  const isLegacy =
+    trimmed.length > 0 &&
+    !(LOCATION_OPTIONS as readonly string[]).includes(trimmed);
+
   return (
     <div className={cn(FORM_FIELD_GROUP_CLASS, className)}>
       <label htmlFor={id} className={FORM_FIELD_LABEL_CLASS}>
@@ -26,14 +31,15 @@ export function TimezoneSelect({
       </label>
       <FormSelect
         id={id}
-        value={value ?? ""}
+        value={trimmed}
         onChange={(e) => onChange(e.target.value.trim() || null)}
         aria-label={label}
       >
-        <option value="">Select timezone</option>
-        {TIMEZONE_OPTIONS.map((tz) => (
-          <option key={tz} value={tz}>
-            {tz.replace(/_/g, " ")}
+        <option value="">Select location</option>
+        {isLegacy ? <option value={trimmed}>{trimmed}</option> : null}
+        {LOCATION_OPTIONS.map((location) => (
+          <option key={location} value={location}>
+            {location}
           </option>
         ))}
       </FormSelect>
