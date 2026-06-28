@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { uploadResume } from "@/lib/resume-upload";
 import { waitForResumeParse } from "@/lib/resume-parse-tracker";
 import {
@@ -9,6 +10,7 @@ import {
   RESUME_UPLOAD_CTA_CLASS,
   RESUME_UPLOAD_HINT,
   RESUME_UPLOAD_TITLE,
+  RESUME_SCORE_TITLE,
   resumeUploadZoneClassName,
 } from "@/components/resume-upload-styles";
 import { CtaSpinner } from "@/components/ui/cta-spinner";
@@ -17,7 +19,10 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Props {
-  onReady: (payload: { resumeId: string; fileName: string }) => void;
+  resumeId?: string | null;
+  fileName?: string | null;
+  onResumeChange: (payload: { resumeId: string; fileName: string }) => void;
+  onScore: () => void;
   disabled?: boolean;
   className?: string;
   /** Compact card pinned to the bottom of the empty state. */
@@ -25,7 +30,10 @@ interface Props {
 }
 
 export function ResumeReviewUploadZone({
-  onReady,
+  resumeId,
+  fileName,
+  onResumeChange,
+  onScore,
   disabled,
   className,
   pinnedBottom = false,
@@ -36,16 +44,18 @@ export function ResumeReviewUploadZone({
   const [phase, setPhase] = useState<"uploading" | "parsing" | null>(null);
   const ingestLockRef = useRef(false);
 
+  const hasResume = Boolean(resumeId && fileName);
+
   async function processFile(file: File) {
     if (ingestLockRef.current) return;
     ingestLockRef.current = true;
     setBusy(true);
     setPhase("uploading");
     try {
-      const { resumeId, fileName } = await uploadResume(file);
+      const uploaded = await uploadResume(file);
       setPhase("parsing");
-      await waitForResumeParse(resumeId);
-      onReady({ resumeId, fileName });
+      await waitForResumeParse(uploaded.resumeId);
+      onResumeChange({ resumeId: uploaded.resumeId, fileName: uploaded.fileName });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed.");
     } finally {
@@ -62,6 +72,11 @@ export function ResumeReviewUploadZone({
     void processFile(file);
   }
 
+  function openFilePicker() {
+    if (busy || disabled) return;
+    fileRef.current?.click();
+  }
+
   const busyLabel =
     phase === "uploading"
       ? "Uploading resume"
@@ -75,10 +90,10 @@ export function ResumeReviewUploadZone({
 
   return (
     <div className={cn("px-4", className)}>
-      <label
+      <div
         className={resumeUploadZoneClassName(
           cn(
-            "relative block",
+            "relative",
             pinnedBottom ? "py-6" : "min-h-[220px]",
             dragOver && "border-primary/50 bg-muted/55",
           ),
@@ -99,29 +114,66 @@ export function ResumeReviewUploadZone({
           type="file"
           accept={accept}
           disabled={busy || disabled}
-          aria-label="Upload resume for review"
+          aria-label={hasResume ? "Replace resume for review" : "Upload resume for review"}
           onChange={(e) => handleFiles(e.target.files)}
           onInput={(e) => handleFiles(e.currentTarget.files)}
-          className={cn(
-            "absolute inset-0 z-10 h-full w-full cursor-pointer opacity-[0.0001]",
-            (busy || disabled) && "pointer-events-none",
-          )}
+          className="hidden"
         />
-        <div className="pointer-events-none flex flex-col items-center justify-center gap-2 text-center">
-          <span
-            className={RESUME_UPLOAD_CTA_CLASS}
-            aria-busy={busy}
-            aria-label={busy ? busyLabel ?? undefined : undefined}
-          >
-            {busy ? <CtaSpinner className="size-8" /> : RESUME_UPLOAD_TITLE}
-          </span>
-          {!busy ? (
-            <span className="text-[13px] text-muted-foreground">
-              {RESUME_UPLOAD_HINT}
-            </span>
+
+        <div className="flex flex-col items-center justify-center gap-3 text-center">
+          {hasResume ? (
+            <>
+              {busy ? (
+                <CtaSpinner className="size-8" />
+              ) : (
+                <CheckCircle2 className="size-8 text-primary" aria-hidden />
+              )}
+              <button
+                type="button"
+                disabled={busy || disabled}
+                onClick={openFilePicker}
+                className="max-w-full text-[17px] font-medium text-foreground break-all transition-colors hover:text-primary disabled:opacity-60"
+              >
+                {fileName}
+              </button>
+              {!busy ? (
+                <span className="text-[13px] text-muted-foreground">
+                  Tap to replace
+                </span>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                disabled={busy || disabled}
+                onClick={openFilePicker}
+                className={RESUME_UPLOAD_CTA_CLASS}
+                aria-busy={busy}
+                aria-label={busy ? busyLabel ?? undefined : undefined}
+              >
+                {busy ? <CtaSpinner className="size-8" /> : RESUME_UPLOAD_TITLE}
+              </button>
+              {!busy ? (
+                <span className="text-[13px] text-muted-foreground">
+                  {RESUME_UPLOAD_HINT}
+                </span>
+              ) : null}
+            </>
+          )}
+
+          {hasResume && !busy ? (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={onScore}
+              className={cn(RESUME_UPLOAD_CTA_CLASS, "mt-1 w-full max-w-sm")}
+            >
+              {RESUME_SCORE_TITLE}
+            </button>
           ) : null}
         </div>
-      </label>
+      </div>
     </div>
   );
 }

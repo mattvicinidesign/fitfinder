@@ -9,6 +9,8 @@ export const RESUME_UPLOAD_ACCEPT_NATIVE = ".pdf,.doc,.docx,.txt";
 
 export const RESUME_UPLOAD_TITLE = "Upload your resume";
 
+export const RESUME_SCORE_TITLE = "Score my resume";
+
 export const RESUME_UPLOAD_HINT = "PDF, Word, or TXT";
 
 export const RESUME_UPLOAD_CTA_CLASS =

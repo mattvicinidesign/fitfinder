@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { IosLargeTitle } from "@/components/ui/ios-large-title";
 import { screenShellClass } from "@/components/ui/sticky-bottom-cta";
@@ -30,17 +30,55 @@ import { toast } from "sonner";
 export function ResumeReviewScreen() {
   const [review, setReview] = useState<ResumeReviewResult | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [pendingResumeId, setPendingResumeId] = useState<string | null>(null);
+  const [pendingFileName, setPendingFileName] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
-  const [bootstrapping, setBootstrapping] = useState(true);
   const [animateGauge, setAnimateGauge] = useState(false);
-  const runReviewRef = useRef<
-    (resumeId: string, name: string) => Promise<void>
-  >(() => Promise.resolve());
+
+  useEffect(() => {
+    ensureAtsOptimizationCacheFresh();
+    const cached = loadResumeReview();
+    const cachedResumeId =
+      loadResumeReviewResumeId() ?? cached?.resumeId ?? null;
+
+    void (async () => {
+      let latest: Awaited<ReturnType<typeof fetchLatestUserResume>> = null;
+      try {
+        latest = await fetchLatestUserResume();
+      } catch {
+        latest = null;
+      }
+
+      const latestId = latest?.id ?? null;
+      const shouldUseCache =
+        cached != null &&
+        (!latestId || !cachedResumeId || cachedResumeId === latestId);
+
+      if (shouldUseCache) {
+        setReview(cached);
+        setFileName(loadResumeReviewFileName());
+        void resolveResumeIdForOptimization(cached.resumeId).then((resumeId) => {
+          if (resumeId) void resolveResumeTextForOptimization(resumeId);
+        });
+        return;
+      }
+
+      if (latest) {
+        setPendingResumeId(latest.id);
+        setPendingFileName(latest.fileName);
+      }
+    })();
+  }, []);
 
   const runReview = useCallback(async (resumeId: string, name: string) => {
     setReviewing(true);
     setFileName(name);
     try {
+      try {
+        await waitForResumeParse(resumeId);
+      } catch {
+        // Parse may already be cached from signup or profile upload.
+      }
       const parsedResume = getCachedParsedResume(resumeId);
       const previous = loadResumeReview();
       if (previous?.id) {
@@ -62,73 +100,28 @@ export function ResumeReviewScreen() {
     }
   }, []);
 
-  runReviewRef.current = runReview;
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function bootstrap() {
-      ensureAtsOptimizationCacheFresh();
-      const cached = loadResumeReview();
-      const cachedResumeId =
-        loadResumeReviewResumeId() ?? cached?.resumeId ?? null;
-
-      let latest: Awaited<ReturnType<typeof fetchLatestUserResume>> = null;
-      try {
-        latest = await fetchLatestUserResume();
-      } catch {
-        latest = null;
-      }
-
-      if (cancelled) return;
-
-      const latestId = latest?.id ?? null;
-      const shouldUseCache =
-        cached != null &&
-        (!latestId || !cachedResumeId || cachedResumeId === latestId);
-
-      if (shouldUseCache) {
-        setReview(cached);
-        setFileName(loadResumeReviewFileName());
-        void resolveResumeIdForOptimization(cached.resumeId).then((resumeId) => {
-          if (resumeId && !cancelled) {
-            void resolveResumeTextForOptimization(resumeId);
-          }
-        });
-        return;
-      }
-
-      if (!latest) return;
-
-      try {
-        await waitForResumeParse(latest.id);
-      } catch {
-        // Parse may already be cached from signup or profile upload.
-      }
-
-      if (cancelled) return;
-      await runReviewRef.current(latest.id, latest.fileName);
-    }
-
-    setBootstrapping(true);
-    void bootstrap()
-      .catch(() => {
-        // Errors surface from runReview; keep empty state on bootstrap failure.
-      })
-      .finally(() => {
-        if (!cancelled) setBootstrapping(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const handleReplace = () => {
     clearResumeReview();
     setReview(null);
     setFileName(null);
     setAnimateGauge(false);
+    void fetchLatestUserResume().then((latest) => {
+      if (!latest) {
+        setPendingResumeId(null);
+        setPendingFileName(null);
+        return;
+      }
+      setPendingResumeId(latest.id);
+      setPendingFileName(latest.fileName);
+    });
+  };
+
+  const handleScore = () => {
+    if (!pendingResumeId || !pendingFileName) {
+      toast.error("Upload your resume to continue.");
+      return;
+    }
+    void runReview(pendingResumeId, pendingFileName);
   };
 
   return (
@@ -148,13 +141,11 @@ export function ResumeReviewScreen() {
         }
       />
 
-      {bootstrapping || reviewing ? (
+      {reviewing ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-4 py-16 text-center">
           <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
           <p className="text-[17px] font-medium text-foreground">
-            {bootstrapping && !reviewing
-              ? "Loading your resume…"
-              : "Analyzing your resume…"}
+            Analyzing your resume…
           </p>
           <p className="max-w-[16rem] text-[14px] text-muted-foreground">
             Checking content, structure, ATS compatibility, and completeness.
@@ -175,9 +166,13 @@ export function ResumeReviewScreen() {
           <ResumeReviewUploadZone
             pinnedBottom
             className="!px-0"
-            onReady={({ resumeId, fileName: name }) => {
-              void runReview(resumeId, name);
+            resumeId={pendingResumeId}
+            fileName={pendingFileName}
+            onResumeChange={({ resumeId, fileName: name }) => {
+              setPendingResumeId(resumeId);
+              setPendingFileName(name);
             }}
+            onScore={handleScore}
           />
         </div>
       )}
