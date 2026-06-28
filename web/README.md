@@ -83,6 +83,10 @@ The app caches the original file and PDF text runs in IndexedDB, re-fetches from
 Storage when needed, and bundles `pdf.worker.min.mjs` for in-app PDF parsing on
 native (`npm run build:capacitor` copies it from `pdfjs-dist`).
 
+**Score tab landing:** `/resume-review` shows an intro screen with the onboarding
+resume pre-loaded when available. Tap **Score my resume** to run the review — tab
+navigation does not auto-score.
+
 ## Deploy web (Vercel)
 
 See **[VERCEL.md](./VERCEL.md)** for the full import checklist.
