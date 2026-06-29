@@ -9,6 +9,7 @@ import {
 import { IosLargeTitle } from "@/components/ui/ios-large-title";
 import { StatsDashboard } from "@/components/stats-dashboard";
 import { SkeletonStatsDashboard } from "@/components/ui/skeletons/skeleton-stats-dashboard";
+import { loadLastResumeScoreForStats } from "@/lib/resume-review-cache";
 import {
   screenShellClass,
   StickyScreenBody,
@@ -25,11 +26,20 @@ type StatsRow = AnalysisRecord & { report_id: string };
 export function StatsScreen() {
   const [analyses, setAnalyses] = useState<StatsRow[]>([]);
   const [stats, setStats] = useState<AnalysisStats | null>(null);
+  const [lastResumeScore, setLastResumeScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     ensureSampleAnalysisDataSeeded();
     const supabase = createClient();
+
+    const refreshResumeScore = () => {
+      setLastResumeScore(loadLastResumeScoreForStats());
+    };
+
+    refreshResumeScore();
+    window.addEventListener("focus", refreshResumeScore);
+    document.addEventListener("visibilitychange", refreshResumeScore);
 
     void supabase
       .from("analyses")
@@ -38,18 +48,26 @@ export function StatsScreen() {
       )
       .order("created_at", { ascending: false })
       .then((analysesResult) => {
-      const rows = pickAnalysisListWithSamples(
-        (analysesResult.data ?? []) as AnalysisRecord[],
-        getSampleAnalyses(),
-      ).map((row) => ({
-        ...row,
-        report_id: row.id,
-      }));
-      setAnalyses(rows);
-      setStats(computeAnalysisStats(rows));
-      setLoading(false);
-    });
+        const rows = pickAnalysisListWithSamples(
+          (analysesResult.data ?? []) as AnalysisRecord[],
+          getSampleAnalyses(),
+        ).map((row) => ({
+          ...row,
+          report_id: row.id,
+        }));
+        setAnalyses(rows);
+        setStats(computeAnalysisStats(rows));
+        setLoading(false);
+      });
+
+    return () => {
+      window.removeEventListener("focus", refreshResumeScore);
+      document.removeEventListener("visibilitychange", refreshResumeScore);
+    };
   }, []);
+
+  const hasResumeScore = lastResumeScore != null;
+  const showDashboard = Boolean(stats && (stats.totalAnalyses > 0 || hasResumeScore));
 
   return (
     <div className={screenShellClass}>
@@ -58,12 +76,13 @@ export function StatsScreen() {
       <StickyScreenBody className="py-4">
         {loading || !stats ? (
           <SkeletonStatsDashboard />
-        ) : stats.totalAnalyses === 0 ? (
+        ) : !showDashboard ? (
           <p className="px-4 py-12 text-center text-[15px] text-muted-foreground">
-            No analyses yet. Run your first from Analyze to see stats here.
+            No activity yet. Run a fit analysis or score your resume to see stats
+            here.
           </p>
         ) : (
-          <StatsDashboard analyses={analyses} stats={stats} />
+          <StatsDashboard analyses={analyses} stats={stats!} />
         )}
       </StickyScreenBody>
     </div>

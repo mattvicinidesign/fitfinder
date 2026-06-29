@@ -7,7 +7,7 @@ import { waitForResumeParse } from "@/lib/resume-parse-tracker";
 import {
   RESUME_UPLOAD_ACCEPT,
   RESUME_UPLOAD_ACCEPT_NATIVE,
-  PRIMARY_FLOATING_CTA_CLASS,
+  RESUME_SCORE_ZONE_CTA_CLASS,
   RESUME_UPLOAD_CTA_CLASS,
   RESUME_UPLOAD_HINT,
   RESUME_UPLOAD_TITLE,
@@ -176,7 +176,7 @@ export const ResumeReviewUploadZone = forwardRef<
               onClick={onScore}
               className={cn(
                 buttonVariants({ variant: "default", size: "lg" }),
-                PRIMARY_FLOATING_CTA_CLASS,
+                RESUME_SCORE_ZONE_CTA_CLASS,
                 "mt-1",
               )}
             >

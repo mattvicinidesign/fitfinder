@@ -63,10 +63,10 @@ export const ResumeFilePicker = forwardRef<ResumeFilePickerHandle, Props>(
       setParsing(false);
       try {
         const { resumeId, fileName: name } = await uploadResume(file);
+        onParsed({ resumeId, fileName: name });
         setUploading(false);
         setParsing(true);
         await waitForResumeParse(resumeId);
-        onParsed({ resumeId, fileName: name });
         toast.success("Upload complete.");
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Upload failed.");

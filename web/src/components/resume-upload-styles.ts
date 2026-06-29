@@ -20,6 +20,10 @@ export const RESUME_UPLOAD_CTA_CLASS =
 export const REPLACE_RESUME_BUTTON_CLASS =
   "rounded-lg border border-border/80 bg-card px-3 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-muted/40";
 
+/** In-zone Score CTA — contained width (not full-bleed sticky bar). */
+export const RESUME_SCORE_ZONE_CTA_CLASS =
+  "inline-flex h-11 max-w-full min-w-0 items-center justify-center rounded-xl px-4 text-[15px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]";
+
 /** Primary floating CTA — matches Home “+ New Fit Analysis” and Score actions. */
 export const PRIMARY_FLOATING_CTA_CLASS =
   "h-12 w-full rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]";

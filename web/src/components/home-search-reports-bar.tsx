@@ -11,6 +11,7 @@ import { getAppVersionLabel } from "@/lib/app-version";
 import { fetchUserDisplayName } from "@/lib/profile";
 import {
   resolveSearchReportsPlaceholderText,
+  searchPlaceholderTextClass,
   searchReportsPlaceholderText,
 } from "@/lib/search-reports-placeholder";
 import { cn } from "@/lib/utils";
@@ -72,6 +73,7 @@ export function HomeSearchReportsBar({
   };
 
   const isSearching = active || value.length > 0;
+  const placeholderTextClass = searchPlaceholderTextClass(placeholderText);
 
   useEffect(() => {
     if (isSearching || !typewriterEnabled) return;
@@ -175,14 +177,20 @@ export function HomeSearchReportsBar({
           onBlur={handleBlur}
           placeholder={placeholderText}
           aria-label={placeholderText}
-          className="min-h-[1.25rem] flex-1 bg-transparent text-[16px] font-medium text-white outline-none placeholder:text-white/40 [&::-webkit-search-cancel-button]:hidden"
+          className={cn(
+            "min-h-[1.25rem] min-w-0 flex-1 bg-transparent font-medium text-white outline-none placeholder:text-white/40 [&::-webkit-search-cancel-button]:hidden",
+            placeholderTextClass,
+          )}
         />
       ) : (
         <span
-          className="pointer-events-none flex min-h-[1.25rem] flex-1 items-center text-[16px] font-medium text-white/40"
+          className={cn(
+            "pointer-events-none flex min-h-[1.25rem] min-w-0 flex-1 items-center overflow-hidden font-medium text-white/40",
+            placeholderTextClass,
+          )}
           aria-hidden
         >
-          {displayText}
+          <span className="truncate whitespace-nowrap">{displayText}</span>
           {showCursor ? (
             <span
               aria-hidden

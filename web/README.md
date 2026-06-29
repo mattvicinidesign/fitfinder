@@ -49,7 +49,8 @@ src/
 | `npm run dev` | Next dev server (Vercel-style, uses `proxy.ts` for auth) |
 | `npm run build` | Production build for **Vercel** (SSR) |
 | `npm run build:capacitor` | Static export (`out/`) for **Capacitor iOS** |
-| `npm run cap:sync` | Export + `cap sync ios` |
+| `npm run cap:sync` | Export + `cap sync ios` (bumps `build-meta.json` → home badge **v0.1.N**) |
+| `npm run build:verify` | Verify Vercel + Capacitor builds before shipping |
 | `npm run cap:open` | Open Xcode |
 
 Capacitor loads the static `out/` bundle in a WKWebView. Auth on iOS uses
@@ -84,8 +85,13 @@ Storage when needed, and bundles `pdf.worker.min.mjs` for in-app PDF parsing on
 native (`npm run build:capacitor` copies it from `pdfjs-dist`).
 
 **Score tab landing:** `/resume-review` shows an intro screen with the onboarding
-resume pre-loaded when available. Tap **Score my resume** to run the review — tab
-navigation does not auto-score.
+resume pre-loaded when available. Tap **+ Score My Resume** to run the review — tab
+navigation does not auto-score. The in-zone CTA uses a contained width on native
+so it does not overflow the card.
+
+**Stats resume score:** The Stats tab **Resume score** KPI reads the latest review
+from session cache and persists the last score to `localStorage` so it updates on
+native when switching tabs (focus/visibility refresh).
 
 ## Deploy web (Vercel)
 

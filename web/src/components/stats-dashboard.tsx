@@ -10,9 +10,8 @@ import {
   type RecommendationStat,
 } from "@/lib/analysis-stats";
 import { formatRelativeTimeAgo } from "@/lib/posting-header-meta";
-import { loadResumeReview } from "@/lib/resume-review-cache";
+import { loadLastResumeScoreForStats } from "@/lib/resume-review-cache";
 import { resumeReviewScoreTextClass } from "@/lib/resume-review-score-colors";
-import { getResumeReviewMasterScore } from "@/lib/resume-review-scores";
 import { scoreColor } from "@/lib/score";
 import { cn } from "@/lib/utils";
 import type { AnalysisRecord } from "@/lib/types";
@@ -292,8 +291,17 @@ export function StatsDashboard({
   const [lastResumeScore, setLastResumeScore] = useState<number | null>(null);
 
   useEffect(() => {
-    const review = loadResumeReview();
-    setLastResumeScore(review ? getResumeReviewMasterScore(review) : null);
+    const refresh = () => {
+      setLastResumeScore(loadLastResumeScoreForStats());
+    };
+
+    refresh();
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, []);
 
   return (

@@ -5,21 +5,54 @@ import {
   loadAtsKeywordOptimization,
   clearAllAtsKeywordOptimizations,
 } from "@/lib/resume-review-ats-optimization";
-import { normalizeResumeReviewScores } from "@/lib/resume-review-scores";
+import { normalizeResumeReviewScores, getResumeReviewMasterScore } from "@/lib/resume-review-scores";
 
 const CACHE_KEY = "fitfinder:resume-review:last";
 const FILE_NAME_KEY = "fitfinder:resume-review:last-filename";
 const RESUME_ID_KEY = "fitfinder:resume-review:last-resume-id";
+const LAST_STATS_SCORE_KEY = "fitfinder:resume-review:last-stats-score";
+
+type LastResumeStatsScore = {
+  score: number;
+  reviewedAt: string;
+};
+
+function saveLastResumeStatsScore(review: ResumeReviewResult): void {
+  if (typeof localStorage === "undefined") return;
+  const normalized = normalizeResumeReviewScores(review);
+  const payload: LastResumeStatsScore = {
+    score: getResumeReviewMasterScore(normalized),
+    reviewedAt: new Date().toISOString(),
+  };
+  localStorage.setItem(LAST_STATS_SCORE_KEY, JSON.stringify(payload));
+}
+
+/** Stats KPI — session review first, then persisted last score (native tab reuse). */
+export function loadLastResumeScoreForStats(): number | null {
+  const review = loadResumeReview();
+  if (review) return getResumeReviewMasterScore(review);
+
+  if (typeof localStorage === "undefined") return null;
+  const raw = localStorage.getItem(LAST_STATS_SCORE_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<LastResumeStatsScore>;
+    return typeof parsed.score === "number" ? parsed.score : null;
+  } catch {
+    return null;
+  }
+}
 
 export function saveResumeReview(
   review: ResumeReviewResult,
   resumeId?: string | null,
 ): void {
+  const normalized = normalizeResumeReviewScores(review);
+  saveLastResumeStatsScore(normalized);
+
   if (typeof sessionStorage === "undefined") return;
-  sessionStorage.setItem(
-    CACHE_KEY,
-    JSON.stringify(normalizeResumeReviewScores(review)),
-  );
+  sessionStorage.setItem(CACHE_KEY, JSON.stringify(normalized));
   const id = resumeId ?? review.resumeId;
   if (id) {
     sessionStorage.setItem(RESUME_ID_KEY, id);

@@ -4,6 +4,14 @@ import { loadProfileHeaderSnapshot } from "@/lib/profile";
 
 const FALLBACK_PLACEHOLDER = "Search Reports";
 
+export function searchPlaceholderTextClass(text: string): string {
+  const length = text.length;
+  if (length > 34) return "text-[11px] leading-tight";
+  if (length > 28) return "text-[12px] leading-tight";
+  if (length > 22) return "text-[13px] leading-snug";
+  return "text-[16px] leading-normal";
+}
+
 export function searchReportsPlaceholderText(
   displayName?: string | null,
 ): string {
