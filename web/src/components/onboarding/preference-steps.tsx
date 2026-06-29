@@ -13,6 +13,7 @@ import type { OnboardingStep } from "@/components/onboarding/onboarding-wizard";
 export function createResumeUploadStep(input: {
   fileName: string | null;
   onParsed: (payload: { resumeId: string; fileName: string }) => void;
+  onBusyChange?: (busy: boolean) => void;
 }): OnboardingStep {
   return {
     title: "Upload your resume",
@@ -23,6 +24,7 @@ export function createResumeUploadStep(input: {
         className="min-h-[180px]"
         fileName={input.fileName}
         onParsed={input.onParsed}
+        onBusyChange={input.onBusyChange}
       />
     ),
   };

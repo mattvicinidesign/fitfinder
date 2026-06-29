@@ -1,18 +1,20 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { uploadResume } from "@/lib/resume-upload";
 import { waitForResumeParse } from "@/lib/resume-parse-tracker";
 import {
   RESUME_UPLOAD_ACCEPT,
   RESUME_UPLOAD_ACCEPT_NATIVE,
+  PRIMARY_FLOATING_CTA_CLASS,
   RESUME_UPLOAD_CTA_CLASS,
   RESUME_UPLOAD_HINT,
   RESUME_UPLOAD_TITLE,
   RESUME_SCORE_TITLE,
   resumeUploadZoneClassName,
 } from "@/components/resume-upload-styles";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { CtaSpinner } from "@/components/ui/cta-spinner";
 import { isNativePlatform } from "@/lib/platform";
 import { cn } from "@/lib/utils";
@@ -29,15 +31,25 @@ interface Props {
   pinnedBottom?: boolean;
 }
 
-export function ResumeReviewUploadZone({
-  resumeId,
-  fileName,
-  onResumeChange,
-  onScore,
-  disabled,
-  className,
-  pinnedBottom = false,
-}: Props) {
+export type ResumeReviewUploadZoneHandle = {
+  openFilePicker: () => void;
+};
+
+export const ResumeReviewUploadZone = forwardRef<
+  ResumeReviewUploadZoneHandle,
+  Props
+>(function ResumeReviewUploadZone(
+  {
+    resumeId,
+    fileName,
+    onResumeChange,
+    onScore,
+    disabled,
+    className,
+    pinnedBottom = false,
+  },
+  ref,
+) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -76,6 +88,8 @@ export function ResumeReviewUploadZone({
     if (busy || disabled) return;
     fileRef.current?.click();
   }
+
+  useImperativeHandle(ref, () => ({ openFilePicker }), [busy, disabled]);
 
   const busyLabel =
     phase === "uploading"
@@ -128,19 +142,12 @@ export function ResumeReviewUploadZone({
               ) : (
                 <CheckCircle2 className="size-8 text-primary" aria-hidden />
               )}
-              <button
-                type="button"
-                disabled={busy || disabled}
-                onClick={openFilePicker}
-                className="max-w-full text-[17px] font-medium text-foreground break-all transition-colors hover:text-primary disabled:opacity-60"
+              <p
+                className="w-full max-w-full truncate px-2 text-[17px] font-medium text-foreground"
+                title={fileName ?? undefined}
               >
                 {fileName}
-              </button>
-              {!busy ? (
-                <span className="text-[13px] text-muted-foreground">
-                  Tap to replace
-                </span>
-              ) : null}
+              </p>
             </>
           ) : (
             <>
@@ -163,17 +170,21 @@ export function ResumeReviewUploadZone({
           )}
 
           {hasResume && !busy ? (
-            <button
+            <Button
               type="button"
               disabled={disabled}
               onClick={onScore}
-              className={cn(RESUME_UPLOAD_CTA_CLASS, "mt-1 w-full max-w-sm")}
+              className={cn(
+                buttonVariants({ variant: "default", size: "lg" }),
+                PRIMARY_FLOATING_CTA_CLASS,
+                "mt-1",
+              )}
             >
               {RESUME_SCORE_TITLE}
-            </button>
+            </Button>
           ) : null}
         </div>
       </div>
     </div>
   );
-}
+});

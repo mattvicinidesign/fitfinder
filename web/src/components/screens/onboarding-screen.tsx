@@ -22,6 +22,7 @@ export function OnboardingScreen() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile>(emptyUserProfile());
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
+  const [resumeBusy, setResumeBusy] = useState(false);
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -61,6 +62,7 @@ export function OnboardingScreen() {
       createResumeUploadStep({
         fileName: resumeFileName,
         onParsed: handleResumeParsed,
+        onBusyChange: setResumeBusy,
       }),
       ...createPreferenceSteps(profile, patch),
     ],
@@ -102,6 +104,7 @@ export function OnboardingScreen() {
         onFinish={() => void finish()}
         onSkip={skip}
         busy={busy}
+        canContinue={!resumeBusy}
         loading={loading}
       />
     </AppFrame>

@@ -31,15 +31,13 @@ export function StatsScreen() {
     ensureSampleAnalysisDataSeeded();
     const supabase = createClient();
 
-    void Promise.all([
-      supabase
-        .from("analyses")
-        .select(
-          "id, company_name, job_title, fit_score, qualification_score, confidence_score, recommendation, recommendation_label, created_at",
-        )
-        .order("created_at", { ascending: false }),
-      supabase.from("saved_jobs").select("id", { count: "exact", head: true }),
-    ]).then(([analysesResult, savedResult]) => {
+    void supabase
+      .from("analyses")
+      .select(
+        "id, company_name, job_title, fit_score, qualification_score, confidence_score, recommendation, recommendation_label, created_at",
+      )
+      .order("created_at", { ascending: false })
+      .then((analysesResult) => {
       const rows = pickAnalysisListWithSamples(
         (analysesResult.data ?? []) as AnalysisRecord[],
         getSampleAnalyses(),
@@ -47,9 +45,8 @@ export function StatsScreen() {
         ...row,
         report_id: row.id,
       }));
-      const savedCount = savedResult.count ?? getSampleAnalyses().length;
       setAnalyses(rows);
-      setStats(computeAnalysisStats(rows, savedCount));
+      setStats(computeAnalysisStats(rows));
       setLoading(false);
     });
   }, []);

@@ -1,12 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { IosLargeTitle } from "@/components/ui/ios-large-title";
 import { screenShellClass } from "@/components/ui/sticky-bottom-cta";
 import { ResumeReviewIntro } from "@/components/resume-review-intro";
 import { ResumeReviewResultView } from "@/components/resume-review-result";
-import { ResumeReviewUploadZone } from "@/components/resume-review-upload-zone";
+import {
+  ResumeReviewUploadZone,
+  type ResumeReviewUploadZoneHandle,
+} from "@/components/resume-review-upload-zone";
 import { reviewResume } from "@/lib/api";
 import { fetchLatestUserResume } from "@/lib/resume-documents";
 import {
@@ -23,20 +26,46 @@ import {
   saveResumeReview,
   saveResumeReviewFileName,
 } from "@/lib/resume-review-cache";
+import { recordRecentResumeScoreActivity } from "@/lib/recent-activity";
 import { clearAtsKeywordOptimization, ensureAtsOptimizationCacheFresh } from "@/lib/resume-review-ats-optimization";
 import type { ResumeReviewResult } from "@/lib/types";
+import { REPLACE_RESUME_BUTTON_CLASS } from "@/components/resume-upload-styles";
 import { toast } from "sonner";
 
+function getInitialResumeReviewScreenState() {
+  if (typeof window === "undefined") {
+    return {
+      review: null as ResumeReviewResult | null,
+      fileName: null as string | null,
+    };
+  }
+
+  ensureAtsOptimizationCacheFresh();
+  const cached = loadResumeReview();
+  if (!cached) {
+    return { review: null, fileName: null };
+  }
+
+  return {
+    review: cached,
+    fileName: loadResumeReviewFileName(),
+  };
+}
+
 export function ResumeReviewScreen() {
-  const [review, setReview] = useState<ResumeReviewResult | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const initial = getInitialResumeReviewScreenState();
+  const [review, setReview] = useState<ResumeReviewResult | null>(initial.review);
+  const [fileName, setFileName] = useState<string | null>(initial.fileName);
   const [pendingResumeId, setPendingResumeId] = useState<string | null>(null);
   const [pendingFileName, setPendingFileName] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [animateGauge, setAnimateGauge] = useState(false);
+  const uploadZoneRef = useRef<ResumeReviewUploadZoneHandle>(null);
+
+  const showReplaceButton =
+    Boolean(review) || Boolean(pendingResumeId && pendingFileName);
 
   useEffect(() => {
-    ensureAtsOptimizationCacheFresh();
     const cached = loadResumeReview();
     const cachedResumeId =
       loadResumeReviewResumeId() ?? cached?.resumeId ?? null;
@@ -63,6 +92,8 @@ export function ResumeReviewScreen() {
         return;
       }
 
+      setReview(null);
+      setFileName(null);
       if (latest) {
         setPendingResumeId(latest.id);
         setPendingFileName(latest.fileName);
@@ -89,6 +120,7 @@ export function ResumeReviewScreen() {
       setReview(result);
       saveResumeReview(result, resumeId);
       saveResumeReviewFileName(name);
+      recordRecentResumeScoreActivity(result, name);
       void resolveResumeTextForOptimization(resumeId);
     } catch (e) {
       toast.error(
@@ -124,18 +156,26 @@ export function ResumeReviewScreen() {
     void runReview(pendingResumeId, pendingFileName);
   };
 
+  function handleHeaderReplace() {
+    if (review) {
+      handleReplace();
+      return;
+    }
+    uploadZoneRef.current?.openFilePicker();
+  }
+
   return (
     <div className={screenShellClass}>
       <IosLargeTitle
         title="Score"
         trailing={
-          review ? (
+          showReplaceButton ? (
             <button
               type="button"
-              onClick={handleReplace}
-              className="rounded-lg border border-border/80 bg-card px-3 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-muted/40"
+              onClick={handleHeaderReplace}
+              className={REPLACE_RESUME_BUTTON_CLASS}
             >
-              Replace
+              Replace Resume
             </button>
           ) : undefined
         }
@@ -152,18 +192,17 @@ export function ResumeReviewScreen() {
           </p>
         </div>
       ) : review ? (
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y py-4">
-          <ResumeReviewResultView
-            review={review}
-            fileName={fileName}
-            animateGauge={animateGauge}
-            onGaugeAnimationComplete={() => setAnimateGauge(false)}
-          />
-        </div>
+        <ResumeReviewResultView
+          review={review}
+          fileName={fileName}
+          animateGauge={animateGauge}
+          onGaugeAnimationComplete={() => setAnimateGauge(false)}
+        />
       ) : (
         <div className="min-h-0 flex-1 overflow-x-visible overflow-y-auto overscroll-contain touch-pan-y px-4 pb-4 pt-1">
           <ResumeReviewIntro />
           <ResumeReviewUploadZone
+            ref={uploadZoneRef}
             pinnedBottom
             className="!px-0"
             resumeId={pendingResumeId}

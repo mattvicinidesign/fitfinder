@@ -1,10 +1,15 @@
 import { formatRelativeTimeAgo } from "@/lib/posting-header-meta";
 import { loadAnalysisReport } from "@/lib/analysis-report-cache";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
-import type { AnalysisRecord, Recommendation } from "@/lib/types";
+import { reportHrefForReportId } from "@/lib/report-navigation";
+import { getResumeReviewMasterScore } from "@/lib/resume-review-scores";
+import type { AnalysisRecord, Recommendation, ResumeReviewResult } from "@/lib/types";
 import type { AnalysisReportCacheEntry } from "@/lib/analysis-report-cache";
 
+export type RecentActivityKind = "fit_analysis" | "resume_score";
+
 export type RecentActivityEntry = {
+  kind?: RecentActivityKind;
   reportId: string;
   analysisId: string | null;
   job_title: string | null;
@@ -14,16 +19,35 @@ export type RecentActivityEntry = {
   confidence_score: number | null;
   recommendation: Recommendation | null;
   recommendation_label: string | null;
+  resume_score?: number | null;
+  file_name?: string | null;
   created_at: string;
 };
 
 export type RecentActivityItem = AnalysisRecord & {
   /** Key in sessionStorage report cache (always use for report links). */
   report_id: string;
+  activity_kind?: RecentActivityKind;
+  resume_score?: number | null;
 };
 
 const STORAGE_KEY = "fitfinder:recent-activity";
 const MAX_STORED = 50;
+
+export function isResumeScoreActivity(
+  item: Pick<RecentActivityItem, "activity_kind" | "report_id">,
+): boolean {
+  if (item.activity_kind === "resume_score") return true;
+  return item.report_id?.startsWith("resume-review:") ?? false;
+}
+
+export function recentActivityHref(
+  item: Pick<RecentActivityItem, "activity_kind" | "report_id" | "id">,
+  from = "/home",
+): string {
+  if (isResumeScoreActivity(item)) return "/resume-review";
+  return reportHrefForReportId(item.report_id, from);
+}
 
 function readStored(): RecentActivityEntry[] {
   if (typeof localStorage === "undefined") return [];
@@ -54,13 +78,17 @@ function normalizeReportEntryFitScore(
   }).score.fitScore;
 }
 
-/** Report ring score (0–100) for an activity list row. */
+/** Report ring score (0–100) for a fit-analysis activity row. */
 export function resolveActivityFitScore(item: RecentActivityItem): number {
   const cached = loadAnalysisReport(item.report_id);
   if (cached) {
     return normalizeReportEntryFitScore(cached);
   }
   return item.fit_score ?? 0;
+}
+
+export function resolveActivityResumeScore(item: RecentActivityItem): number {
+  return item.resume_score ?? 0;
 }
 
 /** Record a generated report for Recent activity (independent of Save Report). */
@@ -95,11 +123,40 @@ export function recordRecentActivityFromReport(
   writeStored([next, ...stored]);
 }
 
+/** Record a completed resume score for Recent activity. */
+export function recordRecentResumeScoreActivity(
+  review: ResumeReviewResult,
+  fileName: string,
+): void {
+  const reportId = `resume-review:${review.id}`;
+  const resumeScore = getResumeReviewMasterScore(review);
+  const title = fileName.trim() || "Resume score";
+  const next: RecentActivityEntry = {
+    kind: "resume_score",
+    reportId,
+    analysisId: null,
+    job_title: title,
+    company_name: null,
+    fit_score: null,
+    qualification_score: null,
+    confidence_score: null,
+    recommendation: null,
+    recommendation_label: null,
+    resume_score: resumeScore,
+    file_name: fileName.trim() || null,
+    created_at: new Date().toISOString(),
+  };
+
+  const stored = readStored().filter((item) => item.reportId !== reportId);
+  writeStored([next, ...stored]);
+}
+
 export function loadRecentActivity(): RecentActivityEntry[] {
   return readStored();
 }
 
 function recentEntryToAnalysisRecord(entry: RecentActivityEntry): RecentActivityItem {
+  const kind = entry.kind ?? "fit_analysis";
   return {
     id: entry.analysisId ?? entry.reportId,
     report_id: entry.reportId,
@@ -114,6 +171,8 @@ function recentEntryToAnalysisRecord(entry: RecentActivityEntry): RecentActivity
     narrative_json: null,
     parsed_job_json: null,
     created_at: entry.created_at,
+    activity_kind: kind,
+    resume_score: entry.resume_score ?? null,
   };
 }
 
@@ -169,12 +228,13 @@ export function mergeRecentActivity(
 }
 
 export function matchesReportSearchQuery(
-  item: Pick<RecentActivityItem, "job_title" | "company_name">,
+  item: Pick<RecentActivityItem, "job_title" | "company_name" | "activity_kind" | "report_id">,
   query: string,
 ): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  return `${item.job_title ?? ""} ${item.company_name ?? ""}`
+  const resumeLabel = isResumeScoreActivity(item) ? "resume score score" : "";
+  return `${item.job_title ?? ""} ${item.company_name ?? ""} ${resumeLabel}`
     .toLowerCase()
     .includes(q);
 }

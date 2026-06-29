@@ -1,6 +1,5 @@
 "use client";
 
-import { AiGradientPillButton, AiGradientPillBadge } from "@/components/ai-gradient-pill-button";
 import { Button } from "@/components/ui/button";
 import {
   formatResumeReviewScorePercent,
@@ -73,20 +72,23 @@ export function ResumeReviewAtsCategoryCard({
   if (showOptimizeButton) {
     afterLabel = (
       <ScoreAccessoryWrap className="w-full min-w-0">
-        <AiGradientPillButton
+        <Button
+          type="button"
+          className="h-9 w-full rounded-xl text-sm"
           onClick={onOptimizeKeywords}
-          showIcon={false}
-          badge="Beta"
         >
           Optimize
-        </AiGradientPillButton>
+          <span className="ml-1.5 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider">
+            Beta
+          </span>
+        </Button>
       </ScoreAccessoryWrap>
     );
   } else if (showImprovementBadge) {
     scoreAccessory = (
-      <AiGradientPillBadge>
+      <span className="inline-flex h-7 shrink-0 items-center justify-center rounded-full bg-primary px-2.5 text-[11px] font-semibold text-primary-foreground">
         +{optimization!.improvementPercentage}%
-      </AiGradientPillBadge>
+      </span>
     );
   }
 
@@ -125,7 +127,6 @@ export function ResumeReviewAtsCategoryCard({
             <Button
               type="button"
               size="sm"
-              variant="outline"
               className="w-full"
               onClick={onReviewApplied}
             >

@@ -1,12 +1,17 @@
 "use client";
 
 import { fitScoreOnTen } from "@/components/qualification-score-circle";
-import { ReportLink } from "@/components/report-link";
+import { RecentActivityLink } from "@/components/recent-activity-link";
 import {
   activityMetaLine,
+  isResumeScoreActivity,
+  matchesReportSearchQuery,
   resolveActivityFitScore,
+  resolveActivityResumeScore,
   type RecentActivityItem,
 } from "@/lib/recent-activity";
+import { formatResumeReviewScorePercent } from "@/components/resume-review-ui";
+import { resumeReviewScoreTextClass } from "@/lib/resume-review-score-colors";
 import { scoreColor } from "@/lib/score";
 import { cn } from "@/lib/utils";
 
@@ -19,11 +24,7 @@ export function filterSearchReportItems(
 ): RecentActivityItem[] {
   const q = query.trim().toLowerCase();
   const pool = q
-    ? items.filter((item) =>
-        `${item.job_title ?? ""} ${item.company_name ?? ""}`
-          .toLowerCase()
-          .includes(q),
-      )
+    ? items.filter((item) => matchesReportSearchQuery(item, query))
     : items;
   return pool.slice(0, q ? MAX_RESULTS : MAX_RECENT);
 }
@@ -70,18 +71,20 @@ export function SearchReportsDropdown({
       ) : (
         <ul className="max-h-[min(18rem,50vh)] overflow-y-auto overscroll-contain">
           {items.map((item) => {
-            const fitScore = resolveActivityFitScore(item);
+            const isResume = isResumeScoreActivity(item);
+            const fitScore = isResume ? null : resolveActivityFitScore(item);
+            const resumeScore = isResume ? resolveActivityResumeScore(item) : null;
             return (
               <li key={item.id}>
-                <ReportLink
+                <RecentActivityLink
                   from="/home"
-                  analysis={item}
+                  item={item}
                   onClick={onSelect}
                   className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/8 active:bg-white/12"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[16px] font-medium text-white">
-                      {item.job_title ?? "Untitled role"}
+                      {item.job_title ?? (isResume ? "Resume score" : "Untitled role")}
                     </p>
                     <p className="mt-0.5 truncate text-[13px] text-white/50">
                       {activityMetaLine(item)}
@@ -91,14 +94,20 @@ export function SearchReportsDropdown({
                     <p
                       className={cn(
                         "text-[17px] font-semibold tabular-nums",
-                        scoreColor(fitScore),
+                        isResume
+                          ? resumeReviewScoreTextClass(resumeScore ?? 0)
+                          : scoreColor(fitScore ?? 0),
                       )}
                     >
-                      {fitScoreOnTen(fitScore)}
+                      {isResume
+                        ? formatResumeReviewScorePercent(resumeScore ?? 0)
+                        : fitScoreOnTen(fitScore ?? 0)}
                     </p>
-                    <p className="text-[11px] text-white/40">Fit</p>
+                    <p className="text-[11px] text-white/40">
+                      {isResume ? "Score" : "Fit"}
+                    </p>
                   </div>
-                </ReportLink>
+                </RecentActivityLink>
               </li>
             );
           })}

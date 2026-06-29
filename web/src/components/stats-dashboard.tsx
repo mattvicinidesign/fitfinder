@@ -1,13 +1,18 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ReportLink } from "@/components/report-link";
 import { MetricScore } from "@/components/ui/metric-score";
 import { fitScoreOnTen } from "@/components/qualification-score-circle";
+import { formatResumeReviewScorePercent } from "@/components/resume-review-ui";
 import {
   type AnalysisStats,
   type RecommendationStat,
 } from "@/lib/analysis-stats";
 import { formatRelativeTimeAgo } from "@/lib/posting-header-meta";
+import { loadResumeReview } from "@/lib/resume-review-cache";
+import { resumeReviewScoreTextClass } from "@/lib/resume-review-score-colors";
+import { getResumeReviewMasterScore } from "@/lib/resume-review-scores";
 import { scoreColor } from "@/lib/score";
 import { cn } from "@/lib/utils";
 import type { AnalysisRecord } from "@/lib/types";
@@ -25,6 +30,11 @@ type StatsRow = AnalysisRecord & { report_id: string };
 function formatScore(value: number | null): string {
   if (value == null) return "—";
   return String(value);
+}
+
+function formatFitScore(value: number | null): string {
+  if (value == null) return "—";
+  return fitScoreOnTen(value);
 }
 
 function recommendationConicGradient(stats: RecommendationStat[]): string {
@@ -77,15 +87,15 @@ function KpiCard({
   );
 }
 
-function summarizeRecommendationLabel(label: string): string {
-  const shortLabels: Record<string, string> = {
-    "Strong Pursuit": "Strong",
-    "Good Opportunity": "Good",
-    "Proceed With Caution": "Caution",
-    "Not Recommended": "Pass",
-    Unlabeled: "Other",
+function recommendationLegendLabel(label: string): string {
+  const labels: Record<string, string> = {
+    "Strong Pursuit": "Strong pursuit",
+    "Good Opportunity": "Good opportunity",
+    "Proceed With Caution": "Proceed with caution",
+    "Not Recommended": "Not recommended",
+    Unlabeled: "Unlabeled",
   };
-  return shortLabels[label] ?? label;
+  return labels[label] ?? label;
 }
 
 function RecommendationDonut({
@@ -96,14 +106,14 @@ function RecommendationDonut({
   total: number;
 }) {
   return (
-    <div className="flex items-center justify-start gap-3">
+    <div className="flex items-center justify-start gap-4">
       <div className="relative size-[6.25rem] shrink-0">
         <div
           className="size-full rounded-full"
           style={{ background: recommendationConicGradient(stats) }}
           aria-hidden
         />
-        <div className="absolute inset-[18%] flex flex-col items-center justify-center rounded-full bg-background text-center">
+        <div className="absolute inset-[12%] flex flex-col items-center justify-center rounded-full bg-background text-center">
           <span className="text-[20px] font-semibold tabular-nums leading-none">
             {total}
           </span>
@@ -112,11 +122,11 @@ function RecommendationDonut({
           </span>
         </div>
       </div>
-      <ul className="min-w-0 flex-1 space-y-1.5">
+      <ul className="min-w-0 flex-1 space-y-2">
         {stats.map((item, index) => (
           <li
             key={item.label}
-            className="flex items-center gap-2 text-[12px] leading-tight"
+            className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 text-[12px] leading-tight"
           >
             <span
               className="size-2 shrink-0 rounded-full"
@@ -126,8 +136,8 @@ function RecommendationDonut({
               }}
               aria-hidden
             />
-            <span className="min-w-0 flex-1 truncate">
-              {summarizeRecommendationLabel(item.label)}
+            <span className="min-w-0 text-foreground">
+              {recommendationLegendLabel(item.label)}
             </span>
             <span className="shrink-0 tabular-nums text-muted-foreground">
               {item.pct}%
@@ -166,7 +176,9 @@ function ScoreAverageBars({
                 item.value != null ? scoreColor(item.value) : "text-muted-foreground",
               )}
             >
-              {formatScore(item.value)}
+              {item.label === "Fit"
+                ? formatFitScore(item.value)
+                : formatScore(item.value)}
             </span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -277,6 +289,12 @@ export function StatsDashboard({
   stats: AnalysisStats;
 }) {
   const tableRows = analyses.slice(0, 12);
+  const [lastResumeScore, setLastResumeScore] = useState<number | null>(null);
+
+  useEffect(() => {
+    const review = loadResumeReview();
+    setLastResumeScore(review ? getResumeReviewMasterScore(review) : null);
+  }, []);
 
   return (
     <div className="space-y-5 px-4 pb-6">
@@ -284,15 +302,24 @@ export function StatsDashboard({
         <KpiCard label="Total analyses" value={String(stats.totalAnalyses)} />
         <KpiCard
           label="Avg fit score"
-          value={formatScore(stats.averageFit)}
+          value={formatFitScore(stats.averageFit)}
           valueClassName={
             stats.averageFit != null ? scoreColor(stats.averageFit) : undefined
           }
         />
         <KpiCard
-          label="Saved"
-          value={String(stats.savedCount)}
-          hint="Bookmarked roles"
+          label="Resume score"
+          value={
+            lastResumeScore != null
+              ? formatResumeReviewScorePercent(lastResumeScore)
+              : "—"
+          }
+          hint="Last review"
+          valueClassName={
+            lastResumeScore != null
+              ? resumeReviewScoreTextClass(lastResumeScore)
+              : undefined
+          }
         />
         <KpiCard
           label="Strong pursuits"

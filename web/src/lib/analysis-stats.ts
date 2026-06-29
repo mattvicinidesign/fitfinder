@@ -3,7 +3,7 @@ import type { AnalysisRecord } from "@/lib/types";
 export interface HomeFitStats {
   averageFitOnTen: number | null;
   analyzedCount: number;
-  /** e.g. "June 17, 2026" from the most recent analysis — shown as "Updated …" on home. */
+  /** e.g. "June 17, 2026" from the most recent fit analysis — shown on home hero. */
   lastAnalysisDateLabel: string | null;
 }
 
@@ -15,7 +15,6 @@ export interface RecommendationStat {
 
 export interface AnalysisStats {
   totalAnalyses: number;
-  savedCount: number;
   strongPursuitCount: number;
   averageFit: number | null;
   averageQualification: number | null;
@@ -81,7 +80,6 @@ export function computeHomeFitStats(analyses: AnalysisRecord[]): HomeFitStats {
 /** Aggregate headline metrics from analysis rows. */
 export function computeAnalysisStats(
   analyses: AnalysisRecord[],
-  savedCount: number,
 ): AnalysisStats {
   const fitScores = analyses
     .map((row) => row.fit_score)
@@ -113,7 +111,6 @@ export function computeAnalysisStats(
 
   return {
     totalAnalyses: total,
-    savedCount,
     strongPursuitCount,
     averageFit: average(fitScores),
     averageQualification: average(qualificationScores),

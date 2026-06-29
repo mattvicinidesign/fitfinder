@@ -15,7 +15,7 @@ export function ResumeReviewIntro() {
       aria-label="What Score includes"
     >
       <h2 className="mb-4 text-center text-[22px] font-semibold tracking-tight text-foreground">
-        See how your resume performs
+        See How Your Resume Performs
       </h2>
       <div className="relative flex w-full justify-center overflow-visible pb-2 pt-2">
         <div className="relative h-[13.75rem] w-[20rem] overflow-visible">

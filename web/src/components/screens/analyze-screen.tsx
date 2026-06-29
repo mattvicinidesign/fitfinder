@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Maximize2, Minimize2 } from "lucide-react";
@@ -26,7 +26,11 @@ import { CtaSpinner } from "@/components/ui/cta-spinner";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AnalysisResultView } from "@/components/analysis-result";
-import { ResumeFilePicker } from "@/components/resume-file-picker";
+import {
+  ResumeFilePicker,
+  type ResumeFilePickerHandle,
+} from "@/components/resume-file-picker";
+import { REPLACE_RESUME_BUTTON_CLASS } from "@/components/resume-upload-styles";
 import {
   ANALYZE_FIELD_CLASS,
   ANALYZE_SECTION_CLASS,
@@ -135,6 +139,7 @@ const DEMO_RESULT: AnalysisResult = {
 
 export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   const router = useRouter();
+  const resumePickerRef = useRef<ResumeFilePickerHandle>(null);
 
   const [resumeId, setResumeId] = useState<string | undefined>(undefined);
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
@@ -302,9 +307,21 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
               </ReportLink>
             ) : null}
           </div>
-          <h1 className="text-[34px] font-bold leading-tight tracking-tight">
-            Analyze
-          </h1>
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="min-w-0 text-[34px] font-bold leading-tight tracking-tight">
+              Analyze
+            </h1>
+            {resumeFileName ? (
+              <button
+                type="button"
+                onClick={() => resumePickerRef.current?.openFilePicker()}
+                disabled={busy}
+                className={REPLACE_RESUME_BUTTON_CLASS}
+              >
+                Replace Resume
+              </button>
+            ) : null}
+          </div>
         </StickyScreenHeader>
       )}
 
@@ -322,9 +339,11 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           <h2 className={ANALYZE_SECTION_LABEL_CLASS}>Resume</h2>
           {!demo ? (
             <ResumeFilePicker
+              ref={resumePickerRef}
               className="min-h-0 flex-1"
               disabled={busy}
               fileName={resumeFileName}
+              showReplaceHint={false}
               onParsed={({ resumeId, fileName }) => {
                 setResumeId(resumeId);
                 setResumeFileName(fileName);

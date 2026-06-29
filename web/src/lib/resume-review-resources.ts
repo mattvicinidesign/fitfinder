@@ -43,7 +43,7 @@ export const RESUME_REVIEW_RESOURCES: ResumeReviewResource[] = [
     title: "Quantify Your Resume",
     description:
       "Turn responsibilities into metrics — users, revenue, time saved, and % improvements.",
-    url: "https://www.indeed.com/career-advice/resumes-cover-letters/how-to-quantify-your-resume",
+    url: "https://www.indeed.com/career-advice/resumes-cover-letters/how-to-quantify-resume",
     cta: "Read guide",
     categoryKey: "content",
     icon: BarChart3,
@@ -54,7 +54,7 @@ export const RESUME_REVIEW_RESOURCES: ResumeReviewResource[] = [
     title: "Purdue OWL Achievement Bullets",
     description:
       "Structure each bullet around results and measurable outcomes in work experience.",
-    url: "https://owl.purdue.edu/owl/job_search_writing/resumes_and_vitae/resume_work_experience_section.html",
+    url: "https://owl.purdue.edu/owl/job_search_writing/resumes_and_vitas/resume_sections/work_experience_section.html",
     cta: "Read guide",
     categoryKey: "content",
     icon: BookOpen,
@@ -65,7 +65,7 @@ export const RESUME_REVIEW_RESOURCES: ResumeReviewResource[] = [
     title: "XYZ Bullet Formula",
     description:
       "Accomplished X, measured by Y, by doing Z — a simple framework for metric bullets.",
-    url: "https://www.indeed.com/career-advice/resumes-cover-letters/what-is-the-x-y-z-formula",
+    url: "https://simplify.jobs/blog/how-to-use-the-xyz-resume-format",
     cta: "Read guide",
     categoryKey: "content",
     icon: Target,
@@ -76,7 +76,7 @@ export const RESUME_REVIEW_RESOURCES: ResumeReviewResource[] = [
     title: "Quantify Without Exact Numbers",
     description:
       "Estimate scope, frequency, and impact when you do not have hard revenue or user stats.",
-    url: "https://www.themuse.com/advice/how-to-quantify-your-resume-bullets-when-you-dont-have-hard-numbers",
+    url: "https://www.themuse.com/advice/how-to-quantify-your-resume-bullets-when-you-dont-work-with-numbers",
     cta: "Read guide",
     categoryKey: "content",
     icon: Lightbulb,
@@ -96,7 +96,7 @@ export const RESUME_REVIEW_RESOURCES: ResumeReviewResource[] = [
     id: "indeed-format",
     title: "Indeed Resume Format Guide",
     description: "Section order, spacing, and hierarchy that recruiters scan fast.",
-    url: "https://www.indeed.com/career-advice/resumes-cover-letters/resume-format-guide",
+    url: "https://www.indeed.com/career-advice/resumes-cover-letters/resume-format-guide-with-examples",
     cta: "Read guide",
     categoryKey: "structure",
     icon: Columns3,

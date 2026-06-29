@@ -53,12 +53,14 @@ export function StickyBottomCta({
   className,
   variant = "bar",
   scrollFade = false,
+  scrollFadeClassName,
 }: {
   children: React.ReactNode;
   className?: string;
   variant?: "bar" | "floating" | "bare";
   /** Soft gradient above floating CTAs — dims scroll content under the button. */
   scrollFade?: boolean;
+  scrollFadeClassName?: string;
 }) {
   const isFloating = variant === "floating";
   const isBare = variant === "bare";
@@ -72,6 +74,7 @@ export function StickyBottomCta({
           className={cn(
             "pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[6.75rem]",
             "bg-gradient-to-t from-background from-[28%] via-background/80 via-[58%] to-transparent",
+            scrollFadeClassName,
           )}
         />
       ) : null}

@@ -5,31 +5,19 @@ import {
   getResumeReviewResourcesForCategory,
   type ResumeReviewResource,
 } from "@/lib/resume-review-resources";
-import { isNativePlatform } from "@/lib/platform";
 import { openExternalUrl } from "@/lib/open-external-url";
 import type { ResumeReviewCategoryKey } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import type { MouseEvent } from "react";
 
 function ResourceBanner({ resource }: { resource: ResumeReviewResource }) {
   const Icon = resource.icon;
 
-  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (!isNativePlatform()) return;
-    event.preventDefault();
-    void openExternalUrl(resource.url);
-  };
-
   return (
-    <a
-      href={resource.url}
-      onClick={handleClick}
-      {...(!isNativePlatform() && {
-        target: "_blank",
-        rel: "noopener noreferrer",
-      })}
+    <button
+      type="button"
+      onClick={() => void openExternalUrl(resource.url)}
       className={cn(
-        "block w-[17.5rem] max-w-[calc(100%-3rem)] shrink-0 snap-start rounded-2xl p-5 text-white shadow-sm outline-offset-2 transition-transform active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-ring",
+        "block w-[17.5rem] max-w-[calc(100%-3rem)] shrink-0 snap-start rounded-2xl p-5 text-left text-white shadow-sm outline-offset-2 transition-transform active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-ring",
         resource.gradientClass,
       )}
     >
@@ -50,7 +38,7 @@ function ResourceBanner({ resource }: { resource: ResumeReviewResource }) {
       <span className="mt-4 inline-flex rounded-full bg-[#f4f0e8] px-4 py-2 text-[14px] font-semibold text-[#1e3a2f]">
         {resource.cta}
       </span>
-    </a>
+    </button>
   );
 }
 

@@ -11,8 +11,8 @@ import {
   AtsKeywordOptimizeLoadingOverlay,
 } from "@/components/ats-keyword-optimize-modals";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
-import { AiGradientPillButton } from "@/components/ai-gradient-pill-button";
 import { Button } from "@/components/ui/button";
+import { RESUME_REVIEW_PRIMARY_CTA_CLASS } from "@/components/resume-upload-styles";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   FindingRow,
@@ -440,29 +440,30 @@ export function ResumeReviewCategoryScreen({
               <div className="space-y-2">
                 <Button
                   type="button"
-                  variant="outline"
-                  className="w-full bg-background/95"
+                  className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
                   onClick={openAppliedReview}
                 >
                   Review replacements
                 </Button>
-                <AiGradientPillButton
-                  size="large"
-                  showIcon={false}
-                  className="w-full"
+                <Button
+                  type="button"
+                  className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
                   onClick={handleDownload}
                 >
                   Download Optimized Resume
-                </AiGradientPillButton>
+                </Button>
               </div>
             ) : (
-              <AiGradientPillButton
+              <Button
+                type="button"
+                className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
                 onClick={() => setConfirmOpen(true)}
-                showIcon={false}
-                badge="Beta"
               >
                 Optimize
-              </AiGradientPillButton>
+                <span className="ml-2 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider">
+                  Beta
+                </span>
+              </Button>
             )}
           </div>
         </>

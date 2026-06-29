@@ -9,12 +9,23 @@ export const RESUME_UPLOAD_ACCEPT_NATIVE = ".pdf,.doc,.docx,.txt";
 
 export const RESUME_UPLOAD_TITLE = "Upload your resume";
 
-export const RESUME_SCORE_TITLE = "Score my resume";
+export const RESUME_SCORE_TITLE = "+ Score My Resume";
 
 export const RESUME_UPLOAD_HINT = "PDF, Word, or TXT";
 
 export const RESUME_UPLOAD_CTA_CLASS =
   "rounded-xl bg-primary px-5 py-2.5 text-[15px] font-semibold text-primary-foreground";
+
+/** Header action on Analyze / Score when a resume is already loaded. */
+export const REPLACE_RESUME_BUTTON_CLASS =
+  "rounded-lg border border-border/80 bg-card px-3 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-muted/40";
+
+/** Primary floating CTA — matches Home “+ New Fit Analysis” and Score actions. */
+export const PRIMARY_FLOATING_CTA_CLASS =
+  "h-12 w-full rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]";
+
+/** Full-width primary actions on Score screens (matches onboarding / analyze CTAs). */
+export const RESUME_REVIEW_PRIMARY_CTA_CLASS = PRIMARY_FLOATING_CTA_CLASS;
 
 /** Canonical resume dropzone — matches Analyze screen field styling. */
 export function resumeUploadZoneClassName(className?: string) {

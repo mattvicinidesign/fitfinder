@@ -4,6 +4,7 @@ import {
   type AnalysisReportCacheEntry,
 } from "@/lib/analysis-report-cache";
 import {
+  isResumeScoreActivity,
   loadRecentActivity,
   type RecentActivityItem,
 } from "@/lib/recent-activity";
@@ -399,6 +400,15 @@ export function canOpenAnalysisItem(
   return canOpenReport(reportCacheIdForItem(item));
 }
 
+/** Recent activity rows — fit reports with cache, or resume score entries. */
+export function filterRecentActivity(
+  items: RecentActivityItem[],
+): RecentActivityItem[] {
+  return items.filter(
+    (item) => isResumeScoreActivity(item) || canOpenAnalysisItem(item),
+  );
+}
+
 /** Drop list rows that cannot open a report (stale localStorage ids, etc.). */
 export function filterOpenableAnalyses<
   T extends AnalysisRecord & { report_id?: string },
@@ -411,7 +421,7 @@ export function pickRecentActivityList(
   merged: RecentActivityItem[],
   limit: number,
 ): RecentActivityItem[] {
-  const loadable = filterOpenableAnalyses(merged);
+  const loadable = filterRecentActivity(merged);
   const primary = loadable.length > 0 ? loadable.slice(0, limit) : [];
   if (primary.length >= limit) return primary;
 
@@ -457,7 +467,9 @@ function ensureAllSampleReportsCached(): void {
 function recentActivityIsValid(): boolean {
   const entries = loadRecentActivity();
   if (entries.length === 0) return false;
-  return entries.every((entry) => canOpenReport(entry.reportId));
+  return entries.every(
+    (entry) => entry.kind === "resume_score" || canOpenReport(entry.reportId),
+  );
 }
 
 /** Replace stale recent-activity rows with sample reports that match SPECS. */

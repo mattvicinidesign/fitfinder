@@ -8,12 +8,15 @@ import {
 } from "@/components/ats-keyword-optimize-modals";
 import { showAtsOptimizeError } from "@/lib/ats-optimize-toast";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
-import { AiGradientPillButton } from "@/components/ai-gradient-pill-button";
 import { Button } from "@/components/ui/button";
+import { RESUME_REVIEW_PRIMARY_CTA_CLASS } from "@/components/resume-upload-styles";
 import { ResumeReviewAtsCategoryCard } from "@/components/resume-review-ats-category-card";
 import { ResumeReviewScoreGauge } from "@/components/resume-review-score-gauge";
 import { ResumeReviewCategoryRow } from "@/components/resume-review-ui";
-import { safeBottomCta } from "@/lib/safe-area";
+import {
+  StickyBottomCta,
+  StickyScreenBody,
+} from "@/components/ui/sticky-bottom-cta";
 import { cn } from "@/lib/utils";
 import { patchResumeReviewAtsScore } from "@/lib/patch-resume-review-ats-score";
 import {
@@ -181,82 +184,73 @@ export function ResumeReviewResultView({
   }, [review.id]);
 
   return (
-    <>
-      <div className={cn("space-y-8", atsOptimized && "pb-28")}>
-        <div className="px-4">
-          <div className="rounded-2xl border border-border/70 bg-card/50 px-5 py-5">
-            <div className="flex flex-col gap-4">
-              <ResumeReviewScoreGauge
-                key={animateGauge ? `animate-${review.id}` : review.id}
-                score={masterScore}
-                animate={animateGauge}
-                onAnimationComplete={onGaugeAnimationComplete}
-              />
-              <p className="text-center text-[16px] leading-snug text-foreground/90">
-                {review.summary}
-              </p>
-              {resolvedFileName ? (
-                <p className="text-center text-[11px] leading-snug break-all text-muted-foreground">
-                  {resolvedFileName}
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <StickyScreenBody className={cn("py-4", atsOptimized && "pb-36")}>
+        <div className="space-y-8">
+          <div className="px-4">
+            <div className="rounded-2xl border border-border/70 bg-card/50 px-5 py-5">
+              <div className="flex flex-col gap-4">
+                <ResumeReviewScoreGauge
+                  key={animateGauge ? `animate-${review.id}` : review.id}
+                  score={masterScore}
+                  animate={animateGauge}
+                  onAnimationComplete={onGaugeAnimationComplete}
+                />
+                <p className="text-center text-[16px] leading-snug text-foreground/90">
+                  {review.summary}
                 </p>
-              ) : null}
+                {resolvedFileName ? (
+                  <p className="text-center text-[11px] leading-snug break-all text-muted-foreground">
+                    {resolvedFileName}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
 
-        <section className="space-y-2">
-          <h2 className="px-4 text-[13px] font-normal uppercase tracking-wide text-muted-foreground">
-            Category scores
-          </h2>
-          <div className="grid grid-cols-2 items-start gap-3 px-4">
-            {review.categories.map((category, index) =>
-              category.key === "ats" ? (
-                <ResumeReviewAtsCategoryCard
-                  key={category.key}
-                  category={category}
-                  optimization={optimization}
-                  onOptimizeKeywords={() => setConfirmOpen(true)}
-                  onPreviewChanges={() => {
-                    setPreviewMode("review");
-                    setPreviewOpen(true);
-                  }}
-                  onReviewApplied={() => {
-                    setPreviewMode("applied");
-                    setPreviewOpen(true);
-                  }}
-                  animate={animateGauge}
-                  animateDelay={index * 75}
-                />
-              ) : (
-                <ResumeReviewCategoryRow
-                  key={category.key}
-                  category={category}
-                  animate={animateGauge}
-                  animateDelay={index * 75}
-                />
-              ),
-            )}
-          </div>
-        </section>
-      </div>
+          <section className="space-y-2">
+            <h2 className="px-4 text-[13px] font-normal uppercase tracking-wide text-muted-foreground">
+              Category scores
+            </h2>
+            <div className="grid grid-cols-2 items-start gap-3 px-4">
+              {review.categories.map((category, index) =>
+                category.key === "ats" ? (
+                  <ResumeReviewAtsCategoryCard
+                    key={category.key}
+                    category={category}
+                    optimization={optimization}
+                    onOptimizeKeywords={() => setConfirmOpen(true)}
+                    onPreviewChanges={() => {
+                      setPreviewMode("review");
+                      setPreviewOpen(true);
+                    }}
+                    onReviewApplied={() => {
+                      setPreviewMode("applied");
+                      setPreviewOpen(true);
+                    }}
+                    animate={animateGauge}
+                    animateDelay={index * 75}
+                  />
+                ) : (
+                  <ResumeReviewCategoryRow
+                    key={category.key}
+                    category={category}
+                    animate={animateGauge}
+                    animateDelay={index * 75}
+                  />
+                ),
+              )}
+            </div>
+          </section>
+        </div>
+      </StickyScreenBody>
 
       {atsOptimized ? (
-        <>
-          <div
-            aria-hidden
-            className="pointer-events-none fixed inset-x-0 bottom-[calc(58px+max(0px,env(safe-area-inset-bottom)))] z-20 mx-auto h-24 max-w-[480px] bg-gradient-to-t from-background from-[28%] via-background/80 via-[58%] to-transparent"
-          />
-          <div
-            className={cn(
-              "pointer-events-none fixed inset-x-0 z-30 mx-auto max-w-[480px] space-y-2 px-4 pt-3",
-              "bottom-[calc(58px+max(0px,env(safe-area-inset-bottom))+0.75rem)]",
-              safeBottomCta,
-            )}
-          >
+        <StickyBottomCta variant="floating" scrollFade scrollFadeClassName="h-[10.5rem]">
+          <div className="space-y-2">
             <Button
               type="button"
-              variant="outline"
-              className="pointer-events-auto w-full bg-background/95"
+              className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
               onClick={() => {
                 setPreviewMode("applied");
                 setPreviewOpen(true);
@@ -264,16 +258,15 @@ export function ResumeReviewResultView({
             >
               Review replacements
             </Button>
-            <AiGradientPillButton
-              size="large"
-              showIcon={false}
-              className="pointer-events-auto w-full"
+            <Button
+              type="button"
+              className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
               onClick={handleDownload}
             >
               Download Optimized Resume
-            </AiGradientPillButton>
+            </Button>
           </div>
-        </>
+        </StickyBottomCta>
       ) : null}
 
       <AtsKeywordOptimizeConfirmModal
@@ -292,6 +285,6 @@ export function ResumeReviewResultView({
           onDiscard={handleDiscardPending}
         />
       ) : null}
-    </>
+    </div>
   );
 }

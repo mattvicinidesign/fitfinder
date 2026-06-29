@@ -51,6 +51,11 @@ Apply to **Production**, **Preview**, and **Development** so preview deploys wor
 Click **Deploy**. When the build log shows routes like `/`, `/home`, `/analyze`,
 the Next.js app built correctly.
 
+**App version badge:** The home screen shows `v0.1.N` where `N` is the cap-sync
+build counter in `web/build-meta.json`. Run `npm run cap:sync` locally to bump
+it, then commit `build-meta.json` (and the iOS `project.pbxproj` version lines)
+so Production and Preview deploys show the same number.
+
 If every URL returns Vercel’s `404: NOT_FOUND` box but the build succeeded:
 
 - Re-check **Root Directory** = `web` and **Framework Preset** = **Next.js**

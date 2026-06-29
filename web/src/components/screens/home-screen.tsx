@@ -9,6 +9,7 @@ import {
 } from "@/components/search-reports-dropdown";
 import { usePathname } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
+import { PRIMARY_FLOATING_CTA_CLASS } from "@/components/resume-upload-styles";
 import {
   screenShellClass,
   StickyBottomCta,
@@ -41,7 +42,7 @@ import {
   activityMetaLine,
   type RecentActivityItem,
 } from "@/lib/recent-activity";
-import { ReportLink } from "@/components/report-link";
+import { RecentActivityLink } from "@/components/recent-activity-link";
 import { homeHeroContentInset, screenGutterX } from "@/lib/screen-gutter";
 import type { AnalysisRecord } from "@/lib/types";
 
@@ -90,7 +91,7 @@ function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
       </MetricScore>
       {stats.lastAnalysisDateLabel ? (
         <p className="mt-2.5 text-[12px] font-semibold leading-snug text-primary-foreground/90">
-          Updated {stats.lastAnalysisDateLabel}
+          Last Fit Analysis: {stats.lastAnalysisDateLabel}
         </p>
       ) : null}
     </div>
@@ -343,16 +344,18 @@ export function HomeScreen() {
                 />
               ) : analyses.length === 0 ? (
                 <p className="py-10 text-center text-[15px] text-muted-foreground leading-snug">
-                  No activity yet. Tap{" "}
-                  <span className="font-medium text-foreground">Analyze Fit</span>{" "}
-                  to run your first fit report.
+                  No activity yet. Run a{" "}
+                  <span className="font-medium text-foreground">Fit Analysis</span>{" "}
+                  or{" "}
+                  <span className="font-medium text-foreground">Resume Score</span>{" "}
+                  to see results here.
                 </p>
               ) : (
                 <IosGroupedSection fullWidth>
                   {analyses.map((a) => (
-                    <ReportLink
+                    <RecentActivityLink
                       key={a.id}
-                      analysis={a}
+                      item={a}
                       from="/home"
                       className="block transition-colors hover:bg-muted/30 active:bg-muted/40"
                     >
@@ -361,7 +364,7 @@ export function HomeScreen() {
                         subtitle={activityMetaLine(a)}
                         className="px-0"
                       />
-                    </ReportLink>
+                    </RecentActivityLink>
                   ))}
                 </IosGroupedSection>
               )}
@@ -377,10 +380,10 @@ export function HomeScreen() {
           href="/analyze"
           className={cn(
             buttonVariants({ variant: "default", size: "lg" }),
-            "h-12 w-full rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]",
+            PRIMARY_FLOATING_CTA_CLASS,
           )}
         >
-          Scan Resume
+          + New Fit Analysis
         </Link>
       </StickyBottomCta>
     </div>

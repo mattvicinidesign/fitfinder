@@ -139,6 +139,7 @@ export function SignUpScreen({
   const [busy, setBusy] = useState(false);
   const [emailSent, setEmailSent] = useState(initial.emailSent);
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
+  const [resumeBusy, setResumeBusy] = useState(false);
   const progressRef = useRef({
     signupStep: initial.step,
     email: initial.email,
@@ -227,6 +228,7 @@ export function SignUpScreen({
       createResumeUploadStep({
         fileName: resumeFileName,
         onParsed: handleResumeParsed,
+        onBusyChange: setResumeBusy,
       }),
       ...preferenceSteps,
     ],
@@ -245,7 +247,8 @@ export function SignUpScreen({
     ],
   );
 
-  const canContinue = canContinueSignupStep(step, profile, email);
+  const canContinue =
+    !resumeBusy && canContinueSignupStep(step, profile, email);
 
   function validateAccountStep(): boolean {
     if (isSignupGeneralDetailsComplete(profile, email)) return true;

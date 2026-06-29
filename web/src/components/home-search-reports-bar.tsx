@@ -8,9 +8,13 @@ import {
   shouldPlaySearchReportsTypewriter,
 } from "@/lib/app-session";
 import { getAppVersionLabel } from "@/lib/app-version";
+import { fetchUserDisplayName } from "@/lib/profile";
+import {
+  resolveSearchReportsPlaceholderText,
+  searchReportsPlaceholderText,
+} from "@/lib/search-reports-placeholder";
 import { cn } from "@/lib/utils";
 
-const PLACEHOLDER_TEXT = "Search Reports";
 const TYPEWRITER_CHAR_MS = 68;
 
 function AppVersionBadge() {
@@ -49,9 +53,18 @@ export function HomeSearchReportsBar({
   const [uncontrolledActive, setUncontrolledActive] = useState(false);
   const [displayText, setDisplayText] = useState("");
   const [showCursor, setShowCursor] = useState(false);
+  const [placeholderText, setPlaceholderText] = useState(
+    resolveSearchReportsPlaceholderText,
+  );
 
   const isControlled = controlledActive !== undefined;
   const active = isControlled ? controlledActive : uncontrolledActive;
+
+  useEffect(() => {
+    void fetchUserDisplayName().then((name) => {
+      setPlaceholderText(searchReportsPlaceholderText(name));
+    });
+  }, []);
 
   const setActive = (next: boolean) => {
     if (!isControlled) setUncontrolledActive(next);
@@ -70,7 +83,7 @@ export function HomeSearchReportsBar({
       !reduceMotion && shouldPlaySearchReportsTypewriter();
 
     if (!shouldAnimate) {
-      setDisplayText(PLACEHOLDER_TEXT);
+      setDisplayText(placeholderText);
       setShowCursor(false);
       markSearchReportsTypewriterDone();
       return;
@@ -82,8 +95,8 @@ export function HomeSearchReportsBar({
     let index = 0;
     const intervalId = window.setInterval(() => {
       index += 1;
-      setDisplayText(PLACEHOLDER_TEXT.slice(0, index));
-      if (index >= PLACEHOLDER_TEXT.length) {
+      setDisplayText(placeholderText.slice(0, index));
+      if (index >= placeholderText.length) {
         window.clearInterval(intervalId);
         setShowCursor(false);
         markSearchReportsTypewriterDone();
@@ -91,7 +104,7 @@ export function HomeSearchReportsBar({
     }, TYPEWRITER_CHAR_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [isSearching, typewriterEnabled]);
+  }, [isSearching, typewriterEnabled, placeholderText]);
 
   const activate = () => {
     markSearchReportsTypewriterDone();
@@ -116,7 +129,7 @@ export function HomeSearchReportsBar({
       <div
         role={isSearching ? undefined : "button"}
         tabIndex={isSearching ? undefined : 0}
-        aria-label={isSearching ? undefined : PLACEHOLDER_TEXT}
+        aria-label={isSearching ? undefined : placeholderText}
         onClick={!isSearching ? activate : undefined}
         onKeyDown={
           !isSearching
@@ -160,8 +173,8 @@ export function HomeSearchReportsBar({
             onFocusChange?.(true);
           }}
           onBlur={handleBlur}
-          placeholder={PLACEHOLDER_TEXT}
-          aria-label={PLACEHOLDER_TEXT}
+          placeholder={placeholderText}
+          aria-label={placeholderText}
           className="min-h-[1.25rem] flex-1 bg-transparent text-[16px] font-medium text-white outline-none placeholder:text-white/40 [&::-webkit-search-cancel-button]:hidden"
         />
       ) : (
