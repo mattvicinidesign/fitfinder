@@ -3,8 +3,8 @@ import type { AnalysisRecord } from "@/lib/types";
 export interface HomeFitStats {
   averageFitOnTen: number | null;
   analyzedCount: number;
-  /** e.g. "June 17, 2026" from the most recent fit analysis — shown on home hero. */
-  lastAnalysisDateLabel: string | null;
+  /** e.g. "June 17, 2026" — most recent fit or resume score activity. */
+  lastActivityDateLabel: string | null;
 }
 
 export interface RecommendationStat {
@@ -27,13 +27,13 @@ function average(values: number[]): number | null {
   return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 }
 
-function formatLastAnalysisDateLabel(
-  analyses: AnalysisRecord[],
+export function formatLatestActivityDateLabel(
+  items: Pick<AnalysisRecord, "created_at">[],
 ): string | null {
   let latestIso: string | null = null;
   let latestTime = Number.NEGATIVE_INFINITY;
 
-  for (const row of analyses) {
+  for (const row of items) {
     if (!row.created_at) continue;
     const time = new Date(row.created_at).getTime();
     if (Number.isNaN(time) || time <= latestTime) continue;
@@ -73,7 +73,7 @@ export function computeHomeFitStats(analyses: AnalysisRecord[]): HomeFitStats {
   return {
     averageFitOnTen,
     analyzedCount,
-    lastAnalysisDateLabel: formatLastAnalysisDateLabel(analyses),
+    lastActivityDateLabel: null,
   };
 }
 

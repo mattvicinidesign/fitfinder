@@ -437,6 +437,15 @@ export function pickAnalysisListWithSamples<T extends AnalysisRecord & { report_
   return loadable.length > 0 ? loadable : samples;
 }
 
+/** Home/Stats KPIs — real rows only; empty when QA forces blank activity lists. */
+export function pickFitAnalysesForMetrics<T extends AnalysisRecord & { report_id?: string }>(
+  rows: T[],
+  samples: T[],
+): T[] {
+  if (shouldForceEmptyActivityLists()) return [];
+  return pickAnalysisListWithSamples(rows, samples);
+}
+
 function clearLegacySeedKeys(): void {
   if (typeof localStorage === "undefined") return;
   for (let i = localStorage.length - 1; i >= 0; i--) {

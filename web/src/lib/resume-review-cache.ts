@@ -11,6 +11,72 @@ const CACHE_KEY = "fitfinder:resume-review:last";
 const FILE_NAME_KEY = "fitfinder:resume-review:last-filename";
 const RESUME_ID_KEY = "fitfinder:resume-review:last-resume-id";
 const LAST_STATS_SCORE_KEY = "fitfinder:resume-review:last-stats-score";
+const HISTORY_STORAGE_KEY = "fitfinder:resume-review:history";
+
+type ResumeReviewHistoryEntry = {
+  review: ResumeReviewResult;
+  fileName: string | null;
+  savedAt: string;
+};
+
+function readHistoryMap(): Record<string, ResumeReviewHistoryEntry> {
+  if (typeof localStorage === "undefined") return {};
+  const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, ResumeReviewHistoryEntry>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeHistoryMap(map: Record<string, ResumeReviewHistoryEntry>): void {
+  if (typeof localStorage === "undefined") return;
+  if (Object.keys(map).length === 0) {
+    localStorage.removeItem(HISTORY_STORAGE_KEY);
+    return;
+  }
+  localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(map));
+}
+
+/** Persist each scored resume so activity rows can reopen the matching report. */
+export function saveResumeReviewHistoryEntry(
+  review: ResumeReviewResult,
+  fileName?: string | null,
+): void {
+  const normalized = normalizeResumeReviewScores(review);
+  const map = readHistoryMap();
+  map[normalized.id] = {
+    review: normalized,
+    fileName: fileName?.trim() || null,
+    savedAt: new Date().toISOString(),
+  };
+  writeHistoryMap(map);
+}
+
+export function loadResumeReviewHistoryEntry(
+  reviewId: string,
+): ResumeReviewHistoryEntry | null {
+  const entry = readHistoryMap()[reviewId];
+  if (!entry?.review) return null;
+  return {
+    review: normalizeResumeReviewScores(entry.review),
+    fileName: entry.fileName ?? null,
+    savedAt: entry.savedAt,
+  };
+}
+
+/** Hydrate session cache from a historical resume score activity row. */
+export function activateResumeReviewFromHistory(reviewId: string): boolean {
+  const entry = loadResumeReviewHistoryEntry(reviewId);
+  if (!entry) return false;
+  saveResumeReview(entry.review, entry.review.resumeId);
+  if (entry.fileName) {
+    saveResumeReviewFileName(entry.fileName);
+  }
+  return true;
+}
 
 type LastResumeStatsScore = {
   score: number;
@@ -47,9 +113,11 @@ export function loadLastResumeScoreForStats(): number | null {
 export function saveResumeReview(
   review: ResumeReviewResult,
   resumeId?: string | null,
+  fileName?: string | null,
 ): void {
   const normalized = normalizeResumeReviewScores(review);
   saveLastResumeStatsScore(normalized);
+  saveResumeReviewHistoryEntry(normalized, fileName);
 
   if (typeof sessionStorage === "undefined") return;
   sessionStorage.setItem(CACHE_KEY, JSON.stringify(normalized));

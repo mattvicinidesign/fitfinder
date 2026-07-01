@@ -26,7 +26,7 @@ import {
   ensureSampleAnalysisDataSeeded,
   filterOpenableAnalyses,
   getSampleAnalyses,
-  pickAnalysisListWithSamples,
+  pickFitAnalysesForMetrics,
   pickRecentActivityList,
 } from "@/lib/sample-analyses";
 import type { AnalysisRecord } from "@/lib/types";
@@ -40,7 +40,7 @@ function buildStatsView(dbRows: AnalysisRecord[]) {
     Number.MAX_SAFE_INTEGER,
   );
   const activityRows = pickRecentActivityList(merged, Number.MAX_SAFE_INTEGER);
-  const fitRows = pickAnalysisListWithSamples(
+  const fitRows = pickFitAnalysesForMetrics(
     filterOpenableAnalyses(
       merged.filter((item) => !isResumeScoreActivity(item)),
     ),

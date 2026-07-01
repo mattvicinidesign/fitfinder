@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ComponentProps } from "react";
 import {
   isResumeScoreActivity,
+  recentActivityHref,
   type RecentActivityItem,
 } from "@/lib/recent-activity";
 import { ReportLink } from "@/components/report-link";
@@ -25,7 +26,7 @@ export function RecentActivityLink({
     return (
       <Link
         {...props}
-        href="/resume-review"
+        href={recentActivityHref(item, from)}
         onClick={(event) => {
           markReportReturnPath(from);
           onClick?.(event);

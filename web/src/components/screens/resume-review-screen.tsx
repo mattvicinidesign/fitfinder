@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { IosLargeTitle } from "@/components/ui/ios-large-title";
 import { screenShellClass } from "@/components/ui/sticky-bottom-cta";
@@ -19,9 +20,11 @@ import {
   waitForResumeParse,
 } from "@/lib/resume-parse-tracker";
 import {
+  activateResumeReviewFromHistory,
   clearResumeReview,
   loadResumeReview,
   loadResumeReviewFileName,
+  loadResumeReviewHistoryEntry,
   loadResumeReviewResumeId,
   saveResumeReview,
   saveResumeReviewFileName,
@@ -53,6 +56,8 @@ function getInitialResumeReviewScreenState() {
 }
 
 export function ResumeReviewScreen() {
+  const searchParams = useSearchParams();
+  const reviewIdParam = searchParams.get("reviewId");
   const initial = getInitialResumeReviewScreenState();
   const [review, setReview] = useState<ResumeReviewResult | null>(initial.review);
   const [fileName, setFileName] = useState<string | null>(initial.fileName);
@@ -66,6 +71,21 @@ export function ResumeReviewScreen() {
     Boolean(review) || Boolean(pendingResumeId && pendingFileName);
 
   useEffect(() => {
+    if (reviewIdParam) {
+      const historical = loadResumeReviewHistoryEntry(reviewIdParam);
+      if (historical) {
+        activateResumeReviewFromHistory(reviewIdParam);
+        setReview(historical.review);
+        setFileName(historical.fileName);
+        void resolveResumeIdForOptimization(historical.review.resumeId).then(
+          (resumeId) => {
+            if (resumeId) void resolveResumeTextForOptimization(resumeId);
+          },
+        );
+        return;
+      }
+    }
+
     const cached = loadResumeReview();
     const cachedResumeId =
       loadResumeReviewResumeId() ?? cached?.resumeId ?? null;
@@ -99,7 +119,7 @@ export function ResumeReviewScreen() {
         setPendingFileName(latest.fileName);
       }
     })();
-  }, []);
+  }, [reviewIdParam]);
 
   const runReview = useCallback(async (resumeId: string, name: string) => {
     setReviewing(true);
@@ -118,7 +138,7 @@ export function ResumeReviewScreen() {
       const result = await reviewResume({ resumeId, parsedResume });
       setAnimateGauge(true);
       setReview(result);
-      saveResumeReview(result, resumeId);
+      saveResumeReview(result, resumeId, name);
       saveResumeReviewFileName(name);
       recordRecentResumeScoreActivity(result, name);
       void resolveResumeTextForOptimization(resumeId);

@@ -57,11 +57,22 @@ export function isResumeScoreActivity(
   return item.report_id?.startsWith("resume-review:") ?? false;
 }
 
+export function resumeReviewIdFromReportId(reportId: string): string | null {
+  if (!reportId.startsWith("resume-review:")) return null;
+  const id = reportId.slice("resume-review:".length).trim();
+  return id || null;
+}
+
 export function recentActivityHref(
   item: Pick<RecentActivityItem, "activity_kind" | "report_id" | "id">,
   from = "/home",
 ): string {
-  if (isResumeScoreActivity(item)) return "/resume-review";
+  if (isResumeScoreActivity(item)) {
+    const reviewId = resumeReviewIdFromReportId(item.report_id ?? "");
+    return reviewId
+      ? `/resume-review?reviewId=${encodeURIComponent(reviewId)}`
+      : "/resume-review";
+  }
   return reportHrefForReportId(item.report_id, from);
 }
 

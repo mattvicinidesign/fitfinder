@@ -90,9 +90,9 @@ function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
       >
         {stats.averageFitOnTen?.toFixed(1) ?? "—"}
       </MetricScore>
-      {stats.lastAnalysisDateLabel ? (
+      {stats.lastActivityDateLabel ? (
         <p className="mt-2.5 text-[12px] font-semibold leading-snug text-primary-foreground/90">
-          Last Fit Analysis: {stats.lastAnalysisDateLabel}
+          Last activity: {stats.lastActivityDateLabel}
         </p>
       ) : null}
     </div>
