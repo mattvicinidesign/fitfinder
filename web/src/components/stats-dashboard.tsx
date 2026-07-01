@@ -1,20 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ReportLink } from "@/components/report-link";
+import { useMemo } from "react";
+import { FitScoreRatio } from "@/components/fit-score-ratio";
+import { RecentActivitySection } from "@/components/recent-activity-section";
 import { MetricScore } from "@/components/ui/metric-score";
-import { fitScoreOnTen } from "@/components/qualification-score-circle";
+import {
+  fitScoreOnTen,
+  fitScoreValueOnTen,
+} from "@/components/qualification-score-circle";
 import { formatResumeReviewScorePercent } from "@/components/resume-review-ui";
 import {
   type AnalysisStats,
   type RecommendationStat,
 } from "@/lib/analysis-stats";
-import { formatRelativeTimeAgo } from "@/lib/posting-header-meta";
-import { loadLastResumeScoreForStats } from "@/lib/resume-review-cache";
 import { resumeReviewScoreTextClass } from "@/lib/resume-review-score-colors";
+import {
+  isResumeScoreActivity,
+  type RecentActivityItem,
+} from "@/lib/recent-activity";
 import { scoreColor } from "@/lib/score";
 import { cn } from "@/lib/utils";
-import type { AnalysisRecord } from "@/lib/types";
 
 const CHART_SEGMENT_COLORS = [
   "var(--color-primary)",
@@ -23,8 +28,6 @@ const CHART_SEGMENT_COLORS = [
   "color-mix(in oklch, var(--color-primary) 28%, white)",
   "color-mix(in oklch, var(--color-primary) 14%, white)",
 ];
-
-type StatsRow = AnalysisRecord & { report_id: string };
 
 function formatScore(value: number | null): string {
   if (value == null) return "—";
@@ -61,24 +64,30 @@ function KpiCard({
   value,
   hint,
   valueClassName,
+  rawValue = false,
 }: {
   label: string;
-  value: string;
+  value: React.ReactNode;
   hint?: string;
   valueClassName?: string;
+  rawValue?: boolean;
 }) {
   return (
     <div className="rounded-xl border border-border/70 bg-card/80 p-3.5 shadow-sm">
       <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
         {label}
       </p>
-      <MetricScore
-        as="p"
-        size="md"
-        className={cn("mt-1.5 text-foreground", valueClassName)}
-      >
-        {value}
-      </MetricScore>
+      {rawValue ? (
+        <div className="mt-1.5">{value}</div>
+      ) : (
+        <MetricScore
+          as="p"
+          size="md"
+          className={cn("mt-1.5 text-foreground", valueClassName)}
+        >
+          {value}
+        </MetricScore>
+      )}
       {hint ? (
         <p className="mt-1 text-[12px] leading-snug text-muted-foreground">{hint}</p>
       ) : null}
@@ -216,125 +225,68 @@ function DashboardPanel({
   );
 }
 
-function AnalysisTable({ rows }: { rows: StatsRow[] }) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-border/70 bg-card/60 shadow-sm">
-      <div className="border-b border-border/60 px-4 py-2.5">
-        <h3 className="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-          Recent analyses
-        </h3>
-      </div>
-      <div className="overflow-x-auto">
-        <div
-          className="grid min-w-[20rem] grid-cols-[minmax(0,1fr)_2.75rem_2.75rem_minmax(4.5rem,1fr)] gap-x-1 border-b border-border/60 bg-muted/25 px-3 py-2 text-[11px] uppercase tracking-wide text-muted-foreground"
-          role="row"
-        >
-          <span role="columnheader">Role</span>
-          <span role="columnheader" className="text-right">
-            Fit
-          </span>
-          <span role="columnheader" className="text-right">
-            Qual
-          </span>
-          <span role="columnheader">Rec</span>
-        </div>
-        {rows.map((row) => {
-          const fit = row.fit_score ?? 0;
-          const qual = row.qualification_score;
-          return (
-            <ReportLink
-              key={row.id}
-              analysis={row}
-              from="/stats"
-              className="grid min-w-[20rem] grid-cols-[minmax(0,1fr)_2.75rem_2.75rem_minmax(4.5rem,1fr)] gap-x-1 border-b border-border/40 px-3 py-2.5 text-[13px] last:border-0 transition-colors hover:bg-muted/20 active:bg-muted/30"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-medium text-foreground">
-                  {row.job_title ?? "Untitled role"}
-                </p>
-                <p className="truncate text-[12px] text-muted-foreground">
-                  {[row.company_name, formatRelativeTimeAgo(row.created_at)]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-              </div>
-              <span
-                className={cn(
-                  "text-right tabular-nums self-center",
-                  scoreColor(fit),
-                )}
-              >
-                {fitScoreOnTen(fit)}
-              </span>
-              <span className="text-right tabular-nums text-muted-foreground self-center">
-                {formatScore(qual)}
-              </span>
-              <span className="line-clamp-2 text-[12px] leading-snug text-muted-foreground self-center">
-                {row.recommendation_label ?? "—"}
-              </span>
-            </ReportLink>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export function StatsDashboard({
   analyses,
   stats,
 }: {
-  analyses: StatsRow[];
+  analyses: RecentActivityItem[];
   stats: AnalysisStats;
 }) {
-  const tableRows = analyses.slice(0, 12);
-  const [lastResumeScore, setLastResumeScore] = useState<number | null>(null);
+  const { totalResumeScores, averageResumeScore } = useMemo(() => {
+    const resumeItems = analyses.filter(isResumeScoreActivity);
+    const scores = resumeItems
+      .map((item) => item.resume_score)
+      .filter((value): value is number => value != null);
 
-  useEffect(() => {
-    const refresh = () => {
-      setLastResumeScore(loadLastResumeScoreForStats());
+    return {
+      totalResumeScores: resumeItems.length,
+      averageResumeScore:
+        scores.length > 0
+          ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
+          : null,
     };
-
-    refresh();
-    window.addEventListener("focus", refresh);
-    document.addEventListener("visibilitychange", refresh);
-    return () => {
-      window.removeEventListener("focus", refresh);
-      document.removeEventListener("visibilitychange", refresh);
-    };
-  }, []);
+  }, [analyses]);
 
   return (
     <div className="space-y-5 px-4 pb-6">
       <div className="grid grid-cols-2 gap-3">
-        <KpiCard label="Total analyses" value={String(stats.totalAnalyses)} />
         <KpiCard
-          label="Avg fit score"
-          value={formatFitScore(stats.averageFit)}
-          valueClassName={
-            stats.averageFit != null ? scoreColor(stats.averageFit) : undefined
+          label="Total Fit Analyses"
+          value={String(stats.totalAnalyses)}
+        />
+        <KpiCard
+          label="Total Resume Scores"
+          value={String(totalResumeScores)}
+        />
+        <KpiCard
+          label="Avg Fit Analysis"
+          rawValue
+          value={
+            stats.averageFit != null ? (
+              <FitScoreRatio
+                as="p"
+                size="md"
+                valueOnTen={fitScoreValueOnTen(stats.averageFit)}
+                className={scoreColor(stats.averageFit)}
+              />
+            ) : (
+              <MetricScore as="p" size="md" className="text-muted-foreground">
+                —
+              </MetricScore>
+            )
           }
         />
         <KpiCard
-          label="Resume score"
+          label="Avg Resume Score"
           value={
-            lastResumeScore != null
-              ? formatResumeReviewScorePercent(lastResumeScore)
+            averageResumeScore != null
+              ? formatResumeReviewScorePercent(averageResumeScore)
               : "—"
           }
-          hint="Last review"
           valueClassName={
-            lastResumeScore != null
-              ? resumeReviewScoreTextClass(lastResumeScore)
+            averageResumeScore != null
+              ? resumeReviewScoreTextClass(averageResumeScore)
               : undefined
-          }
-        />
-        <KpiCard
-          label="Strong pursuits"
-          value={String(stats.strongPursuitCount)}
-          hint="Top-tier matches"
-          valueClassName={
-            stats.strongPursuitCount > 0 ? "text-primary" : undefined
           }
         />
       </div>
@@ -360,7 +312,7 @@ export function StatsDashboard({
         </DashboardPanel>
       </div>
 
-      {tableRows.length > 0 ? <AnalysisTable rows={tableRows} /> : null}
+      <RecentActivitySection items={analyses} from="/stats" variant="all" />
     </div>
   );
 }

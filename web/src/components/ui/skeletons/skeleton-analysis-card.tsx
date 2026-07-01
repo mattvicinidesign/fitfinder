@@ -1,24 +1,23 @@
 import { cn } from "@/lib/utils";
 import { SkeletonPrimitive } from "@/components/ui/skeletons/skeleton-primitive";
 
-/** Matches IosAnalysisListRow — title, subtitle, score, badge area. */
+/** Matches IosAnalysisListRow — title, subtitle, pill, score. */
 export function SkeletonAnalysisCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-3 bg-background px-4 py-3.5",
+        "grid grid-cols-[minmax(0,58%)_minmax(0,1fr)_minmax(4.5rem,auto)] items-center gap-x-2 bg-background px-4 py-3.5",
         className,
       )}
     >
-      <div className="min-w-0 flex-1 space-y-2">
-        <SkeletonPrimitive className="h-[17px] w-[72%] max-w-[220px]" />
-        <SkeletonPrimitive className="h-3.5 w-[48%] max-w-[160px]" />
-        <SkeletonPrimitive className="h-3 w-20 rounded-full" />
+      <div className="min-w-0 space-y-2">
+        <SkeletonPrimitive className="h-[17px] w-full max-w-[220px]" />
+        <SkeletonPrimitive className="h-3.5 w-[70%] max-w-[160px]" />
       </div>
-      <div className="shrink-0 space-y-1.5 text-right">
-        <SkeletonPrimitive className="ml-auto h-7 w-10" />
-        <SkeletonPrimitive className="ml-auto h-2.5 w-6" />
+      <div className="flex justify-center">
+        <SkeletonPrimitive className="h-6 w-[5.5rem] rounded-full" />
       </div>
+      <SkeletonPrimitive className="ml-auto h-7 w-12" />
     </div>
   );
 }

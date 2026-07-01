@@ -90,10 +90,15 @@ export function useAnimatedNumber(
   return value;
 }
 
-/** Format a 0–10 animated value for display (matches categoryScoreOutOfTen). */
+/** Format a 0–10 value for display (whole numbers omit decimals). */
 export function formatScoreOnTen(value: number): string {
   const rounded = Math.round(value * 10) / 10;
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+/** Fit score ratio on a 0–10 scale (e.g. 7.3/10, 4/10). */
+export function formatFitScoreRatioOnTen(valueOnTen: number): string {
+  return `${formatScoreOnTen(valueOnTen)}/10`;
 }
 
 export const SCORE_BAR_REVEAL_CLASS =

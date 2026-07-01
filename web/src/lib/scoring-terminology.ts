@@ -93,7 +93,7 @@ export function scoringItemAriaLabel(title: string, badgeLabel: string): string 
 }
 
 /** Accessible label for the 0–10 global score ring. */
-export function globalScoreAriaLabel(displayOnTen: string, recommendation?: string): string {
-  const base = `Overall match ${displayOnTen} out of 10`;
+export function globalScoreAriaLabel(displayRatio: string, recommendation?: string): string {
+  const base = `Overall match ${displayRatio}`;
   return recommendation?.trim() ? `${base}, ${recommendation}` : base;
 }

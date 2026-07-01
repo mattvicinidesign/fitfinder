@@ -1,6 +1,10 @@
 import { cn } from "@/lib/utils";
+import { ActivityKindPill } from "@/components/activity-kind-pill";
+import { FitScoreRatio } from "@/components/fit-score-ratio";
 import { MetricScore } from "@/components/ui/metric-score";
-import { fitScoreOnTen } from "@/components/qualification-score-circle";
+import {
+  fitScoreValueOnTen,
+} from "@/components/qualification-score-circle";
 import { formatResumeReviewScorePercent } from "@/components/resume-review-ui";
 import {
   isResumeScoreActivity,
@@ -11,6 +15,10 @@ import {
 import { resumeReviewScoreTextClass } from "@/lib/resume-review-score-colors";
 import { scoreColor } from "@/lib/score";
 import type { AnalysisRecord } from "@/lib/types";
+
+/** Reference proportions: name ~58%, pill centered in middle band, score pinned right. */
+const ACTIVITY_ROW_GRID_CLASS =
+  "grid grid-cols-[minmax(0,58%)_minmax(0,1fr)_minmax(4.5rem,auto)] items-center gap-x-2";
 
 /** Single recent-activity row — fit analysis or resume score. */
 export function IosAnalysisListRow({
@@ -29,66 +37,59 @@ export function IosAnalysisListRow({
   };
   const isResume = isResumeScoreActivity(item);
 
-  if (isResume) {
-    const resumeScore = resolveActivityResumeScore(item);
-    return (
-      <div className={cn("flex items-center gap-3 bg-background px-4 py-3.5", className)}>
-        <div className="min-w-0 flex-1">
-          <p className="text-[17px] font-semibold leading-tight truncate">
-            {a.job_title ?? "Resume score"}
-          </p>
-          {subtitle ? (
-            <p className="text-[14px] text-muted-foreground leading-snug truncate mt-0.5">
-              {subtitle}
-            </p>
-          ) : null}
-        </div>
-        <div className="text-right shrink-0">
-          <MetricScore
-            as="p"
-            size="md"
-            className={resumeReviewScoreTextClass(resumeScore)}
-          >
-            {formatResumeReviewScorePercent(resumeScore)}
-          </MetricScore>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Score</p>
-        </div>
-      </div>
-    );
-  }
+  const scoreValue = isResume
+    ? resolveActivityResumeScore(item)
+    : resolveActivityFitScore(item);
+  const scoreLabel = isResume
+    ? formatResumeReviewScorePercent(scoreValue)
+    : null;
+  const scoreClass = isResume
+    ? resumeReviewScoreTextClass(scoreValue)
+    : scoreColor(scoreValue);
+  const fitScoreOnTen = isResume ? null : fitScoreValueOnTen(scoreValue);
 
-  const fitScore = resolveActivityFitScore(item);
+  const secondaryLine =
+    subtitle ??
+    (isResume
+      ? null
+      : a.company_name?.trim() || a.recommendation_label?.trim() || null);
 
   return (
-    <div className={cn("flex items-center gap-3 bg-background px-4 py-3.5", className)}>
-      <div className="min-w-0 flex-1">
-        <p className="text-[17px] font-semibold leading-tight truncate">
-          {a.job_title ?? "Untitled role"}
+    <div
+      className={cn(
+        ACTIVITY_ROW_GRID_CLASS,
+        "bg-background px-4 py-3.5",
+        className,
+      )}
+    >
+      <div className="min-w-0">
+        <p className="truncate text-[17px] font-semibold leading-tight text-foreground">
+          {a.job_title ?? (isResume ? "Resume score" : "Untitled role")}
         </p>
-        {subtitle ? (
-          <p className="text-[14px] text-muted-foreground leading-snug truncate mt-0.5">
-            {subtitle}
+        {secondaryLine ? (
+          <p className="mt-0.5 truncate text-[13px] leading-snug text-muted-foreground">
+            {secondaryLine}
           </p>
-        ) : (
-          <>
-            {a.company_name ? (
-              <p className="text-[15px] text-muted-foreground truncate">
-                {a.company_name}
-              </p>
-            ) : null}
-            {a.recommendation_label ? (
-              <p className="text-[13px] text-muted-foreground mt-0.5">
-                {a.recommendation_label}
-              </p>
-            ) : null}
-          </>
-        )}
+        ) : null}
       </div>
-      <div className="text-right shrink-0">
-        <MetricScore as="p" size="md" className={scoreColor(fitScore)}>
-          {fitScoreOnTen(fitScore)}
-        </MetricScore>
-        <p className="text-[11px] text-muted-foreground mt-0.5">Fit</p>
+
+      <div className="flex min-w-0 justify-center">
+        <ActivityKindPill item={item} />
+      </div>
+
+      <div className="min-w-[4.5rem] justify-self-end text-right">
+        {isResume ? (
+          <MetricScore as="p" size="md" className={scoreClass}>
+            {scoreLabel}
+          </MetricScore>
+        ) : (
+          <FitScoreRatio
+            as="p"
+            valueOnTen={fitScoreOnTen ?? 0}
+            size="md"
+            className={scoreClass}
+          />
+        )}
       </div>
     </div>
   );

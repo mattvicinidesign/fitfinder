@@ -1,7 +1,9 @@
 import { formatRelativeTimeAgo } from "@/lib/posting-header-meta";
 import { loadAnalysisReport } from "@/lib/analysis-report-cache";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
+import { clearQaEmptyActivityMark } from "@/lib/qa-activity";
 import { reportHrefForReportId } from "@/lib/report-navigation";
+import { resolveReportFitScoreFromCacheEntry } from "@/lib/report-display-score";
 import { getResumeReviewMasterScore } from "@/lib/resume-review-scores";
 import type { AnalysisRecord, Recommendation, ResumeReviewResult } from "@/lib/types";
 import type { AnalysisReportCacheEntry } from "@/lib/analysis-report-cache";
@@ -31,8 +33,22 @@ export type RecentActivityItem = AnalysisRecord & {
   resume_score?: number | null;
 };
 
+/** Home recent activity preview — full list lives on Stats. */
+export const HOME_RECENT_ACTIVITY_DISPLAY_LIMIT = 10;
+
+/** Stats "All Activity" lazy-load page size. */
+export const ALL_ACTIVITY_PAGE_SIZE = 20;
+
+export const ALL_ACTIVITY_SECTION_ID = "all-activity";
+
+export const STATS_ALL_ACTIVITY_HREF = `/stats#${ALL_ACTIVITY_SECTION_ID}`;
+
 const STORAGE_KEY = "fitfinder:recent-activity";
 const MAX_STORED = 50;
+
+function isSampleActivityReportId(reportId: string): boolean {
+  return reportId.startsWith("sample-analysis-");
+}
 
 export function isResumeScoreActivity(
   item: Pick<RecentActivityItem, "activity_kind" | "report_id">,
@@ -66,16 +82,40 @@ function writeStored(entries: RecentActivityEntry[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, MAX_STORED)));
 }
 
-function normalizeReportEntryFitScore(
-  entry: AnalysisReportCacheEntry,
-): number {
+function normalizeCachedReportEntry(entry: AnalysisReportCacheEntry) {
   return normalizeAnalysisResult(entry.result, {
     profileDesiredCompensation: entry.profileDesiredCompensation,
     profileQualifiedIndustries: entry.profileQualifiedIndustries,
     profileQualifiedSkills: entry.profileQualifiedSkills,
     profileCountry: entry.profileCountry,
     profileTimezone: entry.profileTimezone,
-  }).score.fitScore;
+  });
+}
+
+function normalizeReportEntryFitScore(
+  entry: AnalysisReportCacheEntry,
+): number {
+  return resolveReportFitScoreFromCacheEntry(entry);
+}
+
+/** Align stats/KPI rows with cached report scores shown in activity lists. */
+export function resolveActivityAnalysisRecord(
+  item: RecentActivityItem,
+): RecentActivityItem {
+  const cached = loadAnalysisReport(item.report_id);
+  if (!cached) return item;
+
+  const result = normalizeCachedReportEntry(cached);
+  const fitScore = resolveReportFitScoreFromCacheEntry(cached);
+  return {
+    ...item,
+    fit_score: fitScore,
+    qualification_score: result.score.qualificationScore,
+    confidence_score: result.score.confidenceScore,
+    recommendation: result.score.recommendation ?? item.recommendation,
+    recommendation_label:
+      result.score.recommendationLabel ?? item.recommendation_label,
+  };
 }
 
 /** Report ring score (0–100) for a fit-analysis activity row. */
@@ -96,6 +136,8 @@ export function recordRecentActivityFromReport(
   reportId: string,
   entry: AnalysisReportCacheEntry,
 ): void {
+  if (isSampleActivityReportId(reportId)) return;
+  clearQaEmptyActivityMark();
   const { result, analysisId } = entry;
   const created_at = new Date().toISOString();
   const displayFitScore = normalizeReportEntryFitScore(entry);
@@ -128,6 +170,7 @@ export function recordRecentResumeScoreActivity(
   review: ResumeReviewResult,
   fileName: string,
 ): void {
+  clearQaEmptyActivityMark();
   const reportId = `resume-review:${review.id}`;
   const resumeScore = getResumeReviewMasterScore(review);
   const title = fileName.trim() || "Resume score";
@@ -153,6 +196,25 @@ export function recordRecentResumeScoreActivity(
 
 export function loadRecentActivity(): RecentActivityEntry[] {
   return readStored();
+}
+
+export function clearRecentActivity(): void {
+  if (typeof localStorage === "undefined") return;
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+/** Drop sample-report rows that were accidentally tracked as recent activity. */
+export function purgeSampleRecentActivityEntries(): void {
+  if (typeof localStorage === "undefined") return;
+  const entries = readStored().filter(
+    (entry) => !isSampleActivityReportId(entry.reportId),
+  );
+  if (entries.length === readStored().length) return;
+  if (entries.length === 0) {
+    localStorage.removeItem(STORAGE_KEY);
+    return;
+  }
+  writeStored(entries);
 }
 
 function recentEntryToAnalysisRecord(entry: RecentActivityEntry): RecentActivityItem {

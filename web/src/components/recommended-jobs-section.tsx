@@ -33,7 +33,7 @@ const carouselNavButtonClass = cn(
 const LOGO_SIZE_CLASS = "size-[75px] shrink-0";
 const LOGO_FRAME_CLASS = cn(
   LOGO_SIZE_CLASS,
-  "flex items-center justify-center overflow-hidden rounded-[4px]",
+  "flex items-center justify-center overflow-hidden rounded-[4px] bg-white ring-1 ring-black/5",
 );
 
 function CompanyLogo({
@@ -51,7 +51,7 @@ function CompanyLogo({
           alt=""
           width={75}
           height={75}
-          className="size-full rounded-[4px] object-contain object-left"
+          className="size-full rounded-[4px] object-contain object-center p-1.5"
           loading="lazy"
         />
       </div>
@@ -63,7 +63,7 @@ function CompanyLogo({
       aria-hidden
       className={cn(
         LOGO_FRAME_CLASS,
-        "bg-muted text-[22px] font-semibold text-muted-foreground",
+        "bg-white text-[22px] font-semibold text-muted-foreground",
       )}
     >
       {company.charAt(0).toUpperCase()}

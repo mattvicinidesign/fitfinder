@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/client";
-import { clearOnboardingState } from "@/lib/app-session";
-import { QA_LAUNCH_SIMULATION_KEY } from "@/lib/splash-qa";
+import { markQaEmptyActivityLists } from "@/lib/qa-activity";
+import {
+  clearRecentActivity,
+  purgeSampleRecentActivityEntries,
+} from "@/lib/recent-activity";
+import { clearOnboardingState, QA_LAUNCH_SIMULATION_KEY } from "@/lib/app-session";
 
 const FITFINDER_KEY_PREFIX = "fitfinder";
 
@@ -28,6 +32,10 @@ export async function resetAppFirstLaunch(): Promise<void> {
   if (typeof sessionStorage !== "undefined") {
     clearFitFinderStorage(sessionStorage);
   }
+
+  clearRecentActivity();
+  purgeSampleRecentActivityEntries();
+  markQaEmptyActivityLists();
 
   try {
     const supabase = createClient();

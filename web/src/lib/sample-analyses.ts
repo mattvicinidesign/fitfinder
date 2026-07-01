@@ -10,6 +10,7 @@ import {
 } from "@/lib/recent-activity";
 import { buildSampleAnalysisResult } from "@/lib/sample-report-fixtures";
 import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
+import { shouldForceEmptyActivityLists } from "@/lib/qa-activity";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import type { AnalysisRecord, AnalysisResult, Recommendation } from "@/lib/types";
 
@@ -376,7 +377,7 @@ export function resolveReportEntry(
   if (isSampleReportId(reportId)) {
     const sample = loadSampleAnalysisReport(reportId);
     if (sample) {
-      saveAnalysisReport(reportId, sample);
+      saveAnalysisReport(reportId, sample, { trackRecentActivity: false });
       return sample;
     }
   }
@@ -404,9 +405,11 @@ export function canOpenAnalysisItem(
 export function filterRecentActivity(
   items: RecentActivityItem[],
 ): RecentActivityItem[] {
-  return items.filter(
-    (item) => isResumeScoreActivity(item) || canOpenAnalysisItem(item),
-  );
+  return items.filter((item) => {
+    const reportId = reportCacheIdForItem(item);
+    if (isSampleReportId(reportId)) return false;
+    return isResumeScoreActivity(item) || canOpenAnalysisItem(item);
+  });
 }
 
 /** Drop list rows that cannot open a report (stale localStorage ids, etc.). */
@@ -416,25 +419,13 @@ export function filterOpenableAnalyses<
   return items.filter((item) => canOpenAnalysisItem(item));
 }
 
-/** Recent activity for home — openable rows first, padded with samples up to limit. */
+/** Recent activity for home + stats — real openable rows only (no sample padding). */
 export function pickRecentActivityList(
   merged: RecentActivityItem[],
   limit: number,
 ): RecentActivityItem[] {
-  const loadable = filterRecentActivity(merged);
-  const primary = loadable.length > 0 ? loadable.slice(0, limit) : [];
-  if (primary.length >= limit) return primary;
-
-  const seen = new Set(primary.map((row) => row.id));
-  const filled: RecentActivityItem[] = [...primary];
-  for (const sample of getSampleAnalyses()) {
-    if (filled.length >= limit) break;
-    if (seen.has(sample.id)) continue;
-    filled.push(sample);
-    seen.add(sample.id);
-  }
-
-  return filled.length > 0 ? filled : getSampleAnalyses().slice(0, limit);
+  if (shouldForceEmptyActivityLists()) return [];
+  return filterRecentActivity(merged).slice(0, limit);
 }
 
 /** Saved list — openable DB rows first, else sample saved list. */
@@ -459,7 +450,7 @@ function clearLegacySeedKeys(): void {
 function ensureAllSampleReportsCached(): void {
   for (const spec of SPECS) {
     if (!sampleReportIsComplete(spec.id)) {
-      saveAnalysisReport(spec.id, sampleEntry(spec));
+      saveAnalysisReport(spec.id, sampleEntry(spec), { trackRecentActivity: false });
     }
   }
 }
@@ -477,7 +468,7 @@ function resetSampleRecentActivity(): void {
   if (typeof localStorage === "undefined") return;
   localStorage.removeItem(RECENT_ACTIVITY_KEY);
   for (const spec of SPECS) {
-    saveAnalysisReport(spec.id, sampleEntry(spec));
+    saveAnalysisReport(spec.id, sampleEntry(spec), { trackRecentActivity: false });
   }
 }
 

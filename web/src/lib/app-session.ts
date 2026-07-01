@@ -5,6 +5,7 @@ export const WELCOME_STORAGE_KEY = "fitfinder-welcome-seen";
 export const APP_SESSION_ACTIVE_KEY = "fitfinder-app-session-active";
 export const LAST_ROUTE_KEY = "fitfinder-last-route";
 export const QA_RETURNING_SPLASH_KEY = "fitfinder-qa-returning-splash";
+export const QA_LAUNCH_SIMULATION_KEY = "fitfinder-qa-launch-simulation";
 export const SIGNUP_LAUNCH_KEY = "fitfinder-signup-launch";
 export const AUTH_DEEP_LINK_KEY = "fitfinder-auth-deep-link";
 export const SEARCH_TYPEWRITER_DONE_KEY = "fitfinder-home-search-typewriter-done";

@@ -4,12 +4,12 @@ import { recommendationRingClass } from "@/lib/recommendation-bands";
 import { globalScoreAriaLabel } from "@/lib/scoring-terminology";
 import {
   SCORE_RING_REVEAL_CLASS,
-  formatScoreOnTen,
+  formatFitScoreRatioOnTen,
   useAnimatedNumber,
   useRevealOnMount,
 } from "@/lib/use-score-reveal";
 import type { Recommendation } from "@/lib/types";
-import { metricScoreClass } from "@/components/ui/metric-score";
+import { FitScoreRatio } from "@/components/fit-score-ratio";
 import { cn } from "@/lib/utils";
 
 const RING_SIZES = {
@@ -19,9 +19,9 @@ const RING_SIZES = {
 
 const STROKE_WIDTH = 8;
 
-/** Global score on a 0–10 scale (e.g. 73 → 7.3). */
+/** Global fit score as a 0–10 ratio (e.g. 73 → 7.3/10, 100 → 10/10). */
 export function fitScoreOnTen(fitScore: number): string {
-  return fitScoreValueOnTen(fitScore).toFixed(1);
+  return formatFitScoreRatioOnTen(fitScoreValueOnTen(fitScore));
 }
 
 /** Global score as 0–10 for ring progress. */
@@ -50,7 +50,7 @@ export function QualificationScoreCircle({
   const animatedScore = useAnimatedNumber(scoreOnTen, {
     disabled: !animate,
   });
-  const display = formatScoreOnTen(animatedScore);
+  const display = formatFitScoreRatioOnTen(animatedScore);
   const progress = scoreOnTen / 10;
   const animatedProgress = revealed ? progress : 0;
   const ringClass = recommendationRingClass(recommendation);
@@ -59,7 +59,7 @@ export function QualificationScoreCircle({
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - animatedProgress);
   const center = ringSize / 2;
-  const scoreFont = metricScoreClass(size === "large" ? "xl" : "lg");
+  const ratioSize = size === "large" ? "xl" : "lg";
 
   return (
     <div
@@ -104,13 +104,8 @@ export function QualificationScoreCircle({
             strokeDashoffset={dashOffset}
           />
         </svg>
-        <span
-          className={cn(
-            "absolute inset-0 flex items-center justify-center text-foreground",
-            scoreFont,
-          )}
-        >
-          {display}
+        <span className="absolute inset-0 flex items-center justify-center text-foreground">
+          <FitScoreRatio valueOnTen={animatedScore} size={ratioSize} />
         </span>
       </div>
       {recommendationLabel ? (

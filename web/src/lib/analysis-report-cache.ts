@@ -24,6 +24,7 @@ const LAST_REPORT_ID_KEY = "fitfinder:last-analysis-report-id";
 export function saveAnalysisReport(
   reportId: string,
   entry: AnalysisReportCacheEntry,
+  options?: { trackRecentActivity?: boolean },
 ): void {
   if (typeof sessionStorage === "undefined") return;
   sessionStorage.setItem(
@@ -31,7 +32,9 @@ export function saveAnalysisReport(
     JSON.stringify(entry),
   );
   sessionStorage.setItem(LAST_REPORT_ID_KEY, reportId);
-  recordRecentActivityFromReport(reportId, entry);
+  if (options?.trackRecentActivity !== false) {
+    recordRecentActivityFromReport(reportId, entry);
+  }
 }
 
 export function reportRoleTitle(result: AnalysisResult): string {

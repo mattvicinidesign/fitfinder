@@ -103,11 +103,11 @@ export const ResumeReviewUploadZone = forwardRef<
     : RESUME_UPLOAD_ACCEPT;
 
   return (
-    <div className={cn("px-4", className)}>
+    <div className={cn("min-w-0 px-4", className)}>
       <div
         className={resumeUploadZoneClassName(
           cn(
-            "relative",
+            "relative overflow-hidden",
             pinnedBottom ? "py-6" : "min-h-[220px]",
             dragOver && "border-primary/50 bg-muted/55",
           ),
@@ -134,16 +134,16 @@ export const ResumeReviewUploadZone = forwardRef<
           className="hidden"
         />
 
-        <div className="flex flex-col items-center justify-center gap-3 text-center">
+        <div className="flex w-full min-w-0 flex-col items-center justify-center gap-3 overflow-hidden text-center">
           {hasResume ? (
             <>
               {busy ? (
-                <CtaSpinner className="size-8" />
+                <CtaSpinner className="size-8 shrink-0" />
               ) : (
-                <CheckCircle2 className="size-8 text-primary" aria-hidden />
+                <CheckCircle2 className="size-8 shrink-0 text-primary" aria-hidden />
               )}
               <p
-                className="w-full max-w-full truncate px-2 text-[17px] font-medium text-foreground"
+                className="block w-full min-w-0 truncate px-2 text-[17px] font-medium text-foreground"
                 title={fileName ?? undefined}
               >
                 {fileName}

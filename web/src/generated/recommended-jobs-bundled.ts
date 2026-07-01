@@ -3,6 +3,16 @@ import type { RecommendedJob } from "@/lib/types";
 
 export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
   {
+    "id": "21811147",
+    "title": "Product Designer II - Uber Eats, Offers Consumer Experiences",
+    "company": "Uber",
+    "location": "San Francisco, CA",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-27T00:43:48Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/product-designer-ii-uber-eats-offers-consumer-experiences",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
+  },
+  {
     "id": "14137481",
     "title": "UX/UI Designer (Mid level)",
     "company": "Designit",
@@ -23,23 +33,23 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
   },
   {
-    "id": "21893837",
-    "title": "Sr Technical Program Manager",
+    "id": "21866908",
+    "title": "Staff Security Strategist GRC",
     "company": "Uber",
-    "location": "Location not listed",
+    "location": "Sunnyvale, CA",
     "level": "Senior Level",
-    "publishedAt": "2026-06-27T00:43:47Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/sr-technical-program-manager-a28dbb",
+    "publishedAt": "2026-06-30T00:20:14Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/staff-security-strategist-grc",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
-    "id": "21040163",
-    "title": "Sr. Manufacturing Engineer, Tool & Die Machining (Starlink)",
+    "id": "21576522",
+    "title": "Graphic Designer",
     "company": "SpaceX",
-    "location": "Lockhart, TX",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-26T18:34:37Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/sr-manufacturing-engineer-tool-die-machining-starlink-bde375",
+    "location": "El Segundo, CA",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-29T18:37:17Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/graphic-designer-b8655e",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
@@ -93,6 +103,16 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
+    "id": "21789634",
+    "title": "CMF Designer - Color, Material, and Finish (Starlink)",
+    "company": "SpaceX",
+    "location": "Lockhart, TX",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-26T18:34:07Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/cmf-designer-color-material-and-finish-starlink",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
     "id": "21633158",
     "title": "Senior Visual Design Artist - Riftbound",
     "company": "Riot Games",
@@ -113,26 +133,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
   },
   {
-    "id": "21866908",
-    "title": "Staff Security Strategist GRC",
-    "company": "Uber",
-    "location": "Sunnyvale, CA",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-19T01:05:54Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/staff-security-strategist-grc",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
-  },
-  {
-    "id": "21852459",
-    "title": "Senior Manager, Innovation - Packaging & Equipment",
-    "company": "The Coca-Cola Company",
-    "location": "Shanghai, China",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-15T23:43:35Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-manager-innovation-packaging-equipment-33254e",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
-  },
-  {
     "id": "21668812",
     "title": "Software Engineer III - UI Development Team",
     "company": "Bank of America",
@@ -143,16 +143,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
   },
   {
-    "id": "21754383",
-    "title": "Senior Director, Experience Design & Connection Planning - Sparkling Flavors",
-    "company": "The Coca-Cola Company",
-    "location": "Shanghai, China",
-    "level": "Senior Level",
-    "publishedAt": "2026-05-21T23:32:25Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-director-experience-design-connection-planning-sparkling-flavors-4e4427",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
-  },
-  {
     "id": "21727110",
     "title": "UI Designer - Unpublished R&D Product (Contract)",
     "company": "Riot Games",
@@ -161,16 +151,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-05-19T18:30:31Z",
     "applyUrl": "https://www.themuse.com/jobs/riotgames/ui-designer-unpublished-rd-product-contract",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
-  },
-  {
-    "id": "21811147",
-    "title": "Product Designer II - Uber Eats, Offers Consumer Experiences",
-    "company": "Uber",
-    "location": "San Francisco, CA",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-27T00:43:48Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/product-designer-ii-uber-eats-offers-consumer-experiences",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
     "id": "21889924",
@@ -193,13 +173,33 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
   },
   {
-    "id": "21820506",
-    "title": "Product Design Consultant (Contract, 3–6 Months)",
-    "company": "Nanit",
-    "location": "New York, NY",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-11T18:29:09Z",
-    "applyUrl": "https://www.themuse.com/jobs/nanit/product-design-consultant-contract-36-months",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000106/small_logo.png?v=5d4d6dac86a0ea7229ffbf5eb4358bd1490c38bd69c72f7a8f37d9f6bbde9601"
+    "id": "21388562",
+    "title": "Wastewater Technician (Starlink PCB)",
+    "company": "SpaceX",
+    "location": "Lockhart, TX",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-26T18:34:47Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/wastewater-technician-starlink-pcb-d6cc35",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21230961",
+    "title": "Water Treatment Technician, UPW & Wastewater (Starlink)",
+    "company": "SpaceX",
+    "location": "Lockhart, TX",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-26T18:34:47Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/water-treatment-technician-upw-wastewater-starlink",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21418125",
+    "title": "Propulsion Technician (Raptor Production Machining)",
+    "company": "SpaceX",
+    "location": "El Segundo, CA",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-26T18:34:30Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/propulsion-technician-raptor-production-machining",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   }
 ] as RecommendedJob[];

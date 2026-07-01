@@ -2,21 +2,24 @@ import {
   clearAuthDeepLinkPending,
   clearOnboardingState,
   markReturningUserState,
+  QA_LAUNCH_SIMULATION_KEY,
   QA_RETURNING_SPLASH_KEY,
   SIGNUP_LAUNCH_KEY,
 } from "@/lib/app-session";
 import { clearPendingSignup } from "@/lib/pending-signup";
 import { clearProfileHeaderSnapshot } from "@/lib/profile";
+import { markQaEmptyActivityLists } from "@/lib/qa-activity";
+import {
+  clearRecentActivity,
+  purgeSampleRecentActivityEntries,
+} from "@/lib/recent-activity";
 import { clearAllAtsKeywordOptimizations } from "@/lib/resume-review-ats-optimization";
-import { resetAppFirstLaunch } from "@/lib/reset-first-launch";
 
 export {
   SPLASH_STORAGE_KEY as SPLASH_SESSION_KEY,
   WELCOME_STORAGE_KEY as WELCOME_SESSION_KEY,
+  QA_LAUNCH_SIMULATION_KEY,
 } from "@/lib/app-session";
-
-/** Set before reload — blocks auto markLaunchFlowComplete until splash finishes. */
-export const QA_LAUNCH_SIMULATION_KEY = "fitfinder-qa-launch-simulation";
 
 const FITFINDER_STORAGE_PREFIX = "fitfinder";
 const ATS_CACHE_VERSION_KEY = "fitfinder:ats-optimization-cache-version";
@@ -88,6 +91,9 @@ export function hardRefreshFromQa(): void {
   console.log("QA: Hard refresh");
   clearQaLaunchSimulation();
   clearFitFinderSessionStorage();
+  clearRecentActivity();
+  purgeSampleRecentActivityEntries();
+  markQaEmptyActivityLists();
   if (typeof window === "undefined") return;
 
   const url = new URL(window.location.href);
@@ -133,5 +139,7 @@ export function simulateReturningUser(): void {
 /** Full reset: storage, sign-out, splash replay (web + native when QA is on). */
 export function resetFirstLaunchFromQa(): void {
   console.log("QA: Reset first launch");
-  void resetAppFirstLaunch();
+  void import("@/lib/reset-first-launch").then(({ resetAppFirstLaunch }) => {
+    void resetAppFirstLaunch();
+  });
 }

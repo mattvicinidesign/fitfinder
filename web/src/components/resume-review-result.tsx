@@ -224,10 +224,6 @@ export function ResumeReviewResultView({
                       setPreviewMode("review");
                       setPreviewOpen(true);
                     }}
-                    onReviewApplied={() => {
-                      setPreviewMode("applied");
-                      setPreviewOpen(true);
-                    }}
                     animate={animateGauge}
                     animateDelay={index * 75}
                   />

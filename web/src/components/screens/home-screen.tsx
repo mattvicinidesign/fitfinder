@@ -15,14 +15,11 @@ import {
   StickyBottomCta,
 } from "@/components/ui/sticky-bottom-cta";
 import { createClient } from "@/lib/supabase/client";
-import { IosGroupedSection } from "@/components/ui/ios-grouped-section";
-import { IosAnalysisListRow } from "@/components/ui/ios-list-row";
 import { RecommendedJobsSection } from "@/components/recommended-jobs-section";
 import { HomeHeroIllustration } from "@/components/home-hero-illustration";
 import { InfoTooltip } from "@/components/info-tooltip";
 import { MetricScore } from "@/components/ui/metric-score";
 import {
-  SkeletonAnalysisList,
   SkeletonHomeWelcome,
   SkeletonPrimitive,
 } from "@/components/ui/skeletons";
@@ -37,16 +34,12 @@ import {
   writeHomeActivitySnapshot,
 } from "@/lib/home-activity";
 import { computeHomeFitStats, type HomeFitStats } from "@/lib/analysis-stats";
+import { HOME_RECENT_ACTIVITY_DISPLAY_LIMIT } from "@/lib/recent-activity";
 import { cn } from "@/lib/utils";
-import {
-  activityMetaLine,
-  type RecentActivityItem,
-} from "@/lib/recent-activity";
-import { RecentActivityLink } from "@/components/recent-activity-link";
+import type { RecentActivityItem } from "@/lib/recent-activity";
+import { RecentActivitySection } from "@/components/recent-activity-section";
 import { homeHeroContentInset, screenGutterX } from "@/lib/screen-gutter";
 import type { AnalysisRecord } from "@/lib/types";
-
-const RECENT_LIMIT = 20;
 
 type HomeHeaderPlayState = "pending" | "animating" | "entered";
 
@@ -57,10 +50,18 @@ function initialHeaderPlayState(): HomeHeaderPlayState {
 
 function initialHomeActivity() {
   if (typeof window === "undefined") {
-    return { analyses: [] as RecentActivityItem[], fitStats: null as HomeFitStats | null };
+    return {
+      analyses: [] as RecentActivityItem[],
+      fitStats: null as HomeFitStats | null,
+      hasMoreActivity: false,
+    };
   }
-  const snapshot = readHomeActivitySnapshot(RECENT_LIMIT);
-  return { analyses: snapshot.analyses, fitStats: snapshot.fitStats };
+  const snapshot = readHomeActivitySnapshot(HOME_RECENT_ACTIVITY_DISPLAY_LIMIT);
+  return {
+    analyses: snapshot.analyses,
+    fitStats: snapshot.fitStats,
+    hasMoreActivity: snapshot.hasMoreActivity,
+  };
 }
 
 function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
@@ -104,6 +105,9 @@ export function HomeScreen() {
   const initialActivity = initialHomeActivity();
   const [analyses, setAnalyses] = useState<RecentActivityItem[]>(
     initialActivity.analyses,
+  );
+  const [hasMoreActivity, setHasMoreActivity] = useState(
+    initialActivity.hasMoreActivity,
   );
   const [fitStats, setFitStats] = useState<HomeFitStats | null>(
     initialActivity.fitStats,
@@ -181,10 +185,14 @@ export function HomeScreen() {
       .order("created_at", { ascending: false });
 
     const dbRows = (data ?? []) as AnalysisRecord[];
-    const snapshot = buildHomeActivitySnapshot(dbRows, RECENT_LIMIT);
+    const snapshot = buildHomeActivitySnapshot(
+      dbRows,
+      HOME_RECENT_ACTIVITY_DISPLAY_LIMIT,
+    );
     writeHomeActivitySnapshot(snapshot);
     setFitStats(snapshot.fitStats);
     setAnalyses(snapshot.analyses);
+    setHasMoreActivity(snapshot.hasMoreActivity);
     setLoading(false);
   }, []);
 
@@ -329,46 +337,14 @@ export function HomeScreen() {
           >
             {homeContentReady ? (
               <>
-            <RecommendedJobsSection embedded />
+                <RecommendedJobsSection embedded />
 
-            <section className="space-y-2">
-              <h2 className="text-[13px] font-normal uppercase tracking-wide text-muted-foreground">
-                Recent activity
-              </h2>
-
-              {loading ? (
-                <SkeletonAnalysisList
-                  count={RECENT_LIMIT}
-                  className="mx-0"
-                  rowClassName="px-0"
+                <RecentActivitySection
+                  items={analyses}
+                  from="/home"
+                  loading={loading}
+                  showViewAll={hasMoreActivity}
                 />
-              ) : analyses.length === 0 ? (
-                <p className="py-10 text-center text-[15px] text-muted-foreground leading-snug">
-                  No activity yet. Run a{" "}
-                  <span className="font-medium text-foreground">Fit Analysis</span>{" "}
-                  or{" "}
-                  <span className="font-medium text-foreground">Resume Score</span>{" "}
-                  to see results here.
-                </p>
-              ) : (
-                <IosGroupedSection fullWidth>
-                  {analyses.map((a) => (
-                    <RecentActivityLink
-                      key={a.id}
-                      item={a}
-                      from="/home"
-                      className="block transition-colors hover:bg-muted/30 active:bg-muted/40"
-                    >
-                      <IosAnalysisListRow
-                        analysis={a}
-                        subtitle={activityMetaLine(a)}
-                        className="px-0"
-                      />
-                    </RecentActivityLink>
-                  ))}
-                </IosGroupedSection>
-              )}
-            </section>
               </>
             ) : null}
           </div>
