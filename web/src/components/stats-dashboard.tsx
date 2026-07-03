@@ -5,14 +5,16 @@ import { FitScoreRatio } from "@/components/fit-score-ratio";
 import { RecentActivitySection } from "@/components/recent-activity-section";
 import { MetricScore } from "@/components/ui/metric-score";
 import {
-  fitScoreOnTen,
   fitScoreValueOnTen,
 } from "@/components/qualification-score-circle";
 import { formatResumeReviewScorePercent } from "@/components/resume-review-ui";
 import {
   type AnalysisStats,
+  type OverallMatchCategoryAverage,
   type RecommendationStat,
+  computeOverallMatchCategoryAverages,
 } from "@/lib/analysis-stats";
+import { formatCategoryScoreOnTen } from "@/lib/opportunity-categories";
 import { resumeReviewScoreTextClass } from "@/lib/resume-review-score-colors";
 import {
   isResumeScoreActivity,
@@ -29,14 +31,40 @@ const CHART_SEGMENT_COLORS = [
   "color-mix(in oklch, var(--color-primary) 14%, white)",
 ];
 
-function formatScore(value: number | null): string {
-  if (value == null) return "—";
-  return String(value);
-}
-
-function formatFitScore(value: number | null): string {
-  if (value == null) return "—";
-  return fitScoreOnTen(value);
+function OverallMatchAnalysisBars({
+  categories,
+}: {
+  categories: OverallMatchCategoryAverage[];
+}) {
+  return (
+    <div className="space-y-3.5">
+      {categories.map((item) => (
+        <div key={item.id} className="space-y-1.5">
+          <div className="flex items-center justify-between gap-3 text-[13px]">
+            <span className="text-muted-foreground">{item.label}</span>
+            <span
+              className={cn(
+                "font-semibold tabular-nums",
+                item.averageScore != null
+                  ? scoreColor(item.averageScore)
+                  : "text-muted-foreground",
+              )}
+            >
+              {formatCategoryScoreOnTen(item.averageScore)}
+            </span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{
+                width: `${Math.max(0, Math.min(100, item.averageScore ?? 0))}%`,
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function recommendationConicGradient(stats: RecommendationStat[]): string {
@@ -157,50 +185,6 @@ function RecommendationDonut({
   );
 }
 
-function ScoreAverageBars({
-  averageFit,
-  averageQualification,
-  averageConfidence,
-}: {
-  averageFit: number | null;
-  averageQualification: number | null;
-  averageConfidence: number | null;
-}) {
-  const items = [
-    { label: "Fit", value: averageFit },
-    { label: "Qualification", value: averageQualification },
-    { label: "Confidence", value: averageConfidence },
-  ];
-
-  return (
-    <div className="space-y-3.5">
-      {items.map((item) => (
-        <div key={item.label} className="space-y-1.5">
-          <div className="flex items-center justify-between gap-3 text-[13px]">
-            <span className="text-muted-foreground">{item.label}</span>
-            <span
-              className={cn(
-                "font-semibold tabular-nums",
-                item.value != null ? scoreColor(item.value) : "text-muted-foreground",
-              )}
-            >
-              {item.label === "Fit"
-                ? formatFitScore(item.value)
-                : formatScore(item.value)}
-            </span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{ width: `${Math.max(0, Math.min(100, item.value ?? 0))}%` }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function DashboardPanel({
   title,
   children,
@@ -246,6 +230,14 @@ export function StatsDashboard({
           : null,
     };
   }, [analyses]);
+
+  const overallMatchCategories = useMemo(
+    () =>
+      computeOverallMatchCategoryAverages(
+        analyses.filter((item) => !isResumeScoreActivity(item)),
+      ),
+    [analyses],
+  );
 
   return (
     <div className="space-y-5 px-4 pb-6">
@@ -303,12 +295,12 @@ export function StatsDashboard({
           )}
         </DashboardPanel>
 
-        <DashboardPanel title="Score averages">
-          <ScoreAverageBars
-            averageFit={stats.averageFit}
-            averageQualification={stats.averageQualification}
-            averageConfidence={stats.averageConfidence}
-          />
+        <DashboardPanel title="Overall Match Analysis">
+          {stats.totalAnalyses > 0 ? (
+            <OverallMatchAnalysisBars categories={overallMatchCategories} />
+          ) : (
+            <p className="text-[14px] text-muted-foreground">No breakdown yet.</p>
+          )}
         </DashboardPanel>
       </div>
 

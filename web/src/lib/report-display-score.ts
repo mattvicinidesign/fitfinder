@@ -1,4 +1,5 @@
 import type { AnalysisReportCacheEntry } from "@/lib/analysis-report-cache";
+import { buildOverallMatchRollups } from "@/lib/opportunity-categories";
 import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import { resolveReportFitScore } from "@/lib/report-fit-score";
@@ -10,11 +11,12 @@ import {
   resolveReportPreferredRegions,
 } from "@/lib/report-profile-prefs";
 import { buildReportRollupOptions } from "@/lib/report-rollup-context";
+import type { ReportRollupOptions } from "@/lib/section-score-rollups";
+import type { ScoreResult } from "@/lib/types";
 
-/** Same global fit score (0–100) as the report summary ring. */
-export function resolveReportFitScoreFromCacheEntry(
+export function resolveReportRollupContextFromCacheEntry(
   entry: AnalysisReportCacheEntry,
-): number {
+): { score: ScoreResult; rollupOptions: ReportRollupOptions } {
   const local = loadLocalProfilePrefs();
 
   const profileDesiredCompensation = entry.profileDesiredCompensation ?? null;
@@ -67,5 +69,23 @@ export function resolveReportFitScoreFromCacheEntry(
     postingContext: normalized.postingContext,
   });
 
-  return resolveReportFitScore(normalized.score, rollupOptions);
+  return { score: normalized.score, rollupOptions };
+}
+
+/** Same Overall Match category rows as the fit report summary card. */
+export function resolveOverallMatchRollupsFromCacheEntry(
+  entry: AnalysisReportCacheEntry,
+) {
+  const { score, rollupOptions } =
+    resolveReportRollupContextFromCacheEntry(entry);
+  return buildOverallMatchRollups(score, rollupOptions);
+}
+
+/** Same global fit score (0–100) as the report summary ring. */
+export function resolveReportFitScoreFromCacheEntry(
+  entry: AnalysisReportCacheEntry,
+): number {
+  const { score, rollupOptions } =
+    resolveReportRollupContextFromCacheEntry(entry);
+  return resolveReportFitScore(score, rollupOptions);
 }
