@@ -21,17 +21,55 @@ export type AnalysisReportCacheEntry = {
 const STORAGE_PREFIX = "fitfinder:analysis-report:";
 const LAST_REPORT_ID_KEY = "fitfinder:last-analysis-report-id";
 
+function reportStorageKey(reportId: string): string {
+  return `${STORAGE_PREFIX}${reportId}`;
+}
+
+function parseReportEntry(raw: string | null): AnalysisReportCacheEntry | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as AnalysisReportCacheEntry;
+  } catch {
+    return null;
+  }
+}
+
+function readReportFromStorage(
+  storage: Storage | undefined,
+  reportId: string,
+): AnalysisReportCacheEntry | null {
+  if (!storage) return null;
+  return parseReportEntry(storage.getItem(reportStorageKey(reportId)));
+}
+
+function writeReportToStorage(
+  storage: Storage | undefined,
+  reportId: string,
+  payload: string,
+): void {
+  if (!storage) return;
+  storage.setItem(reportStorageKey(reportId), payload);
+  storage.setItem(LAST_REPORT_ID_KEY, reportId);
+}
+
+function warmSessionReportCache(
+  reportId: string,
+  entry: AnalysisReportCacheEntry,
+): void {
+  if (typeof sessionStorage === "undefined") return;
+  if (readReportFromStorage(sessionStorage, reportId)) return;
+  writeReportToStorage(sessionStorage, reportId, JSON.stringify(entry));
+}
+
 export function saveAnalysisReport(
   reportId: string,
   entry: AnalysisReportCacheEntry,
   options?: { trackRecentActivity?: boolean },
 ): void {
-  if (typeof sessionStorage === "undefined") return;
-  sessionStorage.setItem(
-    `${STORAGE_PREFIX}${reportId}`,
-    JSON.stringify(entry),
-  );
-  sessionStorage.setItem(LAST_REPORT_ID_KEY, reportId);
+  const payload = JSON.stringify(entry);
+  writeReportToStorage(sessionStorage, reportId, payload);
+  writeReportToStorage(localStorage, reportId, payload);
+
   if (options?.trackRecentActivity !== false) {
     recordRecentActivityFromReport(reportId, entry);
   }
@@ -59,26 +97,42 @@ export function getLastAnalysisReport(): {
 }
 
 export function getLastAnalysisReportId(): string | null {
-  if (typeof sessionStorage === "undefined") return null;
-  const reportId = sessionStorage.getItem(LAST_REPORT_ID_KEY);
-  if (!reportId) return null;
-  return loadAnalysisReport(reportId) ? reportId : null;
+  const fromSession =
+    typeof sessionStorage !== "undefined"
+      ? sessionStorage.getItem(LAST_REPORT_ID_KEY)
+      : null;
+  if (fromSession && loadAnalysisReport(fromSession)) return fromSession;
+
+  const fromLocal =
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem(LAST_REPORT_ID_KEY)
+      : null;
+  if (fromLocal && loadAnalysisReport(fromLocal)) return fromLocal;
+
+  return null;
 }
 
+/** Session cache first; fall back to localStorage so iOS cold starts keep reports. */
 export function loadAnalysisReport(
   reportId: string,
 ): AnalysisReportCacheEntry | null {
-  if (typeof sessionStorage === "undefined") return null;
-  const raw = sessionStorage.getItem(`${STORAGE_PREFIX}${reportId}`);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as AnalysisReportCacheEntry;
-  } catch {
-    return null;
+  const fromSession = readReportFromStorage(sessionStorage, reportId);
+  if (fromSession) return fromSession;
+
+  const fromLocal = readReportFromStorage(localStorage, reportId);
+  if (fromLocal) {
+    warmSessionReportCache(reportId, fromLocal);
+    return fromLocal;
   }
+
+  return null;
 }
 
 export function clearAnalysisReport(reportId: string): void {
-  if (typeof sessionStorage === "undefined") return;
-  sessionStorage.removeItem(`${STORAGE_PREFIX}${reportId}`);
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.removeItem(reportStorageKey(reportId));
+  }
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(reportStorageKey(reportId));
+  }
 }

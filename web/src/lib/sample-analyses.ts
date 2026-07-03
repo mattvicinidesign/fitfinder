@@ -401,14 +401,22 @@ export function canOpenAnalysisItem(
   return canOpenReport(reportCacheIdForItem(item));
 }
 
-/** Recent activity rows — fit reports with cache, or resume score entries. */
+/** Recent activity rows — fit reports with cache/history, or resume score entries. */
 export function filterRecentActivity(
   items: RecentActivityItem[],
 ): RecentActivityItem[] {
+  const trackedReportIds = new Set(
+    loadRecentActivity()
+      .filter((entry) => !isSampleReportId(entry.reportId))
+      .map((entry) => entry.reportId),
+  );
+
   return items.filter((item) => {
     const reportId = reportCacheIdForItem(item);
     if (isSampleReportId(reportId)) return false;
-    return isResumeScoreActivity(item) || canOpenAnalysisItem(item);
+    if (isResumeScoreActivity(item)) return true;
+    if (canOpenAnalysisItem(item)) return true;
+    return trackedReportIds.has(reportId);
   });
 }
 
@@ -464,9 +472,17 @@ function ensureAllSampleReportsCached(): void {
   }
 }
 
+function hasRealUserRecentActivity(): boolean {
+  return loadRecentActivity().some(
+    (entry) => !isSampleReportId(entry.reportId),
+  );
+}
+
 function recentActivityIsValid(): boolean {
   const entries = loadRecentActivity();
   if (entries.length === 0) return false;
+  // Never treat real user rows as invalid just because sessionStorage was cleared.
+  if (hasRealUserRecentActivity()) return true;
   return entries.every(
     (entry) => entry.kind === "resume_score" || canOpenReport(entry.reportId),
   );

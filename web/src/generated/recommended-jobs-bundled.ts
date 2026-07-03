@@ -3,16 +3,6 @@ import type { RecommendedJob } from "@/lib/types";
 
 export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
   {
-    "id": "21811147",
-    "title": "Product Designer II - Uber Eats, Offers Consumer Experiences",
-    "company": "Uber",
-    "location": "San Francisco, CA",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-27T00:43:48Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/product-designer-ii-uber-eats-offers-consumer-experiences",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
-  },
-  {
     "id": "14137481",
     "title": "UX/UI Designer (Mid level)",
     "company": "Designit",
@@ -31,6 +21,16 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-15T19:13:03Z",
     "applyUrl": "https://www.themuse.com/jobs/bankofamerica/experience-design-xd-iv-product-design-bank-of-america-experience-design",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
+  },
+  {
+    "id": "21909813",
+    "title": "Automation & Controls Engineer (Raptor Manufacturing Systems)",
+    "company": "SpaceX",
+    "location": "El Segundo, CA",
+    "level": "Mid Level",
+    "publishedAt": "2026-07-02T18:37:46Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/automation-controls-engineer-raptor-manufacturing-systems",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
     "id": "21866908",
@@ -153,6 +153,16 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
   },
   {
+    "id": "21811147",
+    "title": "Product Designer II - Uber Eats, Offers Consumer Experiences",
+    "company": "Uber",
+    "location": "San Francisco, CA",
+    "level": "Mid Level",
+    "publishedAt": "2026-07-02T00:26:22Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/product-designer-ii-uber-eats-offers-consumer-experiences",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
+  },
+  {
     "id": "21889924",
     "title": "Staff Product Designer",
     "company": "The Coca-Cola Company",
@@ -173,33 +183,23 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
   },
   {
-    "id": "21388562",
-    "title": "Wastewater Technician (Starlink PCB)",
-    "company": "SpaceX",
-    "location": "Lockhart, TX",
+    "id": "21893857",
+    "title": "Risk and Compliance Specialist II - Global Account Security and Risk",
+    "company": "Uber",
+    "location": "Bonifacio Global City, Philippines",
     "level": "Mid Level",
-    "publishedAt": "2026-06-26T18:34:47Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/wastewater-technician-starlink-pcb-d6cc35",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+    "publishedAt": "2026-07-02T00:26:24Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/risk-and-compliance-specialist-ii-global-account-security-and-risk",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
-    "id": "21230961",
-    "title": "Water Treatment Technician, UPW & Wastewater (Starlink)",
-    "company": "SpaceX",
-    "location": "Lockhart, TX",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-26T18:34:47Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/water-treatment-technician-upw-wastewater-starlink",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21418125",
-    "title": "Propulsion Technician (Raptor Production Machining)",
-    "company": "SpaceX",
-    "location": "El Segundo, CA",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-26T18:34:30Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/propulsion-technician-raptor-production-machining",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+    "id": "21893837",
+    "title": "Sr Technical Program Manager",
+    "company": "Uber",
+    "location": "Location not listed",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-02T00:26:23Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/sr-technical-program-manager-a28dbb",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   }
 ] as RecommendedJob[];
