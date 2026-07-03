@@ -295,7 +295,7 @@ export function StatsDashboard({
           )}
         </DashboardPanel>
 
-        <DashboardPanel title="Overall Match Analysis">
+        <DashboardPanel title="Avg Fit Analysis by Category">
           {stats.totalAnalyses > 0 ? (
             <OverallMatchAnalysisBars categories={overallMatchCategories} />
           ) : (
