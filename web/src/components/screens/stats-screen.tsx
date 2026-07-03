@@ -24,9 +24,6 @@ import {
 } from "@/components/ui/sticky-bottom-cta";
 import {
   ensureSampleAnalysisDataSeeded,
-  filterOpenableAnalyses,
-  getSampleAnalyses,
-  pickFitAnalysesForMetrics,
   pickRecentActivityList,
 } from "@/lib/sample-analyses";
 import type { AnalysisRecord } from "@/lib/types";
@@ -40,15 +37,9 @@ function buildStatsView(dbRows: AnalysisRecord[]) {
     Number.MAX_SAFE_INTEGER,
   );
   const activityRows = pickRecentActivityList(merged, Number.MAX_SAFE_INTEGER);
-  const fitRows = pickFitAnalysesForMetrics(
-    filterOpenableAnalyses(
-      merged.filter((item) => !isResumeScoreActivity(item)),
-    ),
-    getSampleAnalyses(),
-  );
+  const fitRows = activityRows.filter((item) => !isResumeScoreActivity(item));
 
   return {
-    fitRows,
     activityRows,
     stats: computeAnalysisStats(fitRows.map(resolveActivityAnalysisRecord)),
   };

@@ -448,10 +448,11 @@ export function pickAnalysisListWithSamples<T extends AnalysisRecord & { report_
 /** Home/Stats KPIs — real rows only; empty when QA forces blank activity lists. */
 export function pickFitAnalysesForMetrics<T extends AnalysisRecord & { report_id?: string }>(
   rows: T[],
-  samples: T[],
 ): T[] {
   if (shouldForceEmptyActivityLists()) return [];
-  return pickAnalysisListWithSamples(rows, samples);
+  return filterOpenableAnalyses(rows).filter(
+    (item) => !isSampleReportId(reportCacheIdForItem(item)),
+  );
 }
 
 function clearLegacySeedKeys(): void {
