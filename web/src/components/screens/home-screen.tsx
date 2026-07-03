@@ -33,7 +33,7 @@ import {
   readHomeActivitySnapshot,
   writeHomeActivitySnapshot,
 } from "@/lib/home-activity";
-import { computeHomeFitStats, type HomeFitStats } from "@/lib/analysis-stats";
+import type { HomeFitStats } from "@/lib/analysis-stats";
 import { HOME_RECENT_ACTIVITY_DISPLAY_LIMIT } from "@/lib/recent-activity";
 import { cn } from "@/lib/utils";
 import type { RecentActivityItem } from "@/lib/recent-activity";
@@ -88,13 +88,11 @@ function HomeHeroStats({ stats }: { stats: HomeFitStats }) {
         size="hero"
         className="mt-1 font-bold text-primary-foreground"
       >
-        {stats.averageFitOnTen?.toFixed(1) ?? "—"}
+        {(stats.averageFitOnTen ?? 0).toFixed(1)}
       </MetricScore>
-      {stats.lastActivityDateLabel ? (
-        <p className="mt-2.5 text-[12px] font-semibold leading-snug text-primary-foreground/90">
-          Last activity: {stats.lastActivityDateLabel}
-        </p>
-      ) : null}
+      <p className="mt-2.5 text-[12px] font-semibold leading-snug text-primary-foreground/90">
+        Last activity: {stats.lastActivityAgoLabel}
+      </p>
     </div>
   );
 }
@@ -214,8 +212,7 @@ export function HomeScreen() {
     };
   }, [loadActivity]);
 
-  const showPersonalizedHero =
-    !loading && fitStats != null && fitStats.analyzedCount > 0;
+  const showPersonalizedHero = !loading && fitStats != null;
 
   useLayoutEffect(() => {
     if (!homeContentReady) return;

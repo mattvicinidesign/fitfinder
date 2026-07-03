@@ -1,4 +1,8 @@
-import { computeHomeFitStats, formatLatestActivityDateLabel, type HomeFitStats } from "@/lib/analysis-stats";
+import {
+  computeHomeFitStats,
+  formatLatestActivityAgoLabel,
+  type HomeFitStats,
+} from "@/lib/analysis-stats";
 import {
   loadRecentActivity,
   mergeRecentActivity,
@@ -8,10 +12,7 @@ import {
 } from "@/lib/recent-activity";
 import {
   ensureSampleAnalysisDataSeeded,
-  filterOpenableAnalyses,
   filterRecentActivity,
-  getSampleAnalyses,
-  pickFitAnalysesForMetrics,
   pickRecentActivityList,
 } from "@/lib/sample-analyses";
 import type { AnalysisRecord } from "@/lib/types";
@@ -43,22 +44,27 @@ export function buildHomeActivitySnapshot(
   const activityItems = shouldForceEmptyActivityLists()
     ? []
     : filterRecentActivity(merged);
-  const statsSource = pickFitAnalysesForMetrics(
-    filterOpenableAnalyses(
-      merged.filter((item) => !isResumeScoreActivity(item)),
-    ),
-    getSampleAnalyses(),
+  const fitActivityItems = activityItems.filter(
+    (item) => !isResumeScoreActivity(item),
   );
   const openableCount = activityItems.length;
-  const fitStats = computeHomeFitStats(
-    statsSource.map(resolveActivityAnalysisRecord),
-  );
+  const lastActivityAgoLabel = formatLatestActivityAgoLabel(activityItems);
+  const fitStats: HomeFitStats =
+    fitActivityItems.length === 0
+      ? {
+          averageFitOnTen: 0,
+          analyzedCount: 0,
+          lastActivityAgoLabel,
+        }
+      : {
+          ...computeHomeFitStats(
+            fitActivityItems.map(resolveActivityAnalysisRecord),
+          ),
+          lastActivityAgoLabel,
+        };
   return {
     analyses: pickRecentActivityList(merged, recentLimit),
-    fitStats: {
-      ...fitStats,
-      lastActivityDateLabel: formatLatestActivityDateLabel(activityItems),
-    },
+    fitStats,
     hasMoreActivity: openableCount > recentLimit,
   };
 }
