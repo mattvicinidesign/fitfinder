@@ -381,7 +381,7 @@ export function ProfileScreen() {
       </StickyScreenBody>
 
       {showSaveButton ? (
-        <StickyBottomCta variant="bare">
+        <StickyBottomCta variant="bare" inactive={busy}>
           <Button
             type="button"
             className="w-full h-12 rounded-xl"

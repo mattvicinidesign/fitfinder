@@ -177,10 +177,7 @@ export function HomeSearchReportsBar({
           onBlur={handleBlur}
           placeholder={placeholderText}
           aria-label={placeholderText}
-          className={cn(
-            "min-h-[1.25rem] min-w-0 flex-1 bg-transparent font-medium text-white outline-none placeholder:text-white/40 [&::-webkit-search-cancel-button]:hidden",
-            placeholderTextClass,
-          )}
+          className="min-h-[1.25rem] min-w-0 flex-1 bg-transparent text-[16px] leading-normal font-medium text-white outline-none placeholder:text-[16px] placeholder:leading-normal placeholder:text-white/40 [&::-webkit-search-cancel-button]:hidden"
         />
       ) : (
         <span

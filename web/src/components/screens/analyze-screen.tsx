@@ -8,6 +8,7 @@ import { CircleBackLink } from "@/components/ui/circle-back-button";
 import { analyze } from "@/lib/api";
 import {
   getLastAnalysisReport,
+  repairSampleLastAnalysisReportPointer,
   saveAnalysisReport,
 } from "@/lib/analysis-report-cache";
 import { sanitizeJobText } from "@/lib/sanitize-job-text";
@@ -180,6 +181,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
 
   useEffect(() => {
     if (demo) return;
+    repairSampleLastAnalysisReportPointer();
     setLastReport(getLastAnalysisReport());
   }, [demo]);
 
@@ -439,7 +441,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           ) : null}
         </StickyScreenBody>
 
-        <StickyBottomCta variant="floating" scrollFade>
+        <StickyBottomCta variant="floating" scrollFade inactive={busy}>
           <Button
             type="submit"
             className="h-12 w-full gap-2 rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]"

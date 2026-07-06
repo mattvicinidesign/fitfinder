@@ -26,7 +26,7 @@ export function AnalysisLoadingOverlay({
   return (
     <div
       className={cn(
-        "absolute inset-0 z-20 flex flex-col items-center justify-center bg-background px-8",
+        "absolute inset-0 z-30 flex flex-col items-center justify-center bg-background px-8",
         className,
       )}
       role="status"

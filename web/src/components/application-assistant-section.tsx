@@ -134,7 +134,7 @@ export function ApplicationAssistantSection({
 
   return (
     <>
-      <StickyBottomCta variant="floating" scrollFade>
+      <StickyBottomCta variant="floating" scrollFade inactive={generating}>
         <Button
           type="button"
           className={cn(

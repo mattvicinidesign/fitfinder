@@ -195,7 +195,7 @@ export function ResumeReviewScreen() {
               onClick={handleHeaderReplace}
               className={REPLACE_RESUME_BUTTON_CLASS}
             >
-              Replace Resume
+              {review ? "New Score Resume" : "Replace Resume"}
             </button>
           ) : undefined
         }

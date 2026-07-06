@@ -242,7 +242,12 @@ export function ResumeReviewResultView({
       </StickyScreenBody>
 
       {atsOptimized ? (
-        <StickyBottomCta variant="floating" scrollFade scrollFadeClassName="h-[10.5rem]">
+        <StickyBottomCta
+          variant="floating"
+          scrollFade
+          scrollFadeClassName="h-[10.5rem]"
+          inactive={loadingOpen}
+        >
           <div className="space-y-2">
             <Button
               type="button"

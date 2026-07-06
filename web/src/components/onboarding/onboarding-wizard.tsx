@@ -137,7 +137,7 @@ export function OnboardingWizard({
         </div>
       </StickyScreenBody>
 
-      <StickyBottomCta variant="floating" className={safeBottomCta}>
+      <StickyBottomCta variant="floating" className={safeBottomCta} inactive={busy}>
         <Button
           type="button"
           className="h-12 w-full rounded-xl text-[17px] shadow-[0_8px_28px_rgba(0,0,0,0.45)]"

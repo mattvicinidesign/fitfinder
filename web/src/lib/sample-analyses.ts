@@ -1,5 +1,6 @@
 import {
   loadAnalysisReport,
+  repairSampleLastAnalysisReportPointer,
   saveAnalysisReport,
   type AnalysisReportCacheEntry,
 } from "@/lib/analysis-report-cache";
@@ -507,6 +508,7 @@ export function ensureSampleAnalysisDataSeeded(): void {
 
   clearLegacySeedKeys();
   ensureAllSampleReportsCached();
+  repairSampleLastAnalysisReportPointer();
 
   const seeded = localStorage.getItem(SEED_KEY) === "true";
   if (!seeded || !recentActivityIsValid()) {

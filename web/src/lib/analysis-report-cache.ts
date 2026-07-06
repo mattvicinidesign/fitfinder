@@ -20,6 +20,11 @@ export type AnalysisReportCacheEntry = {
 
 const STORAGE_PREFIX = "fitfinder:analysis-report:";
 const LAST_REPORT_ID_KEY = "fitfinder:last-analysis-report-id";
+const SAMPLE_REPORT_ID_PREFIX = "sample-analysis-";
+
+function isSampleReportStorageId(reportId: string): boolean {
+  return reportId.startsWith(SAMPLE_REPORT_ID_PREFIX);
+}
 
 function reportStorageKey(reportId: string): string {
   return `${STORAGE_PREFIX}${reportId}`;
@@ -46,10 +51,13 @@ function writeReportToStorage(
   storage: Storage | undefined,
   reportId: string,
   payload: string,
+  options?: { updateLastReportId?: boolean },
 ): void {
   if (!storage) return;
   storage.setItem(reportStorageKey(reportId), payload);
-  storage.setItem(LAST_REPORT_ID_KEY, reportId);
+  if (options?.updateLastReportId !== false) {
+    storage.setItem(LAST_REPORT_ID_KEY, reportId);
+  }
 }
 
 function warmSessionReportCache(
@@ -58,7 +66,9 @@ function warmSessionReportCache(
 ): void {
   if (typeof sessionStorage === "undefined") return;
   if (readReportFromStorage(sessionStorage, reportId)) return;
-  writeReportToStorage(sessionStorage, reportId, JSON.stringify(entry));
+  writeReportToStorage(sessionStorage, reportId, JSON.stringify(entry), {
+    updateLastReportId: false,
+  });
 }
 
 export function saveAnalysisReport(
@@ -67,8 +77,9 @@ export function saveAnalysisReport(
   options?: { trackRecentActivity?: boolean },
 ): void {
   const payload = JSON.stringify(entry);
-  writeReportToStorage(sessionStorage, reportId, payload);
-  writeReportToStorage(localStorage, reportId, payload);
+  const updateLastReportId = options?.trackRecentActivity !== false;
+  writeReportToStorage(sessionStorage, reportId, payload, { updateLastReportId });
+  writeReportToStorage(localStorage, reportId, payload, { updateLastReportId });
 
   if (options?.trackRecentActivity !== false) {
     recordRecentActivityFromReport(reportId, entry);
@@ -90,10 +101,24 @@ export function getLastAnalysisReport(): {
   roleTitle: string;
 } | null {
   const reportId = getLastAnalysisReportId();
-  if (!reportId) return null;
+  if (!reportId || isSampleReportStorageId(reportId)) return null;
   const entry = loadAnalysisReport(reportId);
   if (!entry) return null;
   return { reportId, roleTitle: reportRoleTitle(entry.result) };
+}
+
+function clearSampleLastReportPointer(storage: Storage | undefined): void {
+  if (!storage) return;
+  const reportId = storage.getItem(LAST_REPORT_ID_KEY);
+  if (reportId && isSampleReportStorageId(reportId)) {
+    storage.removeItem(LAST_REPORT_ID_KEY);
+  }
+}
+
+/** Remove sample-report pointers left by older builds that seeded fixtures. */
+export function repairSampleLastAnalysisReportPointer(): void {
+  clearSampleLastReportPointer(sessionStorage);
+  clearSampleLastReportPointer(localStorage);
 }
 
 export function getLastAnalysisReportId(): string | null {
@@ -101,13 +126,17 @@ export function getLastAnalysisReportId(): string | null {
     typeof sessionStorage !== "undefined"
       ? sessionStorage.getItem(LAST_REPORT_ID_KEY)
       : null;
-  if (fromSession && loadAnalysisReport(fromSession)) return fromSession;
+  if (fromSession && !isSampleReportStorageId(fromSession) && loadAnalysisReport(fromSession)) {
+    return fromSession;
+  }
 
   const fromLocal =
     typeof localStorage !== "undefined"
       ? localStorage.getItem(LAST_REPORT_ID_KEY)
       : null;
-  if (fromLocal && loadAnalysisReport(fromLocal)) return fromLocal;
+  if (fromLocal && !isSampleReportStorageId(fromLocal) && loadAnalysisReport(fromLocal)) {
+    return fromLocal;
+  }
 
   return null;
 }

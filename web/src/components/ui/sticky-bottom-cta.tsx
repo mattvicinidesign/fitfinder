@@ -54,6 +54,7 @@ export function StickyBottomCta({
   variant = "bar",
   scrollFade = false,
   scrollFadeClassName,
+  inactive = false,
 }: {
   children: React.ReactNode;
   className?: string;
@@ -61,6 +62,8 @@ export function StickyBottomCta({
   /** Soft gradient above floating CTAs — dims scroll content under the button. */
   scrollFade?: boolean;
   scrollFadeClassName?: string;
+  /** Blocks taps and dims the CTA while a parent action is loading. */
+  inactive?: boolean;
 }) {
   const isFloating = variant === "floating";
   const isBare = variant === "bare";
@@ -99,7 +102,12 @@ export function StickyBottomCta({
           className,
         )}
       >
-        <div className={isFloating ? "pointer-events-auto" : undefined}>
+        <div
+          className={cn(
+            isFloating ? "pointer-events-auto" : undefined,
+            inactive && "pointer-events-none opacity-45 saturate-50",
+          )}
+        >
           {children}
         </div>
       </div>
