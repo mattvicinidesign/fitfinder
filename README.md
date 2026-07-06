@@ -119,6 +119,8 @@ After **backend** changes, deploy Edge Functions (`supabase functions deploy ana
 
 **Analyze header:** The last-report shortcut only appears after a real user analysis — sample fixture seeding no longer sets `fitfinder:last-analysis-report-id`. Home search input uses **16px** text on focus so iOS does not zoom the viewport.
 
+**Sticky bottom CTAs:** Primary floating actions (Analyze, signup/onboarding Continue, profile Save, proposal generate) use `StickyBottomCta` with `inactive` while async work runs. Resume upload/parsing on Analyze and signup wires `ResumeFilePicker` `onBusyChange` so the bottom button greys out and is not tappable until upload + parse finish. Score results show **New Score Resume** in the header after a report.
+
 **Application Assistant:** On a fit report, generate a tailored proposal from resume + job data. Portfolio URL is extracted from the stored resume (not project URLs), inserted between intro paragraphs, and included in PDF export. Regenerate from the proposal modal.
 
 **Recommended jobs (Home):** Horizontal carousel — **two cards visible** on web, preview, and native (inside the 480px column; not viewport `lg`). Product-design listings from [The Muse API](https://www.themuse.com/developers/api/v2). Server route `GET /api/jobs/recommended` filters Design and UX, prioritizes product-design titles, validates live Muse URLs (skips expired 404 listings), and enriches cards with company logos. Tapping a card opens the posting on themuse.com (new tab on web; in-app browser on iOS). Requires `MUSE_API_KEY` in `web/.env.local` and Vercel for live refreshes; a bundled snapshot in `src/generated/recommended-jobs-bundled.ts` is used when the API is unavailable. Smoke test: `GET /api/jobs/test` in dev.
