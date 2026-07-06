@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { CircleBackButton } from "@/components/ui/circle-back-button";
 import { CtaSpinner } from "@/components/ui/cta-spinner";
+import { PRIMARY_FLOATING_CTA_CLASS } from "@/components/resume-upload-styles";
 import {
   screenShellClass,
   StickyBottomCta,
@@ -82,6 +83,7 @@ export function OnboardingWizard({
 
   const showHeaderBack = step > 0 || (step === 0 && onBackFromStart);
   const showHeaderSkip = stepSkippable || Boolean(onSkip);
+  const ctaDisabled = busy || !canContinue;
 
   return (
     <div className={screenShellClass}>
@@ -137,11 +139,11 @@ export function OnboardingWizard({
         </div>
       </StickyScreenBody>
 
-      <StickyBottomCta variant="floating" className={safeBottomCta} inactive={busy}>
+      <StickyBottomCta variant="floating" className={safeBottomCta} inactive={ctaDisabled}>
         <Button
           type="button"
-          className="h-12 w-full rounded-xl text-[17px] shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
-          disabled={busy || !canContinue}
+          className={PRIMARY_FLOATING_CTA_CLASS}
+          disabled={ctaDisabled}
           aria-busy={busy}
           aria-label={
             busy

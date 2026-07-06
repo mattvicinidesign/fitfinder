@@ -26,7 +26,7 @@ export const RESUME_SCORE_ZONE_CTA_CLASS =
 
 /** Primary floating CTA — matches Home “+ New Fit Analysis” and Score actions. */
 export const PRIMARY_FLOATING_CTA_CLASS =
-  "h-12 w-full rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]";
+  "h-12 w-full rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)] disabled:pointer-events-none disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none";
 
 /** Full-width primary actions on Score screens (matches onboarding / analyze CTAs). */
 export const RESUME_REVIEW_PRIMARY_CTA_CLASS = PRIMARY_FLOATING_CTA_CLASS;

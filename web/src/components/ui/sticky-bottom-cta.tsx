@@ -105,7 +105,7 @@ export function StickyBottomCta({
         <div
           className={cn(
             isFloating ? "pointer-events-auto" : undefined,
-            inactive && "pointer-events-none opacity-45 saturate-50",
+            inactive && "pointer-events-none [&_[data-slot=button]]:bg-muted [&_[data-slot=button]]:text-muted-foreground [&_[data-slot=button]]:opacity-100 [&_[data-slot=button]]:shadow-none",
           )}
         >
           {children}

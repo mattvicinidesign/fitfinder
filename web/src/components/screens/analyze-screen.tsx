@@ -31,7 +31,7 @@ import {
   ResumeFilePicker,
   type ResumeFilePickerHandle,
 } from "@/components/resume-file-picker";
-import { REPLACE_RESUME_BUTTON_CLASS } from "@/components/resume-upload-styles";
+import { REPLACE_RESUME_BUTTON_CLASS, PRIMARY_FLOATING_CTA_CLASS } from "@/components/resume-upload-styles";
 import {
   ANALYZE_FIELD_CLASS,
   ANALYZE_SECTION_CLASS,
@@ -176,8 +176,10 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
     reportId: string;
     roleTitle: string;
   } | null>(null);
+  const [resumeBusy, setResumeBusy] = useState(false);
 
   const busy = status !== null;
+  const ctaBlocked = busy || resumeBusy;
 
   useEffect(() => {
     if (demo) return;
@@ -317,7 +319,7 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
               <button
                 type="button"
                 onClick={() => resumePickerRef.current?.openFilePicker()}
-                disabled={busy}
+                disabled={ctaBlocked}
                 className={REPLACE_RESUME_BUTTON_CLASS}
               >
                 Replace Resume
@@ -343,9 +345,10 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
             <ResumeFilePicker
               ref={resumePickerRef}
               className="min-h-0 flex-1"
-              disabled={busy}
+              disabled={ctaBlocked}
               fileName={resumeFileName}
               showReplaceHint={false}
+              onBusyChange={setResumeBusy}
               onParsed={({ resumeId, fileName }) => {
                 setResumeId(resumeId);
                 setResumeFileName(fileName);
@@ -441,11 +444,11 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
           ) : null}
         </StickyScreenBody>
 
-        <StickyBottomCta variant="floating" scrollFade inactive={busy}>
+        <StickyBottomCta variant="floating" scrollFade inactive={ctaBlocked}>
           <Button
             type="submit"
-            className="h-12 w-full gap-2 rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
-            disabled={busy || demo}
+            className={cn("gap-2", PRIMARY_FLOATING_CTA_CLASS)}
+            disabled={ctaBlocked || demo}
             aria-busy={busy}
             aria-label={busy ? status ?? "Analyzing fit" : "Analyze fit"}
           >
