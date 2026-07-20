@@ -1,15 +1,6 @@
-import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import {
-  applyKeywordChangeAtOccurrence,
-  buildPhraseBoundaryPattern,
-  computeVisualWidthDeltaPercent,
-  EXPORT_MAX_VISUAL_WIDTH_DELTA_RATIO,
-} from "@/lib/ats-keyword-optimization-core";
-import { mapRunFontName, measureTextWidth } from "@/lib/pdf-typography";
-import {
-  logReplacementAudit,
-} from "@/lib/ats-optimizer-debug";
+import { logReplacementAudit } from "@/lib/ats-optimizer-debug";
 import type { PdfTextRun } from "@/lib/extract-resume-pdf-runs";
+import { patchPdfContentStreamBytes } from "@/lib/patch-pdf-content-stream";
 import type { AtsKeywordChange } from "@/lib/types";
 
 export type PdfPatchResult = {
@@ -18,312 +9,43 @@ export type PdfPatchResult = {
   rejectedSubstitutions: AtsKeywordChange[];
 };
 
-type PdfLineGroup = {
-  page: number;
-  y: number;
-  runs: PdfTextRun[];
-  text: string;
-};
-
-type LinePatchPlan = {
-  line: PdfLineGroup;
-  originalText: string;
-  optimizedText: string;
-  substitutions: AtsKeywordChange[];
-};
-
-function groupRunsIntoLines(runs: PdfTextRun[]): PdfLineGroup[] {
-  const sorted = [...runs].sort((a, b) => {
-    if (a.page !== b.page) return a.page - b.page;
-    const yDiff = b.y - a.y;
-    if (Math.abs(yDiff) > 3) return yDiff;
-    return a.x - b.x;
-  });
-
-  const lines: PdfLineGroup[] = [];
-  for (const run of sorted) {
-    const last = lines[lines.length - 1];
-    if (
-      last &&
-      last.page === run.page &&
-      Math.abs(last.y - run.y) <= 4
-    ) {
-      last.runs.push(run);
-      last.text = last.runs.map((entry) => entry.str).join(" ");
-      continue;
-    }
-    lines.push({
-      page: run.page,
-      y: run.y,
-      runs: [run],
-      text: run.str,
-    });
-  }
-
-  return lines;
-}
-
-function lineKey(line: PdfLineGroup): string {
-  return `${line.page}:${line.y.toFixed(2)}`;
-}
-
-function lineSearchVariants(line: PdfLineGroup): string[] {
-  const spaced = line.text;
-  const compact = line.runs.map((run) => run.str).join("");
-  const normalizedSpaced = spaced.replace(/\s+/g, " ").trim();
-  const normalizedCompact = compact.replace(/\s+/g, "").trim();
-  return [...new Set([spaced, compact, normalizedSpaced, normalizedCompact])];
-}
-
-function findLinesForSubstitution(
-  lineGroups: PdfLineGroup[],
-  substitution: AtsKeywordChange,
-): PdfLineGroup[] {
-  const pattern = buildPhraseBoundaryPattern(substitution.before, "i");
-  return lineGroups.filter((line) =>
-    lineSearchVariants(line).some((text) => pattern.test(text)),
-  );
-}
-
-function resolveOptimizedLineText(
-  originalLine: string,
-  optimizedText: string | undefined,
-  substitutions: AtsKeywordChange[],
-): string {
-  if (optimizedText) {
-    const optimizedLines = optimizedText.split("\n");
-    for (const substitution of substitutions) {
-      const afterPattern = buildPhraseBoundaryPattern(substitution.after, "i");
-      const match = optimizedLines.find(
-        (line) =>
-          afterPattern.test(line) &&
-          line.slice(0, 2) === originalLine.slice(0, 2),
-      );
-      if (match) return match;
-    }
-  }
-
-  let text = originalLine;
-  for (const substitution of substitutions) {
-    if (buildPhraseBoundaryPattern(substitution.before, "i").test(text)) {
-      text = applyKeywordChangeAtOccurrence(text, substitution, 0);
-    }
-  }
-  return text;
-}
-
-function buildLinePatchPlans(
-  lineGroups: PdfLineGroup[],
-  substitutions: AtsKeywordChange[],
-  optimizedText?: string,
-): LinePatchPlan[] {
-  const plans = new Map<string, LinePatchPlan>();
-
-  for (const substitution of substitutions) {
-    for (const line of findLinesForSubstitution(lineGroups, substitution)) {
-      const key = lineKey(line);
-      const existing = plans.get(key) ?? {
-        line,
-        originalText: line.text,
-        optimizedText: line.text,
-        substitutions: [],
-      };
-
-      if (
-        !existing.substitutions.some(
-          (entry) =>
-            entry.before === substitution.before &&
-            entry.after === substitution.after,
-        )
-      ) {
-        existing.substitutions.push(substitution);
-      }
-
-      plans.set(key, existing);
-    }
-  }
-
-  for (const plan of plans.values()) {
-    plan.optimizedText = resolveOptimizedLineText(
-      plan.originalText,
-      optimizedText,
-      plan.substitutions,
-    );
-  }
-
-  return [...plans.values()].filter(
-    (plan) => plan.originalText.trim() !== plan.optimizedText.trim(),
-  );
-}
-
-function lineRenderBounds(line: PdfLineGroup): {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  fontSize: number;
-} {
-  const anchor = line.runs[0]!;
-  let minX = Number.POSITIVE_INFINITY;
-  let maxX = Number.NEGATIVE_INFINITY;
-
-  for (const run of line.runs) {
-    minX = Math.min(minX, run.x);
-    maxX = Math.max(maxX, run.x + run.width);
-  }
-
-  const fontSize = anchor.fontSize;
-  return {
-    x: minX,
-    y: anchor.y - fontSize * 0.2,
-    width: Math.max(maxX - minX, anchor.width),
-    height: anchor.height ?? fontSize * 1.2,
-    fontSize,
-  };
-}
-
-function passesLineRedrawWidthTolerance(
-  font: PDFFont,
-  optimizedText: string,
-  fontSize: number,
-  originalWidth: number,
-): boolean {
-  const nextWidth = measureTextWidth(font, optimizedText, fontSize);
-  if (nextWidth <= originalWidth) return true;
-  return (
-    computeVisualWidthDeltaPercent(originalWidth, nextWidth) <=
-    EXPORT_MAX_VISUAL_WIDTH_DELTA_RATIO
-  );
-}
-
-function redrawLine(
-  page: PDFPage,
-  line: PdfLineGroup,
-  optimizedText: string,
-  font: PDFFont,
-): boolean {
-  const anchor = line.runs[0]!;
-  const bounds = lineRenderBounds(line);
-
-  if (
-    !passesLineRedrawWidthTolerance(
-      font,
-      optimizedText,
-      bounds.fontSize,
-      bounds.width,
-    )
-  ) {
-    return false;
-  }
-
-  page.drawRectangle({
-    x: bounds.x - 1,
-    y: bounds.y,
-    width: bounds.width + 2,
-    height: bounds.height,
-    color: rgb(1, 1, 1),
-    borderWidth: 0,
-  });
-
-  page.drawText(optimizedText, {
-    x: anchor.x,
-    y: anchor.y,
-    size: bounds.fontSize,
-    font,
-    color: rgb(0, 0, 0),
-  });
-
-  return true;
-}
-
-/** Replace keyword swaps by redrawing whole PDF lines — never partial phrase overlays. */
+/** Replace keyword swaps in-place inside PDF content streams — never redraw lines. */
 export async function patchPdfBlob(
   blob: Blob,
   substitutions: AtsKeywordChange[],
   runs: PdfTextRun[],
-  optimizedText?: string,
+  _optimizedText?: string,
 ): Promise<PdfPatchResult> {
-  const doc = await PDFDocument.load(await blob.arrayBuffer());
-  const pages = doc.getPages();
-  const fontCache = new Map<string, PDFFont>();
-  const lineGroups = groupRunsIntoLines(runs);
-  const plans = buildLinePatchPlans(lineGroups, substitutions, optimizedText);
-  const appliedSubstitutions: AtsKeywordChange[] = [];
-  const rejectedSubstitutions: AtsKeywordChange[] = [];
-  const appliedKeys = new Set<string>();
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const patched = patchPdfContentStreamBytes(bytes, substitutions, runs);
 
-  async function getFont(run: PdfTextRun): Promise<PDFFont> {
-    const key = mapRunFontName(run.fontName);
-    const cached = fontCache.get(key);
-    if (cached) return cached;
-    const embedded = await doc.embedFont(key);
-    fontCache.set(key, embedded);
-    return embedded;
+  for (const substitution of patched.appliedSubstitutions) {
+    logReplacementAudit({
+      stage: "pdf_export",
+      replacement: `${substitution.before} → ${substitution.after}`,
+      originalSentence: substitution.originalBulletText ?? substitution.before,
+      resultingSentence: substitution.optimizedBulletText ?? substitution.after,
+      finalRenderedSentence: substitution.optimizedBulletText ?? substitution.after,
+      integrityPassed: true,
+      failures: [],
+    });
   }
 
-  for (const plan of plans) {
-    const page = pages[plan.line.page - 1];
-    if (!page) {
-      for (const substitution of plan.substitutions) {
-        rejectedSubstitutions.push(substitution);
-      }
-      continue;
-    }
-
-    const font = await getFont(plan.line.runs[0]!);
-    const redrawn = redrawLine(page, plan.line, plan.optimizedText, font);
-    const auditBase = {
-      stage: "pdf_export" as const,
-      originalSentence: plan.originalText,
-      resultingSentence: plan.optimizedText,
-      finalRenderedSentence: redrawn ? plan.optimizedText : plan.originalText,
-    };
-
-    if (!redrawn) {
-      for (const substitution of plan.substitutions) {
-        rejectedSubstitutions.push(substitution);
-        logReplacementAudit({
-          ...auditBase,
-          replacement: `${substitution.before} → ${substitution.after}`,
-          integrityPassed: false,
-          failures: ["PDF line redraw rejected (width/layout)"],
-        });
-      }
-      continue;
-    }
-
-    for (const substitution of plan.substitutions) {
-      const subKey = `${substitution.before}→${substitution.after}`;
-      if (!appliedKeys.has(subKey)) {
-        appliedKeys.add(subKey);
-        appliedSubstitutions.push(substitution);
-      }
-      logReplacementAudit({
-        ...auditBase,
-        replacement: `${substitution.before} → ${substitution.after}`,
-        integrityPassed: true,
-        failures: [],
-      });
-    }
+  for (const substitution of patched.rejectedSubstitutions) {
+    logReplacementAudit({
+      stage: "pdf_export",
+      replacement: `${substitution.before} → ${substitution.after}`,
+      originalSentence: substitution.originalBulletText ?? substitution.before,
+      resultingSentence: substitution.originalBulletText ?? substitution.before,
+      finalRenderedSentence: substitution.originalBulletText ?? substitution.before,
+      integrityPassed: false,
+      failures: ["PDF literal patch not found in content stream"],
+    });
   }
 
-  for (const substitution of substitutions) {
-    const applied = appliedSubstitutions.some(
-      (entry) =>
-        entry.before === substitution.before && entry.after === substitution.after,
-    );
-    if (!applied && !rejectedSubstitutions.some(
-      (entry) =>
-        entry.before === substitution.before && entry.after === substitution.after,
-    )) {
-      rejectedSubstitutions.push(substitution);
-    }
-  }
-
-  const bytes = await doc.save();
   return {
-    blob: new Blob([bytes as BlobPart], { type: "application/pdf" }),
-    appliedSubstitutions,
-    rejectedSubstitutions,
+    blob: new Blob([patched.bytes as BlobPart], { type: "application/pdf" }),
+    appliedSubstitutions: patched.appliedSubstitutions,
+    rejectedSubstitutions: patched.rejectedSubstitutions,
   };
 }

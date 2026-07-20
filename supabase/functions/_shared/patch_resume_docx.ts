@@ -1,4 +1,5 @@
 import JSZip from "npm:jszip@3.10.1";
+import { buildPhraseBoundaryPattern } from "./ats_keyword_optimization.ts";
 
 export type AtsKeywordChange = {
   before: string;
@@ -18,35 +19,116 @@ function escapeXml(value: string): string {
     .replace(/>/g, "&gt;");
 }
 
+function unescapeXml(value: string): string {
+  return value
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
+
 function isBulletParagraphXml(paragraphXml: string): boolean {
   if (/<w:numPr\b/.test(paragraphXml)) return true;
   if (/<w:pStyle[^>]+w:val="ListParagraph"/.test(paragraphXml)) return true;
   return /<w:t[^>]*>\s*[•●◦▪\-*–—]\s/.test(paragraphXml);
 }
 
-function patchDocxXmlTextNodes(
-  xml: string,
+type DocxRunSlice = {
+  open: string;
+  text: string;
+  close: string;
+  start: number;
+  end: number;
+};
+
+function extractDocxRunSlices(paragraphXml: string): DocxRunSlice[] {
+  const slices: DocxRunSlice[] = [];
+  let cursor = 0;
+
+  paragraphXml.replace(
+    /(<w:t(?:\s[^>]*)?>)([^<]*)(<\/w:t>)/g,
+    (match, open: string, text: string, close: string, offset: number) => {
+      void match;
+      void offset;
+      const decoded = unescapeXml(text);
+      slices.push({
+        open,
+        text: decoded,
+        close,
+        start: cursor,
+        end: cursor + decoded.length,
+      });
+      cursor += decoded.length;
+      return match;
+    },
+  );
+
+  return slices;
+}
+
+function rebuildParagraphWithSlices(
+  paragraphXml: string,
+  slices: DocxRunSlice[],
+): string {
+  let sliceIndex = 0;
+  return paragraphXml.replace(
+    /(<w:t(?:\s[^>]*)?>)([^<]*)(<\/w:t>)/g,
+    (match, open: string, _text: string, close: string) => {
+      const slice = slices[sliceIndex];
+      sliceIndex += 1;
+      if (!slice) return match;
+      return `${open}${escapeXml(slice.text)}${close}`;
+    },
+  );
+}
+
+function patchDocxParagraphRuns(
+  paragraphXml: string,
   before: string,
   after: string,
 ): string {
-  const parts = before
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-  const body = parts.length > 0
-    ? parts.join("\\s+")
-    : before.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const pattern = new RegExp(`(?<![\\w-])${body}(?![\\w-])`, "i");
+  const slices = extractDocxRunSlices(paragraphXml);
+  if (slices.length === 0) return paragraphXml;
 
-  return xml.replace(
-    /(<w:t(?:\s[^>]*)?>)([^<]*)(<\/w:t>)/g,
-    (match, open, text, close) => {
-      if (!pattern.test(text)) return match;
-      const next = text.replace(pattern, after);
-      return `${open}${escapeXml(next)}${close}`;
-    },
-  );
+  const fullText = slices.map((slice) => slice.text).join("");
+  const pattern = buildPhraseBoundaryPattern(before, "i");
+  const match = pattern.exec(fullText);
+  if (!match || match.index === undefined) {
+    return paragraphXml;
+  }
+
+  const matchStart = match.index;
+  const matchEnd = matchStart + match[0].length;
+  const firstOverlapIdx = slices.findIndex((slice) => slice.end > matchStart);
+  const lastOverlapIdx = slices.findLastIndex((slice) => slice.start < matchEnd);
+  if (firstOverlapIdx === -1 || lastOverlapIdx === -1) {
+    return paragraphXml;
+  }
+
+  const nextSlices = slices.map((slice, index) => {
+    if (index < firstOverlapIdx || index > lastOverlapIdx) {
+      return slice;
+    }
+
+    if (firstOverlapIdx === lastOverlapIdx) {
+      const prefix = slice.text.slice(0, matchStart - slice.start);
+      const suffix = slice.text.slice(matchEnd - slice.start);
+      return { ...slice, text: prefix + after + suffix };
+    }
+
+    if (index === firstOverlapIdx) {
+      const prefix = slice.text.slice(0, matchStart - slice.start);
+      return { ...slice, text: prefix + after };
+    }
+
+    if (index === lastOverlapIdx) {
+      const suffix = slice.text.slice(matchEnd - slice.start);
+      return { ...slice, text: suffix };
+    }
+
+    return { ...slice, text: "" };
+  });
+
+  return rebuildParagraphWithSlices(paragraphXml, nextSlices);
 }
 
 function patchDocxXmlBulletParagraphs(
@@ -56,7 +138,7 @@ function patchDocxXmlBulletParagraphs(
 ): string {
   return xml.replace(/<w:p[\s\S]*?<\/w:p>/g, (paragraph) => {
     if (!isBulletParagraphXml(paragraph)) return paragraph;
-    return patchDocxXmlTextNodes(paragraph, before, after);
+    return patchDocxParagraphRuns(paragraph, before, after);
   });
 }
 

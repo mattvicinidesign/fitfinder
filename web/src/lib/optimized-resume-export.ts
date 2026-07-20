@@ -166,27 +166,25 @@ async function patchPdfForExport(input: {
     };
   }
 
-  if (input.runs.length > 0) {
-    try {
-      const patched = await patchPdfBlob(
-        input.blob,
-        input.substitutions,
-        input.runs,
-        input.patchedText,
-      );
-      if (patched.appliedSubstitutions.length > 0) {
-        return {
-          blob: pdfBlob(patched.blob),
-          layoutPreserved: true,
-          typographyPreserved:
-            patched.rejectedSubstitutions.length === 0 &&
-            patched.appliedSubstitutions.length === input.substitutions.length,
-          appliedSubstitutionCount: patched.appliedSubstitutions.length,
-        };
-      }
-    } catch {
-      // Fall through to raw literal patching.
+  try {
+    const patched = await patchPdfBlob(
+      input.blob,
+      input.substitutions,
+      input.runs,
+      input.patchedText,
+    );
+    if (patched.appliedSubstitutions.length > 0) {
+      return {
+        blob: pdfBlob(patched.blob),
+        layoutPreserved: true,
+        typographyPreserved:
+          patched.rejectedSubstitutions.length === 0 &&
+          patched.appliedSubstitutions.length === input.substitutions.length,
+        appliedSubstitutionCount: patched.appliedSubstitutions.length,
+      };
     }
+  } catch {
+    // Fall through to raw literal patching without run targeting.
   }
 
   const raw = await patchPdfBlobRawLiterals(input.blob, input.substitutions);
