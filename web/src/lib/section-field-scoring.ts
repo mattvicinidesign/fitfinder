@@ -28,7 +28,6 @@ import {
   isExplicitClientAvgPayRate,
 } from "@/lib/client-quality-scoring";
 import { buildEmployerTypeMatchDetail } from "@/lib/company-type-match";
-import { buildProjectTypeMatchDetail } from "@/lib/project-type-match";
 import { buildEmployerRatingMatchDetail } from "@/lib/employer-rating-match";
 import { buildClientAvgPayMatchDetail } from "@/lib/client-avg-pay-match";
 import { buildEnglishLevelPreferenceDetail } from "@/lib/english-level-match";
@@ -237,8 +236,6 @@ export function buildClientProfileFields(
   const avgRow = postingRowByKey(rows, "clientAverageHourlyRate");
   const datePostedRow = postingRowByKey(rows, "datePosted");
   const hireAreaRow = postingRowByKey(rows, "hireArea");
-  const profileComp =
-    ctx.parsedResume?.desiredCompensation ?? ctx.profileDesiredCompensation ?? null;
 
   const fields: SectionFieldScore[] = [];
 
@@ -274,7 +271,8 @@ export function buildClientProfileFields(
     postingContext: ctx.postingContext,
     jobDescription: ctx.jobDescription,
     jobTitle: ctx.jobTitle,
-    profilePreferredCompanyTypes: ctx.profilePreferredCompanyTypes,
+    // Matching preferences retired — posting-only employer type signal.
+    profilePreferredCompanyTypes: [],
   });
 
   if (employerMatch.identified && employerMatch.compareToProfile) {
@@ -425,8 +423,8 @@ export function buildClientProfileFields(
     postingRowIdentified(ratingRow) || Boolean(details?.clientRating?.trim());
   const ratingMatch = buildEmployerRatingMatchDetail({
     clientRating: ratingIdentified ? ratingValue : null,
-    profilePreferredMinimumEmployerRating:
-      ctx.profilePreferredMinimumEmployerRating,
+    // Matching preferences retired — posting-only rating signal.
+    profilePreferredMinimumEmployerRating: null,
   });
 
   if (ratingMatch.identified && ratingMatch.compareToProfile) {
@@ -473,8 +471,9 @@ export function buildClientProfileFields(
   const avgIdentified = isExplicitClientAvgPayRate(avgValue);
   const avgMatch = buildClientAvgPayMatchDetail({
     avgPayLabel: avgIdentified ? avgValue : null,
-    profileCompensation: profileComp,
-    profileMinimumHourlyRate: ctx.profileMinimumHourlyRate,
+    // Matching preferences retired — posting-only pay signal.
+    profileCompensation: null,
+    profileMinimumHourlyRate: null,
   });
 
   if (avgMatch.identified && avgMatch.compareToProfile) {
@@ -489,7 +488,7 @@ export function buildClientProfileFields(
       ),
     );
   } else if (avgMatch.identified) {
-    const avgPoints = clientQualityAvgPayPoints(avgValue, profileComp);
+    const avgPoints = clientQualityAvgPayPoints(avgValue, null);
     fields.push(
       field(
         "clientAverageHourlyRate",
@@ -664,40 +663,6 @@ function buildIndustryField(ctx: SectionFieldScoreContext): SectionFieldScore {
   );
 }
 
-function buildProjectTypeField(ctx: SectionFieldScoreContext): SectionFieldScore {
-  const detail = buildProjectTypeMatchDetail({
-    parsedJob: ctx.parsedJob,
-    postingContext: ctx.postingContext,
-    jobDescription: ctx.jobDescription,
-    profilePreferredProjectTypes: ctx.profilePreferredProjectTypes,
-  });
-
-  if (!detail.identified) {
-    return field("projectType", "Project Type", false, "", "unknown", null);
-  }
-
-  if (detail.compareToProfile) {
-    return field(
-      "projectType",
-      "Project Type",
-      true,
-      detail.label,
-      detail.matched ? "match" : "mismatch",
-      detail.points,
-    );
-  }
-
-  return field(
-    "projectType",
-    "Project Type",
-    true,
-    detail.label,
-    "match",
-    100,
-    POSTING_ONLY,
-  );
-}
-
 export function buildRoleDetailsFields(
   ctx: SectionFieldScoreContext,
   rows: PostingDetailRow[],
@@ -722,7 +687,6 @@ export function buildRoleDetailsFields(
 
   fields.push(buildIndustryField(ctx));
   fields.push(buildCompensationField(ctx));
-  fields.push(buildProjectTypeField(ctx));
 
   return fields;
 }

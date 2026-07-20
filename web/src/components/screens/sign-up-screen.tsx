@@ -1,32 +1,35 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 import { AppFrame } from "@/components/app-shell/app-frame";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   FORM_FIELD_GROUP_CLASS,
   FORM_FIELD_LABEL_CLASS,
-  FORM_FIELD_CONTROL_TEXT_CLASS,
+  FORM_FIELD_INPUT_BORDERLESS_CLASS,
+  FORM_FIELDS_SECTION_GAP_CLASS,
 } from "@/components/form-field-styles";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 import {
-  createPreferenceSteps,
+  createIntentSteps,
   createResumeUploadStep,
 } from "@/components/onboarding/preference-steps";
-import { CheckEmailIllustration } from "@/components/check-email-illustration";
 import { LocationSelect } from "@/components/location-select";
 import { TimezoneSelect } from "@/components/timezone-select";
-import { markAuthDeepLinkPending } from "@/lib/app-session";
-import { isNativePlatform } from "@/lib/platform";
-import { emptyUserProfile, type UserProfile } from "@/lib/profile";
-import { savePendingSignup, SIGNUP_COMPLETE_ROUTE } from "@/lib/pending-signup";
-import { ensureGuestSession } from "@/lib/ensure-guest-session";
-import { fetchLatestUserResume } from "@/lib/resume-documents";
 import {
+  markAuthDeepLinkPending,
   markLaunchFlowComplete,
   markWelcomeComplete,
 } from "@/lib/app-session";
+import { isNativePlatform } from "@/lib/platform";
+import { emptyUserProfile, saveUserProfile, type UserProfile } from "@/lib/profile";
+import { savePendingSignup, SIGNUP_COMPLETE_ROUTE } from "@/lib/pending-signup";
+import { ensureGuestSession } from "@/lib/ensure-guest-session";
+import { fetchLatestUserResume } from "@/lib/resume-documents";
+import { navigateApp } from "@/lib/navigate-app";
 import {
   clearOnboardingProgress,
   loadOnboardingProgress,
@@ -37,16 +40,17 @@ import {
   canContinueSignupStep,
   firstIncompleteSignupStep,
   isSignupGeneralDetailsComplete,
+  SIGNUP_COMPLETION_STEP_INDEX,
+  SIGNUP_GOALS_STEP_INDEX,
+  SIGNUP_HELP_STEP_INDEX,
+  SIGNUP_RESUME_STEP_INDEX,
+  SIGNUP_SEARCH_STAGE_STEP_INDEX,
 } from "@/lib/signup-flow";
 import { guessProfileTimezone } from "@/lib/timezone-options";
-import { safeBottomOverlay, safeTopHomeHero } from "@/lib/safe-area";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const fieldInputClassName = cn(
-  "h-11 px-3.5 bg-transparent border-0 shadow-none focus-visible:ring-0",
-  FORM_FIELD_CONTROL_TEXT_CLASS,
-);
+const ANALYZE_ROUTE = "/analyze";
 
 function AccountField({
   id,
@@ -74,31 +78,53 @@ function AccountField({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={fieldInputClassName}
+        className={FORM_FIELD_INPUT_BORDERLESS_CLASS}
       />
     </div>
   );
 }
 
-function EmailSentState({ email }: { email: string }) {
-  return (
-    <div className={`flex h-full min-h-0 flex-col px-6 ${safeBottomOverlay} ${safeTopHomeHero}`}>
-      <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <div className="mb-8 flex h-[160px] w-[260px] max-w-full items-center justify-center sm:h-[180px]">
-          <CheckEmailIllustration />
-        </div>
+function CompletionChecklist({
+  resumeUploaded,
+}: {
+  resumeUploaded: boolean;
+}) {
+  const items = [
+    { label: "Resume uploaded", done: resumeUploaded },
+    { label: "Account created", done: true },
+    { label: "Ready for your first analysis", done: true },
+  ];
 
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight">
-          Check your email
-        </h1>
-        <p className="mt-4 max-w-sm text-[16px] leading-relaxed text-muted-foreground">
-          We sent a sign-up link to{" "}
-          <span className="font-medium text-foreground">{email}</span>. Open it
-          to finish creating your account — your preferences are saved and ready
-          to go.
-        </p>
-      </div>
-    </div>
+  return (
+    <ul className="mt-2 space-y-3">
+      {items.map((item) => (
+        <li
+          key={item.label}
+          className={cn(
+            "flex items-center gap-3 rounded-xl border px-4 py-3.5",
+            item.done
+              ? "border-primary/40 bg-primary/10"
+              : "border-border/60 bg-muted/40",
+          )}
+        >
+          <CheckCircle2
+            className={cn(
+              "size-5 shrink-0",
+              item.done ? "text-primary" : "text-muted-foreground",
+            )}
+            aria-hidden
+          />
+          <span
+            className={cn(
+              "text-[16px] font-medium",
+              item.done ? "text-foreground" : "text-muted-foreground",
+            )}
+          >
+            {item.label}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -110,7 +136,7 @@ function readInitialSignupState() {
     return {
       profile: { ...baseProfile, ...saved.profile },
       email: saved.email || "",
-      step: saved.signupStep ?? 0,
+      step: Math.min(saved.signupStep ?? 0, SIGNUP_HELP_STEP_INDEX),
       emailSent: false,
       isFreshSignup: false,
     };
@@ -128,16 +154,20 @@ function readInitialSignupState() {
 export function SignUpScreen({
   embedded = false,
   onBackToWelcome,
+  onComplete,
 }: {
   embedded?: boolean;
   onBackToWelcome?: () => void;
+  /** Exit launch overlay after successful signup completion. */
+  onComplete?: () => void;
 } = {}) {
-  const initial = readInitialSignupState();
+  const router = useRouter();
+  const [initial] = useState(readInitialSignupState);
   const [profile, setProfile] = useState<UserProfile>(initial.profile);
   const [email, setEmail] = useState(initial.email);
   const [step, setStep] = useState(initial.step);
   const [busy, setBusy] = useState(false);
-  const [emailSent, setEmailSent] = useState(initial.emailSent);
+  const [accountReady, setAccountReady] = useState(initial.emailSent);
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const [resumeBusy, setResumeBusy] = useState(false);
   const progressRef = useRef({
@@ -183,17 +213,14 @@ export function SignUpScreen({
     [],
   );
 
-  const preferenceSteps = useMemo(
-    () => createPreferenceSteps(profile, patch),
-    [profile],
-  );
-
   const steps = useMemo(
     () => [
       {
-        title: "General Details",
+        title: "Basic Information",
+        subtitle:
+          "Used only for your account and localization. None of this affects your job match scores.",
         content: (
-          <div className="space-y-4">
+          <div className={cn("flex flex-col", FORM_FIELDS_SECTION_GAP_CLASS)}>
             <AccountField
               id="signup-name"
               label="Name"
@@ -214,6 +241,7 @@ export function SignUpScreen({
             />
             <LocationSelect
               id="signup-location"
+              label="Country"
               value={profile.country}
               onChange={(value) => patch({ country: value })}
             />
@@ -230,25 +258,20 @@ export function SignUpScreen({
         onParsed: handleResumeParsed,
         onBusyChange: setResumeBusy,
       }),
-      ...preferenceSteps,
+      ...createIntentSteps(profile, patch),
+      {
+        title: "You're all set",
+        subtitle: "Your account is ready. Let's run your first analysis.",
+        content: (
+          <CompletionChecklist resumeUploaded={Boolean(resumeFileName)} />
+        ),
+      },
     ],
-    [
-      email,
-      handleResumeParsed,
-      preferenceSteps,
-      profile.country,
-      profile.fullName,
-      profile.timezone,
-      profile.preferredCompanyTypes,
-      profile.preferredProjectTypes,
-      profile.preferredRegions,
-      resumeFileName,
-      step,
-    ],
+    [email, handleResumeParsed, profile, resumeFileName],
   );
 
   const canContinue =
-    canContinueSignupStep(step, profile, email) && !resumeBusy;
+    canContinueSignupStep(step, profile, email) && !resumeBusy && !busy;
 
   function validateAccountStep(): boolean {
     if (isSignupGeneralDetailsComplete(profile, email)) return true;
@@ -268,21 +291,91 @@ export function SignUpScreen({
     return false;
   }
 
-  function handleStepChange(nextStep: number) {
-    if (nextStep > step && !canContinueSignupStep(step, profile, email)) {
-      if (step === 0) {
-        validateAccountStep();
-      } else if (step === 3) {
-        toast.error("Select at least one employer type to continue.");
-      } else if (step === 5) {
-        toast.error("Select at least one project type to continue.");
-      } else if (step === 6) {
-        toast.error("Select at least one region to continue.");
-      }
+  function validateIntentStep(stepIndex: number): boolean {
+    if (stepIndex === SIGNUP_GOALS_STEP_INDEX) {
+      toast.error("Select at least one goal to continue.");
+      return false;
+    }
+    if (stepIndex === SIGNUP_SEARCH_STAGE_STEP_INDEX) {
+      toast.error("Select where you are in your search to continue.");
+      return false;
+    }
+    if (stepIndex === SIGNUP_HELP_STEP_INDEX) {
+      toast.error("Select at least one area you'd like help with.");
+      return false;
+    }
+    return false;
+  }
+
+  async function createAccountAndShowCompletion() {
+    const incompleteStep = firstIncompleteSignupStep(profile, email);
+    if (incompleteStep !== null) {
+      setStep(incompleteStep);
+      if (incompleteStep === 0) validateAccountStep();
+      else validateIntentStep(incompleteStep);
       return;
     }
+
+    const trimmedEmail = email.trim();
+    const signupProfile: UserProfile = {
+      ...profile,
+      fullName: profile.fullName?.trim() || null,
+      country: profile.country?.trim() || null,
+      searchStage: profile.searchStage?.trim() || null,
+    };
+
+    setBusy(true);
+    markLaunchFlowComplete();
+    savePendingSignup({ email: trimmedEmail, profile: signupProfile });
+
+    // Best-effort persist for the guest session (intent fields included).
+    void saveUserProfile(signupProfile, { markComplete: true });
+
+    markAuthDeepLinkPending();
+    const { error } = await sendSignupVerificationEmail({
+      email: trimmedEmail,
+      profile: signupProfile,
+      redirectNext: SIGNUP_COMPLETE_ROUTE,
+    });
+    setBusy(false);
+
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    markWelcomeComplete();
+    setAccountReady(true);
+    setStep(SIGNUP_COMPLETION_STEP_INDEX);
+    persistProgress({
+      emailSent: true,
+      signupStep: SIGNUP_COMPLETION_STEP_INDEX,
+      profile: signupProfile,
+    });
+  }
+
+  function handleStepChange(nextStep: number) {
+    if (nextStep > step && !canContinueSignupStep(step, profile, email)) {
+      if (step === 0) validateAccountStep();
+      else validateIntentStep(step);
+      return;
+    }
+
+    if (nextStep === SIGNUP_COMPLETION_STEP_INDEX && !accountReady) {
+      void createAccountAndShowCompletion();
+      return;
+    }
+
     setStep(nextStep);
     persistProgress({ signupStep: nextStep });
+  }
+
+  function handleStartFirstAnalysis() {
+    clearOnboardingProgress();
+    markLaunchFlowComplete();
+    markWelcomeComplete();
+    onComplete?.();
+    navigateApp(ANALYZE_ROUTE, router, "replace");
   }
 
   useEffect(() => {
@@ -307,10 +400,10 @@ export function SignUpScreen({
     progressRef.current = {
       signupStep: step,
       email,
-      emailSent,
+      emailSent: accountReady,
       profile,
     };
-  }, [step, email, emailSent, profile]);
+  }, [step, email, accountReady, profile]);
 
   useEffect(() => {
     if (!embedded) return;
@@ -340,68 +433,22 @@ export function SignUpScreen({
     return () => remove?.();
   }, [embedded]);
 
-  async function finishSignUp() {
-    const incompleteStep = firstIncompleteSignupStep(profile, email);
-    if (incompleteStep !== null) {
-      setStep(incompleteStep);
-      if (incompleteStep === 0) validateAccountStep();
-      else if (incompleteStep === 3) {
-        toast.error("Select at least one employer type to continue.");
-      } else if (incompleteStep === 5) {
-        toast.error("Select at least one project type to continue.");
-      } else if (incompleteStep === 6) {
-        toast.error("Select at least one region to continue.");
-      }
-      return;
-    }
-
-    const trimmedEmail = email.trim();
-    const signupProfile: UserProfile = {
-      ...profile,
-      fullName: profile.fullName?.trim() || null,
-      country: profile.country?.trim() || null,
-    };
-
-    setBusy(true);
-    markLaunchFlowComplete();
-    savePendingSignup({ email: trimmedEmail, profile: signupProfile });
-
-    markAuthDeepLinkPending();
-    const { error } = await sendSignupVerificationEmail({
-      email: trimmedEmail,
-      profile: signupProfile,
-      redirectNext: SIGNUP_COMPLETE_ROUTE,
-    });
-    setBusy(false);
-
-    if (error) {
-      toast.error(error);
-      return;
-    }
-
-    markWelcomeComplete();
-    clearOnboardingProgress();
-    setEmailSent(true);
-    persistProgress({ emailSent: true });
-  }
-
-  const resumeStepIndex = 1;
   const continueLabel =
-    step === resumeStepIndex && !resumeFileName ? "Skip" : "Continue";
+    step === SIGNUP_RESUME_STEP_INDEX && !resumeFileName ? "Skip" : "Continue";
 
-  const wizard = emailSent ? (
-    <EmailSentState email={email.trim()} />
-  ) : (
+  const wizard = (
     <OnboardingWizard
       steps={steps}
       step={step}
       onStepChange={handleStepChange}
-      onFinish={() => void finishSignUp()}
-      onBackFromStart={embedded ? onBackToWelcome : undefined}
+      onFinish={handleStartFirstAnalysis}
+      onBackFromStart={
+        embedded && step === 0 && !accountReady ? onBackToWelcome : undefined
+      }
       busy={busy}
       canContinue={canContinue}
-      finishLabel="Sign Up"
-      busyLabel="Sending…"
+      finishLabel="Start First Analysis"
+      busyLabel="Creating account…"
       continueLabel={continueLabel}
       compactTopInset={embedded}
     />

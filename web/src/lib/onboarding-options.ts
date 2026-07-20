@@ -1,12 +1,13 @@
 /**
- * Canonical option lists for the onboarding profile.
+ * Canonical option lists for profile preferences and onboarding intent.
  *
- * Onboarding only collects PREFERENCES that a resume cannot provide
- * ("Do I want this job?"). Qualifications, skills, tools, industries, roles,
- * and seniority come from the resume + analysis engine ("Can I do this job?")
- * and are intentionally NOT asked here.
+ * Matching preferences (rate, employer type, rating, regions) live on Profile
+ * and may still influence report UI / career-fit adjustments — they are NOT
+ * collected during signup onboarding.
  *
- * Stored verbatim on the profile and used as additive matching signals only.
+ * Intent options (goals, search stage, help topics) are for personalization,
+ * analytics, and product customization only. They must never feed the
+ * resume + job-description job-fit score.
  */
 
 export const COMPANY_TYPE_OPTIONS = [
@@ -23,7 +24,7 @@ export const REGION_OPTIONS = [
   "Worldwide",
 ] as const;
 
-/** Profile / signup country — used for country-fit scoring on reports. */
+/** Profile / signup country — used for account localization. */
 export const LOCATION_OPTIONS = [
   "United States",
   "Canada",
@@ -67,5 +68,40 @@ export const HOURLY_RATE_MAX = 200;
 export const HOURLY_RATE_STEP = 5;
 export const HOURLY_RATE_DEFAULT = 75;
 
-/** Minimum client star rating (0–5) quick picks for onboarding. */
+/** Minimum client star rating (0–5) quick picks for profile preferences. */
 export const EMPLOYER_RATING_PRESETS = [3, 3.5, 4, 4.5, 5] as const;
+
+/** Signup Step 3 — what brings you to OnlyFit (multi-select). */
+export const JOB_SEARCH_GOAL_OPTIONS = [
+  "Land my next full-time job",
+  "Find contract/freelance work",
+  "Improve my resume",
+  "Practice interviewing",
+  "Explore new career paths",
+  "Compare opportunities",
+  "Track my job search",
+  "Just looking around",
+] as const;
+
+/** Signup Step 4 — where you are in your search (single-select). */
+export const SEARCH_STAGE_OPTIONS = [
+  "Actively applying every week",
+  "Preparing to apply",
+  "Open to opportunities",
+  "Just browsing",
+  "Employed but curious",
+  "Career transition",
+  "Student / New graduate",
+] as const;
+
+/** Signup Step 5 — what you'd like help with (multi-select). */
+export const HELP_TOPIC_OPTIONS = [
+  "Find better matching jobs",
+  "Explain why I match",
+  "Improve my resume",
+  "Optimize for ATS",
+  "Compare multiple jobs",
+  "Identify missing skills",
+  "Discover hidden opportunities",
+  "Save time searching",
+] as const;

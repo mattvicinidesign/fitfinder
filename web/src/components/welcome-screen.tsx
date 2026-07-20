@@ -12,6 +12,7 @@ import { DEFAULT_APP_ROUTE } from "@/lib/app-session";
 import { clearOnboardingProgress } from "@/lib/onboarding-progress";
 import { navigateApp } from "@/lib/navigate-app";
 import { safeBottomOverlay, safeTopHero } from "@/lib/safe-area";
+import { SCREEN_PRIMARY_CTA_CLASS } from "@/components/resume-upload-styles";
 
 interface WelcomeScreenProps {
   onExit: (target: string) => void;
@@ -76,7 +77,7 @@ export function WelcomeScreen({ onExit, onSignUp }: WelcomeScreenProps) {
           <div className="mt-12 w-full max-w-sm space-y-3">
             <Button
               type="button"
-              className="h-12 w-full rounded-xl text-[17px]"
+              className={SCREEN_PRIMARY_CTA_CLASS}
               disabled={busy !== null}
               aria-busy={busy === "account"}
               aria-label={busy === "account" ? "Opening sign up" : "Sign up"}
@@ -87,7 +88,7 @@ export function WelcomeScreen({ onExit, onSignUp }: WelcomeScreenProps) {
             <Button
               type="button"
               variant="outline"
-              className="h-12 w-full rounded-xl text-[17px]"
+              className={SCREEN_PRIMARY_CTA_CLASS}
               disabled={busy !== null}
               aria-busy={busy === "guest"}
               aria-label={busy === "guest" ? "Starting guest session" : "Use as a guest"}

@@ -50,7 +50,7 @@ export const OPPORTUNITY_CATEGORY_WEIGHTS = {
 } as const;
 
 export const GLOBAL_SCORE_INFO =
-  "Your overall career fit for this role. Role alignment and qualifications drive the score; preferences and client quality fine-tune the result.";
+  "Your overall match for this role based on resume evidence compared to job requirements across four weighted categories.";
 
 export const SCORING_CATEGORY_INFO: Record<ScoringCategoryId, string> = {
   clientProfile:

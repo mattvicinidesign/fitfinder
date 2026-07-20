@@ -13,6 +13,14 @@ export const RESUME_SCORE_TITLE = "+ Score My Resume";
 
 export const RESUME_UPLOAD_HINT = "PDF, Word, or TXT";
 
+export const RESUME_UPLOAD_REPLACE_HINT = "Tap to replace";
+
+export const RESUME_UPLOAD_FILENAME_CLASS =
+  "text-[17px] font-medium text-foreground";
+
+export const RESUME_UPLOAD_SECONDARY_HINT_CLASS =
+  "text-[13px] text-muted-foreground";
+
 export const RESUME_UPLOAD_CTA_CLASS =
   "rounded-xl bg-primary px-5 py-2.5 text-[15px] font-semibold text-primary-foreground";
 
@@ -24,9 +32,13 @@ export const REPLACE_RESUME_BUTTON_CLASS =
 export const RESUME_SCORE_ZONE_CTA_CLASS =
   "inline-flex h-11 max-w-full min-w-0 items-center justify-center rounded-xl px-4 text-[15px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)]";
 
+/** Full-width primary button size (welcome / profile / floating bars). */
+export const SCREEN_PRIMARY_CTA_CLASS =
+  "h-12 w-full rounded-xl text-[17px] font-semibold";
+
 /** Primary floating CTA — matches Home “+ New Fit Analysis” and Score actions. */
 export const PRIMARY_FLOATING_CTA_CLASS =
-  "h-12 w-full rounded-xl text-[17px] font-semibold shadow-[0_8px_28px_rgba(0,0,0,0.45)] disabled:pointer-events-none disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none";
+  `${SCREEN_PRIMARY_CTA_CLASS} shadow-[0_8px_28px_rgba(0,0,0,0.45)] disabled:pointer-events-none disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none`;
 
 /** Full-width primary actions on Score screens (matches onboarding / analyze CTAs). */
 export const RESUME_REVIEW_PRIMARY_CTA_CLASS = PRIMARY_FLOATING_CTA_CLASS;

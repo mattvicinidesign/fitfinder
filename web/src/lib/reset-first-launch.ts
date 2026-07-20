@@ -4,7 +4,7 @@ import {
   clearRecentActivity,
   purgeSampleRecentActivityEntries,
 } from "@/lib/recent-activity";
-import { clearOnboardingState, QA_LAUNCH_SIMULATION_KEY } from "@/lib/app-session";
+import { clearOnboardingState, DEFAULT_APP_ROUTE, QA_LAUNCH_SIMULATION_KEY } from "@/lib/app-session";
 
 const FITFINDER_KEY_PREFIX = "fitfinder";
 
@@ -50,8 +50,10 @@ export async function resetAppFirstLaunch(): Promise<void> {
 
   const url = new URL(window.location.href);
   url.searchParams.delete("firstLaunch");
-  const target = `${url.pathname}${url.search}${url.hash}` || "/";
-  window.location.replace(target);
+  url.pathname = DEFAULT_APP_ROUTE;
+  url.search = "";
+  url.hash = "";
+  window.location.replace(url.toString());
 }
 
 export function canResetAppFirstLaunch(): boolean {

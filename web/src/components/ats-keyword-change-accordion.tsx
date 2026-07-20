@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { AtsKeywordChangeDecision } from "@/lib/types";
 import type { AtsKeywordChangeSnippet } from "@/lib/ats-keyword-change-snippets";
 import { cn } from "@/lib/utils";
@@ -62,7 +63,7 @@ export function AtsKeywordChangeAccordion({
   reviewMode = false,
   onApprove,
   onReject,
-  defaultOpen = false,
+  defaultOpen = true,
 }: {
   before: string;
   after: string;
@@ -117,46 +118,7 @@ export function AtsKeywordChangeAccordion({
           </span>
         </button>
 
-        {reviewMode ? (
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              aria-label={`Approve ${before} to ${after}`}
-              aria-pressed={decision === "approved"}
-              onClick={(event) => {
-                event.stopPropagation();
-                onApprove?.();
-                if (open) setOpen(false);
-              }}
-              className={cn(
-                "rounded-md p-1.5 transition-colors",
-                decision === "approved"
-                  ? "bg-emerald-500/15 text-emerald-400"
-                  : "text-emerald-400 hover:bg-emerald-500/10",
-              )}
-            >
-              <Check className="size-4" strokeWidth={2.5} />
-            </button>
-            <button
-              type="button"
-              aria-label={`Reject ${before} to ${after}`}
-              aria-pressed={decision === "rejected"}
-              onClick={(event) => {
-                event.stopPropagation();
-                onReject?.();
-                if (open) setOpen(false);
-              }}
-              className={cn(
-                "rounded-md p-1.5 transition-colors",
-                decision === "rejected"
-                  ? "bg-rose-500/15 text-rose-400"
-                  : "text-rose-400 hover:bg-rose-500/10",
-              )}
-            >
-              <X className="size-4" strokeWidth={2.5} />
-            </button>
-          </div>
-        ) : decision !== "pending" ? (
+        {!reviewMode && decision !== "pending" ? (
           <span
             className={cn(
               "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
@@ -221,6 +183,46 @@ export function AtsKeywordChangeAccordion({
               variant="after"
             />
           </div>
+          {reviewMode ? (
+            <div className="mt-3 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                aria-label={`Approve ${before} to ${after}`}
+                aria-pressed={decision === "approved"}
+                onClick={() => {
+                  onApprove?.();
+                  setOpen(false);
+                }}
+                className={cn(
+                  "flex-1 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300",
+                  decision === "approved" &&
+                    "border-emerald-500/50 bg-emerald-500/15 text-emerald-300",
+                )}
+              >
+                <Check className="size-4" strokeWidth={2.5} />
+                Approve
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                aria-label={`Reject ${before} to ${after}`}
+                aria-pressed={decision === "rejected"}
+                onClick={() => {
+                  onReject?.();
+                  setOpen(false);
+                }}
+                className={cn(
+                  "flex-1 border-rose-500/30 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300",
+                  decision === "rejected" &&
+                    "border-rose-500/50 bg-rose-500/15 text-rose-300",
+                )}
+              >
+                <X className="size-4" strokeWidth={2.5} />
+                Reject
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </li>

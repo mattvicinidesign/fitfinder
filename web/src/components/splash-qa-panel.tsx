@@ -3,43 +3,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  hardRefreshFromQa,
   isSplashQaEnabled,
-  resetFirstLaunchFromQa,
-  simulateFirstLaunch,
-  simulateReturningUser,
+  softResetFromQa,
+  hardResetFromQa,
 } from "@/lib/splash-qa";
 import { safeBottomTabBar, safeTopFloating } from "@/lib/safe-area";
 import { isNativePlatform } from "@/lib/platform";
 import { cn } from "@/lib/utils";
-import { useSplashQa } from "@/components/splash-qa-context";
 
 export function SplashQaPanel() {
   const [open, setOpen] = useState(false);
-  const splashQa = useSplashQa();
 
   if (!isSplashQaEnabled()) return null;
-
-  function handleReplaySplash() {
-    console.log("QA: Replay Splash");
-    setOpen(false);
-    splashQa?.replaySplash();
-  }
-
-  function handleSimulateFirstLaunch() {
-    setOpen(false);
-    simulateFirstLaunch();
-  }
-
-  function handleSimulateReturningUser() {
-    setOpen(false);
-    simulateReturningUser();
-  }
-
-  function handleHardRefresh() {
-    setOpen(false);
-    hardRefreshFromQa();
-  }
 
   const qaButtonClass =
     "h-9 w-full justify-start rounded-lg border-primary/70 text-[13px] font-medium";
@@ -54,7 +29,7 @@ export function SplashQaPanel() {
       )}
     >
       {open ? (
-        <div className="w-64 rounded-xl border border-border/60 bg-card p-3 shadow-lg">
+        <div className="w-56 rounded-xl border border-border/60 bg-card p-3 shadow-lg">
           <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
             Splash QA
           </p>
@@ -63,33 +38,12 @@ export function SplashQaPanel() {
               type="button"
               variant="outline"
               className={qaButtonClass}
-              onClick={handleSimulateFirstLaunch}
+              onClick={() => {
+                setOpen(false);
+                hardResetFromQa();
+              }}
             >
-              Simulate first launch
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className={qaButtonClass}
-              onClick={handleSimulateReturningUser}
-            >
-              Simulate returning user
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className={qaButtonClass}
-              onClick={handleReplaySplash}
-            >
-              Replay splash now
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className={qaButtonClass}
-              onClick={handleHardRefresh}
-            >
-              Hard refresh
+              Hard reset
             </Button>
             <Button
               type="button"
@@ -97,10 +51,10 @@ export function SplashQaPanel() {
               className={qaButtonClass}
               onClick={() => {
                 setOpen(false);
-                resetFirstLaunchFromQa();
+                softResetFromQa();
               }}
             >
-              Reset first launch (full)
+              Soft reset
             </Button>
           </div>
         </div>

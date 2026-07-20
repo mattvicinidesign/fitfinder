@@ -67,16 +67,11 @@ export function isClientRatingAtLeast3(value: string): boolean {
 }
 
 export function isClientAvgHourlyAtOrAboveProfile(
-  clientAvgLabel: string,
-  profile: { desired_compensation_min?: number | null; desired_compensation?: number | null; desired_compensation_period?: string | null } | null | undefined,
+  _clientAvgLabel: string,
+  _profile: { desired_compensation_min?: number | null; desired_compensation?: number | null; desired_compensation_period?: string | null } | null | undefined,
 ): boolean {
-  if (clientAvgLabel.includes("(job budget)")) return false;
-  const clientRate = parseHourlyRateFromLabel(clientAvgLabel);
-  if (clientRate == null || !profile) return false;
-  const period = profile.desired_compensation_period;
-  const floor = profile.desired_compensation_min ?? profile.desired_compensation;
-  if (period !== "hour" || floor == null || !Number.isFinite(floor)) return false;
-  return clientRate >= floor;
+  // Profile rate floors are no longer used in scoring.
+  return false;
 }
 
 export function clientQualityLocationPoints(

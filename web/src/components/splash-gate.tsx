@@ -10,7 +10,6 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { SplashScreen } from "@/components/splash-screen";
 import { LaunchOverlayFrame } from "@/components/launch-overlay-frame";
-import { SplashQaProvider } from "@/components/splash-qa-context";
 import { SplashQaPanel } from "@/components/splash-qa-panel";
 import { WelcomeScreen } from "@/components/welcome-screen";
 import { SignUpScreen } from "@/components/screens/sign-up-screen";
@@ -41,8 +40,8 @@ export {
   WELCOME_STORAGE_KEY as WELCOME_SESSION_KEY,
 } from "@/lib/app-session";
 
-type SplashGatePhase = "pending" | "splash" | "welcome" | "signup" | "replay" | "ready";
-type SplashCompleteMode = "first" | "returning" | "replay";
+type SplashGatePhase = "pending" | "splash" | "welcome" | "signup" | "ready";
+type SplashCompleteMode = "first" | "returning";
 
 function isSignupQueryRequested(): boolean {
   if (typeof window === "undefined") return false;
@@ -73,7 +72,6 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<SplashGatePhase>("pending");
   const phaseRef = useRef<SplashGatePhase>(phase);
-  const [replayKey, setReplayKey] = useState(0);
   const [showWordmark, setShowWordmark] = useState(false);
 
   const resolvedPhase = mounted ? phase : "pending";
@@ -239,11 +237,6 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (mode === "replay") {
-        setPhase("ready");
-        return;
-      }
-
       if (qaSimulation === "returning") {
         clearQaLaunchSimulation();
       }
@@ -259,15 +252,14 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
     [beginSignupPhase, routeAfterSplash],
   );
 
-  const replaySplash = useCallback(() => {
-    setReplayKey((key) => key + 1);
-    setShowWordmark(true);
-    setPhase("replay");
-  }, []);
-
   const handleSignUpFromWelcome = useCallback(() => {
     saveOnboardingProgress({ phase: "signup", signupStep: 0 });
     setPhase("signup");
+  }, []);
+
+  const handleSignupComplete = useCallback(() => {
+    clearQaLaunchSimulation();
+    setPhase("ready");
   }, []);
 
   const handleBackToWelcome = useCallback(() => {
@@ -276,15 +268,12 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   const showSplashOverlay =
-    resolvedPhase === "pending" ||
-    resolvedPhase === "splash" ||
-    resolvedPhase === "replay";
+    resolvedPhase === "pending" || resolvedPhase === "splash";
   const isLaunchSplash = resolvedPhase === "splash";
-  const isReplaySplash = resolvedPhase === "replay";
   const isFirstLaunchSplash = isLaunchSplash && showWordmark;
 
   return (
-    <SplashQaProvider value={{ replaySplash }}>
+    <>
       <div
         className={cn(!appVisible && "invisible")}
         aria-hidden={!appVisible}
@@ -299,21 +288,21 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
       ) : null}
       {mounted && resolvedPhase === "signup" ? (
         <LaunchOverlayFrame className="overflow-hidden">
-          <SignUpScreen embedded onBackToWelcome={handleBackToWelcome} />
+          <SignUpScreen
+            embedded
+            onBackToWelcome={handleBackToWelcome}
+            onComplete={handleSignupComplete}
+          />
         </LaunchOverlayFrame>
       ) : null}
       {showSplashOverlay ? (
-        isLaunchSplash || isReplaySplash ? (
+        isLaunchSplash ? (
           <SplashScreen
-            key={isReplaySplash ? `replay-${replayKey}` : "launch"}
-            showWordmark={isReplaySplash || showWordmark}
+            key="launch"
+            showWordmark={showWordmark}
             onComplete={() =>
               handleSplashComplete(
-                isReplaySplash
-                  ? "replay"
-                  : isFirstLaunchSplash
-                    ? "first"
-                    : "returning",
+                isFirstLaunchSplash ? "first" : "returning",
               )
             }
           />
@@ -322,6 +311,6 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
         )
       ) : null}
       {isSplashQaEnabled() && mounted ? <SplashQaPanel /> : null}
-    </SplashQaProvider>
+    </>
   );
 }

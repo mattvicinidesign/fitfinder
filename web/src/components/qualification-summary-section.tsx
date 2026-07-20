@@ -192,7 +192,6 @@ export function QualificationSummarySection({
   const industryField = fieldByKey(roleFields, "industry");
   const roleField = fieldByKey(roleFields, "role");
   const compensationField = fieldByKey(roleFields, "compensation");
-  const projectTypeField = fieldByKey(roleFields, "projectType");
 
   return (
     <div className="space-y-3 w-full" role="region" aria-label="Scoring categories">
@@ -262,7 +261,6 @@ export function QualificationSummarySection({
               { field: roleField, postingDetailKey: "role" },
               { field: industryField },
               { field: compensationField },
-              { field: projectTypeField },
             ]}
           />
           <SectionScoreSubtotal

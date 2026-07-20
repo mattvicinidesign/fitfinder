@@ -21,6 +21,7 @@ import {
 } from "@/lib/profile-compensation";
 import { fetchUserProfile } from "@/lib/profile";
 import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
+import { buildSampleAnalysisResult } from "@/lib/sample-report-fixtures";
 import type { AnalysisResult, Compensation } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { CtaSpinner } from "@/components/ui/cta-spinner";
@@ -52,91 +53,16 @@ import {
 } from "@/components/ui/sticky-bottom-cta";
 import { safeTopCompact } from "@/lib/safe-area";
 
-const DEMO_RESULT: AnalysisResult = {
-  companyName: null,
-  jobTitle: null,
-  parsedJob: {
-    skills: ["TypeScript", "React"],
-    industries: ["SaaS"],
-    workflows: [],
-    compensation: null,
-    toolRequirements: ["Docker"],
-    aiRequirements: [],
-  },
-  score: {
-    qualificationScore: 82,
-    confidenceScore: 72,
-    careerFitAdjustment: 7,
-    fitScore: 89,
-    recommendation: "strong_apply",
-    recommendationLabel: "Strong Pursuit",
-    scoringMode: "registered",
-    categoryBreakdown: [],
-    opportunityCategories: [
-      {
-        category: "roleAlignment",
-        label: "Role Alignment",
-        score: 92,
-        weight: 35,
-        contribution: 32.2,
-      },
-      {
-        category: "qualificationsMatch",
-        label: "Qualifications",
-        score: 88,
-        weight: 30,
-        contribution: 26.4,
-        matchedCount: 9,
-        totalCount: 10,
-      },
-      {
-        category: "industryAlignment",
-        label: "Industry Alignment",
-        score: 85,
-        weight: 15,
-        contribution: 12.8,
-      },
-      {
-        category: "preferenceAlignment",
-        label: "Preference Alignment",
-        score: 72,
-        weight: 10,
-        contribution: 7.2,
-      },
-      {
-        category: "clientQuality",
-        label: "About Client",
-        score: 78,
-        weight: 10,
-        contribution: 7.8,
-      },
-    ],
-    unknownCategories: ["Tools", "Compensation"],
-    explanation:
-      "Qualification 82% from scored categories. Career fit adjustment +7 → final fit 89%.",
-    strengths: ["Skills: strong alignment (90%)."],
-    gaps: [],
-    positiveSignalsFound: ["enterprise saas", "analytics"],
-    negativeSignalsFound: [],
-  },
-  narrative: {
-    strengths: ["Strong stack overlap with the role"],
-    gaps: ["Limited explicit AI production experience"],
-    recommendations: ["Highlight recent TypeScript projects in your cover letter"],
-    positiveSignals: ["Fintech background matches the team"],
-    negativeSignals: [],
-  },
-  postingContext: {
-    employerType: "product_company",
-    hireTarget: "freelancer",
-    label: "Product company hiring a Freelancer",
-    detail: null,
-    engagementDuration: "ongoing",
-    engagementPath: "contract",
-    payStructure: "hourly",
-    badges: ["Contract", "Hourly"],
-  },
-};
+const DEMO_RESULT: AnalysisResult = buildSampleAnalysisResult({
+  jobTitle: "Senior Product Designer",
+  companyName: "Demo Co",
+  hireArea: "United States",
+  fitScore: 89,
+  qualificationScore: 82,
+  confidenceScore: 72,
+  recommendation: "strong_apply",
+  recommendationLabel: "Strong Pursuit",
+});
 
 export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   const router = useRouter();
@@ -158,19 +84,20 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   >([]);
   const [profileCountry, setProfileCountry] = useState<string | null>(null);
   const [profileTimezone, setProfileTimezone] = useState<string | null>(null);
+  const [localPrefs] = useState(() => loadLocalProfilePrefs());
   const [profilePreferredCompanyTypes, setProfilePreferredCompanyTypes] =
-    useState<string[]>(() => loadLocalProfilePrefs()?.preferredCompanyTypes ?? []);
+    useState<string[]>(() => localPrefs?.preferredCompanyTypes ?? []);
   const [profilePreferredMinimumEmployerRating, setProfilePreferredMinimumEmployerRating] =
     useState<number | null>(
-      () => loadLocalProfilePrefs()?.preferredMinimumEmployerRating ?? null,
+      () => localPrefs?.preferredMinimumEmployerRating ?? null,
     );
   const [profilePreferredRegions, setProfilePreferredRegions] = useState<string[]>(
-    () => loadLocalProfilePrefs()?.preferredRegions ?? [],
+    () => localPrefs?.preferredRegions ?? [],
   );
   const [profilePreferredProjectTypes, setProfilePreferredProjectTypes] =
-    useState<string[]>(() => loadLocalProfilePrefs()?.preferredProjectTypes ?? []);
+    useState<string[]>(() => localPrefs?.preferredProjectTypes ?? []);
   const [profileMinimumHourlyRate, setProfileMinimumHourlyRate] = useState<number | null>(
-    () => loadLocalProfilePrefs()?.minimumHourlyRate ?? null,
+    () => localPrefs?.minimumHourlyRate ?? null,
   );
   const [lastReport, setLastReport] = useState<{
     reportId: string;

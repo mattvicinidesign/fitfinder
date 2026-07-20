@@ -3,6 +3,16 @@ import type { RecommendedJob } from "@/lib/types";
 
 export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
   {
+    "id": "21677208",
+    "title": "Staff Product Designer",
+    "company": "GlossGenius",
+    "location": "New York, NY",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-18T18:32:04Z",
+    "applyUrl": "https://www.themuse.com/jobs/glossgenius/staff-product-designer-44b792",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
+  },
+  {
     "id": "14137481",
     "title": "UX/UI Designer (Mid level)",
     "company": "Designit",
@@ -23,6 +33,36 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
   },
   {
+    "id": "21098533",
+    "title": "Associate Creative Director",
+    "company": "GlossGenius",
+    "location": "New York, NY",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-18T23:35:19Z",
+    "applyUrl": "https://www.themuse.com/jobs/glossgenius/associate-creative-director",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
+  },
+  {
+    "id": "21941164",
+    "title": "Senior Manager, Innovation - Packaging & Equipment",
+    "company": "The Coca-Cola Company",
+    "location": "Shanghai, China",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-10T23:42:46Z",
+    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-manager-innovation-packaging-equipment-51cbb3",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+  },
+  {
+    "id": "21936703",
+    "title": "User Interface Designer",
+    "company": "The Coca-Cola Company",
+    "location": "Atlanta, GA",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-09T23:38:57Z",
+    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/user-interface-designer-4411b4",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+  },
+  {
     "id": "21909813",
     "title": "Automation & Controls Engineer (Raptor Manufacturing Systems)",
     "company": "SpaceX",
@@ -31,16 +71,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-07-02T18:37:46Z",
     "applyUrl": "https://www.themuse.com/jobs/spacex/automation-controls-engineer-raptor-manufacturing-systems",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21866908",
-    "title": "Staff Security Strategist GRC",
-    "company": "Uber",
-    "location": "Sunnyvale, CA",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-30T00:20:14Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/staff-security-strategist-grc",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
     "id": "21576522",
@@ -60,16 +90,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "level": "Mid Level",
     "publishedAt": "2026-06-26T18:34:29Z",
     "applyUrl": "https://www.themuse.com/jobs/spacex/process-technician-injection-molding-starlink-2nd-shift",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21649313",
-    "title": "Mechanical Engineer - Manufacturing Machinery, Satellites (Starlink)",
-    "company": "SpaceX",
-    "location": "Redmond, WA",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-26T18:34:25Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/mechanical-engineer-manufacturing-machinery-satellites-starlink",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
@@ -103,16 +123,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
-    "id": "21789634",
-    "title": "CMF Designer - Color, Material, and Finish (Starlink)",
-    "company": "SpaceX",
-    "location": "Lockhart, TX",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-26T18:34:07Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/cmf-designer-color-material-and-finish-starlink",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
     "id": "21633158",
     "title": "Senior Visual Design Artist - Riftbound",
     "company": "Riot Games",
@@ -121,16 +131,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-26T18:30:14Z",
     "applyUrl": "https://www.themuse.com/jobs/riotgames/senior-visual-design-artist-riftbound",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
-  },
-  {
-    "id": "21098533",
-    "title": "Associate Creative Director",
-    "company": "GlossGenius",
-    "location": "New York, NY",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-24T18:34:00Z",
-    "applyUrl": "https://www.themuse.com/jobs/glossgenius/associate-creative-director",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
   },
   {
     "id": "21668812",
@@ -156,50 +156,50 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "id": "21811147",
     "title": "Product Designer II - Uber Eats, Offers Consumer Experiences",
     "company": "Uber",
-    "location": "San Francisco, CA",
+    "location": "New York, NY, San Francisco, CA",
     "level": "Mid Level",
-    "publishedAt": "2026-07-02T00:26:22Z",
+    "publishedAt": "2026-07-07T00:23:40Z",
     "applyUrl": "https://www.themuse.com/jobs/uber/product-designer-ii-uber-eats-offers-consumer-experiences",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
-    "id": "21889924",
-    "title": "Staff Product Designer",
-    "company": "The Coca-Cola Company",
-    "location": "Atlanta, GA",
+    "id": "21965140",
+    "title": "Sr. Electrical Hardware Engineer, AI Satellites (Starmind)",
+    "company": "SpaceX",
+    "location": "Lockhart, TX",
     "level": "Senior Level",
-    "publishedAt": "2026-06-26T18:39:23Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/staff-product-designer-730fd2",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+    "publishedAt": "2026-07-17T23:35:52Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/sr-electrical-hardware-engineer-ai-satellites-starmind",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
-    "id": "21038917",
-    "title": "Staff Product Designer",
-    "company": "GlossGenius",
-    "location": "New York, NY",
+    "id": "21962947",
+    "title": "Consultant - Applications Programmer - Data Reporting and Operations Management",
+    "company": "Bank of America",
+    "location": "Charlotte, NC, Jacksonville, FL, Newark, DE, Plano, TX, Tampa, FL",
     "level": "Senior Level",
-    "publishedAt": "2026-06-24T18:34:00Z",
-    "applyUrl": "https://www.themuse.com/jobs/glossgenius/staff-product-designer-44678c",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
+    "publishedAt": "2026-07-17T19:18:35Z",
+    "applyUrl": "https://www.themuse.com/jobs/bankofamerica/consultant-applications-programmer-data-reporting-and-operations-management",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
   },
   {
-    "id": "21893857",
-    "title": "Risk and Compliance Specialist II - Global Account Security and Risk",
-    "company": "Uber",
-    "location": "Bonifacio Global City, Philippines",
+    "id": "21948882",
+    "title": "Propulsion Technician (Raptor Production Machining) - 2nd Shift",
+    "company": "SpaceX",
+    "location": "El Segundo, CA",
     "level": "Mid Level",
-    "publishedAt": "2026-07-02T00:26:24Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/risk-and-compliance-specialist-ii-global-account-security-and-risk",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
+    "publishedAt": "2026-07-15T18:42:57Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/propulsion-technician-raptor-production-machining-2nd-shift",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
-    "id": "21893837",
-    "title": "Sr Technical Program Manager",
-    "company": "Uber",
-    "location": "Location not listed",
+    "id": "21936654",
+    "title": "Propulsion Technician - Raptor Chamber & Nozzle Assembly & Final Assembly - 2nd Shift",
+    "company": "SpaceX",
+    "location": "El Segundo, CA",
     "level": "Senior Level",
-    "publishedAt": "2026-07-02T00:26:23Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/sr-technical-program-manager-a28dbb",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
+    "publishedAt": "2026-07-09T23:37:48Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/propulsion-technician-raptor-chamber-nozzle-assembly-final-assembly-2nd-shift",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   }
 ] as RecommendedJob[];

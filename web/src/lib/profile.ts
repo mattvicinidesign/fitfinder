@@ -10,20 +10,19 @@ import {
 } from "@/lib/local-profile-prefs";
 import {
   COMPANY_TYPE_OPTIONS,
+  HELP_TOPIC_OPTIONS,
+  JOB_SEARCH_GOAL_OPTIONS,
   PROJECT_TYPE_OPTIONS,
   REGION_OPTIONS,
+  SEARCH_STAGE_OPTIONS,
 } from "@/lib/onboarding-options";
 
 /**
- * Onboarding/profile PREFERENCE model.
+ * Profile model: account fields, optional matching preferences (Profile screen),
+ * and onboarding intent (personalization only — never feeds job-fit scoring).
  *
- * Onboarding only collects what a resume cannot provide. Resume-derived signals
- * (skills, tools, industries, roles, seniority) are NOT part of this model and
- * are never written here, so the resume/analysis-managed `qualified_industries`
- * and `qualified_skills` columns are left untouched.
- *
- * The minimum hourly rate maps to `desired_compensation_min` (period = hour).
- * Minimum client rating maps to `preferred_minimum_employer_rating` (0–5).
+ * Job-fit scores are calculated exclusively from the uploaded resume and the
+ * analyzed job description.
  */
 export interface UserProfile {
   fullName: string | null;
@@ -31,12 +30,18 @@ export interface UserProfile {
   preferredEngagementTypes: string[];
   preferredCompanyTypes: string[];
   preferredRegions: string[];
-  /** Ongoing vs one-time project preference from onboarding. */
+  /** Ongoing vs one-time project preference from profile settings. */
   preferredProjectTypes: string[];
-  /** Minimum client star rating (0–5) from onboarding. */
+  /** Minimum client star rating (0–5) from profile settings. */
   preferredMinimumEmployerRating: number | null;
   country: string | null;
   timezone: string | null;
+  /** Onboarding intent — personalization / analytics only (not scoring). */
+  jobSearchGoals: string[];
+  /** Onboarding intent — personalization / analytics only (not scoring). */
+  searchStage: string | null;
+  /** Onboarding intent — personalization / analytics only (not scoring). */
+  helpTopics: string[];
   onboardingCompletedAt: string | null;
 }
 
@@ -51,12 +56,15 @@ export function emptyUserProfile(): UserProfile {
     preferredMinimumEmployerRating: null,
     country: null,
     timezone: null,
+    jobSearchGoals: [],
+    searchStage: null,
+    helpTopics: [],
     onboardingCompletedAt: null,
   };
 }
 
 const PROFILE_SELECT =
-  "full_name, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, preferred_project_types, preferred_minimum_employer_rating, onboarding_completed_at";
+  "full_name, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, preferred_project_types, preferred_minimum_employer_rating, job_search_goals, search_stage, help_topics, onboarding_completed_at";
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -97,6 +105,9 @@ function rowToUserProfile(
     ),
     country: typeof data.country === "string" ? data.country : null,
     timezone: typeof data.timezone === "string" ? data.timezone : null,
+    jobSearchGoals: toStringArray(data.job_search_goals),
+    searchStage: typeof data.search_stage === "string" ? data.search_stage : null,
+    helpTopics: toStringArray(data.help_topics),
     onboardingCompletedAt:
       typeof data.onboarding_completed_at === "string"
         ? data.onboarding_completed_at
@@ -128,6 +139,9 @@ function normalizePreferenceArray(
 
 /** Map stored onboarding labels to current chip options. */
 export function normalizeUserProfile(profile: UserProfile): UserProfile {
+  const searchStageAllowed = new Set<string>(SEARCH_STAGE_OPTIONS);
+  const stage = profile.searchStage?.trim() || null;
+
   return {
     ...profile,
     preferredEngagementTypes: [],
@@ -147,6 +161,12 @@ export function normalizeUserProfile(profile: UserProfile): UserProfile {
     preferredMinimumEmployerRating: clampEmployerRatingPreference(
       profile.preferredMinimumEmployerRating,
     ),
+    jobSearchGoals: normalizePreferenceArray(
+      profile.jobSearchGoals,
+      JOB_SEARCH_GOAL_OPTIONS,
+    ),
+    searchStage: stage && searchStageAllowed.has(stage) ? stage : null,
+    helpTopics: normalizePreferenceArray(profile.helpTopics, HELP_TOPIC_OPTIONS),
   };
 }
 
@@ -219,6 +239,9 @@ export function mergeUserProfileLayers(
         merged.preferredMinimumEmployerRating,
         overlay.preferredMinimumEmployerRating,
       ),
+      jobSearchGoals: pickArray(merged.jobSearchGoals, overlay.jobSearchGoals),
+      searchStage: pickString(merged.searchStage, overlay.searchStage),
+      helpTopics: pickArray(merged.helpTopics, overlay.helpTopics),
       onboardingCompletedAt:
         merged.onboardingCompletedAt ?? overlay.onboardingCompletedAt ?? null,
     };
@@ -317,6 +340,9 @@ export async function saveUserProfile(
     preferred_minimum_employer_rating: clampEmployerRatingPreference(
       profile.preferredMinimumEmployerRating,
     ),
+    job_search_goals: profile.jobSearchGoals,
+    search_stage: profile.searchStage?.trim() || null,
+    help_topics: profile.helpTopics,
     desired_compensation_min: rate != null && rate > 0 ? rate : null,
     desired_compensation_period: rate != null && rate > 0 ? "hour" : null,
     desired_compensation_currency: "USD",
@@ -452,7 +478,6 @@ export function isPreferencesValid(profile: UserProfile): boolean {
     profile.minimumHourlyRate > 0 &&
     profile.preferredMinimumEmployerRating != null &&
     profile.preferredCompanyTypes.length > 0 &&
-    profile.preferredProjectTypes.length > 0 &&
     profile.preferredRegions.length > 0
   );
 }
@@ -511,17 +536,25 @@ export function profilesEqual(a: UserProfile, b: UserProfile): boolean {
     arraysEqual(a.preferredEngagementTypes, b.preferredEngagementTypes) &&
     arraysEqual(a.preferredCompanyTypes, b.preferredCompanyTypes) &&
     arraysEqual(a.preferredRegions, b.preferredRegions) &&
-    arraysEqual(a.preferredProjectTypes, b.preferredProjectTypes)
+    arraysEqual(a.preferredProjectTypes, b.preferredProjectTypes) &&
+    arraysEqual(a.jobSearchGoals, b.jobSearchGoals) &&
+    a.searchStage === b.searchStage &&
+    arraysEqual(a.helpTopics, b.helpTopics)
   );
 }
 
 /** Fields that count toward the completion indicator. */
 const COMPLETION_FIELDS: (keyof UserProfile)[] = [
+  "fullName",
+  "country",
+  "timezone",
+  "jobSearchGoals",
+  "searchStage",
+  "helpTopics",
   "minimumHourlyRate",
   "preferredMinimumEmployerRating",
   "preferredCompanyTypes",
   "preferredRegions",
-  "preferredProjectTypes",
 ];
 
 function isFieldFilled(profile: UserProfile, key: keyof UserProfile): boolean {

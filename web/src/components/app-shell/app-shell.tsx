@@ -16,7 +16,7 @@ import { ResumeReviewScreen } from "@/components/screens/resume-review-screen";
 import { SkeletonAppShell } from "@/components/ui/skeletons";
 import { ensureGuestSession } from "@/lib/ensure-guest-session";
 import { isNativePlatform } from "@/lib/platform";
-import { isQaLaunchSimulationPending } from "@/lib/splash-qa";
+import { isQaLaunchSimulationPending, QA_LAUNCH_SIMULATION_CLEARED_EVENT } from "@/lib/splash-qa";
 import { toast } from "sonner";
 
 /**
@@ -29,6 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [signedIn, setSignedIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [guestBootstrapTick, setGuestBootstrapTick] = useState(0);
   const resumeReviewUnderlayRef = useRef<React.ReactNode>(null);
   const resumeReviewCategoryContentRef = useRef<React.ReactNode>(null);
 
@@ -49,6 +50,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useLayoutEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const bumpGuestBootstrap = () => {
+      setGuestBootstrapTick((tick) => tick + 1);
+    };
+    window.addEventListener(QA_LAUNCH_SIMULATION_CLEARED_EVENT, bumpGuestBootstrap);
+    return () => {
+      window.removeEventListener(
+        QA_LAUNCH_SIMULATION_CLEARED_EVENT,
+        bumpGuestBootstrap,
+      );
+    };
   }, []);
 
   useEffect(() => {
@@ -75,7 +89,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     let cancelled = false;
 
-    void ensureGuestSession().then(({ error }) => {
+    void ensureGuestSession({
+      deferLaunchCompletion: !hasCompletedWelcome(),
+    }).then(({ error }) => {
       if (cancelled) return;
       if (error) {
         setAuthError(error);
@@ -90,7 +106,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [ready, shouldBootstrapGuest, signedIn, pathname, router]);
+  }, [ready, shouldBootstrapGuest, signedIn, pathname, router, guestBootstrapTick]);
 
   const launchGateActive =
     mounted && isNativePlatform() && !hasCompletedWelcome();

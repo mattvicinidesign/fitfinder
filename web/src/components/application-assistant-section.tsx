@@ -13,6 +13,7 @@ import { resolvePortfolioUrl } from "@/lib/portfolio-url";
 import { injectPortfolioInIntroduction } from "@/lib/proposal-format";
 import { loadProposal, saveProposal } from "@/lib/proposal-cache";
 import { cn } from "@/lib/utils";
+import { PRIMARY_FLOATING_CTA_CLASS } from "@/components/resume-upload-styles";
 import type {
   Narrative,
   ParsedJob,
@@ -137,10 +138,7 @@ export function ApplicationAssistantSection({
       <StickyBottomCta variant="floating" scrollFade inactive={generating}>
         <Button
           type="button"
-          className={cn(
-            "h-12 w-full gap-2 rounded-xl text-[17px] font-semibold",
-            "shadow-[0_8px_28px_rgba(0,0,0,0.45)]",
-          )}
+          className={cn("gap-2", PRIMARY_FLOATING_CTA_CLASS)}
           onClick={() => {
             if (hasProposal) setDrawerOpen(true);
             else void runGeneration("generate");
@@ -148,7 +146,7 @@ export function ApplicationAssistantSection({
           disabled={generating}
           aria-busy={generating && !hasProposal}
           aria-label={
-            hasProposal ? "View generated proposal" : "Generate proposal"
+            hasProposal ? "View generated proposal" : "Generate custom proposal"
           }
         >
           {generating && !hasProposal ? (
@@ -162,7 +160,7 @@ export function ApplicationAssistantSection({
             ? null
             : hasProposal
               ? "View Proposal"
-              : "Generate Proposal"}
+              : "Generate Custom Proposal"}
         </Button>
       </StickyBottomCta>
 

@@ -3,6 +3,8 @@
 // These types are the contract between the Edge Functions and both clients
 // (iOS + web). The TypeScript client models mirror these shapes.
 
+import type { SemanticMatchReport } from "./semantic_match/types.ts";
+
 /** Structured resume extracted by the AI parser. */
 export interface ParsedResume {
   skills: string[];
@@ -153,7 +155,10 @@ export interface OpportunityEngineDebug {
   parsedJobMetadata: Record<string, unknown>;
 }
 
-/** Output of the Opportunity Engine. fitScore is 0–100 (display ÷10 for 0–10 ring). */
+/** Full explainable output from the semantic matching engine (optional on ScoreResult). */
+export type { SemanticMatchReport } from "./semantic_match/types.ts";
+
+/** Output of the scoring engine. fitScore is 0–100 (display ÷10 for 0–10 ring). */
 export interface ScoreResult {
   qualificationScore: number;
   confidenceScore: number;
@@ -168,6 +173,8 @@ export interface ScoreResult {
   /** Opportunity Engine category scores (primary). */
   opportunityCategories?: OpportunityCategoryScore[];
   opportunityDebug?: OpportunityEngineDebug;
+  /** Semantic engine explainable report when semantic matching is active. */
+  semanticMatchReport?: SemanticMatchReport;
   unknownCategories: string[];
   explanation: string;
   strengths: string[];

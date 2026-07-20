@@ -129,7 +129,11 @@ function inferJobCompanyTypes(
 
 function inferJobRegions(job: ParsedJob, blob: string): string[] {
   const labels = new Set<string>();
-  const location = [job.country, job.timezone, blob].filter(Boolean).join(" ");
+  const location = [
+    job.countryRequirement,
+    job.timezoneRequirement,
+    blob,
+  ].filter(Boolean).join(" ");
   const lower = normalizeText(location);
 
   if (/\bunited states\b|\busa\b|\bu\.s\.?\b|\bamerica\b/.test(lower)) {
@@ -153,77 +157,16 @@ function preferenceOverlap(selected: string[], inferred: string[]): string[] {
   return selected.filter((label) => inferredNorm.has(normalizeText(label)));
 }
 
-/** User onboarding preferences adjust career fit (additive). */
+/** Preference-based career-fit adjustments are retired — job fit is resume + job only. */
 export function computeOnboardingCareerFitAdjustment(
-  resume: ParsedResume,
-  job: ParsedJob,
-  profile: ProfileScoringRow | null | undefined,
-  options: {
+  _resume: ParsedResume,
+  _job: ParsedJob,
+  _profile: ProfileScoringRow | null | undefined,
+  _options: {
     jobTitle?: string | null;
     jobText?: string | null;
     posting?: PostingContext | null;
   } = {},
 ): OnboardingAdjustment {
-  if (!profile) {
-    return { delta: 0, negativeSignalsFound: [], positiveSignalsFound: [] };
-  }
-
-  const blob = normalizeText(
-    [
-      options.jobTitle ?? "",
-      job.roleTitle ?? "",
-      options.jobText ?? "",
-      job.postingContextDetail ?? "",
-      ...(job.skills ?? []),
-      ...(job.industries ?? []),
-      ...(job.workflows ?? []),
-      ...(job.toolRequirements ?? []),
-      ...(job.aiRequirements ?? []),
-      ...(job.softwareModels ?? []),
-      ...(resume.skills ?? []),
-      ...(resume.industries ?? []),
-    ].join(" "),
-  );
-
-  let delta = 0;
-  const negativeSignalsFound: string[] = [];
-  const positiveSignalsFound: string[] = [];
-
-  const companyPrefs = stringArray(profile.preferred_company_types);
-  const companyInJob = inferJobCompanyTypes(job, options.posting ?? null, blob);
-  const companyOverlap = preferenceOverlap(companyPrefs, companyInJob);
-  if (companyPrefs.length > 0 && companyInJob.length > 0) {
-    if (companyOverlap.length === 0) {
-      delta -= 4;
-      negativeSignalsFound.push(
-        `Company type mismatch (you prefer ${companyPrefs.join(", ")})`,
-      );
-    } else {
-      delta += 2;
-      positiveSignalsFound.push(
-        `Company type match (${companyOverlap.join(", ")})`,
-      );
-    }
-  }
-
-  const regionPrefs = stringArray(profile.preferred_regions);
-  const regionsInJob = inferJobRegions(job, blob);
-  const regionOverlap = preferenceOverlap(regionPrefs, regionsInJob);
-  if (regionPrefs.length > 0 && regionsInJob.length > 0) {
-    if (regionOverlap.length === 0) {
-      delta -= 4;
-      negativeSignalsFound.push(
-        `Region mismatch (you prefer ${regionPrefs.join(", ")})`,
-      );
-    } else {
-      delta += 2;
-      positiveSignalsFound.push(`Region match (${regionOverlap.join(", ")})`);
-    }
-  }
-
-  return {
-    delta: Math.max(-20, Math.min(10, delta)),
-    negativeSignalsFound,
-    positiveSignalsFound,
-  };
+  return { delta: 0, negativeSignalsFound: [], positiveSignalsFound: [] };
 }

@@ -5,9 +5,12 @@ import { QualificationScoreCircle } from "@/components/qualification-score-circl
 import { SummarySectionCard } from "@/components/summary-section-card";
 import { resolveReportFitScore } from "@/lib/report-fit-score";
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
-import { buildOverallMatchRollups } from "@/lib/opportunity-categories";
 import {
-  GLOBAL_SCORE_INFO,
+  buildSemanticCategoryRollups,
+  getSemanticReport,
+  GLOBAL_SEMANTIC_SCORE_INFO,
+} from "@/lib/semantic-report";
+import {
   GLOBAL_SCORE_LABEL,
 } from "@/lib/scoring-terminology";
 import {
@@ -27,10 +30,12 @@ import { cn } from "@/lib/utils";
 function ScoringCategoryRollupRow({
   title,
   score,
+  weight,
   animateDelay = 0,
 }: {
   title: string;
   score: number | null;
+  weight?: number;
   animateDelay?: number;
 }) {
   const hasScore = score != null;
@@ -47,6 +52,9 @@ function ScoringCategoryRollupRow({
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-[14px] font-medium text-foreground leading-snug">
           {title}
+          {weight != null ? (
+            <span className="text-muted-foreground font-normal"> ({weight}%)</span>
+          ) : null}
         </span>
         <span
           className={cn(
@@ -70,7 +78,7 @@ function ScoringCategoryRollupRow({
   );
 }
 
-/** Global score card: scoring category rollups (left) and 0–10 ring (right). */
+/** Global score card: semantic category rollups (left) and 0–10 ring (right). */
 export function QualificationScoreOverview({
   score,
   rollupOptions,
@@ -78,30 +86,41 @@ export function QualificationScoreOverview({
   score: ScoreResult;
   rollupOptions: ReportRollupOptions;
 }) {
-  const rollups = buildOverallMatchRollups(score, rollupOptions);
+  const report = getSemanticReport(score);
+  const rollups = report
+    ? buildSemanticCategoryRollups(report)
+    : [];
   const reportFitScore = resolveReportFitScore(score, rollupOptions);
 
   const { recommendation, label: recommendationLabel } =
     recommendFromFitScore(reportFitScore);
 
   return (
-    <SummarySectionCard title={GLOBAL_SCORE_LABEL} info={GLOBAL_SCORE_INFO}>
+    <SummarySectionCard
+      title={GLOBAL_SCORE_LABEL}
+      info={GLOBAL_SEMANTIC_SCORE_INFO}
+    >
       <div
-        className="grid grid-cols-2 gap-4 items-center pt-0.5 min-w-0"
+        className="grid grid-cols-[1fr_auto] gap-4 items-start pt-0.5 min-w-0"
         role="region"
         aria-label={GLOBAL_SCORE_LABEL}
       >
-        <div className="space-y-3 min-w-0" role="list" aria-label="Scoring categories">
+        <div
+          className="flex flex-col gap-3 min-w-0"
+          role="list"
+          aria-label="Scoring categories"
+        >
           {rollups.map((section, index) => (
             <ScoringCategoryRollupRow
               key={section.id}
               title={section.title}
               score={section.score}
-              animateDelay={index * 80}
+              weight={section.weight}
+              animateDelay={index * 60}
             />
           ))}
         </div>
-        <div className="flex justify-center shrink-0 min-w-0">
+        <div className="flex justify-end shrink-0 min-w-0 pt-1">
           <QualificationScoreCircle
             fitScore={reportFitScore}
             recommendationLabel={recommendationLabel}

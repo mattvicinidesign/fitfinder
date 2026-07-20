@@ -10,6 +10,8 @@ import {
   RESUME_SCORE_ZONE_CTA_CLASS,
   RESUME_UPLOAD_CTA_CLASS,
   RESUME_UPLOAD_HINT,
+  RESUME_UPLOAD_FILENAME_CLASS,
+  RESUME_UPLOAD_SECONDARY_HINT_CLASS,
   RESUME_UPLOAD_TITLE,
   RESUME_SCORE_TITLE,
   resumeUploadZoneClassName,
@@ -143,7 +145,10 @@ export const ResumeReviewUploadZone = forwardRef<
                 <CheckCircle2 className="size-8 shrink-0 text-primary" aria-hidden />
               )}
               <p
-                className="block w-full min-w-0 truncate px-2 text-[17px] font-medium text-foreground"
+                className={cn(
+                  RESUME_UPLOAD_FILENAME_CLASS,
+                  "block w-full min-w-0 truncate px-2",
+                )}
                 title={fileName ?? undefined}
               >
                 {fileName}
@@ -162,7 +167,7 @@ export const ResumeReviewUploadZone = forwardRef<
                 {busy ? <CtaSpinner className="size-8" /> : RESUME_UPLOAD_TITLE}
               </button>
               {!busy ? (
-                <span className="text-[13px] text-muted-foreground">
+                <span className={RESUME_UPLOAD_SECONDARY_HINT_CLASS}>
                   {RESUME_UPLOAD_HINT}
                 </span>
               ) : null}

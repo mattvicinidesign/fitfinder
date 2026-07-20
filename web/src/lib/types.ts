@@ -164,6 +164,107 @@ export interface OpportunityEngineDebug {
   parsedJobMetadata: Record<string, unknown>;
 }
 
+export type ImportanceLevel = "required" | "preferred" | "bonus";
+
+export type SemanticCategoryKey =
+  | "skillsTools"
+  | "experience"
+  | "responsibilities"
+  | "domainBackground";
+
+export type MatchKind = "exact" | "strong" | "partial" | "weak" | "missing";
+
+export interface CompetencyMatchResult {
+  jobCompetencyId: string;
+  jobLabel: string;
+  resumeCompetencyId: string | null;
+  resumeLabel: string | null;
+  canonicalLabel: string;
+  category: SemanticCategoryKey;
+  importance: ImportanceLevel;
+  similarityScore: number;
+  matchKind: MatchKind;
+  evidenceCount: number;
+  reasoning: string;
+}
+
+export interface SemanticCategoryScore {
+  category: SemanticCategoryKey;
+  label: string;
+  score: number;
+  weight: number;
+  contribution: number;
+  matched: CompetencyMatchResult[];
+  partial: CompetencyMatchResult[];
+  missing: CompetencyMatchResult[];
+  reasoning: string;
+}
+
+export interface CanonicalProfile {
+  competencies: {
+    id: string;
+    canonicalLabel: string;
+    category: SemanticCategoryKey;
+    importance: ImportanceLevel;
+    evidenceCount: number;
+    sourcePhrases: string[];
+  }[];
+  seniority: string | null;
+  yearsExperience: number | null;
+  industries: string[];
+  accomplishments: string[];
+  quantifiedImpact: string[];
+}
+
+export interface SemanticMatchReport {
+  overallMatchPercent: number;
+  categoryScores: SemanticCategoryScore[];
+  matchedCompetencies: CompetencyMatchResult[];
+  partialCompetencies: CompetencyMatchResult[];
+  missingCompetencies: CompetencyMatchResult[];
+  strengths: string[];
+  weaknesses: string[];
+  scoreReasoning: string;
+  resumeCanonical: CanonicalProfile;
+  jobCanonical: CanonicalProfile;
+}
+
+export const SEMANTIC_CATEGORY_WEIGHTS: Record<SemanticCategoryKey, number> = {
+  skillsTools: 40,
+  experience: 25,
+  responsibilities: 20,
+  domainBackground: 15,
+};
+
+export const SEMANTIC_CATEGORY_LABELS: Record<SemanticCategoryKey, string> = {
+  skillsTools: "Skills & Tools",
+  experience: "Experience",
+  responsibilities: "Responsibilities",
+  domainBackground: "Domain & Background",
+};
+
+/** Map legacy 8-category keys (and aliases) onto the simplified 4-category model. */
+export function remapSemanticCategoryKey(value: unknown): SemanticCategoryKey {
+  switch (value) {
+    case "experience":
+      return "experience";
+    case "responsibilities":
+      return "responsibilities";
+    case "skillsTools":
+    case "competencies":
+    case "toolsTechnology":
+    case "softSkills":
+      return "skillsTools";
+    case "domainBackground":
+    case "domainKnowledge":
+    case "leadership":
+    case "educationCertifications":
+      return "domainBackground";
+    default:
+      return "skillsTools";
+  }
+}
+
 export interface ScoreResult {
   qualificationScore: number;
   confidenceScore: number;
@@ -177,6 +278,8 @@ export interface ScoreResult {
   /** Opportunity Engine category scores (primary). */
   opportunityCategories?: OpportunityCategoryScore[];
   opportunityDebug?: OpportunityEngineDebug;
+  /** Semantic engine explainable report (primary scoring output). */
+  semanticMatchReport?: SemanticMatchReport;
   unknownCategories: string[];
   explanation: string;
   strengths: string[];

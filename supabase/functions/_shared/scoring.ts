@@ -1,10 +1,9 @@
-// Opportunity Engine entry point — scoreFit delegates to scoreOpportunity.
+// Semantic matching engine entry point — scoreFit runs the resume + job pipeline.
 
+import { buildScoreResultFromSemanticReport } from "./semantic_match/score_result.ts";
+import { runSemanticMatchPipeline } from "./semantic_match/pipeline.ts";
 import type { PostingContext } from "./posting_context.ts";
-import type { ProfileScoringRow } from "./profile_scoring.ts";
-import { scoreOpportunity } from "./opportunity_engine.ts";
-export { scoreOpportunity } from "./opportunity_engine.ts";
-import type { ParsedJob, ParsedResume, ScoreResult } from "./types.ts";
+import type { ScoreResult } from "./types.ts";
 import type { ScoringMode } from "./scoring_constants.ts";
 
 export type { ScoringMode };
@@ -13,20 +12,25 @@ export interface ScoreFitOptions {
   mode?: ScoringMode;
   jobTitle?: string | null;
   jobText?: string | null;
+  resumeText?: string | null;
   posting?: PostingContext | null;
-  profile?: ProfileScoringRow | null;
 }
 
-export function scoreFit(
-  resume: ParsedResume,
-  job: ParsedJob,
+export async function scoreFit(
+  resumeText: string,
+  jobText: string,
   options: ScoreFitOptions = {},
-): ScoreResult {
-  return scoreOpportunity(resume, job, {
-    mode: options.mode,
+): Promise<ScoreResult> {
+  const trimmedResume = resumeText.trim();
+  const trimmedJob = (options.jobText ?? jobText).trim();
+
+  if (!trimmedResume || !trimmedJob) {
+    throw new Error("Resume text and job description are required for scoring.");
+  }
+
+  const report = await runSemanticMatchPipeline(trimmedResume, trimmedJob, {
     jobTitle: options.jobTitle,
-    jobText: options.jobText,
-    posting: options.posting,
-    profile: options.profile,
   });
+
+  return buildScoreResultFromSemanticReport(report, options.mode ?? "registered");
 }

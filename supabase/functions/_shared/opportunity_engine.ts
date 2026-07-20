@@ -264,42 +264,18 @@ function scorePreferenceAlignment(
   options: ScoreOpportunityOptions,
 ): OpportunityCategoryScore {
   const weight = OPPORTUNITY_WEIGHTS.preferenceAlignment;
-  const adjustment = computeOnboardingCareerFitAdjustment(resume, job, profile, {
-    jobTitle: options.jobTitle,
-    jobText: options.jobText,
-    posting: options.posting ?? null,
-  });
-
-  const hasPrefs = Boolean(
-    profile?.preferred_company_types?.length ||
-      profile?.preferred_regions?.length ||
-      profile?.desired_compensation_min,
-  );
-
-  if (!hasPrefs) {
-    return {
-      category: "preferenceAlignment",
-      label: OPPORTUNITY_CATEGORY_LABELS.preferenceAlignment,
-      score: 70,
-      weight,
-      contribution: round(weight * 0.7),
-      details: ["No onboarding preferences set — neutral baseline"],
-    };
-  }
-
-  const score = round(clamp(70 + adjustment.delta * 2, 0, 100));
-  const details = [
-    ...adjustment.positiveSignalsFound,
-    ...adjustment.negativeSignalsFound,
-  ];
-
+  // Matching preferences are no longer collected or scored — neutral baseline.
+  void resume;
+  void job;
+  void profile;
+  void options;
   return {
     category: "preferenceAlignment",
     label: OPPORTUNITY_CATEGORY_LABELS.preferenceAlignment,
-    score,
+    score: 70,
     weight,
-    contribution: round(weight * (score / 100)),
-    details: details.length ? details : ["Preferences applied"],
+    contribution: round(weight * 0.7),
+    details: ["Job fit is based on resume and job description only"],
   };
 }
 

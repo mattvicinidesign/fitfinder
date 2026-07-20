@@ -13,8 +13,8 @@ import {
   type OverallMatchCategoryAverage,
   type RecommendationStat,
   computeOverallMatchCategoryAverages,
+  formatOverallMatchCategoryScoreOnTen,
 } from "@/lib/analysis-stats";
-import { formatCategoryScoreOnTen } from "@/lib/opportunity-categories";
 import { resumeReviewScoreTextClass } from "@/lib/resume-review-score-colors";
 import {
   isResumeScoreActivity,
@@ -50,7 +50,7 @@ function OverallMatchAnalysisBars({
                   : "text-muted-foreground",
               )}
             >
-              {formatCategoryScoreOnTen(item.averageScore)}
+              {formatOverallMatchCategoryScoreOnTen(item.id, item.averageScore)}
             </span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -149,7 +149,7 @@ function RecommendationDonut({
           style={{ background: recommendationConicGradient(stats) }}
           aria-hidden
         />
-        <div className="absolute inset-[12%] flex flex-col items-center justify-center rounded-full bg-background text-center">
+        <div className="absolute inset-[8%] flex flex-col items-center justify-center rounded-full bg-background text-center">
           <span className="text-[20px] font-semibold tabular-nums leading-none">
             {total}
           </span>

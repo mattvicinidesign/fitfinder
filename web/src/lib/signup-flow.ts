@@ -1,7 +1,17 @@
 import type { UserProfile } from "@/lib/profile";
 
-/** Signup steps (1-based UI) that may continue without filling fields: resume, rate, rating. */
-const SIGNUP_OPTIONAL_STEP_INDEXES = new Set([1, 2, 4]);
+/** Signup wizard indexes: 0 basic, 1 resume, 2 goals, 3 stage, 4 help, 5 completion. */
+export const SIGNUP_RESUME_STEP_INDEX = 1;
+export const SIGNUP_GOALS_STEP_INDEX = 2;
+export const SIGNUP_SEARCH_STAGE_STEP_INDEX = 3;
+export const SIGNUP_HELP_STEP_INDEX = 4;
+export const SIGNUP_COMPLETION_STEP_INDEX = 5;
+
+/** Steps that may continue without filling fields: resume + completion. */
+const SIGNUP_OPTIONAL_STEP_INDEXES = new Set([
+  SIGNUP_RESUME_STEP_INDEX,
+  SIGNUP_COMPLETION_STEP_INDEX,
+]);
 
 export function isSignupGeneralDetailsComplete(
   profile: UserProfile,
@@ -15,6 +25,18 @@ export function isSignupGeneralDetailsComplete(
   );
 }
 
+export function isSignupGoalsComplete(profile: UserProfile): boolean {
+  return profile.jobSearchGoals.length > 0;
+}
+
+export function isSignupSearchStageComplete(profile: UserProfile): boolean {
+  return Boolean(profile.searchStage?.trim());
+}
+
+export function isSignupHelpTopicsComplete(profile: UserProfile): boolean {
+  return profile.helpTopics.length > 0;
+}
+
 /** Whether the current signup wizard step has required input before Continue / Finish. */
 export function canContinueSignupStep(
   stepIndex: number,
@@ -26,24 +48,29 @@ export function canContinueSignupStep(
   switch (stepIndex) {
     case 0:
       return isSignupGeneralDetailsComplete(profile, email);
-    case 3:
-      return profile.preferredCompanyTypes.length > 0;
-    case 5:
-      return profile.preferredProjectTypes.length > 0;
-    case 6:
-      return profile.preferredRegions.length > 0;
+    case SIGNUP_GOALS_STEP_INDEX:
+      return isSignupGoalsComplete(profile);
+    case SIGNUP_SEARCH_STAGE_STEP_INDEX:
+      return isSignupSearchStageComplete(profile);
+    case SIGNUP_HELP_STEP_INDEX:
+      return isSignupHelpTopicsComplete(profile);
     default:
       return true;
   }
 }
 
-/** Required preference steps for signup finish (excludes optional rate + rating). */
-export function isSignupPreferencesComplete(profile: UserProfile): boolean {
+/** Intent steps required before account creation (excludes optional resume). */
+export function isSignupIntentComplete(profile: UserProfile): boolean {
   return (
-    profile.preferredCompanyTypes.length > 0 &&
-    profile.preferredProjectTypes.length > 0 &&
-    profile.preferredRegions.length > 0
+    isSignupGoalsComplete(profile) &&
+    isSignupSearchStageComplete(profile) &&
+    isSignupHelpTopicsComplete(profile)
   );
+}
+
+/** @deprecated Use isSignupIntentComplete — scoring prefs are no longer part of signup. */
+export function isSignupPreferencesComplete(profile: UserProfile): boolean {
+  return isSignupIntentComplete(profile);
 }
 
 /** First signup step index that still needs input, or null when ready to finish. */
@@ -52,8 +79,8 @@ export function firstIncompleteSignupStep(
   email: string,
 ): number | null {
   if (!isSignupGeneralDetailsComplete(profile, email)) return 0;
-  if (profile.preferredCompanyTypes.length === 0) return 3;
-  if (profile.preferredProjectTypes.length === 0) return 5;
-  if (profile.preferredRegions.length === 0) return 6;
+  if (!isSignupGoalsComplete(profile)) return SIGNUP_GOALS_STEP_INDEX;
+  if (!isSignupSearchStageComplete(profile)) return SIGNUP_SEARCH_STAGE_STEP_INDEX;
+  if (!isSignupHelpTopicsComplete(profile)) return SIGNUP_HELP_STEP_INDEX;
   return null;
 }

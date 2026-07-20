@@ -25,3 +25,9 @@ export const FORM_FIELD_CONTROL_TEXT_CLASS = cn(
   FORM_FIELD_CONTROL_SIZE_CLASS,
   "text-foreground placeholder:text-[17px] placeholder:font-normal placeholder:text-muted-foreground md:placeholder:text-[17px]",
 );
+
+/** Borderless h-11 input used on signup/profile account fields. */
+export const FORM_FIELD_INPUT_BORDERLESS_CLASS = cn(
+  "h-11 px-3.5 bg-transparent border-0 shadow-none focus-visible:ring-0",
+  FORM_FIELD_CONTROL_TEXT_CLASS,
+);

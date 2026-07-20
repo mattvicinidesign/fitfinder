@@ -53,7 +53,7 @@ export function AnalysisResultView({
   });
   const jobDescription =
     normalized.jobDescription ?? result.jobDescription ?? null;
-  const { score, postingContext, parsedJob, parsedResume } = normalized;
+  const { score, postingContext, parsedJob, parsedResume, narrative } = normalized;
   const displayJobTitle = reportRoleTitle({
     ...result,
     jobDescription,
@@ -91,6 +91,7 @@ export function AnalysisResultView({
           ) : null}
           <QualificationBreakdown
             score={score}
+            narrative={narrative}
             postingContext={postingContext}
             jobDescription={jobDescription}
             parsedJob={parsedJob}

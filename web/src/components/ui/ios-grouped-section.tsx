@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { FORM_FIELD_LABEL_CLASS } from "@/components/form-field-styles";
 
 /** iOS inset grouped section (Settings-style). */
 export function IosGroupedSection({
@@ -18,9 +19,7 @@ export function IosGroupedSection({
   return (
     <section className={cn("space-y-2", className)}>
       {title ? (
-        <h2 className="px-4 text-[13px] font-normal uppercase tracking-wide text-muted-foreground">
-          {title}
-        </h2>
+        <h2 className={cn("px-4", FORM_FIELD_LABEL_CLASS)}>{title}</h2>
       ) : null}
       <div
         className={cn(

@@ -15,8 +15,7 @@ import {
   getAppliedKeywordChangesForDisplay,
   hasApprovedKeywordChanges,
 } from "@/lib/resume-review-ats-optimization";
-import { formatAtsSafetyScoreLabel } from "@/lib/ats-keyword-optimization-core";
-import { getAtsDiscoverySummary, formatRejectionReasonLabel } from "@/lib/ats-discovery-stats";
+import { getAtsDiscoverySummary } from "@/lib/ats-discovery-stats";
 import {
   isAtsOptimizerDebugEnabled,
   readReplacementAudit,
@@ -115,11 +114,6 @@ export function AtsKeywordPreviewDrawer({
     allKeywordChangesReviewed(decisions, previewChanges.length) &&
     hasApprovedKeywordChanges(decisions);
 
-  const safetyLabel = optimization.atsSafetyScore
-    ? formatAtsSafetyScoreLabel(optimization.atsSafetyScore)
-    : null;
-  const totalEdits =
-    optimization.totalKeywordEdits ?? optimization.keywordChanges.length;
   const discoverySummary = useMemo(
     () => getAtsDiscoverySummary(optimization),
     [optimization],
@@ -156,46 +150,12 @@ export function AtsKeywordPreviewDrawer({
             {isApplied ? "Applied keyword changes" : "Verify Changes"}
           </h2>
           {isReview ? (
-            <p className="mt-1.5 text-[15px] leading-snug text-muted-foreground">
-              Keyword-only edits inside existing bullets. Structure, companies,
-              titles, dates, and metrics stay unchanged.
+            <p className="mt-1.5 whitespace-nowrap text-[14px] leading-none text-muted-foreground">
+              Only updates keywords in bullets.
             </p>
           ) : isApplied ? (
-            <p className="mt-1.5 text-[15px] leading-snug text-muted-foreground">
-              These swaps were written to your optimized resume export. Compare
-              each before and after line to confirm accuracy.
-            </p>
-          ) : null}
-          {discoverySummary.found > 0 ? (
-            <p className="mt-2 text-[13px] leading-snug text-muted-foreground">
-              Found {discoverySummary.found} opportunit
-              {discoverySummary.found === 1 ? "y" : "ies"}
-              {readyToReviewLabel(discoverySummary.readyToReview)}
-              {optimization.optimizationApplied
-                ? ` · Applied ${discoverySummary.applied}`
-                : discoverySummary.rejected > 0
-                  ? ` · Rejected ${discoverySummary.rejected}`
-                  : ""}
-              {safetyLabel ? ` · ${safetyLabel}` : ""}
-              {optimization.improvementPercentage > 0
-                ? ` · Est. +${optimization.improvementPercentage}% ATS`
-                : ""}
-            </p>
-          ) : null}
-          {discoverySummary.reviewRejectionSummary ? (
-            <p className="mt-1 text-[12px] leading-snug text-muted-foreground/90">
-              Review rejections: {discoverySummary.reviewRejectionSummary}
-            </p>
-          ) : null}
-          {discoverySummary.discoveryRejectionSummary ? (
-            <p className="mt-1 text-[12px] leading-snug text-muted-foreground/90">
-              Discovery rejections: {discoverySummary.discoveryRejectionSummary}
-            </p>
-          ) : null}
-          {optimization.optimizationApplied &&
-          discoverySummary.applyRejectionSummary ? (
-            <p className="mt-1 text-[12px] leading-snug text-muted-foreground/90">
-              {discoverySummary.applyRejectionSummary}
+            <p className="mt-1.5 whitespace-nowrap text-[14px] leading-none text-muted-foreground">
+              Review each swap in your export.
             </p>
           ) : null}
         </div>
@@ -281,31 +241,6 @@ export function AtsKeywordPreviewDrawer({
                 </ul>
               </li>
             ) : null}
-            {isAtsOptimizerDebugEnabled() &&
-            (optimization.rejectedCandidates?.length ?? 0) > 0 ? (
-              <li className="rounded-xl border border-dashed border-border/80 bg-muted/10 px-4 py-4">
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Debug — rejected candidates
-                </p>
-                <ul className="mt-3 space-y-2">
-                  {optimization.rejectedCandidates!.slice(0, 24).map((entry, index) => (
-                    <li
-                      key={`${entry.before}-${entry.after}-${entry.reason}-${index}`}
-                      className="text-[13px] leading-snug text-muted-foreground"
-                    >
-                      <span className="font-medium text-foreground">
-                        {entry.before} → {entry.after}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {" "}
-                        · Rejected: {formatRejectionReasonLabel(entry.reason)} (
-                        {entry.stage})
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ) : null}
             {displayChanges.map((change, index) => (
               <AtsKeywordChangeAccordion
                 key={`${change.before}-${change.after}-${index}`}
@@ -381,9 +316,4 @@ export function AtsKeywordPreviewDrawer({
     </div>,
     getAppOverlayRoot(),
   );
-}
-
-function readyToReviewLabel(count: number): string {
-  if (count <= 0) return " · 0 ready to review";
-  return ` · ${count} ready to review`;
 }

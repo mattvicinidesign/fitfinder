@@ -1,5 +1,6 @@
 import type { AnalysisReportCacheEntry } from "@/lib/analysis-report-cache";
 import { buildOverallMatchRollups } from "@/lib/opportunity-categories";
+import { buildSemanticCategoryRollups, getSemanticReport } from "@/lib/semantic-report";
 import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import { resolveReportFitScore } from "@/lib/report-fit-score";
@@ -78,6 +79,10 @@ export function resolveOverallMatchRollupsFromCacheEntry(
 ) {
   const { score, rollupOptions } =
     resolveReportRollupContextFromCacheEntry(entry);
+  const semantic = getSemanticReport(score);
+  if (semantic) {
+    return buildSemanticCategoryRollups(semantic);
+  }
   return buildOverallMatchRollups(score, rollupOptions);
 }
 

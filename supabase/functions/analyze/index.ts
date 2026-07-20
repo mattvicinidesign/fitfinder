@@ -9,19 +9,16 @@
 // }
 //
 // This is the orchestrator and the ONLY place fit is computed. It parses the
-// job, runs the deterministic scoring engine, asks the AI layer for a
-// narrative, optionally stores the analysis, and returns the full result.
+// job, runs the semantic matching engine on resume + job text, asks the AI
+// layer for a narrative, optionally stores the analysis, and returns the result.
 
 import { completeJSON } from "../_shared/openai.ts";
 import { resolveJobTitle } from "../_shared/posting_details.ts";
 import { normalizeParsedJob } from "../_shared/normalize_parsed_job.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
 import { loadResumeText } from "../_shared/load_resume_text.ts";
-import {
-  mergeProfileIntoResumeForScoring,
-  type ProfileScoringRow,
-} from "../_shared/profile_scoring.ts";
 import { JOB_PARSE_SYSTEM, narrativeSystemPrompt, narrativeUserPayload } from "../_shared/prompts.ts";
+import { parsedResumeToText } from "../_shared/semantic_match/resume_text.ts";
 import { resolvePostingContext } from "../_shared/posting_context.ts";
 import { scoreFit } from "../_shared/scoring.ts";
 import { createUserClient, requireUser } from "../_shared/supabaseClient.ts";
@@ -54,6 +51,7 @@ Deno.serve(async (req: Request) => {
       companyName = null,
       jobTitle = null,
       resumeId,
+      resumeText: inlineResumeText = null,
       parsedResume,
       persist = true,
       scoringMode: requestedScoringMode,
@@ -110,19 +108,7 @@ Deno.serve(async (req: Request) => {
     ]);
     const parsedJob = normalizeParsedJob(parsedJobRaw, jobText, jobTitle);
 
-    // Profile fills compensation, location, qualified signals, and onboarding prefs.
-    const { data: profileRow } = await supabase
-      .from("profiles")
-      .select(
-        "desired_compensation, desired_compensation_min, desired_compensation_max, desired_compensation_currency, desired_compensation_period, qualified_industries, qualified_skills, country, timezone, preferred_engagement_types, preferred_regions, preferred_company_types",
-      )
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    const profile = (profileRow ?? undefined) as ProfileScoringRow | undefined;
-    resume = mergeProfileIntoResumeForScoring(resume, profile);
-
-    // 3. Deterministic V1 qualification engine (guest vs registered weights).
+    // 3. Semantic matching engine (resume + job only — no profile/onboarding scoring).
     const { data: userRow } = await supabase
       .from("users")
       .select("account_type")
@@ -136,16 +122,22 @@ Deno.serve(async (req: Request) => {
       scoringMode = "registered";
     }
 
-    const resumeForScoring = resume;
-
     const postingContextPreview = resolvePostingContext(parsedJob, jobText);
 
-    const score = scoreFit(resumeForScoring, parsedJob, {
+    const resumeTextForScoring =
+      (typeof inlineResumeText === "string" ? inlineResumeText.trim() : "") ||
+      resumeTextForNormalize?.trim() ||
+      parsedResumeToText(resume);
+
+    if (!resumeTextForScoring) {
+      return error("Resume text is required. Upload a resume or pass resumeText.");
+    }
+
+    const score = await scoreFit(resumeTextForScoring, jobText, {
       mode: scoringMode,
       jobTitle,
       jobText,
       posting: postingContextPreview,
-      profile,
     });
 
     // 4. Narrative analysis layered on top of the computed scores.

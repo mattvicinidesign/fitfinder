@@ -25,7 +25,7 @@ const FITFINDER_STORAGE_PREFIX = "fitfinder";
 const ATS_CACHE_VERSION_KEY = "fitfinder:ats-optimization-cache-version";
 
 /**
- * Splash QA panel (simulate first launch, returning user, replay splash).
+ * Splash QA panel (hard reset / soft reset).
  * - Web (Vercel + local dev): on by default (see next.config.ts)
  * - iOS Capacitor build: off unless NEXT_PUBLIC_ENABLE_SPLASH_QA=true at cap:sync
  */
@@ -59,6 +59,9 @@ function setQaLaunchSimulationMode(mode: "first" | "returning"): void {
   }
 }
 
+export const QA_LAUNCH_SIMULATION_CLEARED_EVENT =
+  "fitfinder:qa-launch-simulation-cleared";
+
 export function clearQaLaunchSimulation(): void {
   if (typeof sessionStorage !== "undefined") {
     sessionStorage.removeItem(QA_LAUNCH_SIMULATION_KEY);
@@ -66,6 +69,9 @@ export function clearQaLaunchSimulation(): void {
   }
   if (typeof localStorage !== "undefined") {
     localStorage.removeItem(QA_LAUNCH_SIMULATION_KEY);
+  }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(QA_LAUNCH_SIMULATION_CLEARED_EVENT));
   }
 }
 
@@ -142,4 +148,16 @@ export function resetFirstLaunchFromQa(): void {
   void import("@/lib/reset-first-launch").then(({ resetAppFirstLaunch }) => {
     void resetAppFirstLaunch();
   });
+}
+
+/** Hard reset — wipe launch state and simulate first launch (clears onboarding data). */
+export function hardResetFromQa(): void {
+  console.log("QA: Hard reset");
+  resetFirstLaunchFromQa();
+}
+
+/** Soft reset — replay returning-user splash without clearing profile / auth data. */
+export function softResetFromQa(): void {
+  console.log("QA: Soft reset");
+  simulateReturningUser();
 }

@@ -1,11 +1,12 @@
-import { ChipMultiSelect } from "@/components/ui/chip-multi-select";
-import { EmployerRatingSlider } from "@/components/employer-rating-slider";
-import { MinimumHourlyRateSlider } from "@/components/minimum-hourly-rate-slider";
+import {
+  OptionCardMultiSelect,
+  OptionCardSingleSelect,
+} from "@/components/ui/option-card-select";
 import { ResumeFilePicker } from "@/components/resume-file-picker";
 import {
-  COMPANY_TYPE_OPTIONS,
-  PROJECT_TYPE_OPTIONS,
-  REGION_OPTIONS,
+  HELP_TOPIC_OPTIONS,
+  JOB_SEARCH_GOAL_OPTIONS,
+  SEARCH_STAGE_OPTIONS,
 } from "@/lib/onboarding-options";
 import type { UserProfile } from "@/lib/profile";
 import type { OnboardingStep } from "@/components/onboarding/onboarding-wizard";
@@ -18,7 +19,7 @@ export function createResumeUploadStep(input: {
   return {
     title: "Upload your resume",
     subtitle:
-      "We'll use it to score job fit on every analysis. You can skip and add one later.",
+      "Upload your primary resume. We'll use it for every analysis. You can replace it anytime.",
     content: (
       <ResumeFilePicker
         className="min-h-[180px]"
@@ -30,63 +31,45 @@ export function createResumeUploadStep(input: {
   };
 }
 
-export function createPreferenceSteps(
+/**
+ * Signup Steps 3–5 — personalization / analytics only.
+ * Never wire these into the job-fit matching algorithm.
+ */
+export function createIntentSteps(
   profile: UserProfile,
   patch: (next: Partial<UserProfile>) => void,
 ): OnboardingStep[] {
   return [
     {
-      title: "What is your minimum hourly rate?",
-      subtitle: "We flag jobs that pay below your floor.",
+      title: "What brings you to OnlyFit?",
+      subtitle: "What are you hoping to accomplish?",
       content: (
-        <MinimumHourlyRateSlider
-          value={profile.minimumHourlyRate}
-          onChange={(minimumHourlyRate) => patch({ minimumHourlyRate })}
+        <OptionCardMultiSelect
+          options={JOB_SEARCH_GOAL_OPTIONS}
+          value={profile.jobSearchGoals}
+          onChange={(jobSearchGoals) => patch({ jobSearchGoals })}
         />
       ),
     },
     {
-      title: "What types of employers do you prefer?",
-      subtitle: "Feeds client fit and employer-type alignment.",
+      title: "Where are you in your search?",
+      subtitle: "Which best describes you today?",
       content: (
-        <ChipMultiSelect
-          options={COMPANY_TYPE_OPTIONS}
-          value={profile.preferredCompanyTypes}
-          onChange={(v) => patch({ preferredCompanyTypes: v })}
+        <OptionCardSingleSelect
+          options={SEARCH_STAGE_OPTIONS}
+          value={profile.searchStage}
+          onChange={(searchStage) => patch({ searchStage })}
         />
       ),
     },
     {
-      title: "What's the minimum client rating you'll consider?",
-      subtitle: "Jobs at or above this rating show as a match on the report.",
+      title: "What would you like help with?",
+      subtitle: "What would you like OnlyFit to help you with?",
       content: (
-        <EmployerRatingSlider
-          value={profile.preferredMinimumEmployerRating}
-          onChange={(preferredMinimumEmployerRating) =>
-            patch({ preferredMinimumEmployerRating })
-          }
-        />
-      ),
-    },
-    {
-      title: "What project types do you prefer?",
-      subtitle: "Ongoing retainer work vs one-time projects.",
-      content: (
-        <ChipMultiSelect
-          options={PROJECT_TYPE_OPTIONS}
-          value={profile.preferredProjectTypes}
-          onChange={(v) => patch({ preferredProjectTypes: v })}
-        />
-      ),
-    },
-    {
-      title: "Which regions are you open to?",
-      subtitle: "Feeds location fit on reports.",
-      content: (
-        <ChipMultiSelect
-          options={REGION_OPTIONS}
-          value={profile.preferredRegions}
-          onChange={(v) => patch({ preferredRegions: v })}
+        <OptionCardMultiSelect
+          options={HELP_TOPIC_OPTIONS}
+          value={profile.helpTopics}
+          onChange={(helpTopics) => patch({ helpTopics })}
         />
       ),
     },

@@ -1,36 +1,24 @@
 ---
-description: REQUIRED — run cap:sync after every web change (web + iOS parity)
+description: NEVER run cap:sync unless the user explicitly says to
 alwaysApply: true
 ---
 
-# Capacitor sync is mandatory (web + iOS)
+# Capacitor sync — explicit command only
 
-Fit Finder has **one UI** in `web/src/`. iOS loads the built static export from `web/ios/App/App/public/` (via Capacitor). Edits to `web/src/` do **not** reach the simulator/device until you sync.
+**NEVER** run `cd web && npm run cap:sync` (or any Capacitor sync/build) unless the user **explicitly** tells you to in that message (e.g. “cap sync”, “sync iOS”, “run cap:sync”).
 
-## Sync workflow
+Do **not** sync because:
+- you finished a web UI task
+- the session is ending
+- you think they might test on device
+- a prior rule said sync was mandatory
 
-Edits under `web/` do **not** reach the simulator/device until you sync.
+Use `npm run dev` / Cursor preview for UI checks. iOS only updates after an explicit sync.
 
-**During an active iteration** (multiple UI tweaks in one session): batch code changes and run **one** `cap:sync` at the end — do not sync after every individual edit.
-
-**Before finishing a task** that touched `web/`: run sync once (same turn, before telling the user you're done):
+When (and only when) the user asks:
 
 ```bash
 cd web && npm run cap:sync
 ```
 
-Confirm sync succeeded (exit code 0). If it fails, fix and re-run — do not skip.
-
-**Do not** end a task that touched `web/` without running `cap:sync`. **Do not** ask the user to sync later. **Do not** assume a prior sync covers new edits made after it.
-
-Use `npm run cap:sync` only (runs `build:capacitor` then copies to iOS). Never `npx cap sync ios` alone — that copies stale `out/` without rebuilding.
-
-For quick UI checks, use `npm run dev` (preview) — no sync needed until native verification.
-
-## When to skip
-
-Only when the change has **zero** web impact, e.g. `supabase/` migrations, root docs, `.cursor/` rules with no `web/` edits.
-
-## Xcode reminder (once per task, if relevant)
-
-If the user tests in Xcode: Clean Build Folder (⇧⌘K) → Run, or delete the app if assets/cache look stale.
+Use that command only — never `npx cap sync ios` alone (stale `out/`). Confirm exit code 0.

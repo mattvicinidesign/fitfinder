@@ -68,7 +68,8 @@ export function ResumeReviewScreen() {
   const uploadZoneRef = useRef<ResumeReviewUploadZoneHandle>(null);
 
   const showReplaceButton =
-    Boolean(review) || Boolean(pendingResumeId && pendingFileName);
+    !reviewing &&
+    (Boolean(review) || Boolean(pendingResumeId && pendingFileName));
 
   useEffect(() => {
     if (reviewIdParam) {

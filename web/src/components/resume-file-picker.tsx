@@ -10,6 +10,9 @@ import {
   RESUME_UPLOAD_ACCEPT_NATIVE,
   RESUME_UPLOAD_CTA_CLASS,
   RESUME_UPLOAD_HINT,
+  RESUME_UPLOAD_REPLACE_HINT,
+  RESUME_UPLOAD_FILENAME_CLASS,
+  RESUME_UPLOAD_SECONDARY_HINT_CLASS,
   RESUME_UPLOAD_TITLE,
   resumeUploadZoneClassName,
 } from "@/components/resume-upload-styles";
@@ -122,12 +125,12 @@ export const ResumeFilePicker = forwardRef<ResumeFilePickerHandle, Props>(
               ) : (
                 <CheckCircle2 className="size-8 text-primary" />
               )}
-              <span className="text-[17px] font-medium text-foreground break-all">
+              <span className={cn(RESUME_UPLOAD_FILENAME_CLASS, "break-all")}>
                 {fileName}
               </span>
               {showReplaceHint && !parsing && !uploading ? (
-                <span className="text-[13px] text-muted-foreground">
-                  Tap to replace
+                <span className={RESUME_UPLOAD_SECONDARY_HINT_CLASS}>
+                  {RESUME_UPLOAD_REPLACE_HINT}
                 </span>
               ) : null}
             </>
@@ -145,7 +148,7 @@ export const ResumeFilePicker = forwardRef<ResumeFilePickerHandle, Props>(
                 )}
               </span>
               {!uploading ? (
-                <span className="text-[13px] text-muted-foreground">
+                <span className={RESUME_UPLOAD_SECONDARY_HINT_CLASS}>
                   {RESUME_UPLOAD_HINT}
                 </span>
               ) : null}

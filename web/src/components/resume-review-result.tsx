@@ -9,6 +9,7 @@ import {
 import { showAtsOptimizeError } from "@/lib/ats-optimize-toast";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
 import { Button } from "@/components/ui/button";
+import { FORM_FIELD_LABEL_CLASS } from "@/components/form-field-styles";
 import { RESUME_REVIEW_PRIMARY_CTA_CLASS } from "@/components/resume-upload-styles";
 import { ResumeReviewAtsCategoryCard } from "@/components/resume-review-ats-category-card";
 import { ResumeReviewScoreGauge } from "@/components/resume-review-score-gauge";
@@ -209,7 +210,7 @@ export function ResumeReviewResultView({
           </div>
 
           <section className="space-y-2">
-            <h2 className="px-4 text-[13px] font-normal uppercase tracking-wide text-muted-foreground">
+            <h2 className={cn("px-4", FORM_FIELD_LABEL_CLASS)}>
               Category scores
             </h2>
             <div className="grid grid-cols-2 items-start gap-3 px-4">

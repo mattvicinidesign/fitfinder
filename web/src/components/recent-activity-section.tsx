@@ -16,10 +16,8 @@ import {
   STATS_ALL_ACTIVITY_HREF,
   type RecentActivityItem,
 } from "@/lib/recent-activity";
+import { FORM_FIELD_LABEL_CLASS } from "@/components/form-field-styles";
 import { cn } from "@/lib/utils";
-
-const SECTION_LABEL_CLASS =
-  "text-[13px] font-normal uppercase tracking-wide text-muted-foreground";
 
 function ActivityList({
   items,
@@ -87,7 +85,7 @@ export function RecentActivitySection({
       id={isAllActivity ? ALL_ACTIVITY_SECTION_ID : undefined}
       className={cn("space-y-2", className)}
     >
-      <h2 className={SECTION_LABEL_CLASS}>{title}</h2>
+      <h2 className={FORM_FIELD_LABEL_CLASS}>{title}</h2>
 
       {loading ? (
         <SkeletonAnalysisList

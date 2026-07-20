@@ -1,3 +1,4 @@
+import { hasSemanticReport, resolveSemanticFitScore } from "@/lib/semantic-report";
 import {
   buildOverallMatchRollups,
   computeOverallMatchFitScore,
@@ -14,6 +15,10 @@ export function resolveReportFitScore(
   score: ScoreResult,
   rollupOptions: ReportRollupOptions,
 ): number {
+  if (hasSemanticReport(score)) {
+    return resolveSemanticFitScore(score);
+  }
+
   const rollups = buildOverallMatchRollups(score, rollupOptions);
   const rollupFitScore = computeOverallMatchFitScore(rollups);
   const engineActive = usesOpportunityEngine(score);

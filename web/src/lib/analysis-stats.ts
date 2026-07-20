@@ -1,9 +1,18 @@
-import type { AnalysisRecord, OpportunityCategoryKey } from "@/lib/types";
+import type { AnalysisRecord } from "@/lib/types";
+import type { SemanticCategoryKey } from "@/lib/types";
 import { formatRelativeTimeAgo } from "@/lib/posting-header-meta";
 import { loadAnalysisReport } from "@/lib/analysis-report-cache";
+import {
+  formatSemanticCategoryScoreOnTen,
+  getSemanticReport,
+  SEMANTIC_CATEGORY_LABELS,
+  SEMANTIC_CATEGORY_ORDER,
+} from "@/lib/semantic-report";
+import { resolveOverallMatchRollupsFromCacheEntry } from "@/lib/report-display-score";
+import type { OpportunityCategoryKey } from "@/lib/types";
 import { OVERALL_MATCH_CATEGORY_ORDER } from "@/lib/opportunity-categories";
 import { OPPORTUNITY_CATEGORY_LABELS } from "@/lib/scoring-terminology";
-import { resolveOverallMatchRollupsFromCacheEntry } from "@/lib/report-display-score";
+import { formatCategoryScoreOnTen } from "@/lib/opportunity-categories";
 
 export interface HomeFitStats {
   averageFitOnTen: number | null;
@@ -28,7 +37,7 @@ export interface AnalysisStats {
 }
 
 export type OverallMatchCategoryAverage = {
-  id: OpportunityCategoryKey;
+  id: string;
   label: string;
   /** 0–100 category score average across fit analyses. */
   averageScore: number | null;
@@ -110,37 +119,75 @@ export function computeHomeFitStats(analyses: AnalysisRecord[]): HomeFitStats {
   };
 }
 
-/** Average Overall Match category scores across cached fit analyses. */
+/** Average semantic category scores across cached fit analyses. */
 export function computeOverallMatchCategoryAverages(
   fitAnalyses: (Pick<AnalysisRecord, "id"> & { report_id?: string })[],
 ): OverallMatchCategoryAverage[] {
-  const sums = new Map<OpportunityCategoryKey, number>();
-  const counts = new Map<OpportunityCategoryKey, number>();
+  const semanticSums = new Map<SemanticCategoryKey, number>();
+  const semanticCounts = new Map<SemanticCategoryKey, number>();
+  const legacySums = new Map<OpportunityCategoryKey, number>();
+  const legacyCounts = new Map<OpportunityCategoryKey, number>();
+  let usedSemantic = false;
 
   for (const item of fitAnalyses) {
     const reportId = item.report_id?.trim() || item.id;
     const entry = loadAnalysisReport(reportId);
     if (!entry) continue;
 
+    const semantic = getSemanticReport(entry.result.score);
+    if (semantic) {
+      usedSemantic = true;
+      for (const row of semantic.categoryScores) {
+        semanticSums.set(
+          row.category,
+          (semanticSums.get(row.category) ?? 0) + row.score,
+        );
+        semanticCounts.set(row.category, (semanticCounts.get(row.category) ?? 0) + 1);
+      }
+      continue;
+    }
+
     const rollups = resolveOverallMatchRollupsFromCacheEntry(entry);
     for (const row of rollups) {
       const id = row.id as OpportunityCategoryKey;
       if (!OVERALL_MATCH_CATEGORY_ORDER.includes(id)) continue;
       if (row.score == null) continue;
-      sums.set(id, (sums.get(id) ?? 0) + row.score);
-      counts.set(id, (counts.get(id) ?? 0) + 1);
+      legacySums.set(id, (legacySums.get(id) ?? 0) + row.score);
+      legacyCounts.set(id, (legacyCounts.get(id) ?? 0) + 1);
     }
   }
 
+  if (usedSemantic) {
+    return SEMANTIC_CATEGORY_ORDER.map((id) => {
+      const count = semanticCounts.get(id) ?? 0;
+      return {
+        id,
+        label: SEMANTIC_CATEGORY_LABELS[id],
+        averageScore:
+          count > 0 ? Math.round((semanticSums.get(id) ?? 0) / count) : null,
+      };
+    });
+  }
+
   return OVERALL_MATCH_CATEGORY_ORDER.map((id) => {
-    const count = counts.get(id) ?? 0;
+    const count = legacyCounts.get(id) ?? 0;
     return {
       id,
       label: OPPORTUNITY_CATEGORY_LABELS[id],
-      averageScore:
-        count > 0 ? Math.round((sums.get(id) ?? 0) / count) : null,
+      averageScore: count > 0 ? Math.round((legacySums.get(id) ?? 0) / count) : null,
     };
   });
+}
+
+/** Format category average for stats bars — semantic or legacy. */
+export function formatOverallMatchCategoryScoreOnTen(
+  categoryId: string,
+  score: number | null,
+): string {
+  if (SEMANTIC_CATEGORY_ORDER.includes(categoryId as SemanticCategoryKey)) {
+    return formatSemanticCategoryScoreOnTen(score);
+  }
+  return formatCategoryScoreOnTen(score);
 }
 
 /** Aggregate headline metrics from analysis rows. */

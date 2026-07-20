@@ -357,6 +357,7 @@ export function loadSampleAnalysisReport(
 function isUsableCachedReport(entry: AnalysisReportCacheEntry | null): boolean {
   if (!entry?.result?.score) return false;
   const score = entry.result.score;
+  if (score.semanticMatchReport?.categoryScores?.length) return true;
   if ((score.opportunityCategories?.length ?? 0) > 0) return true;
   if ((score.categoryBreakdown?.length ?? 0) > 0) return true;
   return typeof score.fitScore === "number" && Number.isFinite(score.fitScore);

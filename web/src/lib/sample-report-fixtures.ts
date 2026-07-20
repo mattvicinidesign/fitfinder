@@ -1,10 +1,16 @@
-import { OPPORTUNITY_CATEGORY_LABELS, OPPORTUNITY_CATEGORY_WEIGHTS } from "@/lib/scoring-terminology";
+import {
+  SEMANTIC_CATEGORY_LABELS,
+  SEMANTIC_CATEGORY_WEIGHTS,
+} from "@/lib/semantic-report";
 import type {
   AnalysisResult,
-  OpportunityCategoryScore,
+  CompetencyMatchResult,
   ParsedJob,
   ParsedResume,
   Recommendation,
+  SemanticCategoryKey,
+  SemanticCategoryScore,
+  SemanticMatchReport,
 } from "@/lib/types";
 
 const SAMPLE_RESUME: ParsedResume = {
@@ -87,58 +93,150 @@ function buildParsedJob(title: string, hireArea: string): ParsedJob {
   };
 }
 
-/** Opportunity Engine categories tuned to the target fit score (0–100). */
-function buildOpportunityCategories(targetFit: number): OpportunityCategoryScore[] {
+function competency(
+  id: string,
+  label: string,
+  category: SemanticCategoryKey,
+  similarityScore: number,
+  importance: CompetencyMatchResult["importance"] = "required",
+): CompetencyMatchResult {
+  const matchKind =
+    similarityScore >= 95
+      ? "exact"
+      : similarityScore >= 80
+        ? "strong"
+        : similarityScore >= 50
+          ? "partial"
+          : similarityScore >= 20
+            ? "weak"
+            : "missing";
+
+  return {
+    jobCompetencyId: id,
+    jobLabel: label,
+    resumeCompetencyId: similarityScore > 0 ? `resume-${id}` : null,
+    resumeLabel: similarityScore > 0 ? label : null,
+    canonicalLabel: label,
+    category,
+    importance,
+    similarityScore,
+    matchKind,
+    evidenceCount: similarityScore > 0 ? 2 : 0,
+    reasoning:
+      similarityScore > 0
+        ? `Resume demonstrates ${label} for this role.`
+        : `No resume evidence found for ${label}.`,
+  };
+}
+
+function buildSemanticMatchReport(targetFit: number): SemanticMatchReport {
   const scale = targetFit / 89;
   const scaled = (base: number) => Math.min(100, Math.round(base * scale));
   const contrib = (weight: number, score: number) =>
     Math.round(weight * (score / 100) * 10) / 10;
 
-  const roleScore = scaled(92);
-  const qualScore = scaled(88);
-  const industryScore = scaled(85);
-  const prefScore = scaled(72);
-  const clientScore = scaled(78);
-
-  return [
+  const categoryDefs: {
+    category: SemanticCategoryKey;
+    baseScore: number;
+    matched: CompetencyMatchResult[];
+    partial: CompetencyMatchResult[];
+    missing: CompetencyMatchResult[];
+  }[] = [
     {
-      category: "roleAlignment",
-      label: OPPORTUNITY_CATEGORY_LABELS.roleAlignment,
-      score: roleScore,
-      weight: OPPORTUNITY_CATEGORY_WEIGHTS.roleAlignment,
-      contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.roleAlignment, roleScore),
+      category: "skillsTools",
+      baseScore: 88,
+      matched: [
+        competency("c1", "Research", "skillsTools", scaled(95)),
+        competency("c2", "UX Execution", "skillsTools", scaled(90)),
+        competency("t1", "Product Analytics", "skillsTools", scaled(86)),
+        competency("s1", "Communication", "skillsTools", scaled(82)),
+      ],
+      partial: [
+        competency("c3", "Design Systems", "skillsTools", scaled(68), "preferred"),
+        competency("t2", "Figma", "skillsTools", scaled(72)),
+      ],
+      missing: [],
     },
     {
-      category: "qualificationsMatch",
-      label: OPPORTUNITY_CATEGORY_LABELS.qualificationsMatch,
-      score: qualScore,
-      weight: OPPORTUNITY_CATEGORY_WEIGHTS.qualificationsMatch,
-      contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.qualificationsMatch, qualScore),
-      matchedCount: 8,
-      totalCount: 10,
+      category: "experience",
+      baseScore: 90,
+      matched: [competency("e1", "Senior IC scope", "experience", scaled(92))],
+      partial: [],
+      missing: [],
     },
     {
-      category: "industryAlignment",
-      label: OPPORTUNITY_CATEGORY_LABELS.industryAlignment,
-      score: industryScore,
-      weight: OPPORTUNITY_CATEGORY_WEIGHTS.industryAlignment,
-      contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.industryAlignment, industryScore),
+      category: "responsibilities",
+      baseScore: 86,
+      matched: [competency("r1", "End-to-end product delivery", "responsibilities", scaled(88))],
+      partial: [],
+      missing: [],
     },
     {
-      category: "preferenceAlignment",
-      label: OPPORTUNITY_CATEGORY_LABELS.preferenceAlignment,
-      score: prefScore,
-      weight: OPPORTUNITY_CATEGORY_WEIGHTS.preferenceAlignment,
-      contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.preferenceAlignment, prefScore),
-    },
-    {
-      category: "clientQuality",
-      label: OPPORTUNITY_CATEGORY_LABELS.clientQuality,
-      score: clientScore,
-      weight: OPPORTUNITY_CATEGORY_WEIGHTS.clientQuality,
-      contribution: contrib(OPPORTUNITY_CATEGORY_WEIGHTS.clientQuality, clientScore),
+      category: "domainBackground",
+      baseScore: 80,
+      matched: [competency("d1", "SaaS", "domainBackground", scaled(85))],
+      partial: [
+        competency("l1", "Cross-functional influence", "domainBackground", scaled(62)),
+      ],
+      missing: [
+        competency("ed1", "Formal design certification", "domainBackground", 0, "bonus"),
+      ],
     },
   ];
+
+  const categoryScores: SemanticCategoryScore[] = categoryDefs.map((def) => {
+    const score = scaled(def.baseScore);
+    const weight = SEMANTIC_CATEGORY_WEIGHTS[def.category];
+    return {
+      category: def.category,
+      label: SEMANTIC_CATEGORY_LABELS[def.category],
+      score,
+      weight,
+      contribution: contrib(weight, score),
+      matched: def.matched,
+      partial: def.partial,
+      missing: def.missing,
+      reasoning: `${SEMANTIC_CATEGORY_LABELS[def.category]} scored from normalized competency matches.`,
+    };
+  });
+
+  const matchedCompetencies = categoryScores.flatMap((c) => c.matched);
+  const partialCompetencies = categoryScores.flatMap((c) => c.partial);
+  const missingCompetencies = categoryScores.flatMap((c) => c.missing);
+
+  return {
+    overallMatchPercent: targetFit,
+    categoryScores,
+    matchedCompetencies,
+    partialCompetencies,
+    missingCompetencies,
+    strengths: [
+      "Research (95%)",
+      "UX Execution (90%)",
+      "SaaS domain familiarity (85%)",
+    ],
+    weaknesses: [
+      "Design Systems (68% — preferred)",
+      "Formal design certification (missing — bonus)",
+    ],
+    scoreReasoning: `Overall match ${targetFit}% from weighted semantic categories across experience, skills & tools, responsibilities, and domain & background.`,
+    resumeCanonical: {
+      competencies: [],
+      seniority: "Senior",
+      yearsExperience: 8,
+      industries: ["SaaS", "MarTech"],
+      accomplishments: ["Shipped analytics dashboard"],
+      quantifiedImpact: ["Increased activation 12%"],
+    },
+    jobCanonical: {
+      competencies: [],
+      seniority: "Senior",
+      yearsExperience: 6,
+      industries: ["SaaS"],
+      accomplishments: [],
+      quantifiedImpact: [],
+    },
+  };
 }
 
 /** Full analysis payload — same shape as a live analyze response (web source of truth). */
@@ -149,6 +247,7 @@ export function buildSampleAnalysisResult(input: SampleReportInput): AnalysisRes
     input.companyName,
     input.hireArea,
   );
+  const semanticMatchReport = buildSemanticMatchReport(input.fitScore);
 
   return {
     companyName: input.companyName,
@@ -159,19 +258,19 @@ export function buildSampleAnalysisResult(input: SampleReportInput): AnalysisRes
     score: {
       qualificationScore: input.qualificationScore,
       confidenceScore: input.confidenceScore,
-      careerFitAdjustment: 5,
+      careerFitAdjustment: 0,
       fitScore: input.fitScore,
       recommendation: input.recommendation,
       recommendationLabel: input.recommendationLabel,
       scoringMode: "registered",
       categoryBreakdown: [],
-      opportunityCategories: buildOpportunityCategories(input.fitScore),
       unknownCategories: [],
-      explanation: "Sample fit report for UI preview.",
-      strengths: ["Strong alignment on core skills and tools."],
-      gaps: ["Highlight recent portfolio case studies in your proposal."],
-      positiveSignalsFound: ["saas", "product design"],
-      negativeSignalsFound: [],
+      explanation: semanticMatchReport.scoreReasoning,
+      strengths: semanticMatchReport.strengths,
+      gaps: semanticMatchReport.weaknesses,
+      positiveSignalsFound: semanticMatchReport.strengths,
+      negativeSignalsFound: semanticMatchReport.weaknesses,
+      semanticMatchReport,
     },
     narrative: {
       strengths: ["Relevant product design experience."],

@@ -9,6 +9,11 @@ import {
 import { resumeToolsMatchPool } from "@/lib/resume-tools";
 import { normalizeOpportunityCategories } from "@/lib/opportunity-categories";
 import { recommendFromFitScore } from "@/lib/recommendation-bands";
+import {
+  hasSemanticReport,
+  normalizeSemanticMatchReport,
+  resolveSemanticFitScore,
+} from "@/lib/semantic-report";
 import { buildReportRollupOptions } from "@/lib/report-rollup-context";
 import { resolveReportFitScore } from "@/lib/report-fit-score";
 import type {
@@ -219,6 +224,7 @@ export function normalizeScoreResult(
     asArray<unknown>(s.opportunityCategories).map(normalizeOpportunityCategory),
   );
   const opportunityDebug = normalizeOpportunityDebug(s.opportunityDebug);
+  const semanticMatchReport = normalizeSemanticMatchReport(s.semanticMatchReport);
 
   const baseScore: ScoreResult = {
     qualificationScore: Number(s.qualificationScore) || 0,
@@ -232,6 +238,7 @@ export function normalizeScoreResult(
     categoryBreakdown,
     ...(opportunityCategories.length ? { opportunityCategories } : {}),
     ...(opportunityDebug ? { opportunityDebug } : {}),
+    ...(semanticMatchReport ? { semanticMatchReport } : {}),
     unknownCategories: asArray<string>(s.unknownCategories),
     explanation: typeof s.explanation === "string" ? s.explanation : "",
     strengths: asArray<string>(s.strengths),
@@ -253,7 +260,9 @@ export function normalizeScoreResult(
     jobTitle: options?.jobTitle,
   });
 
-  const fitScore = resolveReportFitScore(baseScore, rollupOptions);
+  const fitScore = hasSemanticReport(baseScore)
+    ? resolveSemanticFitScore(baseScore)
+    : resolveReportFitScore(baseScore, rollupOptions);
   const { recommendation, label: recommendationLabel } =
     recommendFromFitScore(fitScore);
 

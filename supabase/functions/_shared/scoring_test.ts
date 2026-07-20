@@ -1,180 +1,201 @@
-// Tests for the Opportunity Engine. Run: deno test (from supabase/functions).
+// Tests for the semantic matching engine. Run: deno test (from supabase/functions).
 
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { scoreFit } from "./scoring.ts";
-import type { ParsedJob, ParsedResume } from "./types.ts";
+import { buildScoreResultFromSemanticReport } from "./semantic_match/score_result.ts";
+import {
+  applyEvidenceBoost,
+  matchProfilesDeterministic,
+} from "./semantic_match/match.ts";
+import { buildSemanticMatchReport } from "./semantic_match/report.ts";
+import {
+  computeOverallMatchPercent,
+  scoreSemanticCategories,
+} from "./semantic_match/score.ts";
+import type {
+  CanonicalCompetency,
+  CanonicalProfile,
+  CompetencyMatchResult,
+  SemanticMatchReport,
+} from "./semantic_match/types.ts";
 
-const productResume: ParsedResume = {
-  skills: ["Figma", "User Research", "Product Strategy", "Design Systems"],
-  industries: ["AdTech", "MarTech"],
-  workHistory: [
-    {
-      title: "Senior Product Designer",
-      company: "Acme",
-      startDate: "2020",
-      endDate: null,
-      summary: "Dashboarding, analytics, and internal tools for B2B SaaS.",
-    },
+function competency(
+  id: string,
+  label: string,
+  category: CanonicalCompetency["category"],
+  importance: CanonicalCompetency["importance"] = "required",
+  evidenceCount = 1,
+): CanonicalCompetency {
+  return {
+    id,
+    canonicalLabel: label,
+    category,
+    importance,
+    evidenceCount,
+    sourcePhrases: [label],
+  };
+}
+
+const designResume: CanonicalProfile = {
+  competencies: [
+    competency("c1", "Research", "skillsTools", "required", 3),
+    competency("c2", "UX Execution", "skillsTools", "required", 2),
+    competency("c3", "Product Analytics", "skillsTools", "required", 2),
+    competency("c4", "Cross-functional Leadership", "domainBackground", "required", 1),
   ],
-  aiExperience: ["AI-assisted workflows", "ChatGPT", "Figma AI"],
-  tools: ["Figma", "Amplitude", "Jira"],
-  archetypes: ["Product Designer"],
-  softwareModels: ["B2B SaaS", "Enterprise Software"],
-  roleTitle: "Product Designer",
+  seniority: "Senior",
+  yearsExperience: 8,
+  industries: ["SaaS", "MarTech"],
+  accomplishments: ["Shipped analytics dashboard"],
+  quantifiedImpact: ["Increased activation 12%"],
 };
 
-const productJob: ParsedJob = {
-  skills: ["Figma", "User Research", "Product Strategy", "Design Systems"],
+const designJob: CanonicalProfile = {
+  competencies: [
+    competency("j1", "Research", "skillsTools", "required"),
+    competency("j2", "UX Execution", "skillsTools", "required"),
+    competency("j3", "Product Analytics", "skillsTools", "preferred"),
+    competency("j4", "Design Systems", "skillsTools", "bonus"),
+  ],
+  seniority: "Senior",
+  yearsExperience: 6,
   industries: ["MarTech"],
-  workflows: ["Dashboarding", "Analytics", "Reporting"],
-  compensation: { min: 140000, max: 160000, currency: "USD", period: "year" },
-  toolRequirements: ["Figma", "Amplitude"],
-  aiRequirements: ["AI-assisted workflows"],
-  softwareModels: ["B2B SaaS"],
-  roleTitle: "Senior Product Designer",
-  aiMaturityLevel: 50,
+  accomplishments: [],
+  quantifiedImpact: [],
 };
 
-Deno.test("Opportunity Engine: qualifications match ratio", () => {
-  const job: ParsedJob = {
-    ...productJob,
-    skills: ["Figma", "User Research", "Product Strategy", "Prototyping"],
+Deno.test("Semantic match: deterministic exact and partial matches", () => {
+  const matches = matchProfilesDeterministic(designResume, designJob);
+  assertEquals(matches.length, 4);
+
+  const research = matches.find((m) => m.jobLabel === "Research")!;
+  assert(research.similarityScore >= 95);
+
+  const analytics = matches.find((m) => m.jobLabel === "Product Analytics")!;
+  assert(analytics.similarityScore >= 70);
+
+  const missing = matches.find((m) => m.jobLabel === "Design Systems")!;
+  assertEquals(missing.similarityScore, 0);
+  assertEquals(missing.matchKind, "missing");
+});
+
+Deno.test("Semantic match: evidence boost increases confidence", () => {
+  const base: CompetencyMatchResult[] = [
+    {
+      jobCompetencyId: "j1",
+      jobLabel: "Research",
+      resumeCompetencyId: "c1",
+      resumeLabel: "Research",
+      canonicalLabel: "Research",
+      category: "skillsTools",
+      importance: "required",
+      similarityScore: 90,
+      matchKind: "strong",
+      evidenceCount: 4,
+      reasoning: "test",
+    },
+  ];
+
+  const boosted = applyEvidenceBoost(base);
+  assert(boosted[0].similarityScore > base[0].similarityScore);
+});
+
+Deno.test("Semantic match: category weights sum to overall percent", () => {
+  const matches = matchProfilesDeterministic(designResume, designJob);
+  const boosted = applyEvidenceBoost(matches);
+  const report = buildSemanticMatchReport(boosted, designResume, designJob);
+
+  assert(report.categoryScores.length === 4);
+  assert(report.overallMatchPercent >= 0 && report.overallMatchPercent <= 100);
+
+  const recomputed = computeOverallMatchPercent(report.categoryScores);
+  assertEquals(report.overallMatchPercent, recomputed);
+});
+
+Deno.test("Semantic match: experience scoring respects years gap", () => {
+  const lowExpResume: CanonicalProfile = {
+    ...designResume,
+    yearsExperience: 2,
   };
-  const result = scoreFit(productResume, job, { mode: "registered" });
-  const qual = result.opportunityCategories!.find((c) =>
-    c.category === "qualificationsMatch"
-  )!;
-  assert(qual.totalCount! >= 4);
-  assert(qual.matchedCount! >= 3);
-  assert(qual.score >= 50);
+  const matches = matchProfilesDeterministic(lowExpResume, designJob);
+  const categories = scoreSemanticCategories(matches, lowExpResume, designJob);
+  const experience = categories.find((c) => c.category === "experience")!;
+  assert(experience.score < 60);
 });
 
-Deno.test("Opportunity Engine: product role scores higher than brand role", () => {
-  const product = scoreFit(productResume, productJob, { mode: "registered" });
-  const brandJob: ParsedJob = {
-    ...productJob,
-    roleTitle: "Brand Designer",
-    skills: ["Brand guidelines", "Creative assets", "Figma"],
+Deno.test("Semantic score result: exposes semantic report without legacy categories", () => {
+  const matches = applyEvidenceBoost(
+    matchProfilesDeterministic(designResume, designJob),
+  );
+  const report: SemanticMatchReport = buildSemanticMatchReport(
+    matches,
+    designResume,
+    designJob,
+  );
+
+  const result = buildScoreResultFromSemanticReport(report, "registered");
+  assertEquals(result.careerFitAdjustment, 0);
+  assert(result.semanticMatchReport != null);
+  assertEquals(result.fitScore, report.overallMatchPercent);
+  assertEquals(result.opportunityCategories, undefined);
+  assertEquals(result.categoryBreakdown.length, 0);
+});
+
+Deno.test("Semantic score result: recommendation labels are canonical", () => {
+  const strongReport: SemanticMatchReport = {
+    ...buildSemanticMatchReport(
+      applyEvidenceBoost(matchProfilesDeterministic(designResume, designJob)),
+      designResume,
+      designJob,
+    ),
+    overallMatchPercent: 88,
   };
-  const brand = scoreFit(productResume, brandJob, { mode: "registered" });
-  assert(product.fitScore > brand.fitScore);
-  const brandRole = brand.opportunityCategories!.find((c) =>
-    c.category === "roleAlignment"
-  )!;
-  assert(brandRole.score < 50);
-});
-
-Deno.test("Opportunity Engine: guest mode scores three categories", () => {
-  const result = scoreFit(productResume, productJob, { mode: "guest" });
-  assertEquals(result.scoringMode, "guest");
-  assertEquals(result.opportunityCategories!.length, 3);
-  const keys = result.opportunityCategories!.map((c) => c.category);
-  assertEquals(keys, ["roleAlignment", "qualificationsMatch", "industryAlignment"]);
-});
-
-Deno.test("Opportunity Engine: registered mode scores five categories", () => {
-  const result = scoreFit(productResume, productJob, { mode: "registered" });
-  assertEquals(result.opportunityCategories!.length, 5);
-});
-
-Deno.test("Opportunity Engine: strong product match recommends pursuit", () => {
-  const result = scoreFit(productResume, productJob, { mode: "registered" });
-  assert(result.fitScore >= 70);
-  assert(["strong_apply", "apply"].includes(result.recommendation));
-});
-
-Deno.test("Opportunity Engine: unrelated resume scores low", () => {
-  const unrelated: ParsedResume = {
-    skills: ["Phlebotomy"],
-    industries: ["Healthcare"],
-    workHistory: [
-      {
-        title: "Nurse",
-        company: "H",
-        startDate: "2015",
-        endDate: null,
-        summary: null,
-      },
-    ],
-    aiExperience: [],
-    tools: [],
-    archetypes: ["Clinician"],
-  };
-  const engJob: ParsedJob = {
-    skills: ["TypeScript", "React", "PostgreSQL"],
-    industries: ["Fintech"],
-    workflows: ["API development"],
-    compensation: null,
-    toolRequirements: ["Docker"],
-    aiRequirements: ["LLM integration"],
-    roleTitle: "Senior Software Engineer",
-  };
-  const low = scoreFit(unrelated, engJob, { mode: "registered" });
-  assert(low.fitScore < 70);
-});
-
-Deno.test("Opportunity Engine: canonical recommendation labels", () => {
-  const high = scoreFit(productResume, productJob, { mode: "registered" });
+  const result = buildScoreResultFromSemanticReport(strongReport, "registered");
   const labels = new Set([
     "Strong Pursuit",
     "Good Opportunity",
     "Proceed With Caution",
     "Not Recommended",
   ]);
-  assert(labels.has(high.recommendationLabel));
+  assert(labels.has(result.recommendationLabel));
+  assertEquals(result.recommendation, "strong_apply");
+});
 
-  const unrelated: ParsedResume = {
-    skills: ["Phlebotomy"],
-    industries: ["Healthcare"],
-    workHistory: [
-      {
-        title: "Nurse",
-        company: "H",
-        startDate: "2015",
-        endDate: null,
-        summary: null,
-      },
+Deno.test("Semantic match: unrelated profiles score lower", () => {
+  const nurseResume: CanonicalProfile = {
+    competencies: [
+      competency("n1", "Medication Management", "skillsTools"),
+      competency("n2", "Patient Care", "responsibilities"),
     ],
-    aiExperience: [],
-    tools: [],
-    archetypes: ["Clinician"],
+    seniority: "Staff",
+    yearsExperience: 10,
+    industries: ["Healthcare"],
+    accomplishments: [],
+    quantifiedImpact: [],
   };
-  const engJob: ParsedJob = {
-    skills: ["TypeScript", "React", "PostgreSQL", "Kubernetes", "GraphQL"],
+
+  const engJob: CanonicalProfile = {
+    competencies: [
+      competency("e1", "Backend Development", "skillsTools", "required"),
+      competency("e2", "Distributed Systems", "skillsTools", "required"),
+      competency("e3", "TypeScript", "skillsTools", "required"),
+    ],
+    seniority: "Senior",
+    yearsExperience: 5,
     industries: ["Fintech"],
-    workflows: ["API development", "Microservices"],
-    compensation: null,
-    toolRequirements: ["Docker", "Terraform"],
-    aiRequirements: ["LLM integration", "RAG"],
-    roleTitle: "Senior Software Engineer",
+    accomplishments: [],
+    quantifiedImpact: [],
   };
-  const low = scoreFit(unrelated, engJob, { mode: "registered" });
-  assert(labels.has(low.recommendationLabel));
-});
 
-Deno.test("Opportunity Engine: scoring is deterministic", () => {
-  const a = scoreFit(productResume, productJob, { mode: "registered" });
-  const b = scoreFit(productResume, productJob, { mode: "registered" });
-  assertEquals(a.fitScore, b.fitScore);
-  assertEquals(a.recommendation, b.recommendation);
-});
+  const designResult = buildSemanticMatchReport(
+    applyEvidenceBoost(matchProfilesDeterministic(designResume, designJob)),
+    designResume,
+    designJob,
+  );
+  const unrelatedResult = buildSemanticMatchReport(
+    applyEvidenceBoost(matchProfilesDeterministic(nurseResume, engJob)),
+    nurseResume,
+    engJob,
+  );
 
-Deno.test("Opportunity Engine: debug payload is populated", () => {
-  const result = scoreFit(productResume, productJob, { mode: "registered" });
-  assert(result.opportunityDebug);
-  assert(result.opportunityDebug!.detectedRoleArchetype);
-  assert(result.opportunityDebug!.categoryScores.length >= 3);
-  assert(result.opportunityDebug!.weightingCalculation.length > 10);
-  assert(result.opportunityDebug!.finalReasoning.length > 10);
-});
-
-Deno.test("Opportunity Engine: legacy categoryBreakdown is empty", () => {
-  const result = scoreFit(productResume, productJob, { mode: "registered" });
-  assertEquals(result.categoryBreakdown.length, 0);
-});
-
-Deno.test("Opportunity Engine: fit score capped at 100", () => {
-  const result = scoreFit(productResume, productJob, { mode: "registered" });
-  assert(result.fitScore <= 100);
-  assert(result.fitScore >= 0);
+  assert(designResult.overallMatchPercent > unrelatedResult.overallMatchPercent);
 });
