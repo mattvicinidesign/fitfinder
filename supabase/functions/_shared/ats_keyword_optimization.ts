@@ -5,10 +5,16 @@ export interface AtsKeywordChange {
   after: string;
   /** abs(replacementWidth - originalWidth) / originalWidth for this swap. */
   visualWidthDeltaPercent?: number;
+  /** Stable bullet identity in the plain-text resume model. */
+  bulletId?: string;
   /** Source line in the original resume (stable apply target). */
   lineIndex?: number;
   /** Match index within the source line. */
   matchIndex?: number;
+  /** Full original bullet line text (mapping source). */
+  originalBulletText?: string;
+  /** Full optimized bullet line text after the approved swap. */
+  optimizedBulletText?: string;
 }
 
 export type AtsSafetyScore = "low" | "medium" | "high";
@@ -42,6 +48,7 @@ Preserve 100% of companies, job titles, dates, metrics, project names, education
 certifications, contact information, section order, bullet count, line count, and structure.
 
 Only targeted keyword substitutions within existing bullet points.
+Never create, delete, merge, split, or reorder bullets.
 Maximum 5% document modification and 15 keyword swaps total.
 `.trim();
 
@@ -467,23 +474,33 @@ function isScannableLine(line: string, lineIndex: number, lines: string[]): bool
   );
 }
 
-/** Liberal discovery — scan accomplishment-like lines across the full resume. */
+/** Discovery targets bullet lines only — never headers, summaries, or job titles. */
 function isDiscoverableLine(line: string): boolean {
-  if (isScannableAccomplishmentLine(line)) return true;
+  return isBulletLine(line);
+}
 
-  const trimmed = line.trim();
-  if (!trimmed || trimmed.length < 10 || trimmed.length > 320) return false;
-  if (
-    isSectionHeader(line) ||
-    isExperienceHeaderLine(line) ||
-    isContactLine(line) ||
-    isSummaryLikeLine(line)
-  ) {
-    return false;
-  }
+export function buildBulletId(lineIndex: number): string {
+  return `bullet-${lineIndex}`;
+}
 
-  const wordCount = trimmed.split(/\s+/).length;
-  return wordCount >= 3 && wordCount <= 50;
+function enrichKeywordChangeWithBulletMapping(
+  line: string,
+  lineIndex: number,
+  change: AtsKeywordChange,
+): AtsKeywordChange {
+  const originalBulletText = line;
+  const optimizedBulletText =
+    typeof change.matchIndex === "number"
+      ? applyKeywordChangeOnLineAtMatch(line, change, change.matchIndex)
+      : applySingleSwapOnLine(line, change);
+
+  return {
+    ...change,
+    bulletId: buildBulletId(lineIndex),
+    lineIndex,
+    originalBulletText,
+    optimizedBulletText,
+  };
 }
 
 function getValidationPoolForResume(resumeText: string): AtsKeywordChange[] {
@@ -1248,12 +1265,14 @@ export function scanResumeWithDiscovery(
     }
 
     selected.push(
-      withVisualWidthDelta({
-        before: candidate.before,
-        after: candidate.after,
-        lineIndex: candidate.lineIndex,
-        matchIndex: candidate.matchIndex,
-      }),
+      withVisualWidthDelta(
+        enrichKeywordChangeWithBulletMapping(line, candidate.lineIndex, {
+          before: candidate.before,
+          after: candidate.after,
+          lineIndex: candidate.lineIndex,
+          matchIndex: candidate.matchIndex,
+        }),
+      ),
     );
 
     const afterKey = candidate.after.toLowerCase();
@@ -1443,6 +1462,11 @@ export function buildOptimizedResumeText(
     }
 
     const originalLine = currentLines[target.lineIndex]!;
+    if (!isBulletLine(originalLine)) {
+      applyRejectionCounts.layout_preservation += 1;
+      continue;
+    }
+
     const candidateLine = applyKeywordChangeOnLineAtMatch(
       originalLine,
       change,
@@ -1474,7 +1498,9 @@ export function buildOptimizedResumeText(
 
     currentLines[target.lineIndex] = candidateLine;
     text = currentLines.join("\n");
-    appliedChanges.push(withVisualWidthDelta(change));
+    appliedChanges.push(
+      enrichKeywordChangeWithBulletMapping(originalLine, target.lineIndex, change),
+    );
   }
 
   const layout = evaluateLayoutPreservation(originalText, text, metadata);

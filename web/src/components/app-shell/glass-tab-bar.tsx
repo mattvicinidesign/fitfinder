@@ -9,6 +9,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BOTTOM_TAB_NAV } from "@/lib/navigation";
+import { useAppShellVisible } from "@/lib/app-shell-visible";
 import { NavTab } from "@/components/app-shell/nav-tab";
 import { triggerNavHaptic } from "@/lib/haptics";
 import { safeBottomTabBar } from "@/lib/safe-area";
@@ -21,6 +22,13 @@ const MAX_SCALE = 1.38;
 const DRAG_THRESHOLD_PX = 8;
 const LENS_TRANSITION = "left 320ms cubic-bezier(0.22, 1, 0.36, 1)";
 
+function activeTabIndex(pathname: string): number {
+  return BOTTOM_TAB_NAV.findIndex((item) => {
+    const prefix = `${item.href}/`;
+    return pathname === item.href || pathname.startsWith(prefix);
+  });
+}
+
 function scaleForDistance(distance: number): number {
   const t = Math.max(0, 1 - distance / MAGNIFY_RADIUS);
   return 1 + t * (MAX_SCALE - 1);
@@ -29,6 +37,7 @@ function scaleForDistance(distance: number): number {
 export function GlassTabBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const appShellVisible = useAppShellVisible();
   const containerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const draggingRef = useRef(false);
@@ -47,18 +56,28 @@ export function GlassTabBar() {
     if (!container) return;
 
     const containerRect = container.getBoundingClientRect();
+    if (containerRect.width <= 0) return;
+
     const centers = tabRefs.current.map((element) => {
       if (!element) return 0;
       const rect = element.getBoundingClientRect();
       return rect.left + rect.width / 2 - containerRect.left;
     });
 
-    setTabCenters(centers);
-    setLensReady(
+    const ready =
       centers.length === BOTTOM_TAB_NAV.length &&
-        centers.some((value) => Number.isFinite(value) && value > 0),
-    );
-  }, []);
+      centers.every((value) => Number.isFinite(value) && value > 0);
+
+    setTabCenters(centers);
+    setLensReady(ready);
+
+    if (!ready || draggingRef.current) return;
+
+    const activeIndex = activeTabIndex(pathname);
+    if (activeIndex >= 0 && centers[activeIndex] != null) {
+      setLensX(centers[activeIndex]);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -70,7 +89,20 @@ export function GlassTabBar() {
 
   useLayoutEffect(() => {
     measureCenters();
+    requestAnimationFrame(() => {
+      measureCenters();
+      requestAnimationFrame(measureCenters);
+    });
   }, [measureCenters, pathname]);
+
+  useLayoutEffect(() => {
+    if (!appShellVisible) return;
+    measureCenters();
+    requestAnimationFrame(() => {
+      measureCenters();
+      requestAnimationFrame(measureCenters);
+    });
+  }, [appShellVisible, measureCenters]);
 
   useEffect(() => {
     window.addEventListener("resize", measureCenters);
@@ -78,10 +110,17 @@ export function GlassTabBar() {
   }, [measureCenters]);
 
   useEffect(() => {
-    const activeIndex = BOTTOM_TAB_NAV.findIndex((item) => {
-      const prefix = `${item.href}/`;
-      return pathname === item.href || pathname.startsWith(prefix);
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(() => {
+      measureCenters();
     });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [measureCenters]);
+
+  useEffect(() => {
+    const activeIndex = activeTabIndex(pathname);
     if (activeIndex < 0 || tabCenters[activeIndex] == null) return;
     if (!draggingRef.current) {
       setLensX(tabCenters[activeIndex]);
@@ -222,14 +261,18 @@ export function GlassTabBar() {
     draggingRef.current = false;
     didDragRef.current = false;
     setIsDragging(false);
-    const activeIndex = BOTTOM_TAB_NAV.findIndex((item) => {
-      const prefix = `${item.href}/`;
-      return pathname === item.href || pathname.startsWith(prefix);
-    });
+    const activeIndex = activeTabIndex(pathname);
     if (activeIndex >= 0 && tabCenters[activeIndex] != null) {
       setLensX(tabCenters[activeIndex]);
     }
   };
+
+  const activeIndex = activeTabIndex(pathname);
+  const showLens =
+    !reduceMotion &&
+    lensReady &&
+    activeIndex >= 0 &&
+    tabCenters[activeIndex] != null;
 
   return (
     <nav
@@ -258,7 +301,7 @@ export function GlassTabBar() {
               "shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_0_28px_rgba(96,165,250,0.22)]",
               "before:pointer-events-none before:absolute before:inset-0 before:rounded-[999px]",
               "before:bg-gradient-to-b before:from-cyan-300/25 before:via-transparent before:to-fuchsia-300/20",
-              !lensReady && "opacity-0",
+              !showLens && "opacity-0",
             )}
             style={{
               width: LENS_WIDTH,

@@ -11,6 +11,7 @@ import {
   AtsKeywordOptimizeLoadingOverlay,
 } from "@/components/ats-keyword-optimize-modals";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
+import { AtsOptimizedResumePreviewDrawer } from "@/components/ats-optimized-resume-preview-drawer";
 import { Button } from "@/components/ui/button";
 import { RESUME_REVIEW_PRIMARY_CTA_CLASS } from "@/components/resume-upload-styles";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,7 +29,6 @@ import {
   applyAtsKeywordOptimization,
   clearAtsKeywordOptimization,
   buildOptimizedResumeDownloadInput,
-  downloadAppliedAtsOptimization,
   downloadOptimizedResume,
   showOptimizedResumeExportToast,
   getAppliedKeywordChangesForDisplay,
@@ -101,10 +101,16 @@ export function ResumeReviewCategoryScreen({
   const [loadingStep, setLoadingStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<"review" | "applied">("review");
+  const [optimizedPreviewOpen, setOptimizedPreviewOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const openAppliedReview = useCallback(() => {
     setPreviewMode("applied");
     setPreviewOpen(true);
+  }, []);
+
+  const openOptimizedPreview = useCallback(() => {
+    setOptimizedPreviewOpen(true);
   }, []);
 
   useEffect(() => {
@@ -143,25 +149,10 @@ export function ResumeReviewCategoryScreen({
     }
   }, [review, optimization?.originalATSScore]);
 
-  if (!review || !validKey || !category) {
-    return null;
-  }
-
-  const isAts = validKey === "ats";
-  const atsCategory = review.categories.find((category) => category.key === "ats");
-  const atsApplied = isAts && isAtsOptimizationApplied(optimization);
-  const atsPendingReview = isAts && isAtsScanPendingReview(optimization);
-  const showFloatingOptimize =
-    isAts && Boolean(atsCategory) && !atsApplied && !atsPendingReview;
-  const showFloatingAtsActions = atsApplied;
-  const showFloatingBottom = showFloatingOptimize || showFloatingAtsActions;
-  const displayScore = atsApplied
-    ? optimization!.optimizedATSScore
-    : category.score;
-
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     if (!isAtsOptimizationApplied(optimization)) return;
     const sourceFileName = loadResumeReviewFileName() ?? "resume.pdf";
+    setDownloading(true);
     void downloadOptimizedResume(
       buildOptimizedResumeDownloadInput(
         optimization!,
@@ -178,8 +169,27 @@ export function ResumeReviewCategoryScreen({
             ? error.message
             : "Could not export the resume. Try again.",
         );
+      })
+      .finally(() => {
+        setDownloading(false);
       });
-  };
+  }, [optimization, review?.resumeId]);
+
+  if (!review || !validKey || !category) {
+    return null;
+  }
+
+  const isAts = validKey === "ats";
+  const atsCategory = review.categories.find((category) => category.key === "ats");
+  const atsApplied = isAts && isAtsOptimizationApplied(optimization);
+  const atsPendingReview = isAts && isAtsScanPendingReview(optimization);
+  const showFloatingOptimize =
+    isAts && Boolean(atsCategory) && !atsApplied && !atsPendingReview;
+  const showFloatingAtsActions = atsApplied;
+  const showFloatingBottom = showFloatingOptimize || showFloatingAtsActions;
+  const displayScore = atsApplied
+    ? optimization!.optimizedATSScore
+    : category.score;
 
   const handleApplyOptimization = (decisions: AtsKeywordChangeDecision[]) => {
     if (!review || !optimization) return;
@@ -192,15 +202,7 @@ export function ResumeReviewCategoryScreen({
       saveResumeReview(patchedReview);
       setOptimization(applied);
       setPreviewOpen(false);
-
-      const sourceFileName = loadResumeReviewFileName() ?? "resume.pdf";
-      void downloadAppliedAtsOptimization({
-        optimization: applied,
-        sourceFileName,
-        resumeId: review.resumeId,
-      }).catch(() => {
-        toast.error("Could not export the resume. Try again.");
-      });
+      setOptimizedPreviewOpen(true);
     } catch (error) {
       showAtsOptimizeError(error);
     }
@@ -301,9 +303,9 @@ export function ResumeReviewCategoryScreen({
                     type="button"
                     variant="outline"
                     className="w-full"
-                    onClick={openAppliedReview}
+                    onClick={openOptimizedPreview}
                   >
-                    Review replacements
+                    Preview optimized resume
                   </Button>
                   <div className="space-y-2">
                     <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -441,16 +443,17 @@ export function ResumeReviewCategoryScreen({
                 <Button
                   type="button"
                   className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
-                  onClick={openAppliedReview}
+                  onClick={openOptimizedPreview}
                 >
-                  Review replacements
+                  Preview optimized resume
                 </Button>
                 <Button
                   type="button"
                   className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
                   onClick={handleDownload}
+                  disabled={downloading}
                 >
-                  Download Optimized Resume
+                  {downloading ? "Preparing download…" : "Download Optimized Resume"}
                 </Button>
               </div>
             ) : (
@@ -483,6 +486,16 @@ export function ResumeReviewCategoryScreen({
           mode={previewMode}
           onApply={handleApplyOptimization}
           onDiscard={handleDiscardPending}
+        />
+      ) : null}
+      {optimization && isAtsOptimizationApplied(optimization) ? (
+        <AtsOptimizedResumePreviewDrawer
+          open={optimizedPreviewOpen}
+          onClose={() => setOptimizedPreviewOpen(false)}
+          optimization={optimization}
+          onPreviewReplacements={openAppliedReview}
+          onDownload={handleDownload}
+          downloading={downloading}
         />
       ) : null}
     </div>

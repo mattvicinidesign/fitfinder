@@ -79,6 +79,7 @@ export function AtsKeywordPreviewDrawer({
     optimization.keywordChangeDecisions ??
       createPendingKeywordChangeDecisions(previewChanges.length),
   );
+  const [collapseAllSignal, setCollapseAllSignal] = useState(0);
 
   useEffect(() => {
     if (!open) return;
@@ -125,6 +126,7 @@ export function AtsKeywordPreviewDrawer({
 
   const approveAll = useCallback(() => {
     setDecisions(previewChanges.map(() => "approved" as const));
+    setCollapseAllSignal((signal) => signal + 1);
   }, [previewChanges]);
 
   if (!open || !mounted) return null;
@@ -249,6 +251,7 @@ export function AtsKeywordPreviewDrawer({
                 snippet={changeSnippets[index]!}
                 decision={isApplied ? "approved" : (decisions[index] ?? "pending")}
                 reviewMode={isReview}
+                collapseSignal={collapseAllSignal}
                 onApprove={() => {
                   setDecisions((current) => {
                     const next = [...current];

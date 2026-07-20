@@ -381,8 +381,11 @@ export interface AtsKeywordChange {
   before: string;
   after: string;
   visualWidthDeltaPercent?: number;
+  bulletId?: string;
   lineIndex?: number;
   matchIndex?: number;
+  originalBulletText?: string;
+  optimizedBulletText?: string;
 }
 
 export type AtsKeywordChangeDecision = "pending" | "approved" | "rejected";

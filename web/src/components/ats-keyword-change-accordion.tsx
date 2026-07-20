@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AtsKeywordChangeDecision } from "@/lib/types";
@@ -64,6 +64,7 @@ export function AtsKeywordChangeAccordion({
   onApprove,
   onReject,
   defaultOpen = true,
+  collapseSignal = 0,
 }: {
   before: string;
   after: string;
@@ -73,9 +74,16 @@ export function AtsKeywordChangeAccordion({
   onApprove?: () => void;
   onReject?: () => void;
   defaultOpen?: boolean;
+  collapseSignal?: number;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
+
+  useEffect(() => {
+    if (collapseSignal > 0) {
+      setOpen(false);
+    }
+  }, [collapseSignal]);
 
   const isExpanded = open;
 
@@ -171,13 +179,13 @@ export function AtsKeywordChangeAccordion({
         >
           <div className="flex flex-col gap-3 sm:flex-row">
             <SnippetColumn
-              label="Before"
+              label="Original bullet"
               text={snippet.beforeSnippet}
               highlight={before}
               variant="before"
             />
             <SnippetColumn
-              label="After"
+              label="Optimized bullet"
               text={snippet.afterSnippet}
               highlight={after}
               variant="after"

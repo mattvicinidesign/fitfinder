@@ -4,8 +4,11 @@ export type AtsKeywordChange = {
   before: string;
   after: string;
   visualWidthDeltaPercent?: number;
+  bulletId?: string;
   lineIndex?: number;
   matchIndex?: number;
+  originalBulletText?: string;
+  optimizedBulletText?: string;
 };
 
 function escapeXml(value: string): string {
@@ -13,6 +16,12 @@ function escapeXml(value: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+function isBulletParagraphXml(paragraphXml: string): boolean {
+  if (/<w:numPr\b/.test(paragraphXml)) return true;
+  if (/<w:pStyle[^>]+w:val="ListParagraph"/.test(paragraphXml)) return true;
+  return /<w:t[^>]*>\s*[•●◦▪\-*–—]\s/.test(paragraphXml);
 }
 
 function patchDocxXmlTextNodes(
@@ -40,6 +49,17 @@ function patchDocxXmlTextNodes(
   );
 }
 
+function patchDocxXmlBulletParagraphs(
+  xml: string,
+  before: string,
+  after: string,
+): string {
+  return xml.replace(/<w:p[\s\S]*?<\/w:p>/g, (paragraph) => {
+    if (!isBulletParagraphXml(paragraph)) return paragraph;
+    return patchDocxXmlTextNodes(paragraph, before, after);
+  });
+}
+
 export async function patchDocxBytes(
   bytes: Uint8Array,
   substitutions: AtsKeywordChange[],
@@ -52,7 +72,7 @@ export async function patchDocxBytes(
 
   let xml = await documentFile.async("string");
   for (const substitution of substitutions) {
-    xml = patchDocxXmlTextNodes(xml, substitution.before, substitution.after);
+    xml = patchDocxXmlBulletParagraphs(xml, substitution.before, substitution.after);
   }
 
   zip.file("word/document.xml", xml);

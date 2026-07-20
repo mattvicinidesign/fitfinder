@@ -3,6 +3,8 @@ import {
   patchDocxBytes,
   type AtsKeywordChange,
 } from "./patch_resume_docx.ts";
+import { extractPdfRunsFromBuffer } from "./pdf_extract_runs.ts";
+import { patchPdfBytes } from "./patch_resume_pdf.ts";
 
 export type OptimizedResumeOutputFormat = "pdf" | "docx" | "txt";
 
@@ -39,41 +41,6 @@ export type ServerExportResult = {
   requestedSubstitutionCount: number;
 };
 
-async function buildTextPdfBytes(text: string): Promise<Uint8Array> {
-  const { jsPDF } = await import("npm:jspdf@4.2.1");
-  const doc = new jsPDF({ unit: "pt", format: "letter" });
-  const margin = 56;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const contentWidth = pageWidth - margin * 2;
-  let y = margin;
-
-  const ensureSpace = (needed: number) => {
-    if (y + needed > pageHeight - margin) {
-      doc.addPage();
-      y = margin;
-    }
-  };
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-
-  for (const line of text.replace(/\r\n/g, "\n").split("\n")) {
-    if (!line.trim()) {
-      y += 8;
-      continue;
-    }
-    const wrapped = doc.splitTextToSize(line, contentWidth) as string[];
-    for (const entry of wrapped) {
-      ensureSpace(14);
-      doc.text(entry, margin, y);
-      y += 14;
-    }
-  }
-
-  return new Uint8Array(doc.output("arraybuffer"));
-}
-
 export async function exportOptimizedResumeBytes(input: {
   fileBytes: Uint8Array;
   fileName: string;
@@ -83,11 +50,11 @@ export async function exportOptimizedResumeBytes(input: {
   const format = getOptimizedResumeOutputFormat(input.fileName);
   const downloadName = buildOptimizedResumeDownloadName(input.fileName, format);
   const requestedSubstitutionCount = input.substitutions.length;
+  const widthSafe = input.substitutions.filter((substitution) =>
+    passesVisualWidthTolerance(substitution)
+  );
 
   if (format === "docx") {
-    const widthSafe = input.substitutions.filter((substitution) =>
-      passesVisualWidthTolerance(substitution)
-    );
     const bytes = await patchDocxBytes(input.fileBytes, widthSafe);
     return {
       bytes,
@@ -102,26 +69,51 @@ export async function exportOptimizedResumeBytes(input: {
   }
 
   if (format === "pdf") {
-    if (input.substitutions.length === 0) {
+    if (widthSafe.length === 0) {
       return {
         bytes: input.fileBytes,
         downloadName,
         mimeType: "application/pdf",
-        layoutPreserved: false,
-        typographyPreserved: false,
+        layoutPreserved: true,
+        typographyPreserved: true,
         appliedSubstitutionCount: 0,
-        requestedSubstitutionCount: 0,
+        requestedSubstitutionCount,
       };
     }
 
-    const bytes = await buildTextPdfBytes(input.patchedText);
+    try {
+      const { runs } = await extractPdfRunsFromBuffer(input.fileBytes);
+      const patched = await patchPdfBytes(
+        input.fileBytes,
+        widthSafe,
+        runs,
+        input.patchedText,
+      );
+
+      if (patched.appliedSubstitutions.length > 0) {
+        return {
+          bytes: patched.bytes,
+          downloadName,
+          mimeType: "application/pdf",
+          layoutPreserved: true,
+          typographyPreserved:
+            patched.rejectedSubstitutions.length === 0 &&
+            patched.appliedSubstitutions.length === widthSafe.length,
+          appliedSubstitutionCount: patched.appliedSubstitutions.length,
+          requestedSubstitutionCount,
+        };
+      }
+    } catch (error) {
+      console.error("PDF patch failed; returning original file:", error);
+    }
+
     return {
-      bytes,
-      downloadName: buildOptimizedResumeDownloadName(input.fileName, "pdf"),
+      bytes: input.fileBytes,
+      downloadName,
       mimeType: "application/pdf",
       layoutPreserved: false,
       typographyPreserved: false,
-      appliedSubstitutionCount: requestedSubstitutionCount,
+      appliedSubstitutionCount: 0,
       requestedSubstitutionCount,
     };
   }

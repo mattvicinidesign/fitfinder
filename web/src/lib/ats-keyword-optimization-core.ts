@@ -15,6 +15,7 @@ export {
   REVIEW_MAX_VISUAL_WIDTH_DELTA_RATIO,
   applyKeywordChangeAtOccurrence,
   buildAtsOptimizationScanResult,
+  buildBulletId,
   buildOptimizedResumeText,
   buildPhraseBoundaryPattern,
   classifyAtsSafetyScore,

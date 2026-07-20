@@ -8,6 +8,7 @@ import {
 } from "@/components/ats-keyword-optimize-modals";
 import { showAtsOptimizeError } from "@/lib/ats-optimize-toast";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
+import { AtsOptimizedResumePreviewDrawer } from "@/components/ats-optimized-resume-preview-drawer";
 import { Button } from "@/components/ui/button";
 import { FORM_FIELD_LABEL_CLASS } from "@/components/form-field-styles";
 import { RESUME_REVIEW_PRIMARY_CTA_CLASS } from "@/components/resume-upload-styles";
@@ -28,7 +29,6 @@ import {
   applyAtsKeywordOptimization,
   clearAtsKeywordOptimization,
   buildOptimizedResumeDownloadInput,
-  downloadAppliedAtsOptimization,
   downloadOptimizedResume,
   showOptimizedResumeExportToast,
   isAtsOptimizationApplied,
@@ -61,6 +61,8 @@ export function ResumeReviewResultView({
   const [loadingStep, setLoadingStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<"review" | "applied">("review");
+  const [optimizedPreviewOpen, setOptimizedPreviewOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     setReview(initialReview);
@@ -93,6 +95,7 @@ export function ResumeReviewResultView({
     if (!optimization || !isAtsOptimizationApplied(optimization)) return;
     const sourceFileName =
       fileName ?? loadResumeReviewFileName() ?? "resume.pdf";
+    setDownloading(true);
     void downloadOptimizedResume(
       buildOptimizedResumeDownloadInput(
         optimization,
@@ -109,8 +112,20 @@ export function ResumeReviewResultView({
             ? error.message
             : "Could not export the resume. Try again.",
         );
+      })
+      .finally(() => {
+        setDownloading(false);
       });
   }, [optimization, fileName, review.resumeId]);
+
+  const openAppliedReview = useCallback(() => {
+    setPreviewMode("applied");
+    setPreviewOpen(true);
+  }, []);
+
+  const openOptimizedPreview = useCallback(() => {
+    setOptimizedPreviewOpen(true);
+  }, []);
 
   const atsOptimized = Boolean(
     optimization && isAtsOptimizationApplied(optimization),
@@ -157,20 +172,7 @@ export function ResumeReviewResultView({
         setReview(patchedReview);
         setOptimization(applied);
         setPreviewOpen(false);
-
-        const sourceFileName =
-          fileName ?? loadResumeReviewFileName() ?? "resume.pdf";
-        void downloadAppliedAtsOptimization({
-          optimization: applied,
-          sourceFileName,
-          resumeId: review.resumeId,
-        }).catch((error) => {
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Could not export the resume. Try again.",
-          );
-        });
+        setOptimizedPreviewOpen(true);
       } catch (error) {
         showAtsOptimizeError(error);
       }
@@ -253,19 +255,17 @@ export function ResumeReviewResultView({
             <Button
               type="button"
               className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
-              onClick={() => {
-                setPreviewMode("applied");
-                setPreviewOpen(true);
-              }}
+              onClick={openOptimizedPreview}
             >
-              Review replacements
+              Preview optimized resume
             </Button>
             <Button
               type="button"
               className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
               onClick={handleDownload}
+              disabled={downloading}
             >
-              Download Optimized Resume
+              {downloading ? "Preparing download…" : "Download Optimized Resume"}
             </Button>
           </div>
         </StickyBottomCta>
@@ -285,6 +285,16 @@ export function ResumeReviewResultView({
           mode={previewMode}
           onApply={handleApplyOptimization}
           onDiscard={handleDiscardPending}
+        />
+      ) : null}
+      {optimization && isAtsOptimizationApplied(optimization) ? (
+        <AtsOptimizedResumePreviewDrawer
+          open={optimizedPreviewOpen}
+          onClose={() => setOptimizedPreviewOpen(false)}
+          optimization={optimization}
+          onPreviewReplacements={openAppliedReview}
+          onDownload={handleDownload}
+          downloading={downloading}
         />
       ) : null}
     </div>

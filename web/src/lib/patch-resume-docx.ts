@@ -8,6 +8,12 @@ function escapeXml(value: string): string {
     .replace(/>/g, "&gt;");
 }
 
+function isBulletParagraphXml(paragraphXml: string): boolean {
+  if (/<w:numPr\b/.test(paragraphXml)) return true;
+  if (/<w:pStyle[^>]+w:val="ListParagraph"/.test(paragraphXml)) return true;
+  return /<w:t[^>]*>\s*[•●◦▪\-*–—]\s/.test(paragraphXml);
+}
+
 function patchDocxXmlTextNodes(
   xml: string,
   before: string,
@@ -31,7 +37,18 @@ function patchDocxXmlTextNodes(
   );
 }
 
-/** Patch keyword substitutions in-place inside the original DOCX XML. */
+function patchDocxXmlBulletParagraphs(
+  xml: string,
+  before: string,
+  after: string,
+): string {
+  return xml.replace(/<w:p[\s\S]*?<\/w:p>/g, (paragraph) => {
+    if (!isBulletParagraphXml(paragraph)) return paragraph;
+    return patchDocxXmlTextNodes(paragraph, before, after);
+  });
+}
+
+/** Patch keyword substitutions in-place inside bullet paragraphs of the original DOCX. */
 export async function patchDocxBlob(
   blob: Blob,
   substitutions: AtsKeywordChange[],
@@ -44,7 +61,7 @@ export async function patchDocxBlob(
 
   let xml = await documentFile.async("string");
   for (const substitution of substitutions) {
-    xml = patchDocxXmlTextNodes(xml, substitution.before, substitution.after);
+    xml = patchDocxXmlBulletParagraphs(xml, substitution.before, substitution.after);
   }
 
   zip.file("word/document.xml", xml);

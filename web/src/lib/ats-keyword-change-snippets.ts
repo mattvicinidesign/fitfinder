@@ -40,6 +40,13 @@ export function getAtsKeywordChangeSnippet(
   change: AtsKeywordChange,
   occurrence: number,
 ): AtsKeywordChangeSnippet {
+  if (change.originalBulletText && change.optimizedBulletText) {
+    return {
+      beforeSnippet: change.originalBulletText,
+      afterSnippet: change.optimizedBulletText,
+    };
+  }
+
   const beforeSnippet = findLineSnippet(originalText, change.before, occurrence);
   const afterSnippet = beforeSnippet.replace(
     new RegExp(escapeRegExp(change.before), "i"),
