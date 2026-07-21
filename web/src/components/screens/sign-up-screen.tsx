@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { AppFrame } from "@/components/app-shell/app-frame";
+import { CheckEmailIllustration } from "@/components/check-email-illustration";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -29,9 +29,7 @@ import { emptyUserProfile, saveUserProfile, type UserProfile } from "@/lib/profi
 import { savePendingSignup, SIGNUP_COMPLETE_ROUTE } from "@/lib/pending-signup";
 import { ensureGuestSession } from "@/lib/ensure-guest-session";
 import { fetchLatestUserResume } from "@/lib/resume-documents";
-import { navigateApp } from "@/lib/navigate-app";
 import {
-  clearOnboardingProgress,
   loadOnboardingProgress,
   saveOnboardingProgress,
 } from "@/lib/onboarding-progress";
@@ -47,10 +45,9 @@ import {
   SIGNUP_SEARCH_STAGE_STEP_INDEX,
 } from "@/lib/signup-flow";
 import { guessProfileTimezone } from "@/lib/timezone-options";
+import { safeBottomOverlay, safeTopHomeHero } from "@/lib/safe-area";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-const ANALYZE_ROUTE = "/analyze";
 
 function AccountField({
   id,
@@ -91,8 +88,8 @@ function CompletionChecklist({
 }) {
   const items = [
     { label: "Resume uploaded", done: resumeUploaded },
-    { label: "Account created", done: true },
-    { label: "Ready for your first analysis", done: true },
+    { label: "Preferences saved", done: true },
+    { label: "Ready to verify your email", done: true },
   ];
 
   return (
@@ -128,15 +125,49 @@ function CompletionChecklist({
   );
 }
 
+function EmailSentState({ email }: { email: string }) {
+  return (
+    <div
+      className={`flex h-full min-h-0 flex-col px-6 ${safeBottomOverlay} ${safeTopHomeHero}`}
+    >
+      <div className="flex flex-1 flex-col items-center justify-center text-center">
+        <div className="mb-8 flex h-[160px] w-[260px] max-w-full items-center justify-center sm:h-[180px]">
+          <CheckEmailIllustration />
+        </div>
+
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight">
+          Check your email
+        </h1>
+        <p className="mt-4 max-w-sm text-[16px] leading-relaxed text-muted-foreground">
+          We sent a sign-up link to{" "}
+          <span className="font-medium text-foreground">{email}</span>. Open it
+          to finish creating your account — your preferences are saved and ready
+          to go.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function readInitialSignupState() {
   const saved = loadOnboardingProgress();
   const baseProfile = emptyUserProfile();
+
+  if (saved?.phase === "signup" && saved.emailSent && saved.email.trim()) {
+    return {
+      profile: { ...baseProfile, ...saved.profile },
+      email: saved.email,
+      step: SIGNUP_COMPLETION_STEP_INDEX,
+      emailSent: true,
+      isFreshSignup: false,
+    };
+  }
 
   if (saved?.phase === "signup" && !saved.emailSent) {
     return {
       profile: { ...baseProfile, ...saved.profile },
       email: saved.email || "",
-      step: Math.min(saved.signupStep ?? 0, SIGNUP_HELP_STEP_INDEX),
+      step: Math.min(saved.signupStep ?? 0, SIGNUP_COMPLETION_STEP_INDEX),
       emailSent: false,
       isFreshSignup: false,
     };
@@ -154,20 +185,16 @@ function readInitialSignupState() {
 export function SignUpScreen({
   embedded = false,
   onBackToWelcome,
-  onComplete,
 }: {
   embedded?: boolean;
   onBackToWelcome?: () => void;
-  /** Exit launch overlay after successful signup completion. */
-  onComplete?: () => void;
 } = {}) {
-  const router = useRouter();
   const [initial] = useState(readInitialSignupState);
   const [profile, setProfile] = useState<UserProfile>(initial.profile);
   const [email, setEmail] = useState(initial.email);
   const [step, setStep] = useState(initial.step);
   const [busy, setBusy] = useState(false);
-  const [accountReady, setAccountReady] = useState(initial.emailSent);
+  const [emailSent, setEmailSent] = useState(initial.emailSent);
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const [resumeBusy, setResumeBusy] = useState(false);
   const progressRef = useRef({
@@ -261,7 +288,8 @@ export function SignUpScreen({
       ...createIntentSteps(profile, patch),
       {
         title: "You're all set",
-        subtitle: "Your account is ready. Let's run your first analysis.",
+        subtitle:
+          "Tap below and we'll email you a link to finish creating your account.",
         content: (
           <CompletionChecklist resumeUploaded={Boolean(resumeFileName)} />
         ),
@@ -307,7 +335,7 @@ export function SignUpScreen({
     return false;
   }
 
-  async function createAccountAndShowCompletion() {
+  async function finishSignUp() {
     const incompleteStep = firstIncompleteSignupStep(profile, email);
     if (incompleteStep !== null) {
       setStep(incompleteStep);
@@ -345,11 +373,11 @@ export function SignUpScreen({
     }
 
     markWelcomeComplete();
-    setAccountReady(true);
-    setStep(SIGNUP_COMPLETION_STEP_INDEX);
+    setEmailSent(true);
     persistProgress({
       emailSent: true,
       signupStep: SIGNUP_COMPLETION_STEP_INDEX,
+      email: trimmedEmail,
       profile: signupProfile,
     });
   }
@@ -361,21 +389,8 @@ export function SignUpScreen({
       return;
     }
 
-    if (nextStep === SIGNUP_COMPLETION_STEP_INDEX && !accountReady) {
-      void createAccountAndShowCompletion();
-      return;
-    }
-
     setStep(nextStep);
     persistProgress({ signupStep: nextStep });
-  }
-
-  function handleStartFirstAnalysis() {
-    clearOnboardingProgress();
-    markLaunchFlowComplete();
-    markWelcomeComplete();
-    onComplete?.();
-    navigateApp(ANALYZE_ROUTE, router, "replace");
   }
 
   useEffect(() => {
@@ -400,10 +415,10 @@ export function SignUpScreen({
     progressRef.current = {
       signupStep: step,
       email,
-      emailSent: accountReady,
+      emailSent,
       profile,
     };
-  }, [step, email, accountReady, profile]);
+  }, [step, email, emailSent, profile]);
 
   useEffect(() => {
     if (!embedded) return;
@@ -436,19 +451,19 @@ export function SignUpScreen({
   const continueLabel =
     step === SIGNUP_RESUME_STEP_INDEX && !resumeFileName ? "Skip" : "Continue";
 
-  const wizard = (
+  const wizard = emailSent ? (
+    <EmailSentState email={email.trim()} />
+  ) : (
     <OnboardingWizard
       steps={steps}
       step={step}
       onStepChange={handleStepChange}
-      onFinish={handleStartFirstAnalysis}
-      onBackFromStart={
-        embedded && step === 0 && !accountReady ? onBackToWelcome : undefined
-      }
+      onFinish={() => void finishSignUp()}
+      onBackFromStart={embedded && step === 0 ? onBackToWelcome : undefined}
       busy={busy}
       canContinue={canContinue}
-      finishLabel="Start First Analysis"
-      busyLabel="Creating account…"
+      finishLabel="Sign up with email"
+      busyLabel="Sending…"
       continueLabel={continueLabel}
       compactTopInset={embedded}
     />

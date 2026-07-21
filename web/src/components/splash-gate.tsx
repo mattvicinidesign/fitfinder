@@ -257,11 +257,6 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
     setPhase("signup");
   }, []);
 
-  const handleSignupComplete = useCallback(() => {
-    clearQaLaunchSimulation();
-    setPhase("ready");
-  }, []);
-
   const handleBackToWelcome = useCallback(() => {
     markOnboardingWelcomeRestored();
     setPhase("welcome");
@@ -291,7 +286,6 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
           <SignUpScreen
             embedded
             onBackToWelcome={handleBackToWelcome}
-            onComplete={handleSignupComplete}
           />
         </LaunchOverlayFrame>
       ) : null}

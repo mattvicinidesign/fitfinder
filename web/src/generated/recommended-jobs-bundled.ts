@@ -8,7 +8,7 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "company": "GlossGenius",
     "location": "New York, NY",
     "level": "Senior Level",
-    "publishedAt": "2026-07-18T18:32:04Z",
+    "publishedAt": "2026-07-20T18:44:44Z",
     "applyUrl": "https://www.themuse.com/jobs/glossgenius/staff-product-designer-44b792",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
   },
@@ -31,6 +31,26 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-15T19:13:03Z",
     "applyUrl": "https://www.themuse.com/jobs/bankofamerica/experience-design-xd-iv-product-design-bank-of-america-experience-design",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
+  },
+  {
+    "id": "21852947",
+    "title": "Controls Technician (Starship Launch Pad)",
+    "company": "SpaceX",
+    "location": "Brownsville, TX",
+    "level": "Mid Level",
+    "publishedAt": "2026-07-20T23:47:59Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/controls-technician-starship-launch-pad-b72b3f",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21879567",
+    "title": "Control Technician (Starship Launch Pad) - Night Shift",
+    "company": "SpaceX",
+    "location": "Brownsville, TX",
+    "level": "Mid Level",
+    "publishedAt": "2026-07-20T23:47:59Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/control-technician-starship-launch-pad-night-shift",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
     "id": "21098533",
@@ -153,6 +173,16 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
   },
   {
+    "id": "21038917",
+    "title": "Staff Product Designer",
+    "company": "GlossGenius",
+    "location": "New York, NY",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-20T18:44:45Z",
+    "applyUrl": "https://www.themuse.com/jobs/glossgenius/staff-product-designer-44678c",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
+  },
+  {
     "id": "21811147",
     "title": "Product Designer II - Uber Eats, Offers Consumer Experiences",
     "company": "Uber",
@@ -170,36 +200,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "level": "Senior Level",
     "publishedAt": "2026-07-17T23:35:52Z",
     "applyUrl": "https://www.themuse.com/jobs/spacex/sr-electrical-hardware-engineer-ai-satellites-starmind",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21962947",
-    "title": "Consultant - Applications Programmer - Data Reporting and Operations Management",
-    "company": "Bank of America",
-    "location": "Charlotte, NC, Jacksonville, FL, Newark, DE, Plano, TX, Tampa, FL",
-    "level": "Senior Level",
-    "publishedAt": "2026-07-17T19:18:35Z",
-    "applyUrl": "https://www.themuse.com/jobs/bankofamerica/consultant-applications-programmer-data-reporting-and-operations-management",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
-  },
-  {
-    "id": "21948882",
-    "title": "Propulsion Technician (Raptor Production Machining) - 2nd Shift",
-    "company": "SpaceX",
-    "location": "El Segundo, CA",
-    "level": "Mid Level",
-    "publishedAt": "2026-07-15T18:42:57Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/propulsion-technician-raptor-production-machining-2nd-shift",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21936654",
-    "title": "Propulsion Technician - Raptor Chamber & Nozzle Assembly & Final Assembly - 2nd Shift",
-    "company": "SpaceX",
-    "location": "El Segundo, CA",
-    "level": "Senior Level",
-    "publishedAt": "2026-07-09T23:37:48Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/propulsion-technician-raptor-chamber-nozzle-assembly-final-assembly-2nd-shift",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   }
 ] as RecommendedJob[];
