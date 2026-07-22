@@ -11,7 +11,10 @@ import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer
 import { AtsOptimizedResumePreviewDrawer } from "@/components/ats-optimized-resume-preview-drawer";
 import { Button } from "@/components/ui/button";
 import { FORM_FIELD_LABEL_CLASS } from "@/components/form-field-styles";
-import { RESUME_REVIEW_PRIMARY_CTA_CLASS } from "@/components/resume-upload-styles";
+import {
+  RESUME_REVIEW_PREVIEW_CTA_CLASS,
+  RESUME_REVIEW_PRIMARY_CTA_CLASS,
+} from "@/components/resume-upload-styles";
 import { ResumeReviewAtsCategoryCard } from "@/components/resume-review-ats-category-card";
 import { ResumeReviewScoreGauge } from "@/components/resume-review-score-gauge";
 import { ResumeReviewCategoryRow } from "@/components/resume-review-ui";
@@ -254,7 +257,8 @@ export function ResumeReviewResultView({
           <div className="space-y-2">
             <Button
               type="button"
-              className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
+              variant="outline"
+              className={RESUME_REVIEW_PREVIEW_CTA_CLASS}
               onClick={openOptimizedPreview}
             >
               Preview optimized resume

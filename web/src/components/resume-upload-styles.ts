@@ -36,6 +36,26 @@ export const RESUME_SCORE_ZONE_CTA_CLASS =
 export const SCREEN_PRIMARY_CTA_CLASS =
   "h-12 w-full rounded-xl text-[17px] font-semibold";
 
+/** Full-width in-drawer / secondary actions — no floating shadow. */
+export const SCREEN_REGULAR_CTA_CLASS =
+  "h-11 w-full rounded-xl text-[15px] font-semibold";
+
+/** Blue outline styling — pairs with filled primary download CTAs. */
+export const SCREEN_PRIMARY_OUTLINE_CTA_CLASS =
+  "border-primary bg-card text-primary hover:bg-muted hover:text-primary dark:bg-card dark:hover:bg-muted";
+
+/** Floating preview CTA on Score screens (outline blue, same size as primary bar). */
+export const RESUME_REVIEW_PREVIEW_CTA_CLASS = cn(
+  SCREEN_PRIMARY_CTA_CLASS,
+  SCREEN_PRIMARY_OUTLINE_CTA_CLASS,
+);
+
+/** In-drawer preview CTA (outline blue, regular sizing). */
+export const SCREEN_REGULAR_PRIMARY_OUTLINE_CTA_CLASS = cn(
+  SCREEN_REGULAR_CTA_CLASS,
+  SCREEN_PRIMARY_OUTLINE_CTA_CLASS,
+);
+
 /** Primary floating CTA — matches Home “+ New Fit Analysis” and Score actions. */
 export const PRIMARY_FLOATING_CTA_CLASS =
   `${SCREEN_PRIMARY_CTA_CLASS} shadow-[0_8px_28px_rgba(0,0,0,0.45)] disabled:pointer-events-none disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none`;

@@ -3,16 +3,6 @@ import type { RecommendedJob } from "@/lib/types";
 
 export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
   {
-    "id": "21677208",
-    "title": "Staff Product Designer",
-    "company": "GlossGenius",
-    "location": "New York, NY",
-    "level": "Senior Level",
-    "publishedAt": "2026-07-20T18:44:44Z",
-    "applyUrl": "https://www.themuse.com/jobs/glossgenius/staff-product-designer-44b792",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
-  },
-  {
     "id": "14137481",
     "title": "UX/UI Designer (Mid level)",
     "company": "Designit",
@@ -31,6 +21,16 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-06-15T19:13:03Z",
     "applyUrl": "https://www.themuse.com/jobs/bankofamerica/experience-design-xd-iv-product-design-bank-of-america-experience-design",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
+  },
+  {
+    "id": "21980982",
+    "title": "Senior Manager, Frontline Marketing, Iraq",
+    "company": "The Coca-Cola Company",
+    "location": "Dubai, United Arab Emirates",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-21T23:46:00Z",
+    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-manager-frontline-marketing-iraq-de3905",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
     "id": "21852947",
@@ -173,16 +173,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
   },
   {
-    "id": "21038917",
-    "title": "Staff Product Designer",
-    "company": "GlossGenius",
-    "location": "New York, NY",
-    "level": "Senior Level",
-    "publishedAt": "2026-07-20T18:44:45Z",
-    "applyUrl": "https://www.themuse.com/jobs/glossgenius/staff-product-designer-44678c",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
-  },
-  {
     "id": "21811147",
     "title": "Product Designer II - Uber Eats, Offers Consumer Experiences",
     "company": "Uber",
@@ -201,5 +191,15 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-07-17T23:35:52Z",
     "applyUrl": "https://www.themuse.com/jobs/spacex/sr-electrical-hardware-engineer-ai-satellites-starmind",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21962947",
+    "title": "Consultant - Applications Programmer - Data Reporting and Operations Management",
+    "company": "Bank of America",
+    "location": "Charlotte, NC, Jacksonville, FL, Newark, DE, Plano, TX, Tampa, FL",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-17T19:18:35Z",
+    "applyUrl": "https://www.themuse.com/jobs/bankofamerica/consultant-applications-programmer-data-reporting-and-operations-management",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
   }
 ] as RecommendedJob[];

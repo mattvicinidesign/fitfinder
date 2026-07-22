@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { AtsKeywordChangeAccordion } from "@/components/ats-keyword-change-accordion";
 import { Button } from "@/components/ui/button";
+import { SCREEN_REGULAR_CTA_CLASS } from "@/components/resume-upload-styles";
 import { getAppOverlayRoot } from "@/lib/overlay-portal";
 import { APP_PORTAL_OVERLAY_Z } from "@/lib/overlay-z-index";
 import { buildAtsKeywordChangeSnippets, buildAppliedKeywordChangeSnippets } from "@/lib/ats-keyword-change-snippets";
@@ -291,14 +292,14 @@ export function AtsKeywordPreviewDrawer({
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1"
+                className={cn(SCREEN_REGULAR_CTA_CLASS, "flex-1")}
                 onClick={() => onDiscard?.()}
               >
                 Cancel
               </Button>
               <Button
                 type="button"
-                className="flex-1"
+                className={cn(SCREEN_REGULAR_CTA_CLASS, "flex-1")}
                 disabled={!canBuild}
                 onClick={() => onApply?.(decisions)}
               >
@@ -308,7 +309,7 @@ export function AtsKeywordPreviewDrawer({
           ) : (
             <Button
               type="button"
-              className="pointer-events-auto w-full"
+              className={cn(SCREEN_REGULAR_CTA_CLASS, "pointer-events-auto")}
               onClick={handleClose}
             >
               Done

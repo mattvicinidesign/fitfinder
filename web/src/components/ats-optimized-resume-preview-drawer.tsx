@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  SCREEN_REGULAR_CTA_CLASS,
+  SCREEN_REGULAR_PRIMARY_OUTLINE_CTA_CLASS,
+} from "@/components/resume-upload-styles";
 import { SummarySectionCard } from "@/components/summary-section-card";
 import { getAppOverlayRoot } from "@/lib/overlay-portal";
 import { APP_PORTAL_OVERLAY_Z } from "@/lib/overlay-z-index";
@@ -134,7 +138,7 @@ export function AtsOptimizedResumePreviewDrawer({
             <Button
               type="button"
               variant="outline"
-              className="w-full"
+              className={SCREEN_REGULAR_PRIMARY_OUTLINE_CTA_CLASS}
               onClick={onPreviewReplacements}
               disabled={appliedChanges.length === 0}
             >
@@ -142,7 +146,7 @@ export function AtsOptimizedResumePreviewDrawer({
             </Button>
             <Button
               type="button"
-              className="w-full"
+              className={SCREEN_REGULAR_CTA_CLASS}
               onClick={onDownload}
               disabled={downloading}
             >

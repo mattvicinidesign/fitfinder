@@ -13,7 +13,11 @@ import {
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
 import { AtsOptimizedResumePreviewDrawer } from "@/components/ats-optimized-resume-preview-drawer";
 import { Button } from "@/components/ui/button";
-import { RESUME_REVIEW_PRIMARY_CTA_CLASS } from "@/components/resume-upload-styles";
+import {
+  RESUME_REVIEW_PREVIEW_CTA_CLASS,
+  RESUME_REVIEW_PRIMARY_CTA_CLASS,
+  SCREEN_REGULAR_PRIMARY_OUTLINE_CTA_CLASS,
+} from "@/components/resume-upload-styles";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   FindingRow,
@@ -302,7 +306,7 @@ export function ResumeReviewCategoryScreen({
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full"
+                    className={SCREEN_REGULAR_PRIMARY_OUTLINE_CTA_CLASS}
                     onClick={openOptimizedPreview}
                   >
                     Preview optimized resume
@@ -442,7 +446,8 @@ export function ResumeReviewCategoryScreen({
               <div className="space-y-2">
                 <Button
                   type="button"
-                  className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
+                  variant="outline"
+                  className={RESUME_REVIEW_PREVIEW_CTA_CLASS}
                   onClick={openOptimizedPreview}
                 >
                   Preview optimized resume

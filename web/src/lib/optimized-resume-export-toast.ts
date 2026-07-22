@@ -8,7 +8,7 @@ export function showOptimizedResumeExportToast(
 ): void {
   void import("sonner").then(({ toast }) => {
     if (!result.layoutPreserved) {
-      toast.warning(
+      toast.success(
         isNativePlatform()
           ? "Exported with keyword changes (layout was rebuilt for compatibility)."
           : "Resume downloaded with keyword changes (layout edits skipped).",
