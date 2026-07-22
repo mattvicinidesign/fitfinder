@@ -6,6 +6,7 @@ import {
   RESUME_REVIEW_AI_BUTTON_BORDER_GRADIENT,
   RESUME_REVIEW_AI_BUTTON_TEXT_GRADIENT,
 } from "@/lib/resume-review-score-colors";
+import { SCREEN_PRIMARY_CTA_CLASS, SCREEN_REGULAR_CTA_CLASS } from "@/components/resume-upload-styles";
 import { cn } from "@/lib/utils";
 
 export function AiGradientPillBadge({
@@ -71,8 +72,11 @@ export function AiGradientPillButton({
           compact
             ? cn("h-7 gap-1 px-2.5 text-[11px]", !showIcon && "px-2.5")
             : size === "large"
-              ? "h-12 w-full gap-2 px-4 text-[17px] shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
-              : "h-9 w-full gap-2 px-4 text-sm",
+              ? cn(
+                  SCREEN_PRIMARY_CTA_CLASS,
+                  "gap-2 px-4 shadow-[0_8px_28px_rgba(0,0,0,0.45)]",
+                )
+              : cn(SCREEN_REGULAR_CTA_CLASS, "gap-2 px-4"),
         )}
       >
         {showIcon ? (

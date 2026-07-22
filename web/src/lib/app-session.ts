@@ -7,6 +7,7 @@ export const LAST_ROUTE_KEY = "fitfinder-last-route";
 export const QA_RETURNING_SPLASH_KEY = "fitfinder-qa-returning-splash";
 export const QA_LAUNCH_SIMULATION_KEY = "fitfinder-qa-launch-simulation";
 export const SIGNUP_LAUNCH_KEY = "fitfinder-signup-launch";
+export const SIGNUP_RETURN_TO_KEY = "fitfinder-signup-return-to";
 export const AUTH_DEEP_LINK_KEY = "fitfinder-auth-deep-link";
 export const SEARCH_TYPEWRITER_DONE_KEY = "fitfinder-home-search-typewriter-done";
 export const HOME_HEADER_ENTER_DONE_KEY = "fitfinder-home-header-enter-done";
@@ -134,9 +135,14 @@ export function markReturningUserState(): void {
   clearAppSessionActive();
 }
 
-export function requestSignupFlow(): void {
+export function requestSignupFlow(options?: { returnTo?: string }): void {
   if (!canUseSessionStorage()) return;
   sessionStorage.setItem(SIGNUP_LAUNCH_KEY, "true");
+  if (options?.returnTo?.trim()) {
+    sessionStorage.setItem(SIGNUP_RETURN_TO_KEY, options.returnTo.trim());
+  } else {
+    sessionStorage.removeItem(SIGNUP_RETURN_TO_KEY);
+  }
 }
 
 export function isSignupLaunchRequested(): boolean {
@@ -149,6 +155,25 @@ export function consumeSignupLaunch(): boolean {
   if (sessionStorage.getItem(SIGNUP_LAUNCH_KEY) !== "true") return false;
   sessionStorage.removeItem(SIGNUP_LAUNCH_KEY);
   return true;
+}
+
+/** Where to send the user if they dismiss mid-signup (e.g. Profile Preferences). */
+export function peekSignupReturnTo(): string | null {
+  if (!canUseSessionStorage()) return null;
+  const route = sessionStorage.getItem(SIGNUP_RETURN_TO_KEY);
+  return route?.trim() || null;
+}
+
+export function consumeSignupReturnTo(): string | null {
+  const route = peekSignupReturnTo();
+  if (!canUseSessionStorage()) return route;
+  sessionStorage.removeItem(SIGNUP_RETURN_TO_KEY);
+  return route;
+}
+
+export function clearSignupReturnTo(): void {
+  if (!canUseSessionStorage()) return;
+  sessionStorage.removeItem(SIGNUP_RETURN_TO_KEY);
 }
 
 /** Set before sending a magic link — skip launch splash when the link reopens the app. */

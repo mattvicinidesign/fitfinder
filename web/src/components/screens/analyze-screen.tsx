@@ -21,6 +21,7 @@ import {
 } from "@/lib/profile-compensation";
 import { fetchUserProfile } from "@/lib/profile";
 import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
+import { matchScoreWeightsFromProfile } from "@/lib/match-score-weights";
 import { buildSampleAnalysisResult } from "@/lib/sample-report-fixtures";
 import type { AnalysisResult, Compensation } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -175,13 +176,19 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
       await waitForResumeParse(resumeId);
       const parsedResume = getCachedParsedResume(resumeId);
       setStatus("Scoring fit…");
+      const profile = await fetchUserProfile();
+      const categoryWeights = matchScoreWeightsFromProfile(
+        profile?.matchScoreWeights ??
+          loadLocalProfilePrefs()?.matchScoreWeights ??
+          null,
+      );
       const { analysisId, result } = await analyze({
         jobText: jobContent,
         resumeId,
         ...(parsedResume ? { parsedResume } : {}),
+        categoryWeights,
       });
       const reportId = analysisId ?? crypto.randomUUID();
-      const profile = await fetchUserProfile();
       saveAnalysisReport(reportId, {
         result: {
           ...result,

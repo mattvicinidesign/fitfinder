@@ -8,7 +8,13 @@ import {
   type SemanticCategoryKey,
   type SemanticCategoryScore,
   type SemanticMatchReport,
+  type ScoreResult,
 } from "@/lib/types";
+import {
+  areMatchScoreWeightsValid,
+  matchScoreWeightsFromProfile,
+  type MatchScoreWeights,
+} from "@/lib/match-score-weights";
 import { formatScoreOnTen } from "@/lib/use-score-reveal";
 
 export const SEMANTIC_CATEGORY_ORDER: SemanticCategoryKey[] = [
@@ -67,6 +73,37 @@ function normalizeCategoryKey(value: unknown): SemanticCategoryKey {
   return remapSemanticCategoryKey(value);
 }
 
+function round1(n: number): number {
+  return Math.round(n * 10) / 10;
+}
+
+function contributionFor(weight: number, score: number): number {
+  return round1(weight * (score / 100));
+}
+
+function computeOverallMatchPercent(
+  categoryScores: SemanticCategoryScore[],
+): number {
+  let total = 0;
+  for (const row of categoryScores) total += row.contribution;
+  return Math.round(Math.max(0, Math.min(100, total)));
+}
+
+/** True when weights cover all four modern categories and sum to 100. */
+export function isModernMatchScoreWeightSet(
+  weights: Partial<Record<SemanticCategoryKey, number | null | undefined>>,
+): boolean {
+  const resolved = {} as MatchScoreWeights;
+  for (const key of SEMANTIC_CATEGORY_ORDER) {
+    const value = weights[key];
+    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+      return false;
+    }
+    resolved[key] = Math.round(value);
+  }
+  return areMatchScoreWeightsValid(resolved);
+}
+
 export function normalizeCompetencyMatch(raw: unknown): CompetencyMatchResult {
   const m = (raw ?? {}) as Partial<CompetencyMatchResult> & Record<string, unknown>;
   return {
@@ -87,7 +124,12 @@ export function normalizeCompetencyMatch(raw: unknown): CompetencyMatchResult {
 
 export function normalizeSemanticCategoryScore(raw: unknown): SemanticCategoryScore {
   const c = (raw ?? {}) as Partial<SemanticCategoryScore> & Record<string, unknown>;
+  const rawCategory = typeof c.category === "string" ? c.category : "";
   const category = normalizeCategoryKey(c.category);
+  const legacyCategory =
+    rawCategory !== "" &&
+    rawCategory !== category &&
+    !(SEMANTIC_CATEGORY_ORDER as string[]).includes(rawCategory);
   return {
     category,
     label:
@@ -99,10 +141,52 @@ export function normalizeSemanticCategoryScore(raw: unknown): SemanticCategorySc
     partial: asArray<unknown>(c.partial).map(normalizeCompetencyMatch),
     missing: asArray<unknown>(c.missing).map(normalizeCompetencyMatch),
     reasoning: typeof c.reasoning === "string" ? c.reasoning : "",
+    ...(legacyCategory ? { _legacyCategory: rawCategory } : {}),
+  } as SemanticCategoryScore;
+}
+
+/**
+ * Re-apply Fit Score category weights to an existing semantic report.
+ * Category scores stay the same; weight, contribution, and overall update.
+ */
+export function applyMatchScoreWeightsToReport(
+  report: SemanticMatchReport,
+  weights: MatchScoreWeights,
+): SemanticMatchReport {
+  const resolved = matchScoreWeightsFromProfile(weights);
+  const categoryScores = normalizeSemanticCategoryScores(
+    report.categoryScores,
+    resolved,
+  );
+  return {
+    ...report,
+    categoryScores,
+    overallMatchPercent: computeOverallMatchPercent(categoryScores),
   };
 }
 
-export function normalizeSemanticMatchReport(raw: unknown): SemanticMatchReport | null {
+/** Overlay Preferences weights onto a ScoreResult for report display. */
+export function withMatchScoreWeights(
+  score: ScoreResult,
+  weights: MatchScoreWeights | null | undefined,
+): ScoreResult {
+  const report = getSemanticReport(score);
+  if (!report) return score;
+  const nextReport = applyMatchScoreWeightsToReport(
+    report,
+    matchScoreWeightsFromProfile(weights),
+  );
+  return {
+    ...score,
+    fitScore: nextReport.overallMatchPercent,
+    semanticMatchReport: nextReport,
+  };
+}
+
+export function normalizeSemanticMatchReport(
+  raw: unknown,
+  weightOverrides?: MatchScoreWeights | null,
+): SemanticMatchReport | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Partial<SemanticMatchReport> & Record<string, unknown>;
   const categoryScores = asArray<unknown>(r.categoryScores).map(
@@ -110,12 +194,14 @@ export function normalizeSemanticMatchReport(raw: unknown): SemanticMatchReport 
   );
   if (categoryScores.length === 0) return null;
 
+  const normalizedCategories = normalizeSemanticCategoryScores(
+    categoryScores,
+    weightOverrides ?? null,
+  );
+
   return {
-    overallMatchPercent: Math.max(
-      0,
-      Math.min(100, Number(r.overallMatchPercent) || 0),
-    ),
-    categoryScores: normalizeSemanticCategoryScores(categoryScores),
+    overallMatchPercent: computeOverallMatchPercent(normalizedCategories),
+    categoryScores: normalizedCategories,
     matchedCompetencies: asArray<unknown>(r.matchedCompetencies).map(
       normalizeCompetencyMatch,
     ),
@@ -149,28 +235,47 @@ export function normalizeSemanticMatchReport(raw: unknown): SemanticMatchReport 
 
 export function normalizeSemanticCategoryScores(
   rows: SemanticCategoryScore[],
+  weightOverrides?: MatchScoreWeights | null,
 ): SemanticCategoryScore[] {
   const buckets = new Map<
     SemanticCategoryKey,
     {
       scores: number[];
+      weight: number | null;
       matched: CompetencyMatchResult[];
       partial: CompetencyMatchResult[];
       missing: CompetencyMatchResult[];
       reasonings: string[];
+      legacyMerged: boolean;
     }
   >();
 
   for (const row of rows) {
     const key = remapSemanticCategoryKey(row.category);
+    const legacyFlag = Boolean(
+      (row as SemanticCategoryScore & { _legacyCategory?: string })._legacyCategory,
+    );
     const existing = buckets.get(key) ?? {
       scores: [],
+      weight: null,
       matched: [],
       partial: [],
       missing: [],
       reasonings: [],
+      legacyMerged: false,
     };
     existing.scores.push(row.score);
+    if (existing.scores.length > 1 || legacyFlag) {
+      existing.legacyMerged = true;
+    }
+    if (
+      existing.weight == null &&
+      typeof row.weight === "number" &&
+      Number.isFinite(row.weight) &&
+      row.weight > 0
+    ) {
+      existing.weight = row.weight;
+    }
     existing.matched.push(...row.matched);
     existing.partial.push(...row.partial);
     existing.missing.push(...row.missing);
@@ -178,9 +283,34 @@ export function normalizeSemanticCategoryScores(
     buckets.set(key, existing);
   }
 
+  const override =
+    weightOverrides && areMatchScoreWeightsValid(weightOverrides)
+      ? weightOverrides
+      : null;
+
+  const preserved: Partial<Record<SemanticCategoryKey, number>> = {};
+  let canPreserve = !override;
+  for (const key of SEMANTIC_CATEGORY_ORDER) {
+    const bucket = buckets.get(key);
+    if (!bucket || bucket.legacyMerged || bucket.weight == null) {
+      canPreserve = false;
+      break;
+    }
+    preserved[key] = bucket.weight;
+  }
+  if (canPreserve && !isModernMatchScoreWeightSet(preserved)) {
+    canPreserve = false;
+  }
+
+  const resolvedWeights: MatchScoreWeights = override
+    ? { ...override }
+    : canPreserve
+      ? (preserved as MatchScoreWeights)
+      : { ...SEMANTIC_CATEGORY_WEIGHTS };
+
   return SEMANTIC_CATEGORY_ORDER.map((key) => {
     const bucket = buckets.get(key);
-    const weight = SEMANTIC_CATEGORY_WEIGHTS[key];
+    const weight = resolvedWeights[key];
     if (!bucket) {
       return {
         category: key,
@@ -202,7 +332,7 @@ export function normalizeSemanticCategoryScores(
       label: SEMANTIC_CATEGORY_LABELS[key],
       score,
       weight,
-      contribution: Math.round(weight * (score / 100) * 10) / 10,
+      contribution: contributionFor(weight, score),
       matched: bucket.matched,
       partial: bucket.partial,
       missing: bucket.missing,

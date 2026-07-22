@@ -66,6 +66,12 @@ alter table public.profiles
   add column if not exists search_stage text,
   add column if not exists help_topics text[] not null default '{}';
 
+alter table public.profiles
+  add column if not exists match_score_weights jsonb;
+
+alter table public.profiles
+  add column if not exists match_score_custom_presets jsonb not null default '[]'::jsonb;
+
 create table if not exists public.resumes (
   id                 uuid primary key default gen_random_uuid(),
   user_id            uuid not null references public.users (id) on delete cascade,

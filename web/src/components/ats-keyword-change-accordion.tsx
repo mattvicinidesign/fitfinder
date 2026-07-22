@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SCREEN_REGULAR_CTA_CLASS } from "@/components/resume-upload-styles";
 import type { AtsKeywordChangeDecision } from "@/lib/types";
 import type { AtsKeywordChangeSnippet } from "@/lib/ats-keyword-change-snippets";
 import { cn } from "@/lib/utils";
@@ -203,6 +204,7 @@ export function AtsKeywordChangeAccordion({
                   setOpen(false);
                 }}
                 className={cn(
+                  SCREEN_REGULAR_CTA_CLASS,
                   "flex-1 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300",
                   decision === "approved" &&
                     "border-emerald-500/50 bg-emerald-500/15 text-emerald-300",
@@ -221,6 +223,7 @@ export function AtsKeywordChangeAccordion({
                   setOpen(false);
                 }}
                 className={cn(
+                  SCREEN_REGULAR_CTA_CLASS,
                   "flex-1 border-rose-500/30 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300",
                   decision === "rejected" &&
                     "border-rose-500/50 bg-rose-500/15 text-rose-300",

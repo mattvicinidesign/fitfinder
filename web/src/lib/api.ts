@@ -8,6 +8,7 @@
 
 import { invokeFunction } from "@/lib/invoke-function";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
+import type { MatchScoreWeights } from "@/lib/match-score-weights";
 import type {
   AnalysisResult,
   AtsKeywordOptimization,
@@ -102,6 +103,8 @@ export interface AnalyzeArgs {
   resumeId?: string;
   parsedResume?: ParsedResume;
   persist?: boolean;
+  /** Fit Score category weights from Preferences (overrides profile DB when set). */
+  categoryWeights?: MatchScoreWeights | null;
 }
 
 export async function analyze(

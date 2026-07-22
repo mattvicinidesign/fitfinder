@@ -12,6 +12,7 @@ import {
   FORM_FIELD_GROUP_CLASS,
   FORM_FIELD_LABEL_CLASS,
 } from "@/components/form-field-styles";
+import { SCREEN_REGULAR_CTA_CLASS } from "@/components/resume-upload-styles";
 import { cn } from "@/lib/utils";
 import {
   fetchProfileDesiredCompensation,
@@ -196,7 +197,7 @@ export function CompareScreen() {
             </div>
             <Button
               variant="outline"
-              className="w-full h-11 rounded-xl"
+              className={SCREEN_REGULAR_CTA_CLASS}
               disabled={busy}
               onClick={persistComparison}
             >

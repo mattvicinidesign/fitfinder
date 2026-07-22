@@ -14,6 +14,8 @@ import {
   SEMANTIC_CATEGORY_LABELS,
   SEMANTIC_CATEGORY_WEIGHTS,
 } from "./types.ts";
+import type { MatchScoreWeights } from "../match_score_weights.ts";
+import { resolveMatchScoreWeights } from "../match_score_weights.ts";
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
@@ -121,8 +123,9 @@ function scoreCategory(
   matches: CompetencyMatchResult[],
   resume: CanonicalProfile,
   job: CanonicalProfile,
+  weights: MatchScoreWeights,
 ): SemanticCategoryScore {
-  const weight = SEMANTIC_CATEGORY_WEIGHTS[category];
+  const weight = weights[category] ?? SEMANTIC_CATEGORY_WEIGHTS[category];
   const categoryMatches = matches.filter((m) => m.category === category);
   const { matched, partial, missing } = partitionMatches(categoryMatches);
 
@@ -164,10 +167,12 @@ export function scoreSemanticCategories(
   matches: CompetencyMatchResult[],
   resume: CanonicalProfile,
   job: CanonicalProfile,
+  weightOverrides?: Partial<MatchScoreWeights> | null,
 ): SemanticCategoryScore[] {
+  const weights = resolveMatchScoreWeights(weightOverrides ?? null);
   const categories = Object.keys(SEMANTIC_CATEGORY_WEIGHTS) as SemanticCategoryKey[];
   return categories.map((category) =>
-    scoreCategory(category, matches, resume, job)
+    scoreCategory(category, matches, resume, job, weights)
   );
 }
 

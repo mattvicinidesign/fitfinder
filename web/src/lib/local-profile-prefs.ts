@@ -2,6 +2,10 @@ import {
   clampEmployerRatingPreference,
   coerceProfileNumeric,
 } from "@/lib/employer-rating-match";
+import {
+  normalizeMatchScoreCustomPresets,
+  normalizeMatchScoreWeights,
+} from "@/lib/match-score-weights";
 import type { UserProfile } from "@/lib/profile";
 
 export const LOCAL_PROFILE_PREFS_KEY = "fitfinder-local-profile-prefs";
@@ -15,6 +19,8 @@ export type LocalProfilePrefs = Pick<
   | "preferredRegions"
   | "preferredProjectTypes"
   | "preferredMinimumEmployerRating"
+  | "matchScoreWeights"
+  | "matchScoreCustomPresets"
 >;
 
 function canUseLocalStorage(): boolean {
@@ -24,6 +30,19 @@ function canUseLocalStorage(): boolean {
 function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === "string");
+}
+
+function emptyLocalProfilePrefs(): LocalProfilePrefs {
+  return {
+    minimumHourlyRate: null,
+    preferredEngagementTypes: [],
+    preferredCompanyTypes: [],
+    preferredRegions: [],
+    preferredProjectTypes: [],
+    preferredMinimumEmployerRating: null,
+    matchScoreWeights: null,
+    matchScoreCustomPresets: [],
+  };
 }
 
 function normalizeLocalProfilePrefs(raw: unknown): LocalProfilePrefs | null {
@@ -38,6 +57,10 @@ function normalizeLocalProfilePrefs(raw: unknown): LocalProfilePrefs | null {
     preferredProjectTypes: toStringArray(record.preferredProjectTypes),
     preferredMinimumEmployerRating: clampEmployerRatingPreference(
       coerceProfileNumeric(record.preferredMinimumEmployerRating),
+    ),
+    matchScoreWeights: normalizeMatchScoreWeights(record.matchScoreWeights),
+    matchScoreCustomPresets: normalizeMatchScoreCustomPresets(
+      record.matchScoreCustomPresets,
     ),
   };
 }
@@ -56,14 +79,7 @@ export function loadLocalProfilePrefs(): LocalProfilePrefs | null {
 
 export function saveLocalProfilePrefs(prefs: Partial<LocalProfilePrefs>): void {
   if (!canUseLocalStorage()) return;
-  const current = loadLocalProfilePrefs() ?? {
-    minimumHourlyRate: null,
-    preferredEngagementTypes: [],
-    preferredCompanyTypes: [],
-    preferredRegions: [],
-    preferredProjectTypes: [],
-    preferredMinimumEmployerRating: null,
-  };
+  const current = loadLocalProfilePrefs() ?? emptyLocalProfilePrefs();
 
   const next: LocalProfilePrefs = {
     minimumHourlyRate:
@@ -81,6 +97,14 @@ export function saveLocalProfilePrefs(prefs: Partial<LocalProfilePrefs>): void {
       prefs.preferredMinimumEmployerRating !== undefined
         ? clampEmployerRatingPreference(prefs.preferredMinimumEmployerRating)
         : current.preferredMinimumEmployerRating,
+    matchScoreWeights:
+      prefs.matchScoreWeights !== undefined
+        ? normalizeMatchScoreWeights(prefs.matchScoreWeights)
+        : current.matchScoreWeights,
+    matchScoreCustomPresets:
+      prefs.matchScoreCustomPresets !== undefined
+        ? normalizeMatchScoreCustomPresets(prefs.matchScoreCustomPresets)
+        : current.matchScoreCustomPresets,
   };
 
   localStorage.setItem(LOCAL_PROFILE_PREFS_KEY, JSON.stringify(next));
@@ -96,5 +120,7 @@ export function pickLocalProfilePrefs(
     preferredRegions: profile.preferredRegions,
     preferredProjectTypes: profile.preferredProjectTypes,
     preferredMinimumEmployerRating: profile.preferredMinimumEmployerRating,
+    matchScoreWeights: profile.matchScoreWeights,
+    matchScoreCustomPresets: profile.matchScoreCustomPresets,
   };
 }

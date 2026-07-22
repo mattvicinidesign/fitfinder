@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { SCREEN_REGULAR_CTA_CLASS } from "@/components/resume-upload-styles";
 import { getAppOverlayRoot } from "@/lib/overlay-portal";
 import { APP_PORTAL_OVERLAY_Z } from "@/lib/overlay-z-index";
 import { ATS_OPTIMIZE_CONFIRM_EXAMPLES } from "@/lib/resume-review-ats-optimization";
@@ -94,12 +95,16 @@ export function AtsKeywordOptimizeConfirmModal({
           <Button
             type="button"
             variant="outline"
-            className="flex-1"
+            className={cn(SCREEN_REGULAR_CTA_CLASS, "flex-1")}
             onClick={onCancel}
           >
             Cancel
           </Button>
-          <Button type="button" className="flex-1" onClick={onConfirm}>
+          <Button
+            type="button"
+            className={cn(SCREEN_REGULAR_CTA_CLASS, "flex-1")}
+            onClick={onConfirm}
+          >
             Optimize Resume
           </Button>
         </div>

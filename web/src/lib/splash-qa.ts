@@ -150,14 +150,20 @@ export function resetFirstLaunchFromQa(): void {
   });
 }
 
-/** Hard reset — wipe launch state and simulate first launch (clears onboarding data). */
-export function hardResetFromQa(): void {
-  console.log("QA: Hard reset");
-  resetFirstLaunchFromQa();
-}
-
 /** Soft reset — replay returning-user splash without clearing profile / auth data. */
 export function softResetFromQa(): void {
   console.log("QA: Soft reset");
+  void import("@/lib/qa-account-mode").then(({ clearQaAccountMode }) => {
+    clearQaAccountMode();
+  });
   simulateReturningUser();
+}
+
+/** Hard reset — wipe launch state and simulate first launch (clears onboarding data). */
+export function hardResetFromQa(): void {
+  console.log("QA: Hard reset");
+  void import("@/lib/qa-account-mode").then(({ clearQaAccountMode }) => {
+    clearQaAccountMode();
+  });
+  resetFirstLaunchFromQa();
 }

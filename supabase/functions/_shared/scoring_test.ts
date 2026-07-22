@@ -111,6 +111,39 @@ Deno.test("Semantic match: category weights sum to overall percent", () => {
   assertEquals(report.overallMatchPercent, recomputed);
 });
 
+Deno.test("Semantic match: preference weight overrides change overall percent", () => {
+  const matches = applyEvidenceBoost(
+    matchProfilesDeterministic(designResume, designJob),
+  );
+  const balanced = buildSemanticMatchReport(matches, designResume, designJob);
+  const skillsHeavy = buildSemanticMatchReport(matches, designResume, designJob, {
+    skillsTools: 55,
+    experience: 20,
+    responsibilities: 15,
+    domainBackground: 10,
+  });
+
+  assertEquals(
+    skillsHeavy.categoryScores.find((c) => c.category === "skillsTools")?.weight,
+    55,
+  );
+  assertEquals(
+    balanced.categoryScores.find((c) => c.category === "skillsTools")?.weight,
+    40,
+  );
+  // Same category scores, different weights → different overall (unless identical category scores).
+  const skillsScore = balanced.categoryScores.find(
+    (c) => c.category === "skillsTools",
+  )!.score;
+  const otherAvg =
+    balanced.categoryScores
+      .filter((c) => c.category !== "skillsTools")
+      .reduce((sum, c) => sum + c.score, 0) / 3;
+  if (Math.abs(skillsScore - otherAvg) > 1) {
+    assert(skillsHeavy.overallMatchPercent !== balanced.overallMatchPercent);
+  }
+});
+
 Deno.test("Semantic match: experience scoring respects years gap", () => {
   const lowExpResume: CanonicalProfile = {
     ...designResume,

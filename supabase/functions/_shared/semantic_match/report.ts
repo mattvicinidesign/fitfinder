@@ -14,13 +14,20 @@ import type {
   CompetencyMatchResult,
   SemanticMatchReport,
 } from "./types.ts";
+import type { MatchScoreWeights } from "../match_score_weights.ts";
 
 export function buildSemanticMatchReport(
   matches: CompetencyMatchResult[],
   resume: CanonicalProfile,
   job: CanonicalProfile,
+  weightOverrides?: Partial<MatchScoreWeights> | null,
 ): SemanticMatchReport {
-  const categoryScores = scoreSemanticCategories(matches, resume, job);
+  const categoryScores = scoreSemanticCategories(
+    matches,
+    resume,
+    job,
+    weightOverrides,
+  );
   const overallMatchPercent = computeOverallMatchPercent(categoryScores);
   const { matched, partial, missing } = partitionMatches(matches);
 

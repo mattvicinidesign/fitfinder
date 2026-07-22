@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { QualificationBreakdown } from "@/components/qualification-breakdown";
 import { ReportSummaryHeader } from "@/components/report-summary-header";
 import {
@@ -7,8 +8,21 @@ import {
   ReportRevealSection,
 } from "@/components/report-reveal-section";
 import { reportRoleTitle } from "@/lib/analysis-report-cache";
+import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
+import {
+  matchScoreWeightsFromProfile,
+  type MatchScoreWeights,
+} from "@/lib/match-score-weights";
+import { fetchUserProfile } from "@/lib/profile";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
+import { withMatchScoreWeights } from "@/lib/semantic-report";
 import type { AnalysisResult, Compensation } from "@/lib/types";
+
+function readCachedMatchScoreWeights(): MatchScoreWeights {
+  return matchScoreWeightsFromProfile(
+    loadLocalProfilePrefs()?.matchScoreWeights ?? null,
+  );
+}
 
 export function AnalysisResultView({
   result,
@@ -44,6 +58,28 @@ export function AnalysisResultView({
   profileMinimumHourlyRate?: number | null;
   showSummaryHeader?: boolean;
 }) {
+  const [matchScoreWeights, setMatchScoreWeights] = useState(
+    readCachedMatchScoreWeights,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const profile = await fetchUserProfile();
+      if (cancelled) return;
+      setMatchScoreWeights(
+        matchScoreWeightsFromProfile(
+          profile?.matchScoreWeights ??
+            loadLocalProfilePrefs()?.matchScoreWeights ??
+            null,
+        ),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const normalized = normalizeAnalysisResult(result, {
     profileDesiredCompensation,
     profileQualifiedIndustries,
@@ -53,7 +89,8 @@ export function AnalysisResultView({
   });
   const jobDescription =
     normalized.jobDescription ?? result.jobDescription ?? null;
-  const { score, postingContext, parsedJob, parsedResume, narrative } = normalized;
+  const score = withMatchScoreWeights(normalized.score, matchScoreWeights);
+  const { postingContext, parsedJob, parsedResume, narrative } = normalized;
   const displayJobTitle = reportRoleTitle({
     ...result,
     jobDescription,

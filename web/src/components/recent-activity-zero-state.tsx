@@ -14,8 +14,7 @@ export function RecentActivityZeroState({ className }: { className?: string }) {
       </div>
       <p className="mt-4 max-w-[18rem] text-[15px] leading-snug text-muted-foreground">
         No activity yet. Run a{" "}
-        <span className="font-medium text-foreground">Fit Analysis</span> or{" "}
-        <span className="font-medium text-foreground">Resume Score</span> to see
+        <span className="font-medium text-foreground">Fit Analysis</span> to see
         results here.
       </p>
     </div>

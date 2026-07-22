@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { CircleBackButton } from "@/components/ui/circle-back-button";
+import { CircleBackButton, circleBackButtonClass } from "@/components/ui/circle-back-button";
 import { CtaSpinner } from "@/components/ui/cta-spinner";
 import { PRIMARY_FLOATING_CTA_CLASS } from "@/components/resume-upload-styles";
 import {
@@ -11,6 +11,8 @@ import {
   StickyScreenHeader,
 } from "@/components/ui/sticky-bottom-cta";
 import { safeBottomCta, safeTopTitle } from "@/lib/safe-area";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface OnboardingStep {
   title: string;
@@ -27,6 +29,8 @@ interface OnboardingWizardProps {
   onFinish: () => void;
   onSkip?: () => void;
   onBackFromStart?: () => void;
+  /** Top-right close — e.g. dismiss mid-signup back to Preferences. */
+  onDismiss?: () => void;
   busy?: boolean;
   loading?: boolean;
   /** When false, Continue / Finish is disabled until the step is complete. */
@@ -47,6 +51,7 @@ export function OnboardingWizard({
   onFinish,
   onSkip,
   onBackFromStart,
+  onDismiss,
   busy = false,
   loading = false,
   canContinue = true,
@@ -82,7 +87,7 @@ export function OnboardingWizard({
   }
 
   const showHeaderBack = step > 0 || (step === 0 && onBackFromStart);
-  const showHeaderSkip = stepSkippable || Boolean(onSkip);
+  const showHeaderSkip = !onDismiss && (stepSkippable || Boolean(onSkip));
   const ctaDisabled = busy || !canContinue;
 
   return (
@@ -99,7 +104,16 @@ export function OnboardingWizard({
           ) : (
             <span className="size-9 shrink-0" aria-hidden />
           )}
-          {showHeaderSkip ? (
+          {onDismiss ? (
+            <button
+              type="button"
+              aria-label="Close signup"
+              onClick={onDismiss}
+              className={cn(circleBackButtonClass)}
+            >
+              <X className="size-5 shrink-0" strokeWidth={2.25} aria-hidden />
+            </button>
+          ) : showHeaderSkip ? (
             <button
               type="button"
               onClick={handleHeaderSkip}

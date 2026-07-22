@@ -5,6 +5,7 @@ import { runSemanticMatchPipeline } from "./semantic_match/pipeline.ts";
 import type { PostingContext } from "./posting_context.ts";
 import type { ScoreResult } from "./types.ts";
 import type { ScoringMode } from "./scoring_constants.ts";
+import type { MatchScoreWeights } from "./match_score_weights.ts";
 
 export type { ScoringMode };
 
@@ -14,6 +15,7 @@ export interface ScoreFitOptions {
   jobText?: string | null;
   resumeText?: string | null;
   posting?: PostingContext | null;
+  categoryWeights?: Partial<MatchScoreWeights> | null;
 }
 
 export async function scoreFit(
@@ -30,6 +32,7 @@ export async function scoreFit(
 
   const report = await runSemanticMatchPipeline(trimmedResume, trimmedJob, {
     jobTitle: options.jobTitle,
+    categoryWeights: options.categoryWeights,
   });
 
   return buildScoreResultFromSemanticReport(report, options.mode ?? "registered");

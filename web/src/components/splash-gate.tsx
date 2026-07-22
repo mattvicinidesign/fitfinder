@@ -16,6 +16,7 @@ import { SignUpScreen } from "@/components/screens/sign-up-screen";
 import {
   DEFAULT_APP_ROUTE,
   consumeSignupLaunch,
+  consumeSignupReturnTo,
   hasCompletedSplash,
   isAuthDeepLinkPending,
   isColdAppStart,
@@ -23,6 +24,7 @@ import {
   markAppSessionActive,
   markSplashComplete,
   markWelcomeComplete,
+  peekSignupReturnTo,
   QA_RETURNING_SPLASH_KEY,
   shouldSkipWelcomeForDevDeepLink,
 } from "@/lib/app-session";
@@ -262,6 +264,14 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
     setPhase("welcome");
   }, []);
 
+  const handleDismissSignup = useCallback(() => {
+    const returnTo = consumeSignupReturnTo() ?? DEFAULT_APP_ROUTE;
+    markOnboardingWelcomeRestored();
+    setPhase("ready");
+    router.replace(returnTo);
+  }, [router]);
+
+  const signupReturnTo = mounted ? peekSignupReturnTo() : null;
   const showSplashOverlay =
     resolvedPhase === "pending" || resolvedPhase === "splash";
   const isLaunchSplash = resolvedPhase === "splash";
@@ -285,7 +295,8 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
         <LaunchOverlayFrame className="overflow-hidden">
           <SignUpScreen
             embedded
-            onBackToWelcome={handleBackToWelcome}
+            onBackToWelcome={signupReturnTo ? undefined : handleBackToWelcome}
+            onDismiss={signupReturnTo ? handleDismissSignup : undefined}
           />
         </LaunchOverlayFrame>
       ) : null}

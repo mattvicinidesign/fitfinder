@@ -2,7 +2,6 @@
 
 import type { ComponentType } from "react";
 import type { LottieComponentProps } from "lottie-react";
-import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LaunchOverlayFrame } from "@/components/launch-overlay-frame";
 import { safeTopHero } from "@/lib/safe-area";
@@ -87,18 +86,33 @@ export function SplashScreen({
     }, WORDMARK_FADE_MS + PAUSE_MS);
   }, [finishSplash, showWordmark]);
 
-  const showWordmarkMotion = showWordmark && (phase === "wordmark" || phase === "exiting");
+  const isExiting = phase === "exiting";
+  const wordmarkVisible = showWordmark && phase === "wordmark";
+  const exitTransition = {
+    transitionProperty: "opacity",
+    transitionDuration: `${EXIT_FADE_MS}ms`,
+    transitionTimingFunction: "ease-out",
+  } as const;
 
   return (
     <LaunchOverlayFrame
-      exiting={phase === "exiting"}
       className={cn("items-center justify-center", safeTopHero)}
-      aria-hidden={phase === "exiting"}
+      aria-hidden={isExiting}
     >
       <div className="flex flex-col items-center justify-center px-6">
+        {/*
+          Fade Lottie + wordmark with matching element-level opacity.
+          Relying on LaunchOverlayFrame's parent opacity breaks on native
+          WKWebView for the wordmark image (SVG fades; PNG sticks).
+        */}
         <div
           className="splash-lottie-stage flex items-center justify-center overflow-visible"
-          style={{ width: LOTTIE_DISPLAY_W, height: LOTTIE_DISPLAY_H }}
+          style={{
+            width: LOTTIE_DISPLAY_W,
+            height: LOTTIE_DISPLAY_H,
+            opacity: isExiting ? 0 : 1,
+            ...exitTransition,
+          }}
         >
           {animationData && LottiePlayer ? (
             <LottiePlayer
@@ -113,18 +127,25 @@ export function SplashScreen({
         </div>
 
         {showWordmark ? (
-          <Image
+          // Plain img: next/image layers often ignore ancestor opacity in WKWebView.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             src={WORDMARK_PATH}
             alt="Only Fit"
             width={331}
             height={148}
-            priority
-            className={cn(
-              "mt-2 h-auto w-[100px] max-w-[60vw] transition-all duration-700 ease-out sm:w-[112px]",
-              showWordmarkMotion
-                ? "translate-y-0 opacity-100"
-                : "translate-y-2 opacity-0",
-            )}
+            decoding="async"
+            className="mt-2 h-auto w-[100px] max-w-[60vw] sm:w-[112px]"
+            style={{
+              opacity: isExiting || !wordmarkVisible ? 0 : 1,
+              transform:
+                isExiting || wordmarkVisible
+                  ? "translateY(0px)"
+                  : "translateY(8px)",
+              transition: isExiting
+                ? `opacity ${EXIT_FADE_MS}ms ease-out`
+                : `opacity ${WORDMARK_FADE_MS}ms ease-out, transform ${WORDMARK_FADE_MS}ms ease-out`,
+            }}
           />
         ) : null}
       </div>

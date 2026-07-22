@@ -12,7 +12,8 @@ import { DEFAULT_APP_ROUTE } from "@/lib/app-session";
 import { clearOnboardingProgress } from "@/lib/onboarding-progress";
 import { navigateApp } from "@/lib/navigate-app";
 import { safeBottomOverlay, safeTopHero } from "@/lib/safe-area";
-import { SCREEN_PRIMARY_CTA_CLASS } from "@/components/resume-upload-styles";
+import { SCREEN_PRIMARY_CTA_CLASS, SCREEN_PRIMARY_OUTLINE_CTA_CLASS } from "@/components/resume-upload-styles";
+import { cn } from "@/lib/utils";
 
 interface WelcomeScreenProps {
   onExit: (target: string) => void;
@@ -88,7 +89,7 @@ export function WelcomeScreen({ onExit, onSignUp }: WelcomeScreenProps) {
             <Button
               type="button"
               variant="outline"
-              className={SCREEN_PRIMARY_CTA_CLASS}
+              className={cn(SCREEN_PRIMARY_CTA_CLASS, SCREEN_PRIMARY_OUTLINE_CTA_CLASS)}
               disabled={busy !== null}
               aria-busy={busy === "guest"}
               aria-label={busy === "guest" ? "Starting guest session" : "Use as a guest"}

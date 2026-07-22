@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 import { AppFrame } from "@/components/app-shell/app-frame";
 import { CheckEmailIllustration } from "@/components/check-email-illustration";
 import { Input } from "@/components/ui/input";
@@ -45,9 +45,10 @@ import {
   SIGNUP_SEARCH_STAGE_STEP_INDEX,
 } from "@/lib/signup-flow";
 import { guessProfileTimezone } from "@/lib/timezone-options";
-import { safeBottomOverlay, safeTopHomeHero } from "@/lib/safe-area";
+import { safeBottomOverlay, safeTopFloating, safeTopHomeHero } from "@/lib/safe-area";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { circleBackButtonClass } from "@/components/ui/circle-back-button";
 
 function AccountField({
   id,
@@ -185,9 +186,12 @@ function readInitialSignupState() {
 export function SignUpScreen({
   embedded = false,
   onBackToWelcome,
+  onDismiss,
 }: {
   embedded?: boolean;
   onBackToWelcome?: () => void;
+  /** Close mid-flow (e.g. return to Profile Preferences). */
+  onDismiss?: () => void;
 } = {}) {
   const [initial] = useState(readInitialSignupState);
   const [profile, setProfile] = useState<UserProfile>(initial.profile);
@@ -452,14 +456,37 @@ export function SignUpScreen({
     step === SIGNUP_RESUME_STEP_INDEX && !resumeFileName ? "Skip" : "Continue";
 
   const wizard = emailSent ? (
-    <EmailSentState email={email.trim()} />
+    <div className="relative h-full min-h-0">
+      {onDismiss ? (
+        <button
+          type="button"
+          aria-label="Close signup"
+          onClick={onDismiss}
+          className={cn(
+            circleBackButtonClass,
+            "absolute right-4 z-10",
+            safeTopFloating,
+          )}
+        >
+          <X className="size-5 shrink-0" strokeWidth={2.25} aria-hidden />
+        </button>
+      ) : null}
+      <EmailSentState email={email.trim()} />
+    </div>
   ) : (
     <OnboardingWizard
       steps={steps}
       step={step}
       onStepChange={handleStepChange}
       onFinish={() => void finishSignUp()}
-      onBackFromStart={embedded && step === 0 ? onBackToWelcome : undefined}
+      onBackFromStart={
+        onDismiss
+          ? onDismiss
+          : embedded && step === 0
+            ? onBackToWelcome
+            : undefined
+      }
+      onDismiss={onDismiss}
       busy={busy}
       canContinue={canContinue}
       finishLabel="Sign up with email"

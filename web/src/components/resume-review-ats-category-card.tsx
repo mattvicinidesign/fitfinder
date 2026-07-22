@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { SCREEN_REGULAR_CTA_CLASS } from "@/components/resume-upload-styles";
 import {
   formatResumeReviewScorePercent,
   ResumeReviewCategoryScoreCard,
@@ -72,7 +73,7 @@ export function ResumeReviewAtsCategoryCard({
       <ScoreAccessoryWrap className="w-full min-w-0">
         <Button
           type="button"
-          className="h-9 w-full rounded-xl text-sm"
+          className={SCREEN_REGULAR_CTA_CLASS}
           onClick={onOptimizeKeywords}
         >
           Optimize
@@ -113,8 +114,7 @@ export function ResumeReviewAtsCategoryCard({
           <div className={layout.footer}>
             <Button
               type="button"
-              size="sm"
-              className="w-full"
+              className={SCREEN_REGULAR_CTA_CLASS}
               onClick={onPreviewChanges}
             >
               Review changes

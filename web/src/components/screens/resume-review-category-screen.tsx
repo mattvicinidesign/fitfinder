@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import {
   RESUME_REVIEW_PREVIEW_CTA_CLASS,
   RESUME_REVIEW_PRIMARY_CTA_CLASS,
+  SCREEN_REGULAR_CTA_CLASS,
   SCREEN_REGULAR_PRIMARY_OUTLINE_CTA_CLASS,
 } from "@/components/resume-upload-styles";
 import { Card, CardContent } from "@/components/ui/card";
@@ -344,10 +345,14 @@ export function ResumeReviewCategoryScreen({
                     </span>{" "}
                     keyword updates. Review them before building your resume.
                   </p>
-                  <Button type="button" onClick={() => {
-                    setPreviewMode("review");
-                    setPreviewOpen(true);
-                  }}>
+                  <Button
+                    type="button"
+                    className={SCREEN_REGULAR_CTA_CLASS}
+                    onClick={() => {
+                      setPreviewMode("review");
+                      setPreviewOpen(true);
+                    }}
+                  >
                     Review changes
                   </Button>
                 </CardContent>

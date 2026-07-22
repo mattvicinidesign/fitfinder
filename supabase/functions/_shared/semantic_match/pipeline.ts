@@ -8,9 +8,11 @@ import { matchCanonicalProfiles } from "./match.ts";
 import { normalizeProfiles } from "./normalize.ts";
 import { buildSemanticMatchReport } from "./report.ts";
 import type { SemanticMatchReport } from "./types.ts";
+import type { MatchScoreWeights } from "../match_score_weights.ts";
 
 export interface SemanticPipelineOptions {
   jobTitle?: string | null;
+  categoryWeights?: Partial<MatchScoreWeights> | null;
 }
 
 export async function runSemanticMatchPipeline(
@@ -30,5 +32,10 @@ export async function runSemanticMatchPipeline(
 
   const matches = await matchCanonicalProfiles(resumeCanonical, jobCanonical);
 
-  return buildSemanticMatchReport(matches, resumeCanonical, jobCanonical);
+  return buildSemanticMatchReport(
+    matches,
+    resumeCanonical,
+    jobCanonical,
+    options.categoryWeights,
+  );
 }

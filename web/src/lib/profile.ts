@@ -8,6 +8,7 @@ import {
   pickLocalProfilePrefs,
   saveLocalProfilePrefs,
 } from "@/lib/local-profile-prefs";
+import { getQaAccountMode } from "@/lib/qa-account-mode";
 import {
   COMPANY_TYPE_OPTIONS,
   HELP_TOPIC_OPTIONS,
@@ -16,6 +17,16 @@ import {
   REGION_OPTIONS,
   SEARCH_STAGE_OPTIONS,
 } from "@/lib/onboarding-options";
+import {
+  ensureLegacyMatchScoreCustomPresets,
+  matchScoreCustomPresetsEqual,
+  matchScoreWeightsEqual,
+  matchScoreWeightsFromProfile,
+  normalizeMatchScoreCustomPresets,
+  normalizeMatchScoreWeights,
+  type MatchScoreCustomPreset,
+  type MatchScoreWeights,
+} from "@/lib/match-score-weights";
 
 /**
  * Profile model: account fields, optional matching preferences (Profile screen),
@@ -43,6 +54,13 @@ export interface UserProfile {
   /** Onboarding intent — personalization / analytics only (not scoring). */
   helpTopics: string[];
   onboardingCompletedAt: string | null;
+  /**
+   * Per-user Fit Score category weights (semantic match).
+   * Null = platform Balanced defaults.
+   */
+  matchScoreWeights: MatchScoreWeights | null;
+  /** Saved numbered Custom presets (Custom 1, Custom 2, …). */
+  matchScoreCustomPresets: MatchScoreCustomPreset[];
 }
 
 export function emptyUserProfile(): UserProfile {
@@ -60,11 +78,13 @@ export function emptyUserProfile(): UserProfile {
     searchStage: null,
     helpTopics: [],
     onboardingCompletedAt: null,
+    matchScoreWeights: null,
+    matchScoreCustomPresets: [],
   };
 }
 
 const PROFILE_SELECT =
-  "full_name, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, preferred_project_types, preferred_minimum_employer_rating, job_search_goals, search_stage, help_topics, onboarding_completed_at";
+  "full_name, country, timezone, desired_compensation_min, preferred_engagement_types, preferred_regions, preferred_company_types, preferred_project_types, preferred_minimum_employer_rating, job_search_goals, search_stage, help_topics, onboarding_completed_at, match_score_weights, match_score_custom_presets";
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -112,6 +132,10 @@ function rowToUserProfile(
       typeof data.onboarding_completed_at === "string"
         ? data.onboarding_completed_at
         : null,
+    matchScoreWeights: normalizeMatchScoreWeights(data.match_score_weights),
+    matchScoreCustomPresets: normalizeMatchScoreCustomPresets(
+      data.match_score_custom_presets,
+    ),
   };
 }
 
@@ -167,6 +191,16 @@ export function normalizeUserProfile(profile: UserProfile): UserProfile {
     ),
     searchStage: stage && searchStageAllowed.has(stage) ? stage : null,
     helpTopics: normalizePreferenceArray(profile.helpTopics, HELP_TOPIC_OPTIONS),
+    matchScoreWeights: normalizeMatchScoreWeights(profile.matchScoreWeights),
+    matchScoreCustomPresets: (() => {
+      const weights =
+        normalizeMatchScoreWeights(profile.matchScoreWeights) ??
+        matchScoreWeightsFromProfile(null);
+      const customs = normalizeMatchScoreCustomPresets(
+        profile.matchScoreCustomPresets,
+      );
+      return ensureLegacyMatchScoreCustomPresets(weights, customs);
+    })(),
   };
 }
 
@@ -244,6 +278,14 @@ export function mergeUserProfileLayers(
       helpTopics: pickArray(merged.helpTopics, overlay.helpTopics),
       onboardingCompletedAt:
         merged.onboardingCompletedAt ?? overlay.onboardingCompletedAt ?? null,
+      matchScoreWeights:
+        merged.matchScoreWeights ??
+        normalizeMatchScoreWeights(overlay.matchScoreWeights) ??
+        null,
+      matchScoreCustomPresets:
+        merged.matchScoreCustomPresets.length > 0
+          ? merged.matchScoreCustomPresets
+          : normalizeMatchScoreCustomPresets(overlay.matchScoreCustomPresets),
     };
   }
   return merged;
@@ -276,11 +318,15 @@ export async function fetchUserProfileFromDatabase(): Promise<UserProfile | null
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select(PROFILE_SELECT)
     .eq("user_id", user.id)
     .maybeSingle();
+
+  if (error) {
+    console.error("[profile] fetch failed:", error.message);
+  }
 
   if (!data) {
     const metaName = nameFromAuthMetadata(user);
@@ -343,6 +389,12 @@ export async function saveUserProfile(
     job_search_goals: profile.jobSearchGoals,
     search_stage: profile.searchStage?.trim() || null,
     help_topics: profile.helpTopics,
+    match_score_weights: profile.matchScoreWeights
+      ? matchScoreWeightsFromProfile(profile.matchScoreWeights)
+      : null,
+    match_score_custom_presets: normalizeMatchScoreCustomPresets(
+      profile.matchScoreCustomPresets,
+    ),
     desired_compensation_min: rate != null && rate > 0 ? rate : null,
     desired_compensation_period: rate != null && rate > 0 ? "hour" : null,
     desired_compensation_currency: "USD",
@@ -363,6 +415,56 @@ export async function saveUserProfile(
     });
   }
   return { error: error?.message ?? null };
+}
+
+/** Persist only Fit Score weight preferences (avoids rewriting unrelated profile columns). */
+export async function saveMatchScoreWeights(
+  weights: MatchScoreWeights,
+  customPresets: MatchScoreCustomPreset[] = [],
+): Promise<{ error: string | null }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sign in required." };
+
+  const normalized = matchScoreWeightsFromProfile(weights);
+  const normalizedCustoms = normalizeMatchScoreCustomPresets(customPresets);
+  const payload = {
+    match_score_weights: normalized,
+    match_score_custom_presets: normalizedCustoms,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update(payload)
+    .eq("user_id", user.id)
+    .select("user_id");
+
+  if (error) return { error: error.message };
+  if (data && data.length > 0) {
+    saveLocalProfilePrefs({
+      matchScoreWeights: normalized,
+      matchScoreCustomPresets: normalizedCustoms,
+    });
+    return { error: null };
+  }
+
+  const { error: upsertError } = await supabase.from("profiles").upsert(
+    {
+      user_id: user.id,
+      ...payload,
+    },
+    { onConflict: "user_id" },
+  );
+  if (!upsertError) {
+    saveLocalProfilePrefs({
+      matchScoreWeights: normalized,
+      matchScoreCustomPresets: normalizedCustoms,
+    });
+  }
+  return { error: upsertError?.message ?? null };
 }
 
 export const PROFILE_HEADER_CACHE_KEY = "fitfinder-profile-header";
@@ -421,10 +523,17 @@ export function initialProfileScreenState(): {
   const profile = snapshot?.fullName
     ? { ...base, fullName: snapshot.fullName }
     : base;
+  const qaMode = getQaAccountMode();
+  const isGuest =
+    qaMode === "guest"
+      ? true
+      : qaMode === "registered"
+        ? false
+        : (snapshot?.isGuest ?? false);
   return {
     profile: structuredClone(profile),
     savedProfile: structuredClone(profile),
-    isGuest: snapshot?.isGuest ?? false,
+    isGuest,
   };
 }
 
@@ -482,6 +591,19 @@ export function isPreferencesValid(profile: UserProfile): boolean {
   );
 }
 
+/** Whether Fit Score weight preferences differ from the saved snapshot. */
+export function matchScoreWeightsDirty(a: UserProfile, b: UserProfile): boolean {
+  const left = matchScoreWeightsFromProfile(a.matchScoreWeights);
+  const right = matchScoreWeightsFromProfile(b.matchScoreWeights);
+  return (
+    !matchScoreWeightsEqual(left, right) ||
+    !matchScoreCustomPresetsEqual(
+      normalizeMatchScoreCustomPresets(a.matchScoreCustomPresets),
+      normalizeMatchScoreCustomPresets(b.matchScoreCustomPresets),
+    )
+  );
+}
+
 /** Whether preference fields differ from the saved snapshot. */
 export function preferencesDirty(a: UserProfile, b: UserProfile): boolean {
   const arraysEqual = (left: string[], right: string[]) =>
@@ -498,7 +620,8 @@ export function preferencesDirty(a: UserProfile, b: UserProfile): boolean {
     ratingA !== ratingB ||
     !arraysEqual(a.preferredCompanyTypes, b.preferredCompanyTypes) ||
     !arraysEqual(a.preferredRegions, b.preferredRegions) ||
-    !arraysEqual(a.preferredProjectTypes, b.preferredProjectTypes)
+    !arraysEqual(a.preferredProjectTypes, b.preferredProjectTypes) ||
+    matchScoreWeightsDirty(a, b)
   );
 }
 
@@ -539,7 +662,15 @@ export function profilesEqual(a: UserProfile, b: UserProfile): boolean {
     arraysEqual(a.preferredProjectTypes, b.preferredProjectTypes) &&
     arraysEqual(a.jobSearchGoals, b.jobSearchGoals) &&
     a.searchStage === b.searchStage &&
-    arraysEqual(a.helpTopics, b.helpTopics)
+    arraysEqual(a.helpTopics, b.helpTopics) &&
+    matchScoreWeightsEqual(
+      matchScoreWeightsFromProfile(a.matchScoreWeights),
+      matchScoreWeightsFromProfile(b.matchScoreWeights),
+    ) &&
+    matchScoreCustomPresetsEqual(
+      normalizeMatchScoreCustomPresets(a.matchScoreCustomPresets),
+      normalizeMatchScoreCustomPresets(b.matchScoreCustomPresets),
+    )
   );
 }
 

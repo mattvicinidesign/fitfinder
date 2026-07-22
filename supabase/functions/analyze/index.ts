@@ -55,6 +55,7 @@ Deno.serve(async (req: Request) => {
       parsedResume,
       persist = true,
       scoringMode: requestedScoringMode,
+      categoryWeights: requestedCategoryWeights = null,
     } = body ?? {};
 
     if (typeof jobText !== "string" || jobText.trim().length === 0) {
@@ -133,11 +134,22 @@ Deno.serve(async (req: Request) => {
       return error("Resume text is required. Upload a resume or pass resumeText.");
     }
 
+    const { data: profileWeightsRow } = await supabase
+      .from("profiles")
+      .select("match_score_weights")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    // Prefer client-sent Preferences weights (just saved); fall back to profile row.
+    const categoryWeights =
+      requestedCategoryWeights ?? profileWeightsRow?.match_score_weights ?? null;
+
     const score = await scoreFit(resumeTextForScoring, jobText, {
       mode: scoringMode,
       jobTitle,
       jobText,
       posting: postingContextPreview,
+      categoryWeights,
     });
 
     // 4. Narrative analysis layered on top of the computed scores.

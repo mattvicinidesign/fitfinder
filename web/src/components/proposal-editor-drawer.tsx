@@ -6,6 +6,7 @@ import { Check, Copy, Loader2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { SCREEN_REGULAR_CTA_CLASS } from "@/components/resume-upload-styles";
 import { getAppOverlayRoot } from "@/lib/overlay-portal";
 import { APP_PORTAL_OVERLAY_Z } from "@/lib/overlay-z-index";
 import { safeBottomOverlay } from "@/lib/safe-area";
@@ -151,7 +152,7 @@ export function ProposalEditorDrawer({
           <Button
             type="button"
             variant="outline"
-            className="h-11 min-w-0 gap-1.5 rounded-xl px-2 text-[13px] sm:gap-2 sm:px-3 sm:text-sm"
+            className={cn(SCREEN_REGULAR_CTA_CLASS, "min-w-0 gap-1.5 px-2 sm:gap-2 sm:px-3")}
             onClick={() => void handleCopy()}
             disabled={regenerating}
           >
@@ -164,7 +165,7 @@ export function ProposalEditorDrawer({
           </Button>
           <Button
             type="button"
-            className="h-11 min-w-0 gap-1.5 rounded-xl px-2 text-[13px] sm:gap-2 sm:px-3 sm:text-sm"
+            className={cn(SCREEN_REGULAR_CTA_CLASS, "min-w-0 gap-1.5 px-2 sm:gap-2 sm:px-3")}
             onClick={onRegenerate}
             disabled={regenerating}
           >
