@@ -207,17 +207,24 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
 
       const stopPhases = startAnalysisPhaseRotation(setLoadingPhase);
       try {
+        // Local prefs are the freshest Preferences save — prefer them over a
+        // possibly stale profile fetch so the report badge matches Default Preset.
+        const localPrefs = loadLocalProfilePrefs();
         const profile = await fetchUserProfile();
         const categoryWeights = matchScoreWeightsFromProfile(
-          profile?.matchScoreWeights ??
-            loadLocalProfilePrefs()?.matchScoreWeights ??
+          localPrefs?.matchScoreWeights ??
+            profile?.matchScoreWeights ??
             null,
         );
+        const customPresets =
+          (localPrefs?.matchScoreCustomPresets?.length
+            ? localPrefs.matchScoreCustomPresets
+            : null) ??
+          profile?.matchScoreCustomPresets ??
+          [];
         const weightProfileLabel = resolveMatchScoreWeightProfileLabel(
           categoryWeights,
-          profile?.matchScoreCustomPresets ??
-            loadLocalProfilePrefs()?.matchScoreCustomPresets ??
-            [],
+          customPresets,
         );
         const { analysisId, result } = await analyze({
           jobText: jobContent,

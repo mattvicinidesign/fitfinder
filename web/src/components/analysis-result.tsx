@@ -24,8 +24,12 @@ function resolveWeightProfileLabel(
   customs: Parameters<typeof resolveMatchScoreWeightProfileLabel>[1] = [],
   savedLabel?: string | null,
 ): string {
+  // Badge must match the weights applied to the score. Prefer resolving from
+  // those weights so a stale saved label cannot disagree with the mix shown.
+  const fromWeights = resolveMatchScoreWeightProfileLabel(weights, customs);
+  if (fromWeights !== "Custom") return fromWeights;
   if (savedLabel?.trim()) return savedLabel.trim();
-  return resolveMatchScoreWeightProfileLabel(weights, customs);
+  return fromWeights;
 }
 
 export function AnalysisResultView({

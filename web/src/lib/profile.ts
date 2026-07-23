@@ -338,6 +338,29 @@ export async function fetchUserProfileFromDatabase(): Promise<UserProfile | null
   return rowToUserProfile(data, user);
 }
 
+/**
+ * Prefer local Fit Score weights when present. Preferences writes localStorage
+ * on every successful save; a concurrent stale DB read must not clobber that
+ * (or worse, write the stale mix back via preference sync).
+ */
+function applyLocalMatchScorePrefs(profile: UserProfile): UserProfile {
+  const localPrefs = loadLocalProfilePrefs();
+  if (!localPrefs) return profile;
+
+  const localWeights = normalizeMatchScoreWeights(localPrefs.matchScoreWeights);
+  const localCustoms = normalizeMatchScoreCustomPresets(
+    localPrefs.matchScoreCustomPresets,
+  );
+
+  return {
+    ...profile,
+    ...(localWeights ? { matchScoreWeights: localWeights } : {}),
+    ...(localCustoms.length > 0
+      ? { matchScoreCustomPresets: localCustoms }
+      : {}),
+  };
+}
+
 /** Load the signed-in user's profile, or null when not authenticated. */
 export async function fetchUserProfile(): Promise<UserProfile | null> {
   const supabase = createClient();
@@ -349,12 +372,16 @@ export async function fetchUserProfile(): Promise<UserProfile | null> {
   const stored = (await fetchUserProfileFromDatabase()) ?? emptyUserProfile();
   const drafts = await loadLocalProfileDrafts();
   const localPrefs = loadLocalProfilePrefs();
-  const resolved = normalizeUserProfile(
-    mergeUserProfileLayers(stored, ...drafts, localPrefs ?? {}),
+  const resolved = applyLocalMatchScorePrefs(
+    normalizeUserProfile(
+      mergeUserProfileLayers(stored, ...drafts, localPrefs ?? {}),
+    ),
   );
 
   if (profileNeedsPreferenceSync(stored, resolved)) {
-    void saveUserProfile(resolved);
+    // Re-read local weights immediately before sync so we never persist a
+    // mix the user just replaced in Preferences.
+    void saveUserProfile(applyLocalMatchScorePrefs(resolved));
   }
 
   return resolved;

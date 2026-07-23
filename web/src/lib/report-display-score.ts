@@ -1,7 +1,12 @@
 import type { AnalysisReportCacheEntry } from "@/lib/analysis-report-cache";
 import { buildOverallMatchRollups } from "@/lib/opportunity-categories";
-import { buildSemanticCategoryRollups, getSemanticReport } from "@/lib/semantic-report";
+import {
+  buildSemanticCategoryRollups,
+  getSemanticReport,
+  withMatchScoreWeights,
+} from "@/lib/semantic-report";
 import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
+import { matchScoreWeightsFromProfile } from "@/lib/match-score-weights";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import { resolveReportFitScore } from "@/lib/report-fit-score";
 import {
@@ -34,8 +39,15 @@ export function resolveReportRollupContextFromCacheEntry(
     profileTimezone,
   });
 
+  // Same weight overlay as AnalysisResultView / the report ring so Recent
+  // Activity and home stats match the Fit Summary score.
+  const weights = matchScoreWeightsFromProfile(
+    entry.matchScoreWeights ?? local?.matchScoreWeights ?? null,
+  );
+  const score = withMatchScoreWeights(normalized.score, weights);
+
   const rollupOptions = buildReportRollupOptions({
-    score: normalized.score,
+    score,
     parsedJob: normalized.parsedJob,
     parsedResume: normalized.parsedResume,
     profileDesiredCompensation,
@@ -70,7 +82,7 @@ export function resolveReportRollupContextFromCacheEntry(
     postingContext: normalized.postingContext,
   });
 
-  return { score: normalized.score, rollupOptions };
+  return { score, rollupOptions };
 }
 
 /** Same Overall Match category rows as the fit report summary card. */
