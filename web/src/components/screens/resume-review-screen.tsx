@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import {
+  AnalysisLoadingOverlay,
+  startResumeReviewPhaseRotation,
+} from "@/components/analysis-loading-overlay";
 import { IosLargeTitle } from "@/components/ui/ios-large-title";
 import { screenShellClass } from "@/components/ui/sticky-bottom-cta";
 import { ResumeReviewIntro } from "@/components/resume-review-intro";
@@ -64,6 +67,10 @@ export function ResumeReviewScreen() {
   const [pendingResumeId, setPendingResumeId] = useState<string | null>(null);
   const [pendingFileName, setPendingFileName] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState<{
+    status: string;
+    detail: string;
+  } | null>(null);
   const [animateGauge, setAnimateGauge] = useState(false);
   const uploadZoneRef = useRef<ResumeReviewUploadZoneHandle>(null);
 
@@ -125,6 +132,7 @@ export function ResumeReviewScreen() {
   const runReview = useCallback(async (resumeId: string, name: string) => {
     setReviewing(true);
     setFileName(name);
+    const stopPhases = startResumeReviewPhaseRotation(setLoadingPhase);
     try {
       try {
         await waitForResumeParse(resumeId);
@@ -149,6 +157,8 @@ export function ResumeReviewScreen() {
       );
       setFileName(null);
     } finally {
+      stopPhases();
+      setLoadingPhase(null);
       setReviewing(false);
     }
   }, []);
@@ -202,17 +212,7 @@ export function ResumeReviewScreen() {
         }
       />
 
-      {reviewing ? (
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-4 py-16 text-center">
-          <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
-          <p className="text-[17px] font-medium text-foreground">
-            Analyzing your resume…
-          </p>
-          <p className="max-w-[16rem] text-[14px] text-muted-foreground">
-            Checking content, structure, ATS compatibility, and completeness.
-          </p>
-        </div>
-      ) : review ? (
+      {review ? (
         <ResumeReviewResultView
           review={review}
           fileName={fileName}
@@ -236,6 +236,13 @@ export function ResumeReviewScreen() {
           />
         </div>
       )}
+
+      {reviewing && loadingPhase ? (
+        <AnalysisLoadingOverlay
+          status={loadingPhase.status}
+          detail={loadingPhase.detail}
+        />
+      ) : null}
     </div>
   );
 }

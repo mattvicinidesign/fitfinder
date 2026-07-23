@@ -69,7 +69,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 82,
     confidence_score: 74,
     recommendation: "strong_apply",
-    recommendation_label: "Strong Pursuit",
+    recommendation_label: "Pursue",
     daysAgo: 2,
   },
   {
@@ -81,7 +81,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 71,
     confidence_score: 68,
     recommendation: "apply",
-    recommendation_label: "Good Opportunity",
+    recommendation_label: "Consider",
     daysAgo: 5,
   },
   {
@@ -93,7 +93,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 58,
     confidence_score: 55,
     recommendation: "stretch",
-    recommendation_label: "Proceed With Caution",
+    recommendation_label: "Review",
     daysAgo: 7,
   },
   {
@@ -105,7 +105,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 79,
     confidence_score: 70,
     recommendation: "strong_apply",
-    recommendation_label: "Strong Pursuit",
+    recommendation_label: "Pursue",
     daysAgo: 3,
   },
   {
@@ -117,7 +117,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 67,
     confidence_score: 64,
     recommendation: "apply",
-    recommendation_label: "Good Opportunity",
+    recommendation_label: "Consider",
     daysAgo: 14,
   },
   {
@@ -129,7 +129,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 88,
     confidence_score: 80,
     recommendation: "strong_apply",
-    recommendation_label: "Strong Pursuit",
+    recommendation_label: "Pursue",
     daysAgo: 1,
   },
   {
@@ -141,7 +141,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 74,
     confidence_score: 69,
     recommendation: "apply",
-    recommendation_label: "Good Opportunity",
+    recommendation_label: "Consider",
     daysAgo: 4,
   },
   {
@@ -153,7 +153,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 52,
     confidence_score: 48,
     recommendation: "stretch",
-    recommendation_label: "Proceed With Caution",
+    recommendation_label: "Review",
     daysAgo: 6,
   },
   {
@@ -165,7 +165,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 86,
     confidence_score: 78,
     recommendation: "strong_apply",
-    recommendation_label: "Strong Pursuit",
+    recommendation_label: "Pursue",
     daysAgo: 8,
   },
   {
@@ -177,7 +177,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 70,
     confidence_score: 66,
     recommendation: "apply",
-    recommendation_label: "Good Opportunity",
+    recommendation_label: "Consider",
     daysAgo: 9,
   },
   {
@@ -189,7 +189,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 64,
     confidence_score: 60,
     recommendation: "stretch",
-    recommendation_label: "Proceed With Caution",
+    recommendation_label: "Review",
     daysAgo: 10,
   },
   {
@@ -201,7 +201,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 77,
     confidence_score: 72,
     recommendation: "strong_apply",
-    recommendation_label: "Strong Pursuit",
+    recommendation_label: "Pursue",
     daysAgo: 11,
   },
   {
@@ -213,7 +213,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 72,
     confidence_score: 67,
     recommendation: "apply",
-    recommendation_label: "Good Opportunity",
+    recommendation_label: "Consider",
     daysAgo: 12,
   },
   {
@@ -225,7 +225,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 54,
     confidence_score: 50,
     recommendation: "stretch",
-    recommendation_label: "Proceed With Caution",
+    recommendation_label: "Review",
     daysAgo: 13,
   },
   {
@@ -237,7 +237,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 90,
     confidence_score: 82,
     recommendation: "strong_apply",
-    recommendation_label: "Strong Pursuit",
+    recommendation_label: "Pursue",
     daysAgo: 15,
   },
   {
@@ -249,7 +249,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 61,
     confidence_score: 58,
     recommendation: "stretch",
-    recommendation_label: "Proceed With Caution",
+    recommendation_label: "Review",
     daysAgo: 16,
   },
   {
@@ -261,7 +261,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 45,
     confidence_score: 42,
     recommendation: "not_recommended",
-    recommendation_label: "Not Recommended",
+    recommendation_label: "Skip",
     daysAgo: 17,
   },
   {
@@ -273,7 +273,7 @@ const SPECS: SampleSpec[] = [
     qualification_score: 73,
     confidence_score: 68,
     recommendation: "apply",
-    recommendation_label: "Good Opportunity",
+    recommendation_label: "Consider",
     daysAgo: 18,
   },
 ];

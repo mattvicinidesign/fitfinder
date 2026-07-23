@@ -23,6 +23,7 @@ export function QualificationBreakdown({
   jobTitle: analysisJobTitle,
   companyName,
   narrative,
+  weightProfileLabel,
   profileDesiredCompensation,
   profileQualifiedIndustries,
   profileQualifiedSkills,
@@ -42,6 +43,7 @@ export function QualificationBreakdown({
   jobTitle?: string | null;
   companyName?: string | null;
   narrative?: Narrative;
+  weightProfileLabel?: string;
   profileDesiredCompensation?: Compensation | null;
   profileQualifiedIndustries?: string[] | null;
   profileQualifiedSkills?: string[] | null;
@@ -78,7 +80,11 @@ export function QualificationBreakdown({
   return (
     <div className="w-full space-y-3">
       <ReportRevealSection>
-        <QualificationScoreOverview score={score} rollupOptions={rollupOptions} />
+        <QualificationScoreOverview
+          score={score}
+          rollupOptions={rollupOptions}
+          weightProfileLabel={weightProfileLabel}
+        />
       </ReportRevealSection>
 
       {semanticReport ? (
@@ -87,7 +93,7 @@ export function QualificationBreakdown({
           narrative={narrative}
         />
       ) : (
-        <p className="text-[14px] text-muted-foreground px-1">
+        <p className="px-1 text-[14px] text-muted-foreground">
           Detailed semantic breakdown is unavailable for this report.
         </p>
       )}

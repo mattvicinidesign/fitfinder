@@ -206,14 +206,29 @@ export function computeAnalysisStats(
 
   const labelCounts = new Map<string, number>();
   for (const row of analyses) {
-    const label = row.recommendation_label?.trim() || "Unlabeled";
+    const raw = row.recommendation_label?.trim() || "Unlabeled";
+    const label =
+      raw === "Strong" || raw === "Strong Pursuit"
+        ? "Pursue"
+        : raw === "Good" || raw === "Good Opportunity"
+          ? "Consider"
+          : raw === "Caution" || raw === "Proceed With Caution"
+            ? "Review"
+            : raw === "Weak" || raw === "Not Recommended"
+              ? "Skip"
+              : raw;
     labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1);
   }
 
   const total = analyses.length;
-  const strongPursuitCount = analyses.filter(
-    (row) => row.recommendation_label?.trim() === "Strong Pursuit",
-  ).length;
+  const strongPursuitCount = analyses.filter((row) => {
+    const label = row.recommendation_label?.trim();
+    return (
+      label === "Pursue" ||
+      label === "Strong" ||
+      label === "Strong Pursuit"
+    );
+  }).length;
   const recommendationStats = [...labelCounts.entries()]
     .map(([label, count]) => ({
       label,

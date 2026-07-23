@@ -183,8 +183,8 @@ export const ARCHETYPE_SIMILARITY: Record<string, Record<string, number>> = {
  * Display ÷10 for 0–10 ring.
  */
 export const RECOMMENDATION_BANDS = [
-  { min: 85, recommendation: "strong_apply" as const, label: "Strong Pursuit" },
-  { min: 70, recommendation: "apply" as const, label: "Good Opportunity" },
-  { min: 50, recommendation: "stretch" as const, label: "Proceed With Caution" },
-  { min: 0, recommendation: "not_recommended" as const, label: "Not Recommended" },
+  { min: 85, recommendation: "strong_apply" as const, label: "Pursue" },
+  { min: 70, recommendation: "apply" as const, label: "Consider" },
+  { min: 50, recommendation: "stretch" as const, label: "Review" },
+  { min: 0, recommendation: "not_recommended" as const, label: "Skip" },
 ];

@@ -184,10 +184,10 @@ Deno.test("Semantic score result: recommendation labels are canonical", () => {
   };
   const result = buildScoreResultFromSemanticReport(strongReport, "registered");
   const labels = new Set([
-    "Strong Pursuit",
-    "Good Opportunity",
-    "Proceed With Caution",
-    "Not Recommended",
+    "Pursue",
+    "Consider",
+    "Review",
+    "Skip",
   ]);
   assert(labels.has(result.recommendationLabel));
   assertEquals(result.recommendation, "strong_apply");

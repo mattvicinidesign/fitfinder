@@ -269,6 +269,25 @@ export function resolveMatchScoreSelectionId(
   return named === "custom" ? "balanced" : named;
 }
 
+/** Human-readable name for the active Fit Score weight mix (for reports). */
+export function resolveMatchScoreWeightProfileLabel(
+  weights: MatchScoreWeights,
+  customPresets: MatchScoreCustomPreset[] = [],
+): string {
+  const customHit = customPresets.find((preset) =>
+    matchScoreWeightsEqual(preset.weights, weights),
+  );
+  if (customHit) return customHit.label;
+
+  const namedId = resolveMatchScoreWeightPresetId(weights);
+  if (namedId !== "custom") {
+    const named = MATCH_SCORE_WEIGHT_PRESETS.find((preset) => preset.id === namedId);
+    if (named) return named.label;
+  }
+
+  return "Custom";
+}
+
 export function removeMatchScoreCustomPreset(
   customPresets: MatchScoreCustomPreset[],
   id: string,
@@ -281,6 +300,9 @@ export function removeMatchScoreCustomPreset(
  * - Weights match a named preset → keep that named selection (no new Custom)
  * - Weights match an existing Custom → select that Custom (no duplicate)
  * - Otherwise → always append Custom N (never overwrite an existing Custom)
+ *
+ * When creating a new Custom, pass `keepActiveWeights` so the draft is saved as a
+ * preset only — not applied as the Fit Score default until the user chooses it.
  */
 export function commitMatchPreferenceSave(input: {
   weights: MatchScoreWeights;
@@ -288,19 +310,21 @@ export function commitMatchPreferenceSave(input: {
   /** Required when creating a new Custom — shown in the name modal. */
   customLabel?: string;
   customDescription?: string;
+  /** Active weights to keep when only adding a Custom (do not apply draft yet). */
+  keepActiveWeights?: MatchScoreWeights;
 }): {
   weights: MatchScoreWeights;
   customPresets: MatchScoreCustomPreset[];
   selectedPresetId: MatchScoreSelectionId;
   createdCustom: MatchScoreCustomPreset | null;
 } {
-  const weights = { ...input.weights };
+  const draftWeights = { ...input.weights };
   const customs = [...input.customPresets];
 
   for (const named of MATCH_SCORE_WEIGHT_PRESETS) {
-    if (matchScoreWeightsEqual(weights, named.weights)) {
+    if (matchScoreWeightsEqual(draftWeights, named.weights)) {
       return {
-        weights,
+        weights: draftWeights,
         customPresets: customs,
         selectedPresetId: named.id,
         createdCustom: null,
@@ -309,11 +333,11 @@ export function commitMatchPreferenceSave(input: {
   }
 
   const existingCustom = customs.find((preset) =>
-    matchScoreWeightsEqual(preset.weights, weights),
+    matchScoreWeightsEqual(preset.weights, draftWeights),
   );
   if (existingCustom) {
     return {
-      weights,
+      weights: draftWeights,
       customPresets: customs,
       selectedPresetId: existingCustom.id,
       createdCustom: null,
@@ -321,14 +345,21 @@ export function commitMatchPreferenceSave(input: {
   }
 
   const created = createMatchScoreCustomPreset(
-    weights,
+    draftWeights,
     customs,
     input.customLabel,
     input.customDescription,
   );
+  const nextCustoms = [...customs, created];
+  const keepActive = input.keepActiveWeights
+    ? { ...input.keepActiveWeights }
+    : draftWeights;
+
   return {
-    weights,
-    customPresets: [...customs, created],
+    // Persist the previous active weights — new Custom is not applied yet.
+    weights: keepActive,
+    customPresets: nextCustoms,
+    // Select the new card in the UI so the user can review / apply it next.
     selectedPresetId: created.id,
     createdCustom: created,
   };

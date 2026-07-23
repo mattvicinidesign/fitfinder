@@ -2,10 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-  AtsKeywordOptimizeConfirmModal,
-  AtsKeywordOptimizeLoadingOverlay,
-} from "@/components/ats-keyword-optimize-modals";
+import { AtsKeywordOptimizeLoadingOverlay } from "@/components/ats-keyword-optimize-modals";
 import { showAtsOptimizeError } from "@/lib/ats-optimize-toast";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
 import { AtsOptimizedResumePreviewDrawer } from "@/components/ats-optimized-resume-preview-drawer";
@@ -37,6 +34,7 @@ import {
   isAtsOptimizationApplied,
   isAtsScanPendingReview,
   loadAtsKeywordOptimization,
+  reopenAtsKeywordOptimizationForReview,
   saveAtsKeywordOptimization,
   simulateAtsKeywordOptimization,
 } from "@/lib/resume-review-ats-optimization";
@@ -59,12 +57,14 @@ export function ResumeReviewResultView({
   const [optimization, setOptimization] = useState<AtsKeywordOptimization | null>(
     () => loadAtsKeywordOptimization(initialReview.id),
   );
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const [loadingOpen, setLoadingOpen] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<"review" | "applied">("review");
   const [optimizedPreviewOpen, setOptimizedPreviewOpen] = useState(false);
+  const [optimizedPreviewVariant, setOptimizedPreviewVariant] = useState<
+    "confirm" | "browse"
+  >("confirm");
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
@@ -108,6 +108,7 @@ export function ResumeReviewResultView({
     )
       .then((result) => {
         showOptimizedResumeExportToast(result);
+        setOptimizedPreviewOpen(false);
       })
       .catch((error) => {
         toast.error(
@@ -121,12 +122,8 @@ export function ResumeReviewResultView({
       });
   }, [optimization, fileName, review.resumeId]);
 
-  const openAppliedReview = useCallback(() => {
-    setPreviewMode("applied");
-    setPreviewOpen(true);
-  }, []);
-
   const openOptimizedPreview = useCallback(() => {
+    setOptimizedPreviewVariant("browse");
     setOptimizedPreviewOpen(true);
   }, []);
 
@@ -136,7 +133,6 @@ export function ResumeReviewResultView({
 
   const runOptimization = useCallback(async () => {
     if (!atsCategory) return;
-    setConfirmOpen(false);
     setLoadingOpen(true);
     setLoadingStep(0);
 
@@ -175,6 +171,7 @@ export function ResumeReviewResultView({
         setReview(patchedReview);
         setOptimization(applied);
         setPreviewOpen(false);
+        setOptimizedPreviewVariant("confirm");
         setOptimizedPreviewOpen(true);
       } catch (error) {
         showAtsOptimizeError(error);
@@ -188,6 +185,24 @@ export function ResumeReviewResultView({
     setOptimization(null);
     setPreviewOpen(false);
   }, [review.id]);
+
+  const handleBackToSuggestions = useCallback(() => {
+    if (!optimization) return;
+    const reverted = reopenAtsKeywordOptimizationForReview(
+      review.id,
+      optimization,
+    );
+    const patchedReview = patchResumeReviewAtsScore(
+      review,
+      reverted.originalATSScore,
+    );
+    saveResumeReview(patchedReview);
+    setReview(patchedReview);
+    setOptimization(reverted);
+    setOptimizedPreviewOpen(false);
+    setPreviewMode("review");
+    setPreviewOpen(true);
+  }, [optimization, review]);
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -225,7 +240,7 @@ export function ResumeReviewResultView({
                     key={category.key}
                     category={category}
                     optimization={optimization}
-                    onOptimizeKeywords={() => setConfirmOpen(true)}
+                    onOptimizeKeywords={() => void runOptimization()}
                     onPreviewChanges={() => {
                       setPreviewMode("review");
                       setPreviewOpen(true);
@@ -275,11 +290,6 @@ export function ResumeReviewResultView({
         </StickyBottomCta>
       ) : null}
 
-      <AtsKeywordOptimizeConfirmModal
-        open={confirmOpen}
-        onCancel={() => setConfirmOpen(false)}
-        onConfirm={() => void runOptimization()}
-      />
       <AtsKeywordOptimizeLoadingOverlay open={loadingOpen} stepIndex={loadingStep} />
       {optimization?.scanCompleted ? (
         <AtsKeywordPreviewDrawer
@@ -294,9 +304,10 @@ export function ResumeReviewResultView({
       {optimization && isAtsOptimizationApplied(optimization) ? (
         <AtsOptimizedResumePreviewDrawer
           open={optimizedPreviewOpen}
+          variant={optimizedPreviewVariant}
           onClose={() => setOptimizedPreviewOpen(false)}
+          onBackToSuggestions={handleBackToSuggestions}
           optimization={optimization}
-          onPreviewReplacements={openAppliedReview}
           onDownload={handleDownload}
           downloading={downloading}
         />

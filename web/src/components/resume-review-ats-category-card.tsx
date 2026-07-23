@@ -76,10 +76,7 @@ export function ResumeReviewAtsCategoryCard({
           className={SCREEN_REGULAR_CTA_CLASS}
           onClick={onOptimizeKeywords}
         >
-          Optimize
-          <span className="ml-1.5 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider">
-            Beta
-          </span>
+          Optimize Keywords
         </Button>
       </ScoreAccessoryWrap>
     );

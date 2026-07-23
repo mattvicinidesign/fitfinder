@@ -125,10 +125,19 @@ function KpiCard({
 
 function recommendationLegendLabel(label: string): string {
   const labels: Record<string, string> = {
-    "Strong Pursuit": "Strong pursuit",
-    "Good Opportunity": "Good opportunity",
-    "Proceed With Caution": "Proceed with caution",
-    "Not Recommended": "Not recommended",
+    Pursue: "Pursue",
+    Consider: "Consider",
+    Review: "Review",
+    Skip: "Skip",
+    // Legacy labels from older analyses
+    Strong: "Pursue",
+    Good: "Consider",
+    Caution: "Review",
+    Weak: "Skip",
+    "Strong Pursuit": "Pursue",
+    "Good Opportunity": "Consider",
+    "Proceed With Caution": "Review",
+    "Not Recommended": "Skip",
     Unlabeled: "Unlabeled",
   };
   return labels[label] ?? label;
@@ -251,13 +260,14 @@ export function StatsDashboard({
           value={String(totalResumeScores)}
         />
         <KpiCard
-          label="Avg Fit Analysis"
+          label="Avg Fit Analysis Score"
           rawValue
           value={
             stats.averageFit != null ? (
               <FitScoreRatio
                 as="p"
                 size="md"
+                equalParts
                 valueOnTen={fitScoreValueOnTen(stats.averageFit)}
                 className={scoreColor(stats.averageFit)}
               />

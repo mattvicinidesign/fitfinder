@@ -1,7 +1,7 @@
 /**
  * Canonical qualification report terminology:
  *
- * - **Overall Match** — 0–10 ring + recommendation (e.g. 8.7 Strong Pursuit)
+ * - **Overall Match** — 0–10 ring + recommendation (e.g. 8.7 Pursue)
  * - **Opportunity category** — Role Alignment, Qualifications, Preferences, …
  * - **Scoring item** — one row inside a legacy category card (V1 UI only).
  */

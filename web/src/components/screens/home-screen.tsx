@@ -40,6 +40,7 @@ import type { RecentActivityItem } from "@/lib/recent-activity";
 import { RecentActivitySection } from "@/components/recent-activity-section";
 import { homeHeroContentInset, screenGutterX } from "@/lib/screen-gutter";
 import type { AnalysisRecord } from "@/lib/types";
+import { prefetchLatestUserResume } from "@/lib/resume-documents";
 
 type HomeHeaderPlayState = "pending" | "animating" | "entered";
 
@@ -193,6 +194,11 @@ export function HomeScreen() {
     setHasMoreActivity(snapshot.hasMoreActivity);
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (!homeContentReady) return;
+    prefetchLatestUserResume();
+  }, [homeContentReady]);
 
   useEffect(() => {
     if (!homeContentReady) return;
@@ -351,6 +357,8 @@ export function HomeScreen() {
       <StickyBottomCta variant="floating" scrollFade>
         <Link
           href="/analyze"
+          onPointerEnter={prefetchLatestUserResume}
+          onFocus={prefetchLatestUserResume}
           className={cn(
             buttonVariants({ variant: "default", size: "lg" }),
             PRIMARY_FLOATING_CTA_CLASS,

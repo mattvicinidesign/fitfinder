@@ -2,11 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Button } from "@/components/ui/button";
-import { SCREEN_REGULAR_CTA_CLASS } from "@/components/resume-upload-styles";
 import { getAppOverlayRoot } from "@/lib/overlay-portal";
 import { APP_PORTAL_OVERLAY_Z } from "@/lib/overlay-z-index";
-import { ATS_OPTIMIZE_CONFIRM_EXAMPLES } from "@/lib/resume-review-ats-optimization";
 import { cn } from "@/lib/utils";
 
 const ATS_OPTIMIZE_MODAL_SHELL = cn(
@@ -23,96 +20,6 @@ const ATS_OPTIMIZE_STEPS = [
   "Applying ATS Enhancements",
   "Preparing Preview",
 ] as const;
-
-export function AtsKeywordOptimizeConfirmModal({
-  open,
-  onCancel,
-  onConfirm,
-}: {
-  open: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCancel();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onCancel]);
-
-  if (!open || !mounted) return null;
-
-  return createPortal(
-    <div
-      className={ATS_OPTIMIZE_MODAL_SHELL}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="ats-optimize-title"
-      onClick={onCancel}
-    >
-      <div
-        className={ATS_OPTIMIZE_MODAL_CARD}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <h2
-          id="ats-optimize-title"
-          className="text-[20px] font-bold leading-snug text-foreground"
-        >
-          Optimize Resume Keywords?
-        </h2>
-        <p className="mt-2 text-[14px] leading-snug text-muted-foreground">
-          Up to 15 keyword swaps inside existing bullets only. Your structure,
-          companies, titles, dates, and metrics stay exactly the same.
-        </p>
-
-        <div className="mt-4 space-y-2 rounded-xl bg-muted/40 px-3 py-3">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Examples
-          </p>
-          <ul className="space-y-1.5">
-            {ATS_OPTIMIZE_CONFIRM_EXAMPLES.map((example) => (
-              <li
-                key={`${example.before}-${example.after}`}
-                className="text-[14px] leading-snug text-foreground/90"
-              >
-                <span className="text-muted-foreground">{example.before}</span>
-                <span className="mx-1.5 text-muted-foreground">→</span>
-                <span className="font-medium">{example.after}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="mt-5 flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className={cn(SCREEN_REGULAR_CTA_CLASS, "flex-1")}
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            className={cn(SCREEN_REGULAR_CTA_CLASS, "flex-1")}
-            onClick={onConfirm}
-          >
-            Optimize Resume
-          </Button>
-        </div>
-      </div>
-    </div>,
-    getAppOverlayRoot(),
-  );
-}
 
 export function AtsKeywordOptimizeLoadingOverlay({
   open,

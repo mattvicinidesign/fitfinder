@@ -19,7 +19,7 @@ export function PreferenceSliderField({
   valueDisplay: string;
   valueSuffix: string;
   children: React.ReactNode;
-  ticks: React.ReactNode;
+  ticks?: React.ReactNode;
   className?: string;
 }) {
   return (
@@ -41,9 +41,11 @@ export function PreferenceSliderField({
       </div>
       <div className="space-y-2">
         {children}
-        <div className="flex justify-between px-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-          {ticks}
-        </div>
+        {ticks ? (
+          <div className="flex justify-between px-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+            {ticks}
+          </div>
+        ) : null}
       </div>
     </div>
   );

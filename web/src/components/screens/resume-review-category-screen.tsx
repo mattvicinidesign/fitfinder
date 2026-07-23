@@ -6,10 +6,7 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import { showAtsOptimizeError } from "@/lib/ats-optimize-toast";
 import { useResumeReviewCategorySheetClose } from "@/components/app-shell/resume-review-category-sheet-context";
-import {
-  AtsKeywordOptimizeConfirmModal,
-  AtsKeywordOptimizeLoadingOverlay,
-} from "@/components/ats-keyword-optimize-modals";
+import { AtsKeywordOptimizeLoadingOverlay } from "@/components/ats-keyword-optimize-modals";
 import { AtsKeywordPreviewDrawer } from "@/components/ats-keyword-preview-drawer";
 import { AtsOptimizedResumePreviewDrawer } from "@/components/ats-optimized-resume-preview-drawer";
 import { Button } from "@/components/ui/button";
@@ -40,6 +37,7 @@ import {
   isAtsOptimizationApplied,
   isAtsScanPendingReview,
   loadAtsKeywordOptimization,
+  reopenAtsKeywordOptimizationForReview,
   saveAtsKeywordOptimization,
   simulateAtsKeywordOptimization,
 } from "@/lib/resume-review-ats-optimization";
@@ -101,20 +99,18 @@ export function ResumeReviewCategoryScreen({
   const [optimization, setOptimization] = useState<AtsKeywordOptimization | null>(
     null,
   );
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const [loadingOpen, setLoadingOpen] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<"review" | "applied">("review");
   const [optimizedPreviewOpen, setOptimizedPreviewOpen] = useState(false);
+  const [optimizedPreviewVariant, setOptimizedPreviewVariant] = useState<
+    "confirm" | "browse"
+  >("confirm");
   const [downloading, setDownloading] = useState(false);
 
-  const openAppliedReview = useCallback(() => {
-    setPreviewMode("applied");
-    setPreviewOpen(true);
-  }, []);
-
   const openOptimizedPreview = useCallback(() => {
+    setOptimizedPreviewVariant("browse");
     setOptimizedPreviewOpen(true);
   }, []);
 
@@ -132,7 +128,6 @@ export function ResumeReviewCategoryScreen({
     if (!review) return;
     const ats = review.categories.find((category) => category.key === "ats");
     if (!ats) return;
-    setConfirmOpen(false);
     setLoadingOpen(true);
     setLoadingStep(0);
 
@@ -167,6 +162,7 @@ export function ResumeReviewCategoryScreen({
     )
       .then((result) => {
         showOptimizedResumeExportToast(result);
+        setOptimizedPreviewOpen(false);
       })
       .catch((error) => {
         toast.error(
@@ -207,6 +203,7 @@ export function ResumeReviewCategoryScreen({
       saveResumeReview(patchedReview);
       setOptimization(applied);
       setPreviewOpen(false);
+      setOptimizedPreviewVariant("confirm");
       setOptimizedPreviewOpen(true);
     } catch (error) {
       showAtsOptimizeError(error);
@@ -218,6 +215,23 @@ export function ResumeReviewCategoryScreen({
     clearAtsKeywordOptimization(review.id);
     setOptimization(null);
     setPreviewOpen(false);
+  };
+
+  const handleBackToSuggestions = () => {
+    if (!review || !optimization) return;
+    const reverted = reopenAtsKeywordOptimizationForReview(
+      review.id,
+      optimization,
+    );
+    const patchedReview = patchResumeReviewAtsScore(
+      review,
+      reverted.originalATSScore,
+    );
+    saveResumeReview(patchedReview);
+    setOptimization(reverted);
+    setOptimizedPreviewOpen(false);
+    setPreviewMode("review");
+    setPreviewOpen(true);
   };
 
   const activeCategoryKey = validKey as ResumeReviewCategoryKey;
@@ -470,23 +484,15 @@ export function ResumeReviewCategoryScreen({
               <Button
                 type="button"
                 className={RESUME_REVIEW_PRIMARY_CTA_CLASS}
-                onClick={() => setConfirmOpen(true)}
+                onClick={() => void runOptimization()}
               >
-                Optimize
-                <span className="ml-2 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider">
-                  Beta
-                </span>
+                Optimize Keywords
               </Button>
             )}
           </div>
         </>
       ) : null}
 
-      <AtsKeywordOptimizeConfirmModal
-        open={confirmOpen}
-        onCancel={() => setConfirmOpen(false)}
-        onConfirm={() => void runOptimization()}
-      />
       <AtsKeywordOptimizeLoadingOverlay open={loadingOpen} stepIndex={loadingStep} />
       {optimization?.scanCompleted ? (
         <AtsKeywordPreviewDrawer
@@ -501,9 +507,10 @@ export function ResumeReviewCategoryScreen({
       {optimization && isAtsOptimizationApplied(optimization) ? (
         <AtsOptimizedResumePreviewDrawer
           open={optimizedPreviewOpen}
+          variant={optimizedPreviewVariant}
           onClose={() => setOptimizedPreviewOpen(false)}
+          onBackToSuggestions={handleBackToSuggestions}
           optimization={optimization}
-          onPreviewReplacements={openAppliedReview}
           onDownload={handleDownload}
           downloading={downloading}
         />

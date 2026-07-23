@@ -11,24 +11,27 @@ import { reportRoleTitle } from "@/lib/analysis-report-cache";
 import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
 import {
   matchScoreWeightsFromProfile,
+  resolveMatchScoreWeightProfileLabel,
   type MatchScoreWeights,
 } from "@/lib/match-score-weights";
-import { fetchUserProfile } from "@/lib/profile";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
+import { fetchUserProfile } from "@/lib/profile";
 import { withMatchScoreWeights } from "@/lib/semantic-report";
 import type { AnalysisResult, Compensation } from "@/lib/types";
 
-function readCachedMatchScoreWeights(): MatchScoreWeights {
-  return matchScoreWeightsFromProfile(
-    loadLocalProfilePrefs()?.matchScoreWeights ?? null,
-  );
+function resolveWeightProfileLabel(
+  weights: MatchScoreWeights,
+  customs: Parameters<typeof resolveMatchScoreWeightProfileLabel>[1] = [],
+  savedLabel?: string | null,
+): string {
+  if (savedLabel?.trim()) return savedLabel.trim();
+  return resolveMatchScoreWeightProfileLabel(weights, customs);
 }
 
 export function AnalysisResultView({
   result,
-  analysisId = null,
-  reportId = null,
-  resumeId = null,
+  matchScoreWeights: savedMatchScoreWeights = null,
+  matchScoreWeightProfileLabel: savedWeightProfileLabel = null,
   profileDesiredCompensation = null,
   profileQualifiedIndustries = null,
   profileQualifiedSkills = null,
@@ -43,9 +46,10 @@ export function AnalysisResultView({
 }: {
   result: AnalysisResult;
   analysisId?: string | null;
-  /** Stable key for caching the generated proposal; falls back to analysisId. */
   reportId?: string | null;
   resumeId?: string | null;
+  matchScoreWeights?: MatchScoreWeights | null;
+  matchScoreWeightProfileLabel?: string | null;
   profileDesiredCompensation?: Compensation | null;
   profileQualifiedIndustries?: string[] | null;
   profileQualifiedSkills?: string[] | null;
@@ -58,27 +62,52 @@ export function AnalysisResultView({
   profileMinimumHourlyRate?: number | null;
   showSummaryHeader?: boolean;
 }) {
-  const [matchScoreWeights, setMatchScoreWeights] = useState(
-    readCachedMatchScoreWeights,
+  const initialWeights = matchScoreWeightsFromProfile(
+    savedMatchScoreWeights ??
+      loadLocalProfilePrefs()?.matchScoreWeights ??
+      null,
+  );
+  const [weights, setWeights] = useState<MatchScoreWeights>(initialWeights);
+  const [weightProfileLabel, setWeightProfileLabel] = useState(() =>
+    resolveWeightProfileLabel(
+      initialWeights,
+      loadLocalProfilePrefs()?.matchScoreCustomPresets ?? [],
+      savedWeightProfileLabel,
+    ),
   );
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      const localCustoms =
+        loadLocalProfilePrefs()?.matchScoreCustomPresets ?? [];
+
+      if (savedMatchScoreWeights) {
+        const next = matchScoreWeightsFromProfile(savedMatchScoreWeights);
+        setWeights(next);
+        setWeightProfileLabel(
+          resolveWeightProfileLabel(next, localCustoms, savedWeightProfileLabel),
+        );
+        return;
+      }
+
       const profile = await fetchUserProfile();
       if (cancelled) return;
-      setMatchScoreWeights(
-        matchScoreWeightsFromProfile(
-          profile?.matchScoreWeights ??
-            loadLocalProfilePrefs()?.matchScoreWeights ??
-            null,
-        ),
+      const customs = profile?.matchScoreCustomPresets ?? localCustoms;
+      const next = matchScoreWeightsFromProfile(
+        profile?.matchScoreWeights ??
+          loadLocalProfilePrefs()?.matchScoreWeights ??
+          null,
+      );
+      setWeights(next);
+      setWeightProfileLabel(
+        resolveWeightProfileLabel(next, customs, savedWeightProfileLabel),
       );
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [savedMatchScoreWeights, savedWeightProfileLabel]);
 
   const normalized = normalizeAnalysisResult(result, {
     profileDesiredCompensation,
@@ -89,7 +118,7 @@ export function AnalysisResultView({
   });
   const jobDescription =
     normalized.jobDescription ?? result.jobDescription ?? null;
-  const score = withMatchScoreWeights(normalized.score, matchScoreWeights);
+  const score = withMatchScoreWeights(normalized.score, weights);
   const { postingContext, parsedJob, parsedResume, narrative } = normalized;
   const displayJobTitle = reportRoleTitle({
     ...result,
@@ -103,27 +132,7 @@ export function AnalysisResultView({
         <div className="space-y-4">
           {showSummaryHeader ? (
             <ReportRevealSection>
-              <ReportSummaryHeader
-                jobTitle={displayJobTitle}
-                score={score}
-                parsedJob={parsedJob}
-                parsedResume={parsedResume}
-                profileDesiredCompensation={profileDesiredCompensation}
-                profileQualifiedIndustries={profileQualifiedIndustries}
-                profileQualifiedSkills={profileQualifiedSkills}
-                profileCountry={profileCountry}
-                profileTimezone={profileTimezone}
-                profilePreferredCompanyTypes={profilePreferredCompanyTypes}
-                profilePreferredMinimumEmployerRating={
-                  profilePreferredMinimumEmployerRating
-                }
-                profilePreferredRegions={profilePreferredRegions}
-                profilePreferredProjectTypes={profilePreferredProjectTypes}
-                profileMinimumHourlyRate={profileMinimumHourlyRate}
-                jobDescription={jobDescription}
-                companyName={result.companyName}
-                postingContext={postingContext}
-              />
+              <ReportSummaryHeader jobTitle={displayJobTitle} />
             </ReportRevealSection>
           ) : null}
           <QualificationBreakdown
@@ -135,6 +144,7 @@ export function AnalysisResultView({
             parsedResume={parsedResume}
             jobTitle={displayJobTitle}
             companyName={result.companyName}
+            weightProfileLabel={weightProfileLabel}
             profileDesiredCompensation={profileDesiredCompensation}
             profileQualifiedIndustries={profileQualifiedIndustries}
             profileQualifiedSkills={profileQualifiedSkills}

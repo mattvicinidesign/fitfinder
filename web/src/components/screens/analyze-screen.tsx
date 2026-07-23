@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Maximize2, Minimize2 } from "lucide-react";
@@ -21,7 +21,11 @@ import {
 } from "@/lib/profile-compensation";
 import { fetchUserProfile } from "@/lib/profile";
 import { loadLocalProfilePrefs } from "@/lib/local-profile-prefs";
-import { matchScoreWeightsFromProfile } from "@/lib/match-score-weights";
+import {
+  matchScoreWeightsFromProfile,
+  resolveMatchScoreWeightProfileLabel,
+} from "@/lib/match-score-weights";
+import { loadLatestResumeCache } from "@/lib/latest-resume-cache";
 import { buildSampleAnalysisResult } from "@/lib/sample-report-fixtures";
 import type { AnalysisResult, Compensation } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -39,13 +43,18 @@ import {
   ANALYZE_SECTION_CLASS,
   ANALYZE_SECTION_LABEL_CLASS,
 } from "@/components/analyze-form-styles";
-import { waitForResumeParse, getCachedParsedResume } from "@/lib/resume-parse-tracker";
+import { waitForResumeParse, getCachedParsedResume, isResumeParsePending } from "@/lib/resume-parse-tracker";
 import { fetchLatestUserResume } from "@/lib/resume-documents";
 import { ReportLink } from "@/components/report-link";
 import { openAnalysisReport } from "@/lib/report-return";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { AnalysisLoadingOverlay } from "@/components/analysis-loading-overlay";
+import {
+  AnalysisLoadingOverlay,
+  ANALYSIS_PARSE_DETAIL,
+  ANALYSIS_PARSE_STATUS,
+  startAnalysisPhaseRotation,
+} from "@/components/analysis-loading-overlay";
 import {
   screenShellClass,
   StickyBottomCta,
@@ -62,7 +71,7 @@ const DEMO_RESULT: AnalysisResult = buildSampleAnalysisResult({
   qualificationScore: 82,
   confidenceScore: 72,
   recommendation: "strong_apply",
-  recommendationLabel: "Strong Pursuit",
+  recommendationLabel: "Pursue",
 });
 
 export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
@@ -74,7 +83,10 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   const [jobText, setJobText] = useState("");
   const [jobExpanded, setJobExpanded] = useState(false);
 
-  const [status, setStatus] = useState<string | null>(null);
+  const [loadingPhase, setLoadingPhase] = useState<{
+    status: string;
+    detail: string;
+  } | null>(null);
   const [profileDesiredCompensation, setProfileDesiredCompensation] =
     useState<Compensation | null>(null);
   const [profileQualifiedIndustries, setProfileQualifiedIndustries] = useState<
@@ -106,7 +118,8 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
   } | null>(null);
   const [resumeBusy, setResumeBusy] = useState(false);
 
-  const busy = status !== null;
+  const busy = loadingPhase !== null;
+  const status = loadingPhase?.status ?? null;
   const ctaBlocked = busy || resumeBusy;
 
   useEffect(() => {
@@ -115,12 +128,21 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
     setLastReport(getLastAnalysisReport());
   }, [demo]);
 
+  // Instant hydrate from local cache before paint; network confirms right after.
+  useLayoutEffect(() => {
+    if (demo) return;
+    const cached = loadLatestResumeCache();
+    if (!cached) return;
+    setResumeId((current) => current ?? cached.id);
+    setResumeFileName((current) => current ?? cached.fileName);
+  }, [demo]);
+
   useEffect(() => {
     if (demo) return;
     void fetchLatestUserResume().then((resume) => {
       if (!resume) return;
-      setResumeId((current) => current ?? resume.id);
-      setResumeFileName((current) => current ?? resume.fileName);
+      setResumeId(resume.id);
+      setResumeFileName(resume.fileName);
     });
   }, [demo]);
 
@@ -172,53 +194,73 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         );
       }
       const jobContent = cleaned.text;
-      setStatus("Parsing resume…");
-      await waitForResumeParse(resumeId);
+      const needsParse =
+        !getCachedParsedResume(resumeId) || isResumeParsePending(resumeId);
+      if (needsParse) {
+        setLoadingPhase({
+          status: ANALYSIS_PARSE_STATUS,
+          detail: ANALYSIS_PARSE_DETAIL,
+        });
+        await waitForResumeParse(resumeId);
+      }
       const parsedResume = getCachedParsedResume(resumeId);
-      setStatus("Scoring fit…");
-      const profile = await fetchUserProfile();
-      const categoryWeights = matchScoreWeightsFromProfile(
-        profile?.matchScoreWeights ??
-          loadLocalProfilePrefs()?.matchScoreWeights ??
-          null,
-      );
-      const { analysisId, result } = await analyze({
-        jobText: jobContent,
-        resumeId,
-        ...(parsedResume ? { parsedResume } : {}),
-        categoryWeights,
-      });
-      const reportId = analysisId ?? crypto.randomUUID();
-      saveAnalysisReport(reportId, {
-        result: {
-          ...result,
-          jobDescription: result.jobDescription ?? jobContent,
-        },
-        analysisId,
-        resumeId,
-        profileDesiredCompensation,
-        profileQualifiedIndustries,
-        profileQualifiedSkills,
-        profileCountry,
-        profileTimezone,
-        profilePreferredCompanyTypes:
-          profile?.preferredCompanyTypes ?? profilePreferredCompanyTypes,
-        profilePreferredMinimumEmployerRating:
-          profile?.preferredMinimumEmployerRating ??
-          profilePreferredMinimumEmployerRating,
-        profilePreferredRegions:
-          profile?.preferredRegions ?? profilePreferredRegions,
-        profilePreferredProjectTypes:
-          profile?.preferredProjectTypes ?? profilePreferredProjectTypes,
-        profileMinimumHourlyRate:
-          profile?.minimumHourlyRate ?? profileMinimumHourlyRate,
-      });
-      toast.success("Analysis complete and saved.");
-      openAnalysisReport(reportId, "/analyze", router);
+
+      const stopPhases = startAnalysisPhaseRotation(setLoadingPhase);
+      try {
+        const profile = await fetchUserProfile();
+        const categoryWeights = matchScoreWeightsFromProfile(
+          profile?.matchScoreWeights ??
+            loadLocalProfilePrefs()?.matchScoreWeights ??
+            null,
+        );
+        const weightProfileLabel = resolveMatchScoreWeightProfileLabel(
+          categoryWeights,
+          profile?.matchScoreCustomPresets ??
+            loadLocalProfilePrefs()?.matchScoreCustomPresets ??
+            [],
+        );
+        const { analysisId, result } = await analyze({
+          jobText: jobContent,
+          resumeId,
+          ...(parsedResume ? { parsedResume } : {}),
+          categoryWeights,
+        });
+        const reportId = analysisId ?? crypto.randomUUID();
+        saveAnalysisReport(reportId, {
+          result: {
+            ...result,
+            jobDescription: result.jobDescription ?? jobContent,
+          },
+          analysisId,
+          resumeId,
+          matchScoreWeights: categoryWeights,
+          matchScoreWeightProfileLabel: weightProfileLabel,
+          profileDesiredCompensation,
+          profileQualifiedIndustries,
+          profileQualifiedSkills,
+          profileCountry,
+          profileTimezone,
+          profilePreferredCompanyTypes:
+            profile?.preferredCompanyTypes ?? profilePreferredCompanyTypes,
+          profilePreferredMinimumEmployerRating:
+            profile?.preferredMinimumEmployerRating ??
+            profilePreferredMinimumEmployerRating,
+          profilePreferredRegions:
+            profile?.preferredRegions ?? profilePreferredRegions,
+          profilePreferredProjectTypes:
+            profile?.preferredProjectTypes ?? profilePreferredProjectTypes,
+          profileMinimumHourlyRate:
+            profile?.minimumHourlyRate ?? profileMinimumHourlyRate,
+        });
+        toast.success("Analysis complete and saved.");
+        openAnalysisReport(reportId, "/analyze", router);
+      } finally {
+        stopPhases();
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Analysis failed.");
     } finally {
-      setStatus(null);
+      setLoadingPhase(null);
     }
   }
 
@@ -391,7 +433,12 @@ export function AnalyzeScreen({ demo = false }: { demo?: boolean }) {
         </StickyBottomCta>
       </form>
 
-      {busy && status ? <AnalysisLoadingOverlay status={status} /> : null}
+      {busy && loadingPhase ? (
+        <AnalysisLoadingOverlay
+          status={loadingPhase.status}
+          detail={loadingPhase.detail}
+        />
+      ) : null}
     </div>
   );
 }

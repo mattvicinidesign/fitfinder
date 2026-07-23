@@ -14,6 +14,7 @@ import {
   trackResumeParse,
   waitForResumeParse,
 } from "@/lib/resume-parse-tracker";
+import { saveLatestResumeCache } from "@/lib/latest-resume-cache";
 
 export { waitForResumeParse };
 
@@ -132,6 +133,11 @@ export async function uploadResume(file: File): Promise<{
         : { resumeId: row.id },
     ),
   );
+
+  saveLatestResumeCache({
+    id: row.id,
+    fileName: readable.name,
+  });
 
   return {
     resumeId: row.id,

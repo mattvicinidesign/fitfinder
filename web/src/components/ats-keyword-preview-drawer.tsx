@@ -17,10 +17,6 @@ import {
   hasApprovedKeywordChanges,
 } from "@/lib/resume-review-ats-optimization";
 import { getAtsDiscoverySummary } from "@/lib/ats-discovery-stats";
-import {
-  isAtsOptimizerDebugEnabled,
-  readReplacementAudit,
-} from "@/lib/ats-optimizer-debug";
 import { safeBottomOverlay, safeTopSheetHeader } from "@/lib/safe-area";
 import type { AtsKeywordChangeDecision, AtsKeywordOptimization } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -120,10 +116,6 @@ export function AtsKeywordPreviewDrawer({
     () => getAtsDiscoverySummary(optimization),
     [optimization],
   );
-  const replacementAudit = useMemo(
-    () => (isAtsOptimizerDebugEnabled() ? readReplacementAudit() : []),
-    [open, optimization.completedAt, isApplied],
-  );
 
   const approveAll = useCallback(() => {
     setDecisions(previewChanges.map(() => "approved" as const));
@@ -150,7 +142,7 @@ export function AtsKeywordPreviewDrawer({
       >
         <div className="min-w-0 flex-1">
           <h2 id="ats-preview-title" className="text-[22px] font-bold leading-tight tracking-tight">
-            {isApplied ? "Applied keyword changes" : "Verify Changes"}
+            {isApplied ? "Applied keyword changes" : "Suggested Changes"}
           </h2>
           {isReview ? (
             <p className="mt-1.5 whitespace-nowrap text-[14px] leading-none text-muted-foreground">
@@ -176,7 +168,9 @@ export function AtsKeywordPreviewDrawer({
         <div
           className={cn(
             "h-full overflow-y-auto overscroll-contain touch-pan-y px-4",
-            "pb-[calc(4.75rem+max(1.5rem,env(safe-area-inset-bottom)))]",
+            isReview
+              ? "pb-[calc(7.5rem+max(1.5rem,env(safe-area-inset-bottom)))]"
+              : "pb-[calc(4.75rem+max(1.5rem,env(safe-area-inset-bottom)))]",
           )}
         >
           <div className="sticky top-0 z-10 -mx-4 mb-2 border-b border-border/60 bg-background px-4 py-3">
@@ -209,39 +203,10 @@ export function AtsKeywordPreviewDrawer({
                 {isApplied
                   ? "No keyword replacements were applied to your export."
                   : discoverySummary.found > 0 && discoverySummary.readyToReview === 0
-                  ? `${discoverySummary.found} opportunities were discovered, but none passed review validation. See debug rejections below.`
+                  ? `${discoverySummary.found} opportunities were discovered, but none passed review validation.`
                   : discoverySummary.found > 0
                     ? `${discoverySummary.readyToReview} swaps are ready for your review. Export validation runs after you approve.`
                     : "No keyword opportunities were found."}
-              </li>
-            ) : null}
-            {isAtsOptimizerDebugEnabled() && replacementAudit.length > 0 ? (
-              <li className="rounded-xl border border-dashed border-border/80 bg-muted/10 px-4 py-4">
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Debug — replacement audit
-                </p>
-                <ul className="mt-3 space-y-3">
-                  {replacementAudit.slice(0, 12).map((entry, index) => (
-                    <li
-                      key={`${entry.stage}-${entry.replacement}-${entry.loggedAt}-${index}`}
-                      className="space-y-1 text-[13px] leading-snug text-muted-foreground"
-                    >
-                      <p className="font-medium text-foreground">
-                        [{entry.stage}] {entry.replacement}{" "}
-                        {entry.integrityPassed ? "✓" : "✗"}
-                      </p>
-                      <p>Original: {entry.originalSentence}</p>
-                      <p>Result: {entry.resultingSentence}</p>
-                      {entry.finalRenderedSentence &&
-                      entry.finalRenderedSentence !== entry.resultingSentence ? (
-                        <p>Rendered: {entry.finalRenderedSentence}</p>
-                      ) : null}
-                      {entry.failures.length > 0 ? (
-                        <p className="text-rose-400">{entry.failures.join("; ")}</p>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
               </li>
             ) : null}
             {displayChanges.map((change, index) => (
@@ -276,7 +241,9 @@ export function AtsKeywordPreviewDrawer({
           aria-hidden
           className={cn(
             "pointer-events-none absolute inset-x-0 bottom-0 z-10",
-            "h-[calc(6.75rem+max(1.5rem,env(safe-area-inset-bottom)))]",
+            isReview
+              ? "h-[calc(8rem+max(1.5rem,env(safe-area-inset-bottom)))]"
+              : "h-[calc(6.75rem+max(1.5rem,env(safe-area-inset-bottom)))]",
             "bg-gradient-to-t from-background from-[28%] via-background/80 via-[58%] to-transparent",
           )}
         />
@@ -288,22 +255,22 @@ export function AtsKeywordPreviewDrawer({
           )}
         >
           {isReview ? (
-            <div className="pointer-events-auto flex gap-2">
+            <div className="pointer-events-auto flex w-full flex-col gap-2">
               <Button
                 type="button"
                 variant="outline"
-                className={cn(SCREEN_REGULAR_CTA_CLASS, "flex-1")}
+                className={cn(SCREEN_REGULAR_CTA_CLASS, "w-full")}
                 onClick={() => onDiscard?.()}
               >
                 Cancel
               </Button>
               <Button
                 type="button"
-                className={cn(SCREEN_REGULAR_CTA_CLASS, "flex-1")}
+                className={cn(SCREEN_REGULAR_CTA_CLASS, "w-full")}
                 disabled={!canBuild}
                 onClick={() => onApply?.(decisions)}
               >
-                Build the resume
+                Apply and Preview Changes
               </Button>
             </div>
           ) : (

@@ -1,6 +1,6 @@
 "use client";
 
-import { recommendationRingClass } from "@/lib/recommendation-bands";
+import { recommendationLabelClass, recommendationRingClass } from "@/lib/recommendation-bands";
 import { globalScoreAriaLabel } from "@/lib/scoring-terminology";
 import {
   SCORE_RING_REVEAL_CLASS,
@@ -12,10 +12,12 @@ import type { Recommendation } from "@/lib/types";
 import { FitScoreRatio } from "@/components/fit-score-ratio";
 import { cn } from "@/lib/utils";
 
-const RING_SIZES = {
+export const QUALIFICATION_SCORE_RING_SIZES = {
   default: 128,
   large: 152,
 } as const;
+
+const RING_SIZES = QUALIFICATION_SCORE_RING_SIZES;
 
 const STROKE_WIDTH = 8;
 
@@ -104,17 +106,26 @@ export function QualificationScoreCircle({
             strokeDashoffset={dashOffset}
           />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-foreground">
-          <FitScoreRatio valueOnTen={animatedScore} size={ratioSize} />
+        <span className="absolute inset-0 flex items-center justify-center px-3 text-foreground">
+          <span className="relative flex -translate-y-1.5 flex-col items-center">
+            <FitScoreRatio
+              valueOnTen={animatedScore}
+              size={ratioSize}
+              className={recommendationLabelClass(recommendation)}
+            />
+            {recommendationLabel ? (
+              <span
+                className={cn(
+                  "absolute top-full mt-2.5 max-w-[5.5rem] truncate text-center text-[10px] font-medium leading-tight tracking-wide",
+                  recommendationLabelClass(recommendation),
+                )}
+              >
+                {recommendationLabel}
+              </span>
+            ) : null}
+          </span>
         </span>
       </div>
-      {recommendationLabel ? (
-        <div className="mt-3 max-w-[12rem] text-center">
-          <p className="text-[10px] font-medium leading-tight tracking-wide text-muted-foreground">
-            {recommendationLabel}
-          </p>
-        </div>
-      ) : null}
     </div>
   );
 }

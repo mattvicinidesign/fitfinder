@@ -39,23 +39,41 @@ Deno.test("ATS optimization: discovery targets bullet lines only", () => {
   );
 });
 
-Deno.test("ATS optimization: apply preserves structure and bullet count", () => {
-  const original = [
-    "• Helped design onboarding",
-    "• Made prototypes for research",
+Deno.test("ATS optimization: rejects feedback→user feedback when user already precedes", () => {
+  const resumeText = [
+    "EXPERIENCE",
+    "• Partnered closely with founders to iterate on user feedback",
+    "• Defined user flows, wireframes, and prototypes in Figma",
   ].join("\n");
 
-  const scan = scanResumeWithDiscovery(original, 5);
-  const approvedIndices = scan.keywordChanges.map((_, index) => index);
-  const applied = buildOptimizedResumeText(original, scan.keywordChanges, approvedIndices);
-
-  assertEquals(applied.reverted, false);
-  assert(applied.appliedChanges.length > 0);
+  const result = scanResumeWithDiscovery(resumeText, 10);
   assertEquals(
-    applied.optimizedResumeText.split("\n").length,
-    original.split("\n").length,
+    result.keywordChanges.some(
+      (change) =>
+        change.before.toLowerCase() === "feedback" &&
+        change.after.toLowerCase() === "user feedback",
+    ),
+    false,
+    "Must not suggest feedback→user feedback on existing user feedback",
   );
-  for (const line of applied.optimizedResumeText.split("\n")) {
-    assert(isBulletLine(line));
-  }
+
+  const wireframeChange = result.keywordChanges.find(
+    (change) => change.before.toLowerCase() === "wireframes",
+  );
+  assert(wireframeChange, "Expected a wireframes suggestion");
+
+  const applied = buildOptimizedResumeText(
+    resumeText,
+    result.keywordChanges,
+    result.keywordChanges.map((_, index) => index),
+  );
+  assertEquals(applied.reverted, false);
+  assert(
+    !applied.optimizedResumeText.includes("user user feedback"),
+    "Must not create duplicate user wording",
+  );
+  assert(
+    applied.appliedChanges.length >= 1,
+    "At least one valid approved change should apply",
+  );
 });

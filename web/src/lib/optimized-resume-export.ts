@@ -423,11 +423,10 @@ export async function downloadOptimizedResume(
   const substitutions = resolved.layoutReverted ? [] : resolved.substitutions;
   const requestedSubstitutionCount = substitutions.length;
 
-  if (isNativePlatform()) {
-    if (!resumeId) {
-      throw new Error("Resume file reference missing. Re-upload your resume.");
-    }
-
+  // Prefer the Edge Function on every platform when we have a resumeId.
+  // Client-side PDF literal patching is unreliable in Cursor preview / web
+  // (split text operators, missing runs); native already used this path.
+  if (resumeId) {
     const payload = await exportOptimizedResumeViaServer(
       {
         patchedText: exportText,
@@ -450,7 +449,17 @@ export async function downloadOptimizedResume(
     };
     assertExportAppliedChanges(result);
 
-    await shareNativeBase64File(payload.base64, payload.downloadName);
+    if (isNativePlatform()) {
+      await shareNativeBase64File(payload.base64, payload.downloadName);
+    } else {
+      const bytes = base64ToBytes(payload.base64);
+      triggerBrowserDownload(
+        new Blob([bytes as BlobPart], {
+          type: payload.mimeType || "application/pdf",
+        }),
+        payload.downloadName,
+      );
+    }
     return result;
   }
 
@@ -474,6 +483,11 @@ export async function downloadOptimizedResume(
     requestedSubstitutionCount,
   };
   assertExportAppliedChanges(result);
-  triggerBrowserDownload(blob, downloadName);
+
+  if (isNativePlatform()) {
+    await shareNativeBlob(blob, downloadName);
+  } else {
+    triggerBrowserDownload(blob, downloadName);
+  }
   return result;
 }

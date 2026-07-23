@@ -15,6 +15,10 @@ export const metricScoreSizes = {
   lg: "text-[36px] leading-none tracking-[-0.038em]",
   /** Activity list fit column. */
   md: "text-[28px] leading-none tracking-[-0.035em]",
+  /** Category detail cards / Overall Match rollup ratios. */
+  sm: "text-[15px] leading-none tracking-[-0.02em]",
+  /** Secondary category ratios (slightly smaller than sm). */
+  xs: "text-[13px] leading-none tracking-[-0.02em]",
 } as const;
 
 export type MetricScoreSize = keyof typeof metricScoreSizes;

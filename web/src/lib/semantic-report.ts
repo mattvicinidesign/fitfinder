@@ -27,7 +27,7 @@ export const SEMANTIC_CATEGORY_ORDER: SemanticCategoryKey[] = [
 export { SEMANTIC_CATEGORY_LABELS, SEMANTIC_CATEGORY_WEIGHTS };
 
 export const GLOBAL_SEMANTIC_SCORE_INFO =
-  "Your overall match for this role based on resume evidence compared to job requirements. Four weighted categories measure skills & tools, experience, responsibilities, and domain & background.";
+  "Your overall match for this role. Each category row shows how much that category contributes to Overall Match under your selected weight profile. Expand a category below for the raw match quality in that area.";
 
 export function hasSemanticReport(
   score: { semanticMatchReport?: SemanticMatchReport | null },
@@ -341,12 +341,41 @@ export function normalizeSemanticCategoryScores(
   });
 }
 
+/** Pull a valid weight set from already-normalized category rows. */
+export function matchScoreWeightsFromCategoryScores(
+  rows: SemanticCategoryScore[],
+): MatchScoreWeights | null {
+  const weights = {} as MatchScoreWeights;
+  for (const key of SEMANTIC_CATEGORY_ORDER) {
+    const row = rows.find(
+      (item) => remapSemanticCategoryKey(item.category) === key,
+    );
+    if (
+      !row ||
+      typeof row.weight !== "number" ||
+      !Number.isFinite(row.weight) ||
+      row.weight <= 0
+    ) {
+      return null;
+    }
+    weights[key] = Math.round(row.weight);
+  }
+  return areMatchScoreWeightsValid(weights) ? weights : null;
+}
+
 export function buildSemanticCategoryRollups(report: SemanticMatchReport) {
-  return normalizeSemanticCategoryScores(report.categoryScores).map((row) => ({
+  const weightOverrides = matchScoreWeightsFromCategoryScores(
+    report.categoryScores,
+  );
+  return normalizeSemanticCategoryScores(
+    report.categoryScores,
+    weightOverrides,
+  ).map((row) => ({
     id: row.category,
     title: row.label,
     score: row.score,
     weight: row.weight,
+    contribution: row.contribution,
   }));
 }
 

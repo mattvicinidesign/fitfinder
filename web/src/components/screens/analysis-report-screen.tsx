@@ -32,7 +32,6 @@ import { reportRoleTitle } from "@/lib/analysis-report-cache";
 import { cn } from "@/lib/utils";
 import { navigateApp } from "@/lib/navigate-app";
 import { SkeletonAnalysisReport } from "@/components/ui/skeletons";
-import { ReportSummaryHeader } from "@/components/report-summary-header";
 import {
   screenShellClass,
   StickyScreenBody,
@@ -187,27 +186,6 @@ export function AnalysisReportScreen() {
 
   return (
     <ReportShell
-      header={
-        <ReportSummaryHeader
-          jobTitle={displayJobTitle}
-          score={normalized.score}
-          parsedJob={normalized.parsedJob}
-          parsedResume={normalized.parsedResume}
-          profileDesiredCompensation={profileDesired}
-          profileQualifiedIndustries={profileIndustries}
-          profileQualifiedSkills={profileSkills}
-          profileCountry={profileCountryResolved}
-          profileTimezone={profileTimezoneResolved}
-          profilePreferredCompanyTypes={resolvedCompanyTypes}
-          profilePreferredMinimumEmployerRating={resolvedMinRating}
-          profilePreferredRegions={resolvedRegions}
-          profilePreferredProjectTypes={resolvedProjectTypes}
-          profileMinimumHourlyRate={resolvedMinimumHourlyRate}
-          jobDescription={jobDescription}
-          companyName={entry.result.companyName}
-          postingContext={normalized.postingContext}
-        />
-      }
       footer={
         <ApplicationAssistantSection
           reportId={reportId}
@@ -227,7 +205,11 @@ export function AnalysisReportScreen() {
           analysisId={entry.analysisId}
           reportId={reportId}
           resumeId={entry.resumeId ?? null}
-          showSummaryHeader={false}
+          matchScoreWeights={entry.matchScoreWeights ?? null}
+          matchScoreWeightProfileLabel={
+            entry.matchScoreWeightProfileLabel ?? null
+          }
+          showSummaryHeader
           profileDesiredCompensation={profileDesired}
           profileQualifiedIndustries={profileIndustries}
           profileQualifiedSkills={profileSkills}
@@ -246,11 +228,9 @@ export function AnalysisReportScreen() {
 
 function ReportShell({
   children,
-  header,
   footer,
 }: {
   children: React.ReactNode;
-  header?: React.ReactNode;
   footer?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -263,7 +243,7 @@ function ReportShell({
           safeTopCompact,
         )}
       >
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <ReportBackButton />
           <button
             type="button"
@@ -274,7 +254,6 @@ function ReportShell({
             <X className="size-5 shrink-0 pointer-events-none" strokeWidth={2.25} aria-hidden />
           </button>
         </div>
-        {header}
       </StickyScreenHeader>
       <StickyScreenBody
         className={cn(screenGutterX, footer ? "pb-24" : undefined)}

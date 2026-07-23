@@ -87,6 +87,7 @@ export function IosAnalysisListRow({
             as="p"
             valueOnTen={fitScoreOnTen ?? 0}
             size="md"
+            equalParts
             className={scoreClass}
           />
         )}

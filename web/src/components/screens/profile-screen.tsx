@@ -130,6 +130,15 @@ export function ProfileScreen() {
     !isGuest &&
     matchSelectedPresetId === null &&
     matchWeightsChanged;
+  const selectingNamedPreset =
+    activeTab === "matchPreferences" &&
+    !isGuest &&
+    matchSelectedPresetId != null;
+  const matchPreferencesCtaLabel = creatingNewMatchPreset
+    ? "Add Preset"
+    : selectingNamedPreset
+      ? "Use as Default Preset"
+      : "Save Changes";
   const tabHasUnsavedChanges =
     activeTab === "general"
       ? generalInfoChanged
@@ -327,19 +336,19 @@ export function ProfileScreen() {
     customLabel?: string,
     customDescription?: string,
   ) {
-    const normalized: UserProfile = {
-      ...profile,
-      fullName: profile.fullName?.trim() || null,
-      country: profile.country?.trim() || null,
-      timezone: profile.timezone?.trim() || null,
-      matchScoreWeights: matchWeights,
-    };
-
+    const creatingCustom = Boolean(customLabel?.trim());
     const committed = commitMatchPreferenceSave({
       weights: matchWeights,
       customPresets: matchCustomPresets,
       customLabel,
       customDescription,
+      ...(creatingCustom
+        ? {
+            keepActiveWeights: matchScoreWeightsFromProfile(
+              savedProfile.matchScoreWeights,
+            ),
+          }
+        : {}),
     });
 
     setBusy(true);
@@ -354,21 +363,31 @@ export function ProfileScreen() {
       return false;
     }
 
-    const next = {
-      ...normalized,
+    const nextSaved = {
+      ...profile,
+      fullName: profile.fullName?.trim() || null,
+      country: profile.country?.trim() || null,
+      timezone: profile.timezone?.trim() || null,
       matchScoreWeights: committed.weights,
       matchScoreCustomPresets: committed.customPresets,
     };
-    setProfile(next);
-    setSavedProfile(structuredClone(next));
+    setSavedProfile(structuredClone(nextSaved));
+
+    const created = committed.createdCustom;
+    // After adding a Custom: select it and show its weights in the UI, but keep
+    // the persisted active default unchanged until "Use as Default Preset".
+    setProfile(
+      created
+        ? { ...nextSaved, matchScoreWeights: created.weights }
+        : nextSaved,
+    );
     setMatchSelectedPresetId(committed.selectedPresetId);
     setCustomNameModalOpen(false);
     setCustomNameDraft("");
     setCustomDescriptionDraft("");
 
-    const custom = committed.createdCustom;
     toast.success(
-      custom ? `Saved as ${custom.label}.` : "Profile updated.",
+      created ? `Added ${created.label}.` : "Profile updated.",
     );
     return true;
   }
@@ -624,16 +643,16 @@ export function ProfileScreen() {
             aria-label={
               busy
                 ? "Saving profile"
-                : creatingNewMatchPreset
-                  ? "Add preset"
+                : activeTab === "matchPreferences"
+                  ? matchPreferencesCtaLabel
                   : "Save changes"
             }
             onClick={save}
           >
             {busy ? (
               <CtaSpinner />
-            ) : creatingNewMatchPreset ? (
-              "Add Preset"
+            ) : activeTab === "matchPreferences" ? (
+              matchPreferencesCtaLabel
             ) : (
               "Save Changes"
             )}

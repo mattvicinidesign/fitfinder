@@ -476,6 +476,29 @@ export function applyAtsKeywordOptimization(
   return next;
 }
 
+/**
+ * Undo an applied optimization so the user can revisit Suggested Changes
+ * and change approvals. Keeps prior keyword decisions.
+ */
+export function reopenAtsKeywordOptimizationForReview(
+  reviewId: string,
+  optimization: AtsKeywordOptimization,
+): AtsKeywordOptimization {
+  const next: AtsKeywordOptimization = {
+    ...optimization,
+    optimizationApplied: false,
+    optimizedResumeText: optimization.originalResumeText,
+    optimizedATSScore: optimization.originalATSScore,
+    improvementPercentage: 0,
+    appliedKeywordChanges: undefined,
+    layoutReverted: false,
+    typographyReverted: false,
+    applyRejectionCounts: undefined,
+  };
+  saveAtsKeywordOptimization(reviewId, next);
+  return next;
+}
+
 export {
   downloadOptimizedResume,
   buildOptimizedResumeDownloadInput,

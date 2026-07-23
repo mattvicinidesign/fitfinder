@@ -17,13 +17,11 @@ import {
   MATCH_SCORE_WEIGHT_MIN,
   MATCH_SCORE_WEIGHT_PRESETS,
   MATCH_SCORE_WEIGHT_STEP,
-  MATCH_SCORE_WEIGHT_TOTAL,
   areMatchScoreWeightsValid,
   matchScoreCustomPresetsEqual,
   matchScoreWeightsEqual,
   rebalanceMatchScoreWeights,
   resolveMatchScoreSelectionId,
-  sumMatchScoreWeights,
   type MatchScoreCustomPreset,
   type MatchScoreSelectionId,
   type MatchScoreWeightKey,
@@ -50,12 +48,14 @@ function PresetChip({
   label,
   description,
   selected,
+  isDefault,
   onSelect,
   onDelete,
 }: {
   label: string;
   description: string;
   selected: boolean;
+  isDefault: boolean;
   onSelect: () => void;
   onDelete?: () => void;
 }) {
@@ -66,6 +66,7 @@ function PresetChip({
         data-preset-card
         onClick={onSelect}
         aria-pressed={selected}
+        aria-current={isDefault ? "true" : undefined}
         className={cn(
           "w-full rounded-xl border px-3.5 py-3 text-left transition-colors",
           onDelete && "pr-8",
@@ -86,12 +87,24 @@ function PresetChip({
           {description}
         </p>
       </button>
+      {isDefault ? (
+        <span
+          className={cn(
+            "pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2",
+            "inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5",
+            "border border-emerald-600 bg-emerald-500 shadow-sm",
+            "text-[10px] font-semibold uppercase tracking-wide text-white",
+          )}
+        >
+          Default Preset
+        </span>
+      ) : null}
       {onDelete ? (
         <button
           type="button"
           aria-label={`Delete ${label}`}
           className={cn(
-            "absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full",
+            "absolute right-1.5 top-1.5 z-10 flex size-6 items-center justify-center rounded-full",
             "text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive",
             "[appearance:none] [-webkit-appearance:none]",
           )}
@@ -110,12 +123,14 @@ function PresetChip({
 
 function PresetCarousel({
   selectedPresetId,
+  defaultPresetId,
   customPresets,
   onApplyPreset,
   onSelectCustom,
   onRequestDeleteCustom,
 }: {
   selectedPresetId: MatchScoreSelectionId | null;
+  defaultPresetId: MatchScoreSelectionId;
   customPresets: MatchScoreCustomPreset[];
   onApplyPreset: (id: MatchScoreWeightPreset["id"]) => void;
   onSelectCustom: (id: string) => void;
@@ -188,7 +203,7 @@ function PresetCarousel({
       <div
         ref={scrollRef}
         data-app-scroll-x
-        className="flex min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain px-1 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label="Match preference presets"
       >
         {[...customPresets].reverse().map((preset) => (
@@ -197,6 +212,7 @@ function PresetCarousel({
             label={preset.label}
             description={preset.description || "Custom"}
             selected={selectedPresetId === preset.id}
+            isDefault={defaultPresetId === preset.id}
             onSelect={() => onSelectCustom(preset.id)}
             onDelete={() => onRequestDeleteCustom(preset.id)}
           />
@@ -207,6 +223,7 @@ function PresetCarousel({
             label={preset.label}
             description={preset.description}
             selected={selectedPresetId === preset.id}
+            isDefault={defaultPresetId === preset.id}
             onSelect={() => onApplyPreset(preset.id)}
           />
         ))}
@@ -250,8 +267,6 @@ function ScoreWeightsGroup({
   deleteBusy: boolean;
   isGuest: boolean;
 }) {
-  const total = sumMatchScoreWeights(weights);
-  const valid = areMatchScoreWeightsValid(weights);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const prevSavedRef = useRef({
     weights: savedWeights,
@@ -259,12 +274,17 @@ function ScoreWeightsGroup({
   });
 
   const visibleCustomPresets = isGuest ? [] : customPresets;
+  const defaultPresetId = resolveMatchScoreSelectionId(
+    savedWeights,
+    isGuest ? [] : savedCustomPresets,
+  );
   const pendingDelete =
     !isGuest && pendingDeleteId
       ? (customPresets.find((preset) => preset.id === pendingDeleteId) ?? null)
       : null;
 
-  // After Save / discard: re-resolve selection from persisted state.
+  // After Save / discard: re-resolve selection when the active default weights change.
+  // Adding a Custom keeps prior active weights — leave the newly selected card alone.
   useEffect(() => {
     const sameWeights = matchScoreWeightsEqual(
       prevSavedRef.current.weights,
@@ -275,10 +295,12 @@ function ScoreWeightsGroup({
       savedCustomPresets,
     );
     if (sameWeights && sameCustoms) return;
+    const weightsChanged = !sameWeights;
     prevSavedRef.current = {
       weights: savedWeights,
       customs: savedCustomPresets,
     };
+    if (!weightsChanged) return;
     onSelectedPresetIdChange(
       resolveMatchScoreSelectionId(
         savedWeights,
@@ -356,6 +378,7 @@ function ScoreWeightsGroup({
         <div className="mt-2">
           <PresetCarousel
             selectedPresetId={selectedPresetId}
+            defaultPresetId={defaultPresetId}
             customPresets={visibleCustomPresets}
             onApplyPreset={applyPreset}
             onSelectCustom={applyCustom}
@@ -367,11 +390,22 @@ function ScoreWeightsGroup({
       <div>
         <div className="flex items-center justify-between gap-3">
           <h2 className={FORM_FIELD_LABEL_CLASS}>Category Weighting</h2>
-          {draftingNewCustom ? (
-            <p className="shrink-0 text-[12px] leading-snug text-muted-foreground">
-              Creating a new preset
-            </p>
-          ) : null}
+          <div className="flex shrink-0 items-center gap-2">
+            {draftingNewCustom ? (
+              <p className="text-[12px] leading-snug text-muted-foreground">
+                Creating a new preset
+              </p>
+            ) : null}
+            {!isGuest ? (
+              <button
+                type="button"
+                onClick={resetDefault}
+                className="rounded-md px-1.5 py-0.5 text-[13px] font-medium text-primary transition-colors hover:bg-primary/10"
+              >
+                Reset
+              </button>
+            ) : null}
+          </div>
         </div>
         <div className="relative mt-2">
           <div
@@ -390,12 +424,6 @@ function ScoreWeightsGroup({
                   label={category.label}
                   valueDisplay={String(weights[category.key])}
                   valueSuffix="%"
-                  ticks={
-                    <>
-                      <span>{MATCH_SCORE_WEIGHT_MIN}%</span>
-                      <span>{MATCH_SCORE_WEIGHT_MAX}%</span>
-                    </>
-                  }
                 >
                   <PreferenceSliderInput
                     min={MATCH_SCORE_WEIGHT_MIN}
@@ -413,43 +441,6 @@ function ScoreWeightsGroup({
                 </p>
               </div>
             ))}
-
-            <div
-              className={cn(
-                "rounded-xl border border-border/60 bg-card px-4 py-3",
-                !valid && !isGuest && "border-destructive/40",
-              )}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[13px] font-medium text-muted-foreground">
-                    Total Weight
-                  </p>
-                  <p
-                    className={cn(
-                      "text-[22px] font-bold tabular-nums leading-none",
-                      valid || isGuest ? "text-foreground" : "text-destructive",
-                    )}
-                  >
-                    {total}%
-                  </p>
-                  {!valid && !isGuest ? (
-                    <p className="mt-1 text-[12px] text-destructive">
-                      Weights must total exactly {MATCH_SCORE_WEIGHT_TOTAL}%.
-                    </p>
-                  ) : null}
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={cn(SCREEN_REGULAR_CTA_CLASS, "w-auto px-4")}
-                  onClick={resetDefault}
-                  tabIndex={isGuest ? -1 : undefined}
-                >
-                  Reset to Default
-                </Button>
-              </div>
-            </div>
           </div>
 
           {isGuest ? (

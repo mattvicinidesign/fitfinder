@@ -378,7 +378,67 @@ export function validateReplacementIntegrity(
     failures.push("Adjacent text changed unexpectedly");
   }
 
+  if (
+    replacementCreatesRedundantOverlap(originalSentence, change) ||
+    createsNewDuplicateWords(originalSentence, resultingSentence)
+  ) {
+    failures.push("Replacement would duplicate adjacent wording");
+  }
+
   return { passed: failures.length === 0, failures };
+}
+
+/**
+ * True when after extends before with a prefix that is already present
+ * (e.g. "feedback" → "user feedback" on "...user feedback").
+ */
+export function replacementCreatesRedundantOverlap(
+  line: string,
+  change: AtsKeywordChange,
+  matchIndex?: number,
+): boolean {
+  const beforeLower = change.before.trim().toLowerCase();
+  const afterLower = change.after.trim().toLowerCase();
+  if (!beforeLower || !afterLower || afterLower === beforeLower) return false;
+
+  let prefix = "";
+  if (afterLower.endsWith(beforeLower) && afterLower.length > beforeLower.length) {
+    prefix = change.after
+      .trim()
+      .slice(0, change.after.trim().length - change.before.trim().length)
+      .trim();
+  } else {
+    const idx = afterLower.lastIndexOf(beforeLower);
+    if (idx > 0) {
+      prefix = change.after.trim().slice(0, idx).trim();
+    }
+  }
+  if (!prefix) return false;
+
+  const pattern = buildPhraseBoundaryPattern(change.before, "gi");
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(line)) !== null) {
+    if (typeof matchIndex === "number" && match.index !== matchIndex) continue;
+    const preceding = line.slice(0, match.index);
+    if (new RegExp(`${escapeRegExp(prefix)}\\s*$`, "i").test(preceding)) {
+      return true;
+    }
+    if (typeof matchIndex === "number") break;
+  }
+
+  return false;
+}
+
+function createsNewDuplicateWords(original: string, resulting: string): boolean {
+  const dupPattern = /\b([A-Za-z][A-Za-z0-9+/_-]*)(?:\s+\1)+\b/gi;
+  const originalDups = new Set(
+    [...original.matchAll(dupPattern)].map((match) => match[1]!.toLowerCase()),
+  );
+  for (const match of resulting.matchAll(dupPattern)) {
+    const word = match[1]!.toLowerCase();
+    if (!originalDups.has(word)) return true;
+  }
+  return false;
 }
 
 export function isBulletLine(line: string): boolean {
@@ -1107,6 +1167,13 @@ function validateReviewStage(
     return { accepted: false, reason: "golden_rule" };
   }
 
+  if (
+    replacementCreatesRedundantOverlap(line, change) ||
+    createsNewDuplicateWords(line, modifiedLine)
+  ) {
+    return { accepted: false, reason: "golden_rule" };
+  }
+
   return { accepted: true };
 }
 
@@ -1440,7 +1507,22 @@ export function buildOptimizedResumeText(
   const appliedChanges: AtsKeywordChange[] = [];
   const applyRejectionCounts = createEmptyRejectionCounts();
 
-  for (const index of approvedIndices) {
+  // Apply right-to-left / bottom-to-top so earlier matchIndex offsets stay valid
+  // after length-changing replacements on the same line.
+  const orderedIndices = [...approvedIndices].sort((a, b) => {
+    const changeA = changes[a];
+    const changeB = changes[b];
+    if (!changeA || !changeB) return a - b;
+    const lineA = changeA.lineIndex ?? Number.MAX_SAFE_INTEGER;
+    const lineB = changeB.lineIndex ?? Number.MAX_SAFE_INTEGER;
+    if (lineA !== lineB) return lineB - lineA;
+    const matchA = changeA.matchIndex ?? Number.MAX_SAFE_INTEGER;
+    const matchB = changeB.matchIndex ?? Number.MAX_SAFE_INTEGER;
+    if (matchA !== matchB) return matchB - matchA;
+    return b - a;
+  });
+
+  for (const index of orderedIndices) {
     const change = changes[index];
     if (!change) continue;
     if (!passesStageWidthTolerance(change, "review")) {
@@ -1479,6 +1561,18 @@ export function buildOptimizedResumeText(
     }
 
     if (
+      replacementCreatesRedundantOverlap(
+        originalLine,
+        change,
+        target.matchIndex,
+      ) ||
+      createsNewDuplicateWords(originalLine, candidateLine)
+    ) {
+      applyRejectionCounts.golden_rule += 1;
+      continue;
+    }
+
+    if (
       !passesReviewGoldenRule(originalLine, candidateLine, change) ||
       detectAbnormalWhitespace(originalLine, candidateLine)
     ) {
@@ -1499,9 +1593,21 @@ export function buildOptimizedResumeText(
     currentLines[target.lineIndex] = candidateLine;
     text = currentLines.join("\n");
     appliedChanges.push(
-      enrichKeywordChangeWithBulletMapping(originalLine, target.lineIndex, change),
+      enrichKeywordChangeWithBulletMapping(originalLine, target.lineIndex, {
+        ...change,
+        lineIndex: target.lineIndex,
+        matchIndex: target.matchIndex,
+      }),
     );
   }
+
+  // Keep display order top-to-bottom / left-to-right.
+  appliedChanges.sort((a, b) => {
+    if ((a.lineIndex ?? 0) !== (b.lineIndex ?? 0)) {
+      return (a.lineIndex ?? 0) - (b.lineIndex ?? 0);
+    }
+    return (a.matchIndex ?? 0) - (b.matchIndex ?? 0);
+  });
 
   const layout = evaluateLayoutPreservation(originalText, text, metadata);
   const typography = evaluateTypographyPreservation(

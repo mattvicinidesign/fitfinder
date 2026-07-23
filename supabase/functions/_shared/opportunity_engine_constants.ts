@@ -91,15 +91,15 @@ export const LOWER_INDUSTRIES = [
 
 /**
  * Display scale 0–10 = fitScore ÷ 10 (stored fitScore 0–100).
- * 8.5–10.0 Strong Pursuit | 7.0–8.4 Good Opportunity | 5.0–6.9 Proceed With Caution | 0.0–4.9 Not Recommended
+ * 8.5–10.0 Strong | 7.0–8.4 Good | 5.0–6.9 Caution | 0.0–4.9 Weak
  */
 export const OPPORTUNITY_RECOMMENDATION_BANDS: {
   min: number;
   recommendation: Recommendation;
   label: string;
 }[] = [
-  { min: 85, recommendation: "strong_apply", label: "Strong Pursuit" },
-  { min: 70, recommendation: "apply", label: "Good Opportunity" },
-  { min: 50, recommendation: "stretch", label: "Proceed With Caution" },
-  { min: 0, recommendation: "not_recommended", label: "Not Recommended" },
+  { min: 85, recommendation: "strong_apply", label: "Pursue" },
+  { min: 70, recommendation: "apply", label: "Consider" },
+  { min: 50, recommendation: "stretch", label: "Review" },
+  { min: 0, recommendation: "not_recommended", label: "Skip" },
 ];

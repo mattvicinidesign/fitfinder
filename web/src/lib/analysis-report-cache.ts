@@ -1,4 +1,5 @@
 import type { AnalysisResult, Compensation } from "@/lib/types";
+import type { MatchScoreWeights } from "@/lib/match-score-weights";
 import { resolveJobTitle } from "@/lib/posting-details";
 import { recordRecentActivityFromReport } from "@/lib/recent-activity";
 
@@ -6,6 +7,10 @@ export type AnalysisReportCacheEntry = {
   result: AnalysisResult;
   analysisId: string | null;
   resumeId?: string | null;
+  /** Fit Score weights used for this scan (Preferences at analyze time). */
+  matchScoreWeights?: MatchScoreWeights | null;
+  /** Display name of the weight preset used (e.g. OnlyFit Default, Skills Focused). */
+  matchScoreWeightProfileLabel?: string | null;
   profileDesiredCompensation?: Compensation | null;
   profileQualifiedIndustries?: string[] | null;
   profileQualifiedSkills?: string[] | null;

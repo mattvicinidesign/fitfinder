@@ -13,14 +13,44 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000194/small_logo.png"
   },
   {
-    "id": "21851046",
-    "title": "Experience Design (XD) IV, Product Design - Bank of America Experience Design",
-    "company": "Bank of America",
-    "location": "Boston, MA, Charlotte, NC, New York, NY, Pennington, NJ, San Francisco, CA, Seattle, WA",
+    "id": "21985739",
+    "title": "Director, Frontline Marketing, CBL",
+    "company": "The Coca-Cola Company",
+    "location": "Beijing, China",
     "level": "Senior Level",
-    "publishedAt": "2026-06-15T19:13:03Z",
-    "applyUrl": "https://www.themuse.com/jobs/bankofamerica/experience-design-xd-iv-product-design-bank-of-america-experience-design",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
+    "publishedAt": "2026-07-22T23:39:09Z",
+    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/director-frontline-marketing-cbl-bfb12e",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+  },
+  {
+    "id": "21098533",
+    "title": "Associate Creative Director, Design",
+    "company": "GlossGenius",
+    "location": "New York, NY",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-22T23:38:27Z",
+    "applyUrl": "https://www.themuse.com/jobs/glossgenius/associate-creative-director-design",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
+  },
+  {
+    "id": "21985704",
+    "title": "Sales Operations Manager (Starlink Channel Sales)",
+    "company": "SpaceX",
+    "location": "El Segundo, CA, Lockhart, TX",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-22T23:37:59Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/sales-operations-manager-starlink-channel-sales",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21985694",
+    "title": "Sales Operations Manager (Starlink Channel Sales)",
+    "company": "SpaceX",
+    "location": "El Segundo, CA, Lockhart, TX",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-22T23:37:59Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/sales-operations-manager-starlink-channel-sales-5a5223",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
     "id": "21980982",
@@ -51,16 +81,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-07-20T23:47:59Z",
     "applyUrl": "https://www.themuse.com/jobs/spacex/control-technician-starship-launch-pad-night-shift",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21098533",
-    "title": "Associate Creative Director",
-    "company": "GlossGenius",
-    "location": "New York, NY",
-    "level": "Senior Level",
-    "publishedAt": "2026-07-18T23:35:19Z",
-    "applyUrl": "https://www.themuse.com/jobs/glossgenius/associate-creative-director",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
   },
   {
     "id": "21941164",
@@ -113,16 +133,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
-    "id": "21429881",
-    "title": "Manufacturing Engineer, Raptor Turbomachinery",
-    "company": "SpaceX",
-    "location": "El Segundo, CA",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-26T18:34:23Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/manufacturing-engineer-raptor-turbomachinery-7927c8",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
     "id": "21870674",
     "title": "Injection Molding Technician - 2nd Shift",
     "company": "SpaceX",
@@ -161,16 +171,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-05-22T19:15:23Z",
     "applyUrl": "https://www.themuse.com/jobs/bankofamerica/software-engineer-iii-ui-development-team",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
-  },
-  {
-    "id": "21727110",
-    "title": "UI Designer - Unpublished R&D Product (Contract)",
-    "company": "Riot Games",
-    "location": "Guangzhou, China",
-    "level": "Mid Level",
-    "publishedAt": "2026-05-19T18:30:31Z",
-    "applyUrl": "https://www.themuse.com/jobs/riotgames/ui-designer-unpublished-rd-product-contract",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
   },
   {
     "id": "21811147",
