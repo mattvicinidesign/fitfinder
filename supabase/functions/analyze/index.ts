@@ -102,19 +102,20 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // 2. Parse the job description.
-    const parsedJobRaw = await completeJSON<ParsedJob>([
-      { role: "system", content: JOB_PARSE_SYSTEM },
-      { role: "user", content: jobText },
+    // 2. Resolve scoring mode + weights, then run job parse and fit score together.
+    // Job parse is only needed for narrative / persistence — scoring uses raw text.
+    const [{ data: userRow }, { data: profileWeightsRow }] = await Promise.all([
+      supabase
+        .from("users")
+        .select("account_type")
+        .eq("id", userId)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("match_score_weights")
+        .eq("user_id", userId)
+        .maybeSingle(),
     ]);
-    const parsedJob = normalizeParsedJob(parsedJobRaw, jobText, jobTitle);
-
-    // 3. Semantic matching engine (resume + job only — no profile/onboarding scoring).
-    const { data: userRow } = await supabase
-      .from("users")
-      .select("account_type")
-      .eq("id", userId)
-      .maybeSingle();
 
     let scoringMode: ScoringMode =
       userRow?.account_type === "guest" ? "guest" : "registered";
@@ -122,8 +123,6 @@ Deno.serve(async (req: Request) => {
     if (requestedScoringMode === "registered") {
       scoringMode = "registered";
     }
-
-    const postingContextPreview = resolvePostingContext(parsedJob, jobText);
 
     const resumeTextForScoring =
       (typeof inlineResumeText === "string" ? inlineResumeText.trim() : "") ||
@@ -134,31 +133,31 @@ Deno.serve(async (req: Request) => {
       return error("Resume text is required. Upload a resume or pass resumeText.");
     }
 
-    const { data: profileWeightsRow } = await supabase
-      .from("profiles")
-      .select("match_score_weights")
-      .eq("user_id", userId)
-      .maybeSingle();
-
     // Prefer client-sent Preferences weights (just saved); fall back to profile row.
     const categoryWeights =
       requestedCategoryWeights ?? profileWeightsRow?.match_score_weights ?? null;
 
-    const score = await scoreFit(resumeTextForScoring, jobText, {
-      mode: scoringMode,
-      jobTitle,
-      jobText,
-      posting: postingContextPreview,
-      categoryWeights,
-    });
+    const [parsedJobRaw, score] = await Promise.all([
+      completeJSON<ParsedJob>([
+        { role: "system", content: JOB_PARSE_SYSTEM },
+        { role: "user", content: jobText },
+      ]),
+      scoreFit(resumeTextForScoring, jobText, {
+        mode: scoringMode,
+        jobTitle,
+        jobText,
+        categoryWeights,
+      }),
+    ]);
 
-    // 4. Narrative analysis layered on top of the computed scores.
+    const parsedJob = normalizeParsedJob(parsedJobRaw, jobText, jobTitle);
+    const postingContext = resolvePostingContext(parsedJob, jobText);
+
+    // 3. Narrative analysis layered on top of the computed scores.
     const narrative = await completeJSON<Narrative>([
       { role: "system", content: narrativeSystemPrompt() },
       { role: "user", content: narrativeUserPayload(resume, parsedJob, score) },
     ]);
-
-    const postingContext = postingContextPreview;
 
     const resolvedJobTitle =
       resolveJobTitle(jobTitle, jobText, parsedJob.roleTitle) ?? null;
@@ -174,7 +173,7 @@ Deno.serve(async (req: Request) => {
       postingContext,
     };
 
-    // 5. Persist (subject to RLS) unless the caller opts out.
+    // 4. Persist (subject to RLS) unless the caller opts out.
     let analysisId: string | null = null;
     if (persist) {
       const { data, error: dbError } = await supabase

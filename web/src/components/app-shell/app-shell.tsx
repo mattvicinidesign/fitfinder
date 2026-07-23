@@ -68,11 +68,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
 
-    void supabase.auth.getSession().then(({ data: { session } }) => {
-      setSignedIn(!!session?.user);
-      setReady(true);
-    });
-
+    // Wait for INITIAL_SESSION (storage restore) before treating "no session"
+    // as a cue to create an anonymous guest — otherwise a full WebView reload
+    // can race getSession() → null and overwrite a registered login.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {

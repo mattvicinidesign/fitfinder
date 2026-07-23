@@ -50,11 +50,19 @@ export function clearQaAccountMode(): void {
 
 /**
  * Product “guest” for UI gating (Preferences lock, upgrade prompts, etc.).
- * QA can force guest or registered without changing the Supabase session.
+ * QA can force guest or registered without changing the Supabase session —
+ * except a real non-anonymous login always wins over a stale QA "guest" flag.
  */
 export function resolveIsGuestUser(
   user: { is_anonymous?: boolean | null } | null | undefined,
 ): boolean {
+  if (user && user.is_anonymous === false) {
+    if (getQaAccountMode() === "guest") {
+      clearQaAccountMode();
+    }
+    return false;
+  }
+
   const qa = getQaAccountMode();
   if (qa === "registered") return false;
   if (qa === "guest") return true;

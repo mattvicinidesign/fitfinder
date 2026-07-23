@@ -52,6 +52,19 @@ export async function ensureGuestSession(options?: {
     return { error: null };
   }
 
+  // Re-check immediately before anonymous sign-in. A registered session may
+  // finish restoring from storage between the first getSession and here.
+  const {
+    data: { session: latest },
+  } = await supabase.auth.getSession();
+  if (latest?.user) {
+    if (shouldMarkLaunchComplete) {
+      markLaunchFlowComplete();
+    }
+    markAppSessionActive();
+    return { error: null };
+  }
+
   let signInResult: Awaited<ReturnType<typeof supabase.auth.signInAnonymously>>;
   try {
     signInResult = await withTimeout(

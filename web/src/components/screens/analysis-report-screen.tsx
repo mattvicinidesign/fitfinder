@@ -30,7 +30,6 @@ import type { Compensation } from "@/lib/types";
 import { normalizeAnalysisResult } from "@/lib/normalize-score";
 import { reportRoleTitle } from "@/lib/analysis-report-cache";
 import { cn } from "@/lib/utils";
-import { navigateApp } from "@/lib/navigate-app";
 import { SkeletonAnalysisReport } from "@/components/ui/skeletons";
 import {
   screenShellClass,
@@ -248,7 +247,11 @@ function ReportShell({
           <button
             type="button"
             aria-label="Close report"
-            onClick={() => navigateApp("/home", router, "replace")}
+            onClick={() => {
+              // Client replace (same as report back) — avoids a native full reload
+              // that can re-process the magic-link launch URL via CapacitorBridge.
+              router.replace("/home");
+            }}
             className={circleBackButtonClass}
           >
             <X className="size-5 shrink-0 pointer-events-none" strokeWidth={2.25} aria-hidden />

@@ -11,46 +11,58 @@ export const ANALYSIS_PARSE_DETAIL =
 export type AnalysisLoadingPhase = {
   status: string;
   detail: string;
-  /** How long to keep this phase before advancing (last phase holds until done). */
+  /** How long to keep this phase before advancing. */
   holdMs: number;
 };
+
+const FINAL_DETAIL_HOLD_MS = 2200;
 
 /**
  * Timed phases during the analyze Edge Function call.
  * Server work is one request, so these communicate progress while it runs.
- * The final step keeps one header and rotates subtext.
+ * Once we reach "Building your report…", details keep cycling until done.
  */
 export const ANALYSIS_ANALYZE_PHASES: AnalysisLoadingPhase[] = [
   {
     status: "Reading job description…",
     detail: "Pulling out role requirements, skills, and must-haves.",
-    holdMs: 3200,
+    holdMs: 2400,
   },
   {
     status: "Comparing resume with job…",
     detail: "Matching your experience, skills, and background to the role.",
-    holdMs: 4800,
+    holdMs: 3000,
   },
   {
     status: "Scoring fit categories…",
     detail:
       "Weighting Skills & Tools, Experience, Responsibilities, and Domain.",
-    holdMs: 4200,
+    holdMs: 2800,
   },
   {
     status: "Building your report…",
     detail: "Summarizing matched, partial, and missing requirements.",
-    holdMs: 2800,
+    holdMs: FINAL_DETAIL_HOLD_MS,
   },
   {
     status: "Building your report…",
     detail: "Calculating your overall Fit Score and recommendation.",
-    holdMs: 2800,
+    holdMs: FINAL_DETAIL_HOLD_MS,
   },
   {
     status: "Building your report…",
     detail: "Assembling category scores into your final report.",
-    holdMs: 0,
+    holdMs: FINAL_DETAIL_HOLD_MS,
+  },
+  {
+    status: "Building your report…",
+    detail: "Highlighting strengths and gaps for this role.",
+    holdMs: FINAL_DETAIL_HOLD_MS,
+  },
+  {
+    status: "Building your report…",
+    detail: "Packaging insights into a clear Fit Summary.",
+    holdMs: FINAL_DETAIL_HOLD_MS,
   },
 ];
 
@@ -62,27 +74,34 @@ export const RESUME_REVIEW_LOADING_PHASES: AnalysisLoadingPhase[] = [
   {
     status: "Analyzing your resume…",
     detail: "Checking content and clarity.",
-    holdMs: 2800,
+    holdMs: FINAL_DETAIL_HOLD_MS,
   },
   {
     status: "Analyzing your resume…",
     detail: "Reviewing structure and formatting.",
-    holdMs: 2800,
+    holdMs: FINAL_DETAIL_HOLD_MS,
   },
   {
     status: "Analyzing your resume…",
     detail: "Scoring ATS compatibility.",
-    holdMs: 2800,
+    holdMs: FINAL_DETAIL_HOLD_MS,
   },
   {
     status: "Analyzing your resume…",
     detail: "Evaluating completeness and overall score.",
-    holdMs: 0,
+    holdMs: FINAL_DETAIL_HOLD_MS,
+  },
+  {
+    status: "Analyzing your resume…",
+    detail: "Preparing your resume score summary.",
+    holdMs: FINAL_DETAIL_HOLD_MS,
   },
 ];
 
 /**
  * Advance through loading phases. Returns a stop function.
+ * After the first full pass, keeps looping phases that share the final status
+ * so the last step never freezes on one line of copy.
  */
 export function startLoadingPhaseRotation(
   phases: AnalysisLoadingPhase[],
@@ -92,16 +111,31 @@ export function startLoadingPhaseRotation(
   let timer: ReturnType<typeof setTimeout> | null = null;
   let cancelled = false;
 
+  const finalStatus = phases[phases.length - 1]?.status;
+  const loopStart =
+    finalStatus == null
+      ? -1
+      : phases.findIndex((phase) => phase.status === finalStatus);
+
   const tick = () => {
     if (cancelled) return;
     const phase = phases[index];
     if (!phase) return;
     onPhase({ status: phase.status, detail: phase.detail });
-    if (index >= phases.length - 1 || phase.holdMs <= 0) {
+
+    const holdMs = phase.holdMs > 0 ? phase.holdMs : FINAL_DETAIL_HOLD_MS;
+    const atEnd = index >= phases.length - 1;
+
+    if (!atEnd) {
+      index += 1;
+      timer = setTimeout(tick, holdMs);
       return;
     }
-    index += 1;
-    timer = setTimeout(tick, phase.holdMs);
+
+    if (loopStart >= 0 && loopStart < phases.length) {
+      index = loopStart;
+      timer = setTimeout(tick, holdMs);
+    }
   };
 
   tick();
@@ -158,7 +192,10 @@ export function AnalysisLoadingOverlay({
       <p className="mt-6 text-center text-[18px] font-semibold text-foreground">
         {status}
       </p>
-      <p className="mt-2 max-w-[18rem] text-center text-[14px] leading-snug text-muted-foreground">
+      <p
+        key={detail}
+        className="mt-2 max-w-[18rem] animate-in fade-in duration-300 text-center text-[14px] leading-snug text-muted-foreground"
+      >
         {detail}
       </p>
     </div>

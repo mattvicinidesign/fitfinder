@@ -36,7 +36,10 @@ export function AuthCallbackClient() {
       const type = params.get("type");
       if (code || (tokenHash && type)) {
         window.location.replace(`/api/auth/callback?${params.toString()}`);
+        return;
       }
+      // No auth params — don't leave the user stuck on "Signing you in…".
+      router.replace(next);
       return;
     }
 
