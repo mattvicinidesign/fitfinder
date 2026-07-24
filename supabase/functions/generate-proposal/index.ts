@@ -15,6 +15,8 @@
 // Generates a job-tailored proposal plus a requirement→evidence mapping. This is
 // additive to the analysis flow and never persists or mutates report data.
 
+import { requireAccountAccess } from "../_shared/account_access.ts";
+import { enforceAiRateLimit } from "../_shared/ai_rate_limit.ts";
 import { loadResumeText } from "../_shared/load_resume_text.ts";
 import { completeJSON } from "../_shared/openai.ts";
 import {
@@ -26,7 +28,12 @@ import {
 import { resolvePortfolioUrl } from "../_shared/portfolio_url.ts";
 import { proposalSystemPrompt, proposalUserPayload } from "../_shared/prompts.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
-import { createUserClient, requireUser } from "../_shared/supabaseClient.ts";
+import {
+  assertJobTextSize,
+  assertResumeTextSize,
+} from "../_shared/payload_limits.ts";
+import { clientSafeErrorMessage } from "../_shared/safe_error.ts";
+import { createUserClient } from "../_shared/supabaseClient.ts";
 import { error, handlePreflight, json } from "../_shared/cors.ts";
 import type {
   ParsedJob,
@@ -87,7 +94,13 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabase = createUserClient(req);
-    const userId = await requireUser(supabase);
+    const access = await requireAccountAccess(supabase);
+    await enforceAiRateLimit(
+      supabase,
+      "generate-proposal",
+      access.accountType === "guest",
+    );
+    const userId = access.userId;
 
     const body = await req.json().catch(() => ({}));
     const {
@@ -109,6 +122,11 @@ Deno.serve(async (req: Request) => {
       return error("parsedJob is required");
     }
 
+    if (typeof jobDescription === "string") {
+      const jobTooLong = assertJobTextSize(jobDescription);
+      if (jobTooLong) return error(jobTooLong, 413);
+    }
+
     const resume = normalizeParsedResume({
       ...EMPTY_RESUME,
       ...(parsedResume && typeof parsedResume === "object" ? parsedResume : {}),
@@ -123,6 +141,11 @@ Deno.serve(async (req: Request) => {
       (typeof inlineResumeText === "string" && inlineResumeText.trim()
         ? inlineResumeText.trim()
         : null) ?? storedResumeText;
+
+    if (resumeText) {
+      const resumeTooLong = assertResumeTextSize(resumeText);
+      if (resumeTooLong) return error(resumeTooLong, 413);
+    }
 
     let portfolio = resolvePortfolioUrl({
       explicit:
@@ -200,6 +223,6 @@ Deno.serve(async (req: Request) => {
     return json({ proposal });
   } catch (e) {
     if (e instanceof Response) return e;
-    return error((e as Error).message, 500);
+    return error(clientSafeErrorMessage(e), 500);
   }
 });

@@ -1,4 +1,5 @@
 import { isNativePlatform } from "@/lib/platform";
+import { sanitizeAuthNextPath } from "@/lib/safe-auth-redirect";
 
 /** Deep link scheme registered in iOS Info.plist (CFBundleURLSchemes). */
 export const NATIVE_AUTH_CALLBACK_SCHEME = "fitfinder://auth-callback";
@@ -30,7 +31,7 @@ export function getWebAuthOrigin(): string {
  * Native uses a custom URL scheme so iOS opens the app instead of Safari → localhost.
  */
 export function getAuthCallbackRedirectUrl(nextPath: string): string {
-  const next = nextPath.startsWith("/") ? nextPath : `/${nextPath}`;
+  const next = sanitizeAuthNextPath(nextPath);
 
   if (typeof window !== "undefined" && isNativePlatform()) {
     return `${NATIVE_AUTH_CALLBACK_SCHEME}?next=${encodeURIComponent(next)}`;
@@ -47,6 +48,8 @@ export function nativeAuthCallbackPath(url: string): string | null {
   const normalized = url.replace(/^fitfinder:\/\//i, "https://local/");
   try {
     const parsed = new URL(normalized);
+    const next = sanitizeAuthNextPath(parsed.searchParams.get("next"));
+    parsed.searchParams.set("next", next);
     return `/auth/callback${parsed.search}${parsed.hash}`;
   } catch {
     return null;

@@ -29,13 +29,11 @@ Deno.serve(async (req: Request) => {
     const admin = createAdminClient();
     const result = await deleteUserAccount(admin, userId);
     if (result.error) {
-      return error(result.error, 500);
+      return error("Could not delete account. Please try again.", 500);
     }
     return json({ ok: true });
   } catch (response) {
     if (response instanceof Response) return response;
-    const message =
-      response instanceof Error ? response.message : "Delete account failed";
-    return error(message, 500);
+    return error("Could not delete account. Please try again.", 500);
   }
 });

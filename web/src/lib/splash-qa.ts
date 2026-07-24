@@ -26,8 +26,9 @@ const ATS_CACHE_VERSION_KEY = "fitfinder:ats-optimization-cache-version";
 
 /**
  * Splash QA panel (hard reset / soft reset).
- * - Web (Vercel + local dev): on by default (see next.config.ts)
- * - iOS Capacitor build: off unless NEXT_PUBLIC_ENABLE_SPLASH_QA=true at cap:sync
+ * - Local `next dev`: always on
+ * - Vercel Preview: on by default (next.config.ts)
+ * - Production / Capacitor: off unless NEXT_PUBLIC_ENABLE_SPLASH_QA=true
  */
 export function isSplashQaEnabled(): boolean {
   if (process.env.NODE_ENV === "development") return true;

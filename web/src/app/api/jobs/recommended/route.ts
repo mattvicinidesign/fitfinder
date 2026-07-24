@@ -18,7 +18,16 @@ export async function GET() {
     const message =
       error instanceof Error ? error.message : "Failed to load recommended jobs.";
     console.error("[/api/jobs/recommended]", message);
-    const status = message.includes("MUSE_API_KEY") ? 500 : 502;
-    return NextResponse.json({ error: message, jobs: [] }, { status });
+    const status = /MUSE_API_KEY/i.test(message) ? 500 : 502;
+    return NextResponse.json(
+      {
+        error:
+          status === 500
+            ? "Recommended jobs are not configured."
+            : "Could not load recommended jobs.",
+        jobs: [],
+      },
+      { status },
+    );
   }
 }

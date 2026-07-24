@@ -5,14 +5,17 @@
 // on the server. Set textOnly: true with resumeId to return resumeText only (no OpenAI).
 // If resumeId is provided without textOnly, the result is persisted (subject to RLS).
 
+import { requireAccountAccess } from "../_shared/account_access.ts";
+import { enforceAiRateLimit } from "../_shared/ai_rate_limit.ts";
 import { extractResumeTextFromStorage } from "../_shared/extractResumeText.ts";
 import { completeJSON } from "../_shared/openai.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
+import { assertResumeTextSize } from "../_shared/payload_limits.ts";
 import { mergeProfileQualifiedFromParsed } from "../_shared/sync_profile_qualified.ts";
 import { RESUME_PARSE_SYSTEM } from "../_shared/prompts.ts";
+import { clientSafeErrorMessage } from "../_shared/safe_error.ts";
 import {
   createUserClient,
-  requireUser,
   type SupabaseClient,
 } from "../_shared/supabaseClient.ts";
 import { error, handlePreflight, json } from "../_shared/cors.ts";
@@ -60,7 +63,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabase = createUserClient(req);
-    const userId = await requireUser(supabase);
+    const access = await requireAccountAccess(supabase);
+    const userId = access.userId;
 
     const body = await req.json().catch(() => ({}));
     const {
@@ -80,7 +84,7 @@ Deno.serve(async (req: Request) => {
         .eq("user_id", userId)
         .maybeSingle();
       if (rowError) {
-        return error(`Failed to load resume: ${rowError.message}`, 500);
+        return error("Failed to load resume.", 500);
       }
       if (!row?.file_url) {
         return error("Resume file not found");
@@ -91,10 +95,18 @@ Deno.serve(async (req: Request) => {
     if (!resumeText) {
       return error("resumeText or resumeId is required");
     }
+    const resumeTooLong = assertResumeTextSize(resumeText);
+    if (resumeTooLong) return error(resumeTooLong, 413);
 
     if (textOnly === true) {
       return json({ resumeText });
     }
+
+    await enforceAiRateLimit(
+      supabase,
+      "parse-resume",
+      access.accountType === "guest",
+    );
 
     const parsedRaw = await completeJSON<ParsedResume>([
       { role: "system", content: RESUME_PARSE_SYSTEM },
@@ -151,6 +163,6 @@ Deno.serve(async (req: Request) => {
     });
   } catch (e) {
     if (e instanceof Response) return e;
-    return error((e as Error).message, 500);
+    return error(clientSafeErrorMessage(e), 500);
   }
 });

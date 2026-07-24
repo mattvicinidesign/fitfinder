@@ -15,13 +15,25 @@ function countJobs(payload: unknown): number {
   return 0;
 }
 
-/** Smoke-test The Muse jobs API — verify MUSE_API_KEY and inspect response shape. */
+function isJobsTestEnabled(): boolean {
+  if (process.env.NODE_ENV === "development") return true;
+  return process.env.ENABLE_JOBS_TEST_ROUTE === "true";
+}
+
+/**
+ * Smoke-test The Muse jobs API — verify MUSE_API_KEY and inspect response shape.
+ * Disabled in production unless ENABLE_JOBS_TEST_ROUTE=true.
+ */
 export async function GET() {
+  if (!isJobsTestEnabled()) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const apiKey = process.env.MUSE_API_KEY?.trim();
   if (!apiKey) {
     console.error("[/api/jobs/test] Missing MUSE_API_KEY");
     return NextResponse.json(
-      { error: "MUSE_API_KEY is not configured on the server." },
+      { error: "Jobs test is not configured." },
       { status: 500 },
     );
   }
@@ -39,7 +51,7 @@ export async function GET() {
       error instanceof Error ? error.message : "Failed to reach The Muse API.";
     console.error("[/api/jobs/test] Fetch failed:", message);
     return NextResponse.json(
-      { error: "Could not reach The Muse API.", detail: message },
+      { error: "Could not reach The Muse API." },
       { status: 502 },
     );
   }
@@ -52,7 +64,7 @@ export async function GET() {
   } catch {
     console.error("[/api/jobs/test] Invalid JSON", { status });
     return NextResponse.json(
-      { error: "The Muse API returned a non-JSON response.", status },
+      { error: "The Muse API returned a non-JSON response." },
       { status: 502 },
     );
   }
@@ -65,11 +77,15 @@ export async function GET() {
       {
         error: "The Muse API request failed.",
         status,
-        body: payload,
       },
       { status },
     );
   }
 
-  return NextResponse.json(payload);
+  // Return shape summary only — not the full upstream payload.
+  return NextResponse.json({
+    ok: true,
+    status,
+    jobCount,
+  });
 }

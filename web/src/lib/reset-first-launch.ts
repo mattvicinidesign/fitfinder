@@ -4,7 +4,12 @@ import {
   clearRecentActivity,
   purgeSampleRecentActivityEntries,
 } from "@/lib/recent-activity";
-import { clearOnboardingState, DEFAULT_APP_ROUTE, QA_LAUNCH_SIMULATION_KEY } from "@/lib/app-session";
+import {
+  clearOnboardingState,
+  DEFAULT_APP_ROUTE,
+  QA_LAUNCH_SIMULATION_KEY,
+} from "@/lib/app-session";
+import { isSplashQaEnabled } from "@/lib/splash-qa";
 
 const FITFINDER_KEY_PREFIX = "fitfinder";
 
@@ -56,8 +61,9 @@ export async function resetAppFirstLaunch(): Promise<void> {
   window.location.replace(url.toString());
 }
 
+/** `?firstLaunch=1` only when Splash QA is enabled (dev / preview / explicit flag). */
 export function canResetAppFirstLaunch(): boolean {
-  return typeof window !== "undefined";
+  return typeof window !== "undefined" && isSplashQaEnabled();
 }
 
 /** @deprecated Use resetAppFirstLaunch */

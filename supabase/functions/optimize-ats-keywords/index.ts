@@ -2,12 +2,16 @@
 // Body: { resumeId?: string, resumeText?: string, originalATSScore: number }
 // Returns surgical ATS keyword scan results — not a rewritten resume.
 
+import { requireAccountAccess } from "../_shared/account_access.ts";
+import { enforceAiRateLimit } from "../_shared/ai_rate_limit.ts";
 import {
   ATS_NO_KEYWORDS_MESSAGE,
   buildAtsOptimizationScanResult,
 } from "../_shared/ats_keyword_optimization.ts";
 import { loadResumeText } from "../_shared/load_resume_text.ts";
-import { createUserClient, requireUser } from "../_shared/supabaseClient.ts";
+import { assertResumeTextSize } from "../_shared/payload_limits.ts";
+import { clientSafeErrorMessage } from "../_shared/safe_error.ts";
+import { createUserClient } from "../_shared/supabaseClient.ts";
 import { error, handlePreflight, json } from "../_shared/cors.ts";
 
 Deno.serve(async (req: Request) => {
@@ -18,7 +22,12 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabase = createUserClient(req);
-    const userId = await requireUser(supabase);
+    const access = await requireAccountAccess(supabase);
+    await enforceAiRateLimit(
+      supabase,
+      "optimize-ats-keywords",
+      access.accountType === "guest",
+    );
 
     const body = await req.json().catch(() => ({}));
     const {
@@ -31,7 +40,7 @@ Deno.serve(async (req: Request) => {
       return error("originalATSScore is required.");
     }
 
-    const storedResumeText = await loadResumeText(supabase, userId, {
+    const storedResumeText = await loadResumeText(supabase, access.userId, {
       resumeId: typeof resumeId === "string" ? resumeId : null,
     });
 
@@ -45,6 +54,8 @@ Deno.serve(async (req: Request) => {
         "Resume text is required. Upload a resume or pass resumeText.",
       );
     }
+    const resumeTooLong = assertResumeTextSize(resumeText);
+    if (resumeTooLong) return error(resumeTooLong, 413);
 
     const scan = buildAtsOptimizationScanResult(resumeText, originalATSScore);
 
@@ -55,6 +66,6 @@ Deno.serve(async (req: Request) => {
     return json({ optimization: scan });
   } catch (e) {
     if (e instanceof Response) return e;
-    return error((e as Error).message, 500);
+    return error(clientSafeErrorMessage(e), 500);
   }
 });

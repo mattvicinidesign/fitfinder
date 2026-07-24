@@ -35,7 +35,8 @@ export async function completeJSON<T>(messages: ChatMessage[]): Promise<T> {
 
   if (!res.ok) {
     const detail = await res.text();
-    throw new Error(`OpenAI request failed (${res.status}): ${detail}`);
+    console.error(`[openai] chat failed (${res.status}):`, detail.slice(0, 500));
+    throw new Error(`OpenAI request failed (${res.status})`);
   }
 
   const data = await res.json();
@@ -124,7 +125,11 @@ export async function extractDocumentText(
 
   if (!res.ok) {
     const detail = await res.text();
-    throw new Error(`OpenAI document extraction failed (${res.status}): ${detail}`);
+    console.error(
+      `[openai] document extract failed (${res.status}):`,
+      detail.slice(0, 500),
+    );
+    throw new Error(`OpenAI document extraction failed (${res.status})`);
   }
 
   const data = await res.json();

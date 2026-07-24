@@ -53,6 +53,13 @@ export async function POST(
   }
 
   const body = await request.text();
+  // Cap proxied JSON payloads (~1.5MB) to limit abuse through the Next proxy.
+  if (body.length > 1_500_000) {
+    return NextResponse.json(
+      { error: "Request body is too large." },
+      { status: 413 },
+    );
+  }
   const timeoutMs = name === "analyze" ? ANALYZE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
 
   let upstream: Response;

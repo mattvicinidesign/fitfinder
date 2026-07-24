@@ -2,6 +2,7 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_APP_ROUTE } from "@/lib/app-session";
+import { sanitizeAuthNextPath } from "@/lib/safe-auth-redirect";
 
 /** Satisfies static export (Capacitor); handler is not served from the iOS bundle. */
 export function generateStaticParams() {
@@ -27,9 +28,12 @@ export async function GET(
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
-  const next = requestUrl.searchParams.get("next") ?? DEFAULT_APP_ROUTE;
+  const next = sanitizeAuthNextPath(
+    requestUrl.searchParams.get("next"),
+    DEFAULT_APP_ROUTE,
+  );
 
-  const finishUrl = new URL(next.startsWith("/") ? next : `/${next}`, requestUrl.origin);
+  const finishUrl = new URL(next, requestUrl.origin);
 
   if (!code && !(tokenHash && type)) {
     const failed = new URL("/auth/callback/failed", requestUrl.origin);

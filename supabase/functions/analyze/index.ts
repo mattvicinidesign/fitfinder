@@ -11,20 +11,26 @@
 // This is the orchestrator and the ONLY place fit is computed. It parses the
 // job, runs the semantic matching engine on resume + job text, asks the AI
 // layer for a narrative, optionally stores the analysis, and returns the result.
+//
+// Access: scoringMode / account_type are resolved server-side only (JWT + DB).
+// Client scoringMode / feature-access fields are ignored.
 
+import { requireAccountAccess, resolveTrustedCategoryWeights } from "../_shared/account_access.ts";
+import { enforceAiRateLimit } from "../_shared/ai_rate_limit.ts";
 import { completeJSON } from "../_shared/openai.ts";
+import { assertJobTextSize, assertResumeTextSize } from "../_shared/payload_limits.ts";
 import { resolveJobTitle } from "../_shared/posting_details.ts";
 import { normalizeParsedJob } from "../_shared/normalize_parsed_job.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
 import { loadResumeText } from "../_shared/load_resume_text.ts";
 import { JOB_PARSE_SYSTEM, narrativeSystemPrompt, narrativeUserPayload } from "../_shared/prompts.ts";
+import { clientSafeErrorMessage } from "../_shared/safe_error.ts";
 import { parsedResumeToText } from "../_shared/semantic_match/resume_text.ts";
 import { resolvePostingContext } from "../_shared/posting_context.ts";
 import { scoreFit } from "../_shared/scoring.ts";
-import { createUserClient, requireUser } from "../_shared/supabaseClient.ts";
+import { createUserClient } from "../_shared/supabaseClient.ts";
 import { error, handlePreflight, json } from "../_shared/cors.ts";
 import type { AnalysisResult, Narrative, ParsedJob, ParsedResume } from "../_shared/types.ts";
-import type { ScoringMode } from "../_shared/scoring_constants.ts";
 
 const EMPTY_RESUME: ParsedResume = {
   skills: [],
@@ -43,7 +49,12 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabase = createUserClient(req);
-    const userId = await requireUser(supabase);
+    const access = await requireAccountAccess(supabase);
+    await enforceAiRateLimit(
+      supabase,
+      "analyze",
+      access.accountType === "guest",
+    );
 
     const body = await req.json().catch(() => ({}));
     const {
@@ -54,26 +65,22 @@ Deno.serve(async (req: Request) => {
       resumeText: inlineResumeText = null,
       parsedResume,
       persist = true,
-      scoringMode: requestedScoringMode,
+      // Intentionally ignored: scoringMode / account_type from the client.
       categoryWeights: requestedCategoryWeights = null,
     } = body ?? {};
 
     if (typeof jobText !== "string" || jobText.trim().length === 0) {
       return error("jobText is required");
     }
-    if (jobText.length > 120_000) {
-      return error(
-        "Job description is too long. Paste only the role requirements (under ~120k characters).",
-        413,
-      );
-    }
+    const jobTooLong = assertJobTextSize(jobText);
+    if (jobTooLong) return error(jobTooLong, 413);
 
     // 1. Resolve the parsed resume: inline > stored > empty.
     let resume: ParsedResume = EMPTY_RESUME;
     const resumeIdValue = typeof resumeId === "string" ? resumeId : null;
     let resumeTextForNormalize: string | null = null;
     if (resumeIdValue) {
-      resumeTextForNormalize = await loadResumeText(supabase, userId, {
+      resumeTextForNormalize = await loadResumeText(supabase, access.userId, {
         resumeId: resumeIdValue,
       });
     }
@@ -88,9 +95,9 @@ Deno.serve(async (req: Request) => {
         .from("resumes")
         .select("parsed_resume_json")
         .eq("id", resumeId)
-        .eq("user_id", userId)
+        .eq("user_id", access.userId)
         .maybeSingle();
-      if (dbError) return error(`Failed to load resume: ${dbError.message}`, 500);
+      if (dbError) return error("Failed to load resume.", 500);
       if (data?.parsed_resume_json) {
         resume = normalizeParsedResume(
           {
@@ -102,27 +109,14 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // 2. Resolve scoring mode + weights, then run job parse and fit score together.
-    // Job parse is only needed for narrative / persistence — scoring uses raw text.
-    const [{ data: userRow }, { data: profileWeightsRow }] = await Promise.all([
-      supabase
-        .from("users")
-        .select("account_type")
-        .eq("id", userId)
-        .maybeSingle(),
-      supabase
-        .from("profiles")
-        .select("match_score_weights")
-        .eq("user_id", userId)
-        .maybeSingle(),
-    ]);
+    // 2. Scoring mode from auth/DB only — never from the request body.
+    const scoringMode = access.scoringMode;
 
-    let scoringMode: ScoringMode =
-      userRow?.account_type === "guest" ? "guest" : "registered";
-    // Dev/QA clients may request full 10-category scoring (e.g. NEXT_PUBLIC_QA_REGISTERED_SCORING).
-    if (requestedScoringMode === "registered") {
-      scoringMode = "registered";
-    }
+    const { data: profileWeightsRow } = await supabase
+      .from("profiles")
+      .select("match_score_weights")
+      .eq("user_id", access.userId)
+      .maybeSingle();
 
     const resumeTextForScoring =
       (typeof inlineResumeText === "string" ? inlineResumeText.trim() : "") ||
@@ -132,10 +126,15 @@ Deno.serve(async (req: Request) => {
     if (!resumeTextForScoring) {
       return error("Resume text is required. Upload a resume or pass resumeText.");
     }
+    const resumeTooLong = assertResumeTextSize(resumeTextForScoring);
+    if (resumeTooLong) return error(resumeTooLong, 413);
 
-    // Prefer client-sent Preferences weights (just saved); fall back to profile row.
-    const categoryWeights =
-      requestedCategoryWeights ?? profileWeightsRow?.match_score_weights ?? null;
+    // Guests cannot inject Preferences weights via the request body.
+    const categoryWeights = resolveTrustedCategoryWeights(
+      scoringMode,
+      requestedCategoryWeights,
+      profileWeightsRow?.match_score_weights ?? null,
+    );
 
     const [parsedJobRaw, score] = await Promise.all([
       completeJSON<ParsedJob>([
@@ -179,7 +178,7 @@ Deno.serve(async (req: Request) => {
       const { data, error: dbError } = await supabase
         .from("analyses")
         .insert({
-          user_id: userId,
+          user_id: access.userId,
           resume_id: typeof resumeId === "string" ? resumeId : null,
           company_name: companyName,
           job_title: resolvedJobTitle,
@@ -195,13 +194,13 @@ Deno.serve(async (req: Request) => {
         })
         .select("id")
         .single();
-      if (dbError) return error(`Failed to save analysis: ${dbError.message}`, 500);
+      if (dbError) return error("Failed to save analysis.", 500);
       analysisId = data.id;
     }
 
     return json({ analysisId, result });
   } catch (e) {
     if (e instanceof Response) return e;
-    return error((e as Error).message, 500);
+    return error(clientSafeErrorMessage(e), 500);
   }
 });

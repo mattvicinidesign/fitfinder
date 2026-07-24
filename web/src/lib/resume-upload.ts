@@ -60,6 +60,22 @@ export async function uploadResume(file: File): Promise<{
   fileName: string;
 }> {
   const readable = await ensureReadableResumeFile(file);
+  if (readable.size > 5 * 1024 * 1024) {
+    throw new Error("Resume file must be under 5MB.");
+  }
+  const lowerCheck = readable.name.toLowerCase();
+  if (
+    !lowerCheck.endsWith(".pdf") &&
+    !lowerCheck.endsWith(".docx") &&
+    !lowerCheck.endsWith(".doc") &&
+    !lowerCheck.endsWith(".txt") &&
+    !lowerCheck.endsWith(".md") &&
+    !lowerCheck.endsWith(".markdown")
+  ) {
+    throw new Error(
+      "Unsupported resume format. Upload PDF, Word (.docx), or plain text.",
+    );
+  }
   const supabase = createClient();
   const {
     data: { user },

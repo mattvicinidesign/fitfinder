@@ -39,9 +39,16 @@ function assertProductionEnv() {
 
 assertProductionEnv();
 
-/** Splash QA: on for web (dev, preview, production); off in Capacitor export unless overridden. */
+/** Splash QA: on for local dev and Vercel Preview by default; off in production
+ *  and Capacitor unless NEXT_PUBLIC_ENABLE_SPLASH_QA=true is set explicitly. */
 const splashQaPublicFlag =
-  process.env.NEXT_PUBLIC_ENABLE_SPLASH_QA ?? (isCapacitor ? "" : "true");
+  process.env.NEXT_PUBLIC_ENABLE_SPLASH_QA ??
+  (isCapacitor
+    ? ""
+    : process.env.VERCEL_ENV === "preview" ||
+        process.env.NODE_ENV === "development"
+      ? "true"
+      : "");
 
 /** Baked into client bundle for auth emailRedirectTo (see auth-redirect.ts). */
 const publicAppUrl =

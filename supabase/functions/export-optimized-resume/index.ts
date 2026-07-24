@@ -3,12 +3,19 @@
 // Returns patched resume bytes as base64 for native export.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { requireAccountAccess } from "../_shared/account_access.ts";
+import { enforceAiRateLimit } from "../_shared/ai_rate_limit.ts";
 import {
   bytesToBase64,
   exportOptimizedResumeBytes,
 } from "../_shared/export_optimized_resume.ts";
 import type { AtsKeywordChange } from "../_shared/patch_resume_docx.ts";
-import { createUserClient, requireUser } from "../_shared/supabaseClient.ts";
+import {
+  assertResumeFileBytes,
+  assertResumeFilename,
+} from "../_shared/payload_limits.ts";
+import { clientSafeErrorMessage } from "../_shared/safe_error.ts";
+import { createUserClient } from "../_shared/supabaseClient.ts";
 import { error, handlePreflight, json } from "../_shared/cors.ts";
 
 async function downloadResumeBytes(
@@ -35,10 +42,15 @@ async function downloadResumeBytes(
     throw new Error("Could not download resume file.");
   }
 
-  return {
-    bytes: new Uint8Array(await blob.arrayBuffer()),
-    fileName: row.file_url.split("/").pop() ?? "resume.pdf",
-  };
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const tooBig = assertResumeFileBytes(bytes.length);
+  if (tooBig) throw new Error(tooBig);
+
+  const fileName = row.file_url.split("/").pop() ?? "resume.pdf";
+  const badName = assertResumeFilename(fileName);
+  if (badName) throw new Error(badName);
+
+  return { bytes, fileName };
 }
 
 Deno.serve(async (req: Request) => {
@@ -49,7 +61,12 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabase = createUserClient(req);
-    const userId = await requireUser(supabase);
+    const access = await requireAccountAccess(supabase);
+    await enforceAiRateLimit(
+      supabase,
+      "export-optimized-resume",
+      access.accountType === "guest",
+    );
     const body = await req.json().catch(() => ({}));
 
     const resumeId = typeof body?.resumeId === "string"
@@ -69,7 +86,7 @@ Deno.serve(async (req: Request) => {
 
     const { bytes, fileName } = await downloadResumeBytes(
       supabase,
-      userId,
+      access.userId,
       resumeId,
     );
     const exported = await exportOptimizedResumeBytes({
@@ -89,8 +106,8 @@ Deno.serve(async (req: Request) => {
       requestedSubstitutionCount: exported.requestedSubstitutionCount,
     });
   } catch (err) {
+    if (err instanceof Response) return err;
     console.error("export-optimized-resume failed:", err);
-    const message = err instanceof Error ? err.message : "Could not export resume.";
-    return error(message, 500);
+    return error(clientSafeErrorMessage(err, "Could not export resume."), 500);
   }
 });

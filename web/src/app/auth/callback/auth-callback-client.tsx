@@ -11,6 +11,7 @@ import {
   markLaunchFlowComplete,
 } from "@/lib/app-session";
 import { isNativePlatform } from "@/lib/platform";
+import { sanitizeAuthNextPath } from "@/lib/safe-auth-redirect";
 
 /**
  * Native iOS magic-link callback (Capacitor static export has no route.ts).
@@ -19,13 +20,12 @@ import { isNativePlatform } from "@/lib/platform";
 export function AuthCallbackClient() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") ?? DEFAULT_APP_ROUTE;
-  const [error, setError] = useState<string | null>(null);
+  const next = sanitizeAuthNextPath(params.get("next"), DEFAULT_APP_ROUTE);
+  const urlErrorParam = params.get("error");
+  const [error, setError] = useState<string | null>(urlErrorParam);
 
   useEffect(() => {
-    const urlError = params.get("error");
-    if (urlError) {
-      setError(urlError);
+    if (urlErrorParam) {
       return;
     }
 
@@ -35,7 +35,9 @@ export function AuthCallbackClient() {
       const tokenHash = params.get("token_hash");
       const type = params.get("type");
       if (code || (tokenHash && type)) {
-        window.location.replace(`/api/auth/callback?${params.toString()}`);
+        const forward = new URLSearchParams(params.toString());
+        forward.set("next", next);
+        window.location.replace(`/api/auth/callback?${forward.toString()}`);
         return;
       }
       // No auth params — don't leave the user stuck on "Signing you in…".
@@ -97,7 +99,7 @@ export function AuthCallbackClient() {
     }
 
     void finish();
-  }, [params, next, router]);
+  }, [params, next, router, urlErrorParam]);
 
   if (!isNativePlatform()) {
     return (

@@ -2,15 +2,19 @@
 // Body: { resumeId?: string, resumeText?: string, parsedResume?: ParsedResume }
 // Returns a resume-only health assessment (not job match scoring).
 
+import { requireAccountAccess } from "../_shared/account_access.ts";
+import { enforceAiRateLimit } from "../_shared/ai_rate_limit.ts";
 import { loadResumeText } from "../_shared/load_resume_text.ts";
 import { completeJSON } from "../_shared/openai.ts";
 import { normalizeParsedResume } from "../_shared/normalize_parsed_resume.ts";
+import { assertResumeTextSize } from "../_shared/payload_limits.ts";
 import {
   RESUME_REVIEW_SYSTEM,
   resumeReviewUserPayload,
 } from "../_shared/prompts.ts";
 import { normalizeResumeReview } from "../_shared/resume_review_format.ts";
-import { createUserClient, requireUser } from "../_shared/supabaseClient.ts";
+import { clientSafeErrorMessage } from "../_shared/safe_error.ts";
+import { createUserClient } from "../_shared/supabaseClient.ts";
 import { error, handlePreflight, json } from "../_shared/cors.ts";
 import type { ParsedResume } from "../_shared/types.ts";
 
@@ -31,7 +35,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabase = createUserClient(req);
-    const userId = await requireUser(supabase);
+    const access = await requireAccountAccess(supabase);
+    const userId = access.userId;
 
     const body = await req.json().catch(() => ({}));
     const {
@@ -58,10 +63,18 @@ Deno.serve(async (req: Request) => {
     if (!resumeText) {
       return error("Resume text is required. Upload a resume or pass resumeText.");
     }
+    const resumeTooLong = assertResumeTextSize(resumeText);
+    if (resumeTooLong) return error(resumeTooLong, 413);
 
     if (textOnly === true) {
       return json({ resumeText });
     }
+
+    await enforceAiRateLimit(
+      supabase,
+      "review-resume",
+      access.accountType === "guest",
+    );
 
     const draft = await completeJSON<Record<string, unknown>>([
       { role: "system", content: RESUME_REVIEW_SYSTEM },
@@ -83,6 +96,6 @@ Deno.serve(async (req: Request) => {
     return json({ review, resumeText });
   } catch (e) {
     if (e instanceof Response) return e;
-    return error((e as Error).message, 500);
+    return error(clientSafeErrorMessage(e), 500);
   }
 });
