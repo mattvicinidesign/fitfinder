@@ -3,10 +3,11 @@ require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
 platform :ios, '14.0'
 use_frameworks!
 
-# workaround to avoid Xcode caching of Pods that requires
-# Product -> Clean Build Folder after new Cordova plugins installed
-# Requires CocoaPods 1.6 or newer
-install! 'cocoapods', :disable_input_output_paths => true
+# Input/output paths enabled so Xcode can skip [CP] Embed Pods Frameworks /
+# [CP] Copy XCFrameworks when outputs are up to date. Capacitor's default
+# `disable_input_output_paths => true` was a Cordova-plugin cache workaround;
+# this app ships Capacitor plugins only (no Cordova plugins).
+install! 'cocoapods'
 
 def capacitor_pods
   pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
@@ -23,6 +24,92 @@ target 'App' do
   # Add your Pods here
 end
 
+CORDOVA_DEPRECATION_PRAGMA = <<~'PCH'
+
+/* FitFinder: silence Cap 7 Cordova WKProcessPool deprecation (fixed upstream in Cap 8). */
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-implementations"
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+PCH
+
 post_install do |installer|
   assertDeploymentTarget(installer)
+
+  # Cap 7 Cordova still references deprecated WKProcessPool. Cap 8 silences this
+  # in-source; until a Cap 8 upgrade, suppress for every pod that compiles against
+  # Cordova headers (CapacitorCordova itself + Capacitor / plugins / App embeds).
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      flags = Array(config.build_settings['OTHER_CFLAGS']).flatten
+      flags = ['$(inherited)'] if flags.empty?
+      %w[-Wno-deprecated-declarations -Wno-deprecated-implementations].each do |flag|
+        flags << flag unless flags.include?(flag)
+      end
+      config.build_settings['OTHER_CFLAGS'] = flags
+
+      # Swift targets that import Cordova ObjC headers need -Xcc passthrough.
+      swift_flags = Array(config.build_settings['OTHER_SWIFT_FLAGS']).flatten
+      swift_flags = ['$(inherited)'] if swift_flags.empty?
+      clang_passthrough = ['-Xcc', '-Wno-deprecated-declarations', '-Xcc', '-Wno-deprecated-implementations']
+      unless swift_flags.join(' ').include?('-Xcc -Wno-deprecated-declarations')
+        swift_flags.concat(clang_passthrough)
+      end
+
+      # Cap 7 @capacitor/filesystem leaves an unused `responseType` binding in
+      # LegacyFilesystemImplementation.swift (fixed upstream only on Cap 8).
+      if target.name == 'CapacitorFilesystem' && !swift_flags.include?('-suppress-warnings')
+        swift_flags << '-suppress-warnings'
+      end
+      config.build_settings['OTHER_SWIFT_FLAGS'] = swift_flags
+    end
+  end
+
+  # Prefix header pragma is more reliable than OTHER_CFLAGS alone (Xcode can
+  # re-enable -Wdeprecated-declarations via @common-args.resp after OTHER_CFLAGS).
+  cordova_pch = File.join(
+    installer.sandbox.root,
+    'Target Support Files/CapacitorCordova/CapacitorCordova-prefix.pch',
+  )
+  if File.exist?(cordova_pch)
+    contents = File.read(cordova_pch)
+    unless contents.include?('FitFinder: silence Cap 7 Cordova WKProcessPool')
+      File.write(cordova_pch, contents + CORDOVA_DEPRECATION_PRAGMA)
+    end
+  end
+
+  # App target also imports Cordova.framework headers via Capacitor / Swift PCM.
+  require 'xcodeproj'
+  app_project_path = File.join(__dir__, 'App.xcodeproj')
+  app_project = Xcodeproj::Project.open(app_project_path)
+  app_project.native_targets.each do |target|
+    next unless target.name == 'App'
+    target.build_configurations.each do |config|
+      flags = config.build_settings['OTHER_CFLAGS']
+      flag_list =
+        case flags
+        when Array then flags.flatten
+        when String then flags.split(/\s+/)
+        else ['$(inherited)']
+        end
+      flag_list = ['$(inherited)'] if flag_list.empty?
+      %w[-Wno-deprecated-declarations -Wno-deprecated-implementations].each do |flag|
+        flag_list << flag unless flag_list.include?(flag)
+      end
+      config.build_settings['OTHER_CFLAGS'] = flag_list
+
+      swift_flags = config.build_settings['OTHER_SWIFT_FLAGS']
+      swift_list =
+        case swift_flags
+        when Array then swift_flags.flatten
+        when String then swift_flags.split(/\s+/)
+        else ['$(inherited)']
+        end
+      swift_list = ['$(inherited)'] if swift_list.empty?
+      unless swift_list.join(' ').include?('-Xcc -Wno-deprecated-declarations')
+        swift_list.concat(['-Xcc', '-Wno-deprecated-declarations', '-Xcc', '-Wno-deprecated-implementations'])
+      end
+      config.build_settings['OTHER_SWIFT_FLAGS'] = swift_list
+    end
+  end
+  app_project.save
 end

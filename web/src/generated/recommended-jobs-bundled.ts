@@ -93,16 +93,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
-    "id": "21936703",
-    "title": "User Interface Designer",
-    "company": "The Coca-Cola Company",
-    "location": "Atlanta, GA",
-    "level": "Senior Level",
-    "publishedAt": "2026-07-09T23:38:57Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/user-interface-designer-4411b4",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
-  },
-  {
     "id": "21909813",
     "title": "Automation & Controls Engineer (Raptor Manufacturing Systems)",
     "company": "SpaceX",
@@ -130,6 +120,16 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "level": "Mid Level",
     "publishedAt": "2026-06-26T18:34:29Z",
     "applyUrl": "https://www.themuse.com/jobs/spacex/process-technician-injection-molding-starlink-2nd-shift",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "21429881",
+    "title": "Manufacturing Engineer, Raptor Turbomachinery",
+    "company": "SpaceX",
+    "location": "El Segundo, CA",
+    "level": "Mid Level",
+    "publishedAt": "2026-06-26T18:34:23Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/manufacturing-engineer-raptor-turbomachinery-7927c8",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {

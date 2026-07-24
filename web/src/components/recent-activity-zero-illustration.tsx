@@ -2,10 +2,10 @@ import { cn } from "@/lib/utils";
 
 const PRIMARY = "#0475ef";
 const INK = "#061420";
-const PAPER = "#ffffff";
 const MUTED = "#64748b";
+const RING_TRACK = "#243044";
 
-/** Empty recent activity — quiet timeline / report stack. */
+/** Empty recent activity — Fit Score ring waiting for the first analysis. */
 export function RecentActivityZeroIllustration({
   className,
 }: {
@@ -19,50 +19,118 @@ export function RecentActivityZeroIllustration({
       className={cn("h-full w-full", className)}
       aria-hidden
     >
-      <ellipse cx="110" cy="92" rx="78" ry="48" fill={PRIMARY} fillOpacity="0.08" />
+      <ellipse cx="110" cy="98" rx="82" ry="46" fill={PRIMARY} fillOpacity="0.07" />
+      <circle cx="42" cy="48" r="3" fill={MUTED} fillOpacity="0.35" />
+      <circle cx="178" cy="128" r="4" fill={PRIMARY} fillOpacity="0.22" />
+      <circle cx="186" cy="52" r="2.5" fill={MUTED} fillOpacity="0.3" />
 
+      {/* Soft frame */}
       <rect
-        x="44"
-        y="28"
-        width="112"
-        height="108"
-        rx="14"
+        x="48"
+        y="22"
+        width="124"
+        height="124"
+        rx="28"
         fill={INK}
-        fillOpacity="0.42"
-        stroke="#243044"
+        fillOpacity="0.45"
+        stroke={RING_TRACK}
         strokeWidth="1.5"
       />
-      <rect x="52" y="36" width="96" height="92" rx="10" fill={PAPER} fillOpacity="0.96" />
 
-      <rect x="64" y="50" width="52" height="4" rx="2" fill={INK} fillOpacity="0.16" />
-      <rect x="64" y="60" width="36" height="3" rx="1.5" fill={INK} fillOpacity="0.08" />
-
-      <rect x="64" y="76" width="44" height="3" rx="1.5" fill={INK} fillOpacity="0.1" />
-      <rect x="64" y="84" width="56" height="3" rx="1.5" fill={INK} fillOpacity="0.07" />
-      <rect x="64" y="92" width="40" height="3" rx="1.5" fill={INK} fillOpacity="0.07" />
-
-      <rect x="64" y="108" width="48" height="3" rx="1.5" fill={INK} fillOpacity="0.1" />
-      <rect x="64" y="116" width="32" height="3" rx="1.5" fill={INK} fillOpacity="0.07" />
-
-      <circle cx="152" cy="54" r="16" fill={INK} fillOpacity="0.55" stroke={PRIMARY} strokeWidth="1.5" />
-      <path
-        d="M146 54 H158 M152 48 V60"
-        stroke={PRIMARY}
-        strokeWidth="2"
+      {/* Score ring track */}
+      <circle
+        cx="110"
+        cy="84"
+        r="38"
+        stroke={RING_TRACK}
+        strokeWidth="8"
         strokeLinecap="round"
       />
+      {/* Partial primary arc — ready / waiting */}
+      <circle
+        cx="110"
+        cy="84"
+        r="38"
+        stroke={PRIMARY}
+        strokeWidth="8"
+        strokeLinecap="round"
+        strokeDasharray="58 240"
+        strokeDashoffset="12"
+        transform="rotate(-90 110 84)"
+        opacity="0.95"
+      />
 
-      <g transform="translate(168 108)" opacity="0.7">
-        <circle cx="0" cy="0" r="10" fill={PRIMARY} fillOpacity="0.16" />
-        <path
-          d="M0 6 L12 0 L10 8 L18 10 L6 18 L8 10 Z"
+      {/* Inner hub */}
+      <circle cx="110" cy="84" r="24" fill={INK} fillOpacity="0.72" />
+      <text
+        x="110"
+        y="80"
+        textAnchor="middle"
+        fill={PRIMARY}
+        fillOpacity="0.9"
+        fontFamily="system-ui, -apple-system, sans-serif"
+        fontSize="15"
+        fontWeight="700"
+      >
+        —
+      </text>
+      <text
+        x="110"
+        y="96"
+        textAnchor="middle"
+        fill={MUTED}
+        fillOpacity="0.85"
+        fontFamily="system-ui, -apple-system, sans-serif"
+        fontSize="8"
+        fontWeight="600"
+        letterSpacing="0.08em"
+      >
+        FIT
+      </text>
+
+      {/* Resume ↔ job nodes */}
+      <g transform="translate(68 138)">
+        <rect
+          x="0"
+          y="0"
+          width="34"
+          height="14"
+          rx="7"
           fill={PRIMARY}
-          fillOpacity="0.45"
+          fillOpacity="0.14"
+          stroke={PRIMARY}
+          strokeWidth="1"
+          strokeOpacity="0.45"
         />
+        <circle cx="10" cy="7" r="2.5" fill={PRIMARY} fillOpacity="0.7" />
+        <rect x="16" y="5" width="12" height="2" rx="1" fill={MUTED} fillOpacity="0.55" />
+        <rect x="16" y="9" width="8" height="2" rx="1" fill={MUTED} fillOpacity="0.35" />
       </g>
 
-      <circle cx="36" cy="118" r="4" fill={MUTED} fillOpacity="0.35" />
-      <circle cx="28" cy="44" r="3" fill={PAPER} fillOpacity="0.35" />
+      <path
+        d="M108 145 H112"
+        stroke={MUTED}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeDasharray="2 3"
+        opacity="0.55"
+      />
+
+      <g transform="translate(118 138)">
+        <rect
+          x="0"
+          y="0"
+          width="34"
+          height="14"
+          rx="7"
+          fill={MUTED}
+          fillOpacity="0.12"
+          stroke={RING_TRACK}
+          strokeWidth="1"
+        />
+        <rect x="8" y="4" width="18" height="2" rx="1" fill={MUTED} fillOpacity="0.45" />
+        <rect x="8" y="8" width="12" height="2" rx="1" fill={MUTED} fillOpacity="0.3" />
+      </g>
     </svg>
   );
 }

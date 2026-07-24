@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/theme-provider";
 import { toast } from "sonner";
 import { CircleUser, Settings, SlidersHorizontal, type LucideIcon } from "lucide-react";
@@ -51,8 +50,7 @@ import { AppearanceModeSetting, type AppearanceMode } from "@/components/appeara
 import { ResumeFilePicker } from "@/components/resume-file-picker";
 import { TimezoneSelect } from "@/components/timezone-select";
 import { LocationSelect } from "@/components/location-select";
-import { deleteAccount } from "@/lib/delete-account";
-import { navigateApp } from "@/lib/navigate-app";
+import { deleteAccount, redirectAfterAccountDeletion } from "@/lib/delete-account";
 import {
   QA_ACCOUNT_MODE_CHANGED_EVENT,
   resolveIsGuestUser,
@@ -77,7 +75,6 @@ const PROFILE_TABS: { id: ProfileTab; label: string; icon: LucideIcon }[] = [
 ];
 
 export function ProfileScreen() {
-  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const initial = initialProfileScreenState();
   const [profileLoading, setProfileLoading] = useState(true);
@@ -494,7 +491,7 @@ export function ProfileScreen() {
       return;
     }
 
-    navigateApp("/home", router, "replace");
+    redirectAfterAccountDeletion();
   }
 
   return (
