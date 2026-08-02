@@ -1,23 +1,4 @@
 import type { NextConfig } from "next";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import packageJson from "./package.json";
-
-function readBuildMeta(): { build: number; versionLabel?: string } {
-  try {
-    const raw = readFileSync(join(process.cwd(), "build-meta.json"), "utf8");
-    const parsed = JSON.parse(raw) as { build?: number; versionLabel?: string };
-    return {
-      build: Number(parsed.build ?? 0),
-      versionLabel:
-        typeof parsed.versionLabel === "string" ? parsed.versionLabel : undefined,
-    };
-  } catch {
-    return { build: 0 };
-  }
-}
-
-const buildMeta = readBuildMeta();
 
 const isCapacitor = process.env.CAPACITOR_BUILD === "true";
 
@@ -59,8 +40,6 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_URL: publicAppUrl,
     NEXT_PUBLIC_ENABLE_SPLASH_QA: splashQaPublicFlag,
-    NEXT_PUBLIC_APP_VERSION: packageJson.version,
-    NEXT_PUBLIC_APP_BUILD: String(buildMeta.build),
   },
   // Static export for Capacitor iOS; standard build for Vercel (SSR + proxy).
   output: isCapacitor ? "export" : undefined,

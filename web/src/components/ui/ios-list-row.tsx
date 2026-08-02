@@ -16,9 +16,9 @@ import { resumeReviewScoreTextClass } from "@/lib/resume-review-score-colors";
 import { scoreColor } from "@/lib/score";
 import type { AnalysisRecord } from "@/lib/types";
 
-/** Reference proportions: name ~58%, pill centered in middle band, score pinned right. */
+/** Title truncates; pill + score keep intrinsic width so badges never overlap the metric. */
 const ACTIVITY_ROW_GRID_CLASS =
-  "grid grid-cols-[minmax(0,58%)_minmax(0,1fr)_minmax(4.5rem,auto)] items-center gap-x-2";
+  "grid grid-cols-[minmax(0,1fr)_auto_minmax(4.5rem,auto)] items-center gap-x-2";
 
 /** Single recent-activity row — fit analysis or resume score. */
 export function IosAnalysisListRow({
@@ -73,7 +73,7 @@ export function IosAnalysisListRow({
         ) : null}
       </div>
 
-      <div className="flex min-w-0 justify-center">
+      <div className="flex shrink-0 justify-center">
         <ActivityKindPill item={item} />
       </div>
 

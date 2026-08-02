@@ -11,12 +11,14 @@ import {
 import { SkeletonOpportunityCarousel } from "@/components/ui/skeletons/skeleton-opportunity-card";
 import type { RecommendedJob } from "@/lib/types";
 import {
+  clearRecommendedJobsCache,
   getCachedRecommendedJobs,
   loadRecommendedJobs,
 } from "@/lib/load-recommended-jobs";
 import { isNativePlatform } from "@/lib/platform";
 import { openExternalUrl } from "@/lib/open-external-url";
 import { screenGutterX } from "@/lib/screen-gutter";
+import { createClient } from "@/lib/supabase/client";
 import { useHorizontalScrollAxisLock } from "@/lib/use-horizontal-scroll-axis-lock";
 import { cn } from "@/lib/utils";
 
@@ -203,6 +205,25 @@ export function RecommendedJobsSection({ embedded = false }: { embedded?: boolea
   const [jobs, setJobs] = useState<RecommendedJob[]>(getCachedRecommendedJobs);
   const [loading, setLoading] = useState(() => getCachedRecommendedJobs().length === 0);
   const [error, setError] = useState<string | null>(null);
+  const [authEpoch, setAuthEpoch] = useState(0);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (
+        event !== "SIGNED_IN" &&
+        event !== "SIGNED_OUT" &&
+        event !== "USER_UPDATED"
+      ) {
+        return;
+      }
+      clearRecommendedJobsCache();
+      setAuthEpoch((n) => n + 1);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -227,7 +248,7 @@ export function RecommendedJobsSection({ embedded = false }: { embedded?: boolea
     return () => {
       active = false;
     };
-  }, []);
+  }, [authEpoch]);
 
   if (!loading && !error && jobs.length === 0) return null;
 

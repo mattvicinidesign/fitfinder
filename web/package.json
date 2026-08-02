@@ -8,11 +8,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/copy-pdf-worker.mjs && node scripts/prepare-recommended-jobs-bundled.mjs && next build",
-    "build:capacitor": "node scripts/bump-build-number.mjs && node scripts/copy-pdf-worker.mjs && node scripts/prepare-recommended-jobs-bundled.mjs && CAPACITOR_BUILD=true next build",
+    "build:capacitor": "node scripts/copy-pdf-worker.mjs && node scripts/prepare-recommended-jobs-bundled.mjs && node scripts/set-recommended-route-mode.mjs static && CAPACITOR_BUILD=true next build; STATUS=$?; node scripts/set-recommended-route-mode.mjs dynamic; exit $STATUS",
     "postbuild:capacitor": "npx cap sync ios",
+    "capacitor:sync:before": "node scripts/sync-ios-version.mjs",
     "start": "next start",
     "lint": "eslint",
-    "build:verify": "npm run build && CAPACITOR_BUILD=true npm run build",
+    "build:verify": "npm run build && node scripts/set-recommended-route-mode.mjs static && CAPACITOR_BUILD=true next build; STATUS=$?; node scripts/set-recommended-route-mode.mjs dynamic; exit $STATUS",
     "cap:sync": "npm run build:capacitor",
     "cap:open": "npx cap open ios",
     "cap:run": "npm run cap:sync && npm run cap:open"

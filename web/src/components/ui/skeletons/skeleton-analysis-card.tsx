@@ -6,7 +6,7 @@ export function SkeletonAnalysisCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "grid grid-cols-[minmax(0,58%)_minmax(0,1fr)_minmax(4.5rem,auto)] items-center gap-x-2 bg-background px-4 py-3.5",
+        "grid grid-cols-[minmax(0,1fr)_auto_minmax(4.5rem,auto)] items-center gap-x-2 bg-background px-4 py-3.5",
         className,
       )}
     >
