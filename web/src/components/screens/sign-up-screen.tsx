@@ -187,11 +187,14 @@ export function SignUpScreen({
   embedded = false,
   onBackToWelcome,
   onDismiss,
+  onSignIn,
 }: {
   embedded?: boolean;
   onBackToWelcome?: () => void;
   /** Close mid-flow (e.g. return to Profile Preferences). */
   onDismiss?: () => void;
+  /** Switch to returning-user Sign In (does not create a new account). */
+  onSignIn?: () => void;
 } = {}) {
   const [initial] = useState(readInitialSignupState);
   const [profile, setProfile] = useState<UserProfile>(initial.profile);
@@ -281,6 +284,18 @@ export function SignUpScreen({
               value={profile.timezone}
               onChange={(value) => patch({ timezone: value })}
             />
+            {onSignIn ? (
+              <p className="pt-1 text-center text-[15px] text-muted-foreground">
+                Already Have an Account?{" "}
+                <button
+                  type="button"
+                  onClick={onSignIn}
+                  className="font-semibold text-primary transition-colors hover:text-primary/80"
+                >
+                  Sign In
+                </button>
+              </p>
+            ) : null}
           </div>
         ),
       },
@@ -299,7 +314,7 @@ export function SignUpScreen({
         ),
       },
     ],
-    [email, handleResumeParsed, profile, resumeFileName],
+    [email, handleResumeParsed, onSignIn, profile, resumeFileName],
   );
 
   const canContinue =

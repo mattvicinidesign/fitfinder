@@ -74,8 +74,11 @@ supabase link --project-ref <ref>
 supabase db push                         # apply migrations to the cloud DB
 supabase config push --yes               # auth redirect URLs (Vercel + localhost)
 supabase functions deploy parse-resume parse-job analyze delete-account
-supabase secrets set --env-file ./.env   # push OPENAI_API_KEY
+supabase secrets set --env-file ./.env   # push OPENAI_API_KEY (+ optional OPENAI_MODEL)
 ```
+
+For billing plan, credit balance, auto-reload, and out-of-credit symptoms, see
+**OpenAI / AI setup** in the [root README](../README.md#openai--ai-setup).
 
 After changing `config.toml` `[auth]` URLs, run `config push` so magic links from
 Vercel preview/production stop falling back to `localhost`.

@@ -3,6 +3,26 @@ import type { RecommendedJob } from "@/lib/types";
 
 export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
   {
+    "id": "22010006",
+    "title": "Senior Product Designer - Autonomous Mobility & Delivery Experience",
+    "company": "Uber",
+    "location": "New York, NY, San Francisco, CA, Seattle, WA",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-30T00:45:19Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/senior-product-designer-autonomous-mobility-delivery-experience",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
+  },
+  {
+    "id": "22013530",
+    "title": "Senior UX Designer – League of Legends (12 Month Contract)",
+    "company": "Riot Games",
+    "location": "Dublin, Ireland",
+    "level": "Senior Level",
+    "publishedAt": "2026-07-30T23:30:11Z",
+    "applyUrl": "https://www.themuse.com/jobs/riotgames/senior-ux-designer-league-of-legends-12-month-contract-ce148d",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
+  },
+  {
     "id": "14137481",
     "title": "UX/UI Designer (Mid level)",
     "company": "Designit",
@@ -13,14 +33,14 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000194/small_logo.png"
   },
   {
-    "id": "21985739",
-    "title": "Director, Frontline Marketing, CBL",
-    "company": "The Coca-Cola Company",
-    "location": "Beijing, China",
+    "id": "22013529",
+    "title": "Senior UI Designer – League of Legends (12-Month Contract)",
+    "company": "Riot Games",
+    "location": "Dublin, Ireland",
     "level": "Senior Level",
-    "publishedAt": "2026-07-22T23:39:09Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/director-frontline-marketing-cbl-bfb12e",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+    "publishedAt": "2026-07-30T23:30:11Z",
+    "applyUrl": "https://www.themuse.com/jobs/riotgames/senior-ui-designer-league-of-legends-12month-contract-8ce572",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
   },
   {
     "id": "21098533",
@@ -53,16 +73,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
-    "id": "21980982",
-    "title": "Senior Manager, Frontline Marketing, Iraq",
-    "company": "The Coca-Cola Company",
-    "location": "Dubai, United Arab Emirates",
-    "level": "Senior Level",
-    "publishedAt": "2026-07-21T23:46:00Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-manager-frontline-marketing-iraq-de3905",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
-  },
-  {
     "id": "21852947",
     "title": "Controls Technician (Starship Launch Pad)",
     "company": "SpaceX",
@@ -71,26 +81,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "publishedAt": "2026-07-20T23:47:59Z",
     "applyUrl": "https://www.themuse.com/jobs/spacex/controls-technician-starship-launch-pad-b72b3f",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21879567",
-    "title": "Control Technician (Starship Launch Pad) - Night Shift",
-    "company": "SpaceX",
-    "location": "Brownsville, TX",
-    "level": "Mid Level",
-    "publishedAt": "2026-07-20T23:47:59Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/control-technician-starship-launch-pad-night-shift",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21941164",
-    "title": "Senior Manager, Innovation - Packaging & Equipment",
-    "company": "The Coca-Cola Company",
-    "location": "Shanghai, China",
-    "level": "Senior Level",
-    "publishedAt": "2026-07-10T23:42:46Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-manager-innovation-packaging-equipment-51cbb3",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
     "id": "21909813",
@@ -153,16 +143,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
-    "id": "21633158",
-    "title": "Senior Visual Design Artist - Riftbound",
-    "company": "Riot Games",
-    "location": "Shanghai, China",
-    "level": "Senior Level",
-    "publishedAt": "2026-06-26T18:30:14Z",
-    "applyUrl": "https://www.themuse.com/jobs/riotgames/senior-visual-design-artist-riftbound",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
-  },
-  {
     "id": "21668812",
     "title": "Software Engineer III - UI Development Team",
     "company": "Bank of America",
@@ -183,23 +163,43 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
   },
   {
-    "id": "21965140",
-    "title": "Sr. Electrical Hardware Engineer, AI Satellites (Starmind)",
-    "company": "SpaceX",
-    "location": "Lockhart, TX",
+    "id": "22015561",
+    "title": "Senior Director, Experience Design & Connection Planning - Sparkling Flavors",
+    "company": "The Coca-Cola Company",
+    "location": "Shanghai, China",
     "level": "Senior Level",
-    "publishedAt": "2026-07-17T23:35:52Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/sr-electrical-hardware-engineer-ai-satellites-starmind",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+    "publishedAt": "2026-07-31T23:44:50Z",
+    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-director-experience-design-connection-planning-sparkling-flavors-51d4f3",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
   },
   {
-    "id": "21962947",
-    "title": "Consultant - Applications Programmer - Data Reporting and Operations Management",
-    "company": "Bank of America",
-    "location": "Charlotte, NC, Jacksonville, FL, Newark, DE, Plano, TX, Tampa, FL",
+    "id": "21880065",
+    "title": "Head of Safety Support Operations, Community Operations",
+    "company": "Uber",
+    "location": "Bangalore, India, Hyderabad, India",
     "level": "Senior Level",
-    "publishedAt": "2026-07-17T19:18:35Z",
-    "applyUrl": "https://www.themuse.com/jobs/bankofamerica/consultant-applications-programmer-data-reporting-and-operations-management",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
+    "publishedAt": "2026-07-31T00:31:48Z",
+    "applyUrl": "https://www.themuse.com/jobs/uber/head-of-safety-support-operations-community-operations",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
+  },
+  {
+    "id": "21727110",
+    "title": "UI Designer - Unpublished R&D Product (Contract)",
+    "company": "Riot Games",
+    "location": "Guangzhou, China",
+    "level": "Mid Level",
+    "publishedAt": "2026-07-24T18:30:34Z",
+    "applyUrl": "https://www.themuse.com/jobs/riotgames/ui-designer-unpublished-rd-product-contract",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
+  },
+  {
+    "id": "21727105",
+    "title": "Game Designer, Combat - Unpublished R&D Product (Contract)",
+    "company": "Riot Games",
+    "location": "Guangzhou, China",
+    "level": "Mid Level",
+    "publishedAt": "2026-07-24T18:30:32Z",
+    "applyUrl": "https://www.themuse.com/jobs/riotgames/game-designer-combat-unpublished-rd-product-contract-59480d",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
   }
 ] as RecommendedJob[];

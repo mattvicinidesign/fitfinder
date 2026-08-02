@@ -18,16 +18,23 @@ import { cn } from "@/lib/utils";
 interface WelcomeScreenProps {
   onExit: (target: string) => void;
   onSignUp: () => void;
+  onSignIn: () => void;
 }
 
-export function WelcomeScreen({ onExit, onSignUp }: WelcomeScreenProps) {
+export function WelcomeScreen({ onExit, onSignUp, onSignIn }: WelcomeScreenProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [busy, setBusy] = useState<"guest" | "account" | null>(null);
+  const [busy, setBusy] = useState<"guest" | "account" | "signin" | null>(null);
 
   function handleCreateAccount() {
     setBusy("account");
     onSignUp();
+    setBusy(null);
+  }
+
+  function handleSignIn() {
+    setBusy("signin");
+    onSignIn();
     setBusy(null);
   }
 
@@ -81,10 +88,23 @@ export function WelcomeScreen({ onExit, onSignUp }: WelcomeScreenProps) {
               className={SCREEN_PRIMARY_CTA_CLASS}
               disabled={busy !== null}
               aria-busy={busy === "account"}
-              aria-label={busy === "account" ? "Opening sign up" : "Sign up"}
+              aria-label={
+                busy === "account" ? "Opening create account" : "Create Account"
+              }
               onClick={handleCreateAccount}
             >
-              {busy === "account" ? <CtaSpinner /> : "Sign up"}
+              {busy === "account" ? <CtaSpinner /> : "Create Account"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className={cn(SCREEN_PRIMARY_CTA_CLASS, SCREEN_PRIMARY_OUTLINE_CTA_CLASS)}
+              disabled={busy !== null}
+              aria-busy={busy === "signin"}
+              aria-label={busy === "signin" ? "Opening sign in" : "Sign In"}
+              onClick={handleSignIn}
+            >
+              {busy === "signin" ? <CtaSpinner /> : "Sign In"}
             </Button>
             <Button
               type="button"

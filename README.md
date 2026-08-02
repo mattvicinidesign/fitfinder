@@ -171,8 +171,27 @@ Quick summary:
 4. Deploy, then add your production URL to Supabase Auth redirect URLs (`/auth/callback`).
 5. Push to `main` for auto-deploys after the project is connected.
 
-**OpenAI** (`OPENAI_API_KEY`) is a Supabase Edge Function secret, not a Vercel env var:
+### OpenAI / AI setup
+
+Edge Functions (`analyze`, `parse-resume`, `parse-job`, `review-resume`, `generate-proposal`, etc.) call OpenAI via `supabase/functions/_shared/openai.ts`. The key is a **Supabase secret**, not a Vercel env var.
+
+| Item | Value |
+| ---- | ----- |
+| Local key file | `supabase/.env` (gitignored — never commit) |
+| Hosted secrets | Supabase Edge Function secrets (`OPENAI_API_KEY`, optional `OPENAI_MODEL`) |
+| Model | `OPENAI_MODEL` if set; otherwise **`gpt-4o-mini`** |
+| Billing plan | **Pay as you go** |
+| Credit balance | **$5.00** (as of Sun Aug 2, 2026) |
+| Auto-reload | **OFF** — API stops when balance hits $0 |
+
+**Symptoms when out of credit / billing inactive:** Analyze fit (and other AI calls) fail with a user-facing *"AI service temporarily unavailable"* message (`safe_error.ts` maps OpenAI errors, including `billing_not_active` / no credits).
+
+**Top up / check billing:** [platform.openai.com/account/billing](https://platform.openai.com/account/billing)
+
+**Rotate or push secrets** (from repo root; do not paste keys into docs or commits):
 
 ```bash
 supabase secrets set --env-file ./supabase/.env
 ```
+
+`supabase/.env` should define at least `OPENAI_API_KEY=…` and optionally `OPENAI_MODEL=…`.

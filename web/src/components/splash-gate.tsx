@@ -12,6 +12,7 @@ import { SplashScreen } from "@/components/splash-screen";
 import { LaunchOverlayFrame } from "@/components/launch-overlay-frame";
 import { SplashQaPanel } from "@/components/splash-qa-panel";
 import { WelcomeScreen } from "@/components/welcome-screen";
+import { SignInScreen } from "@/components/screens/sign-in-screen";
 import { SignUpScreen } from "@/components/screens/sign-up-screen";
 import {
   DEFAULT_APP_ROUTE,
@@ -42,7 +43,13 @@ export {
   WELCOME_STORAGE_KEY as WELCOME_SESSION_KEY,
 } from "@/lib/app-session";
 
-type SplashGatePhase = "pending" | "splash" | "welcome" | "signup" | "ready";
+type SplashGatePhase =
+  | "pending"
+  | "splash"
+  | "welcome"
+  | "signup"
+  | "signin"
+  | "ready";
 type SplashCompleteMode = "first" | "returning";
 
 function isSignupQueryRequested(): boolean {
@@ -259,9 +266,30 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
     setPhase("signup");
   }, []);
 
+  const handleSignInFromWelcome = useCallback(() => {
+    markOnboardingWelcomeRestored();
+    setPhase("signin");
+  }, []);
+
   const handleBackToWelcome = useCallback(() => {
     markOnboardingWelcomeRestored();
     setPhase("welcome");
+  }, []);
+
+  const handleSignInFromSignup = useCallback(() => {
+    markOnboardingWelcomeRestored();
+    setPhase("signin");
+  }, []);
+
+  const handleCreateAccountFromSignIn = useCallback(() => {
+    saveOnboardingProgress({ phase: "signup", signupStep: 0 });
+    setPhase("signup");
+  }, []);
+
+  const handleSignedIn = useCallback(() => {
+    markWelcomeComplete();
+    clearQaLaunchSimulation();
+    setPhase("ready");
   }, []);
 
   const handleDismissSignup = useCallback(() => {
@@ -289,6 +317,7 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
         <WelcomeScreen
           onExit={beginWelcomeExit}
           onSignUp={handleSignUpFromWelcome}
+          onSignIn={handleSignInFromWelcome}
         />
       ) : null}
       {mounted && resolvedPhase === "signup" ? (
@@ -297,6 +326,17 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
             embedded
             onBackToWelcome={signupReturnTo ? undefined : handleBackToWelcome}
             onDismiss={signupReturnTo ? handleDismissSignup : undefined}
+            onSignIn={handleSignInFromSignup}
+          />
+        </LaunchOverlayFrame>
+      ) : null}
+      {mounted && resolvedPhase === "signin" ? (
+        <LaunchOverlayFrame className="overflow-hidden">
+          <SignInScreen
+            embedded
+            onBackToWelcome={handleBackToWelcome}
+            onCreateAccount={handleCreateAccountFromSignIn}
+            onSignedIn={handleSignedIn}
           />
         </LaunchOverlayFrame>
       ) : null}

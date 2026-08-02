@@ -24,7 +24,7 @@ function clearFitFinderStorage(storage: Storage): void {
 /**
  * Delete the signed-in account on the server, wipe local app state, and sign out.
  * Caller should hard-navigate to the launch route so SplashGate shows Welcome
- * (Sign up / Use as a guest) again.
+ * (Create Account / Sign In / Use as a guest) again.
  */
 export async function deleteAccount(): Promise<{ error?: string }> {
   try {
@@ -56,7 +56,7 @@ export async function deleteAccount(): Promise<{ error?: string }> {
   return {};
 }
 
-/** Full reload onto the launch route so Sign up / Use as guest is shown. */
+/** Full reload onto the launch route so Create Account / Sign In is shown. */
 export function redirectAfterAccountDeletion(): void {
   if (typeof window === "undefined") return;
   window.location.replace(DEFAULT_APP_ROUTE);
