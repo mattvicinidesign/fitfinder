@@ -61,6 +61,13 @@ post_install do |installer|
         swift_flags << '-suppress-warnings'
       end
       config.build_settings['OTHER_SWIFT_FLAGS'] = swift_flags
+
+      # Cap Cordova / Capacitor ship double-quoted includes in framework headers;
+      # Xcode treats CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER as errors.
+      if %w[CapacitorCordova Capacitor].include?(target.name)
+        config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      end
     end
   end
 
@@ -81,9 +88,21 @@ post_install do |installer|
   require 'xcodeproj'
   app_project_path = File.join(__dir__, 'App.xcodeproj')
   app_project = Xcodeproj::Project.open(app_project_path)
+
+  # User Script Sandboxing blocks CocoaPods [CP] Embed Pods Frameworks rsync
+  # (mkstempat / file-write-create denials under DerivedData). Keep disabled.
+  app_project.build_configurations.each do |config|
+    config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+    # Project-level default is YES and elevates Cordova quoted-include warnings to errors.
+    config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+  end
+
   app_project.native_targets.each do |target|
     next unless target.name == 'App'
     target.build_configurations.each do |config|
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+      config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+
       flags = config.build_settings['OTHER_CFLAGS']
       flag_list =
         case flags
