@@ -327,6 +327,7 @@ export function SplashGate({ children }: { children: React.ReactNode }) {
             onBackToWelcome={signupReturnTo ? undefined : handleBackToWelcome}
             onDismiss={signupReturnTo ? handleDismissSignup : undefined}
             onSignIn={handleSignInFromSignup}
+            onSignedIn={handleSignedIn}
           />
         </LaunchOverlayFrame>
       ) : null}

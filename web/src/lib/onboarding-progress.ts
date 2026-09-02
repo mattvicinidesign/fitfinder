@@ -72,10 +72,10 @@ export function clearOnboardingProgress(): void {
   localStorage.removeItem(ONBOARDING_PROGRESS_KEY);
 }
 
-/** Signup started but email verification not sent yet — resume on cold start. */
+/** Signup started but not yet verified — resume on cold start, including OTP entry. */
 export function hasInProgressSignup(): boolean {
   const progress = loadOnboardingProgress();
-  return progress?.phase === "signup" && !progress.emailSent;
+  return progress?.phase === "signup";
 }
 
 /** Step 1 = General Details (signup wizard step 0 completed). */

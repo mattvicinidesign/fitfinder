@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { getAuthCallbackRedirectUrl } from "@/lib/auth-redirect";
+import { normalizeEmailOtpError } from "@/lib/email-otp";
 
 export const SIGNIN_COMPLETE_ROUTE = "/home";
 
@@ -29,7 +29,6 @@ export function isSignInUserNotFoundError(message: string | null | undefined): b
  */
 export async function sendSignInVerificationEmail(input: {
   email: string;
-  redirectNext?: string;
 }): Promise<{ error: string | null; accountNotFound: boolean }> {
   const supabase = createClient();
   const trimmedEmail = input.email.trim();
@@ -43,14 +42,9 @@ export async function sendSignInVerificationEmail(input: {
     await supabase.auth.signOut();
   }
 
-  const emailRedirectTo = getAuthCallbackRedirectUrl(
-    input.redirectNext ?? SIGNIN_COMPLETE_ROUTE,
-  );
-
   const { error } = await supabase.auth.signInWithOtp({
     email: trimmedEmail,
     options: {
-      emailRedirectTo,
       shouldCreateUser: false,
     },
   });
@@ -63,7 +57,7 @@ export async function sendSignInVerificationEmail(input: {
     return { error: ACCOUNT_NOT_FOUND_MESSAGE, accountNotFound: true };
   }
 
-  return { error: error.message, accountNotFound: false };
+  return { error: normalizeEmailOtpError(error.message), accountNotFound: false };
 }
 
 /** Verify the 6-digit email OTP for an existing account. */
@@ -86,5 +80,5 @@ export async function verifySignInOtp(input: {
     return { error: ACCOUNT_NOT_FOUND_MESSAGE, accountNotFound: true };
   }
 
-  return { error: error.message, accountNotFound: false };
+  return { error: normalizeEmailOtpError(error.message), accountNotFound: false };
 }

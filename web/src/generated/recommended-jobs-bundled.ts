@@ -8,19 +8,9 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "company": "Uber",
     "location": "New York, NY, San Francisco, CA, Seattle, WA",
     "level": "Senior Level",
-    "publishedAt": "2026-07-30T00:45:19Z",
+    "publishedAt": "2026-08-05T00:35:03Z",
     "applyUrl": "https://www.themuse.com/jobs/uber/senior-product-designer-autonomous-mobility-delivery-experience",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
-  },
-  {
-    "id": "22013530",
-    "title": "Senior UX Designer – League of Legends (12 Month Contract)",
-    "company": "Riot Games",
-    "location": "Dublin, Ireland",
-    "level": "Senior Level",
-    "publishedAt": "2026-07-30T23:30:11Z",
-    "applyUrl": "https://www.themuse.com/jobs/riotgames/senior-ux-designer-league-of-legends-12-month-contract-ce148d",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
   },
   {
     "id": "14137481",
@@ -33,24 +23,74 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000194/small_logo.png"
   },
   {
-    "id": "22013529",
-    "title": "Senior UI Designer – League of Legends (12-Month Contract)",
-    "company": "Riot Games",
-    "location": "Dublin, Ireland",
+    "id": "22110450",
+    "title": "Experience Design (XD) III, Product Design - Bank of America Experience Design",
+    "company": "Bank of America",
+    "location": "Boston, MA, Charlotte, NC, New York, NY, Pennington, NJ, San Francisco, CA, Seattle, WA",
     "level": "Senior Level",
-    "publishedAt": "2026-07-30T23:30:11Z",
-    "applyUrl": "https://www.themuse.com/jobs/riotgames/senior-ui-designer-league-of-legends-12month-contract-8ce572",
+    "publishedAt": "2026-08-30T00:07:15Z",
+    "applyUrl": "https://www.themuse.com/jobs/bankofamerica/experience-design-xd-iii-product-design-bank-of-america-experience-design",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
+  },
+  {
+    "id": "22094373",
+    "title": "Visual Designer - Wild Rift (Contract)",
+    "company": "Riot Games",
+    "location": "Shanghai, China",
+    "level": "Senior Level",
+    "publishedAt": "2026-08-28T18:50:06Z",
+    "applyUrl": "https://www.themuse.com/jobs/riotgames/visual-designer-wild-rift-contract",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
   },
   {
-    "id": "21098533",
-    "title": "Associate Creative Director, Design",
-    "company": "GlossGenius",
-    "location": "New York, NY",
+    "id": "22100458",
+    "title": "Director, Frontline Marketing, CBL",
+    "company": "The Coca-Cola Company",
+    "location": "Beijing, China",
     "level": "Senior Level",
-    "publishedAt": "2026-07-22T23:38:27Z",
-    "applyUrl": "https://www.themuse.com/jobs/glossgenius/associate-creative-director-design",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000202/small_logo.png"
+    "publishedAt": "2026-08-27T01:06:57Z",
+    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/director-frontline-marketing-cbl-d2dea5",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
+  },
+  {
+    "id": "22098151",
+    "title": "Manufacturing Engineer, Raptor Turbomachinery",
+    "company": "SpaceX",
+    "location": "El Segundo, CA",
+    "level": "Mid Level",
+    "publishedAt": "2026-08-26T19:24:45Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/manufacturing-engineer-raptor-turbomachinery-e35a43",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "22078844",
+    "title": "Experience Design (XD) III, Design Research - Bank of America Experience Design",
+    "company": "Bank of America",
+    "location": "Boston, MA, Charlotte, NC, New York, NY, Pennington, NJ, San Francisco, CA, Seattle, WA",
+    "level": "Senior Level",
+    "publishedAt": "2026-08-19T21:22:46Z",
+    "applyUrl": "https://www.themuse.com/jobs/bankofamerica/experience-design-xd-iii-design-research-bank-of-america-experience-design",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
+  },
+  {
+    "id": "21965140",
+    "title": "Sr. Electrical Hardware Engineer, AI Satellites (Starmind)",
+    "company": "SpaceX",
+    "location": "Lockhart, TX",
+    "level": "Senior Level",
+    "publishedAt": "2026-08-12T23:38:37Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/sr-electrical-hardware-engineer-ai-satellites-starmind",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
+  },
+  {
+    "id": "22053208",
+    "title": "Sr. Equipment Engineer, Insource Manufacturing",
+    "company": "SpaceX",
+    "location": "Lockhart, TX",
+    "level": "Senior Level",
+    "publishedAt": "2026-08-11T23:36:46Z",
+    "applyUrl": "https://www.themuse.com/jobs/spacex/sr-equipment-engineer-insource-manufacturing",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
     "id": "21985704",
@@ -93,16 +133,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
-    "id": "21576522",
-    "title": "Graphic Designer",
-    "company": "SpaceX",
-    "location": "El Segundo, CA",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-29T18:37:17Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/graphic-designer-b8655e",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
     "id": "21870678",
     "title": "Process Technician, Injection Molding (Starlink) - 2nd shift",
     "company": "SpaceX",
@@ -110,16 +140,6 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "level": "Mid Level",
     "publishedAt": "2026-06-26T18:34:29Z",
     "applyUrl": "https://www.themuse.com/jobs/spacex/process-technician-injection-molding-starlink-2nd-shift",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
-  },
-  {
-    "id": "21429881",
-    "title": "Manufacturing Engineer, Raptor Turbomachinery",
-    "company": "SpaceX",
-    "location": "El Segundo, CA",
-    "level": "Mid Level",
-    "publishedAt": "2026-06-26T18:34:23Z",
-    "applyUrl": "https://www.themuse.com/jobs/spacex/manufacturing-engineer-raptor-turbomachinery-7927c8",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000190/small_logo.png"
   },
   {
@@ -153,53 +173,33 @@ export const BUNDLED_RECOMMENDED_JOBS: RecommendedJob[] = [
     "logoUrl": "https://assets.themuse.com/uploaded/companies/12145/small_logo.png?v=99e0494ccb185d77ecfeca617e25b8e7f7da7b92ff38f7c52d20148a2be3a74f"
   },
   {
-    "id": "21811147",
-    "title": "Product Designer II - Uber Eats, Offers Consumer Experiences",
-    "company": "Uber",
-    "location": "New York, NY, San Francisco, CA",
-    "level": "Mid Level",
-    "publishedAt": "2026-07-07T00:23:40Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/product-designer-ii-uber-eats-offers-consumer-experiences",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
-  },
-  {
-    "id": "22015561",
-    "title": "Senior Director, Experience Design & Connection Planning - Sparkling Flavors",
-    "company": "The Coca-Cola Company",
-    "location": "Shanghai, China",
-    "level": "Senior Level",
-    "publishedAt": "2026-07-31T23:44:50Z",
-    "applyUrl": "https://www.themuse.com/jobs/thecocacolacompany/senior-director-experience-design-connection-planning-sparkling-flavors-51d4f3",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000027/small_logo.png?v=1a28bf3a5524f9729449a654609f2ac096c98878478b96e642088e89962f7491"
-  },
-  {
-    "id": "21880065",
-    "title": "Head of Safety Support Operations, Community Operations",
-    "company": "Uber",
-    "location": "Bangalore, India, Hyderabad, India",
-    "level": "Senior Level",
-    "publishedAt": "2026-07-31T00:31:48Z",
-    "applyUrl": "https://www.themuse.com/jobs/uber/head-of-safety-support-operations-community-operations",
-    "logoUrl": "https://assets.themuse.com/uploaded/companies/61/small_logo.png?v=b82887fc031783c73c6f38115fbe93c547b8159f795e6db9882f519bb7ccd44c"
-  },
-  {
-    "id": "21727110",
-    "title": "UI Designer - Unpublished R&D Product (Contract)",
+    "id": "22014173",
+    "title": "UX Designer II - Teamfight Tactics (Contract)",
     "company": "Riot Games",
-    "location": "Guangzhou, China",
+    "location": "Singapore",
     "level": "Mid Level",
-    "publishedAt": "2026-07-24T18:30:34Z",
-    "applyUrl": "https://www.themuse.com/jobs/riotgames/ui-designer-unpublished-rd-product-contract",
+    "publishedAt": "2026-08-28T18:50:05Z",
+    "applyUrl": "https://www.themuse.com/jobs/riotgames/ux-designer-ii-teamfight-tactics-contract",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
   },
   {
-    "id": "21727105",
-    "title": "Game Designer, Combat - Unpublished R&D Product (Contract)",
+    "id": "22013530",
+    "title": "Senior UX Designer – League of Legends (12 Month Contract)",
     "company": "Riot Games",
-    "location": "Guangzhou, China",
-    "level": "Mid Level",
-    "publishedAt": "2026-07-24T18:30:32Z",
-    "applyUrl": "https://www.themuse.com/jobs/riotgames/game-designer-combat-unpublished-rd-product-contract-59480d",
+    "location": "Dublin, Ireland",
+    "level": "Senior Level",
+    "publishedAt": "2026-08-14T18:35:56Z",
+    "applyUrl": "https://www.themuse.com/jobs/riotgames/senior-ux-designer-league-of-legends-12-month-contract-ce148d",
+    "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
+  },
+  {
+    "id": "22030544",
+    "title": "Senior User Experience Designer, Accessibility - Central QA Ops",
+    "company": "Riot Games",
+    "location": "Los Angeles, CA",
+    "level": "Senior Level",
+    "publishedAt": "2026-08-28T18:49:55Z",
+    "applyUrl": "https://www.themuse.com/jobs/riotgames/senior-user-experience-designer-accessibility-central-qa-ops",
     "logoUrl": "https://assets.themuse.com/uploaded/companies/15000199/small_logo.png"
   }
 ] as RecommendedJob[];

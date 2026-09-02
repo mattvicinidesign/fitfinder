@@ -30,10 +30,10 @@ import { clearOnboardingProgress } from "@/lib/onboarding-progress";
 import {
   clearAuthDeepLinkPending,
   DEFAULT_APP_ROUTE,
-  markAuthDeepLinkPending,
   markLaunchFlowComplete,
   markWelcomeComplete,
 } from "@/lib/app-session";
+import { useResendCooldown } from "@/lib/use-resend-cooldown";
 import { navigateApp } from "@/lib/navigate-app";
 import { safeBottomCta, safeTopTitle } from "@/lib/safe-area";
 import {
@@ -107,6 +107,11 @@ export function SignInScreen({
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [busy, setBusy] = useState(false);
+  const {
+    remaining: resendRemaining,
+    active: resendActive,
+    start: startResendCooldown,
+  } = useResendCooldown();
 
   const trimmedName = displayName.trim();
   const trimmedEmail = email.trim();
@@ -145,10 +150,8 @@ export function SignInScreen({
     }
 
     setBusy(true);
-    markAuthDeepLinkPending();
     const { error, accountNotFound } = await sendSignInVerificationEmail({
       email: trimmedEmail,
-      redirectNext: SIGNIN_COMPLETE_ROUTE,
     });
     setBusy(false);
 
@@ -164,6 +167,7 @@ export function SignInScreen({
 
     setOtp("");
     setPhase("otp");
+    startResendCooldown();
   }
 
   async function handleVerifyCode() {
@@ -193,11 +197,11 @@ export function SignInScreen({
   }
 
   async function handleResend() {
+    if (resendActive) return;
+
     setBusy(true);
-    markAuthDeepLinkPending();
     const { error, accountNotFound } = await sendSignInVerificationEmail({
       email: trimmedEmail,
-      redirectNext: SIGNIN_COMPLETE_ROUTE,
     });
     setBusy(false);
 
@@ -211,6 +215,7 @@ export function SignInScreen({
       return;
     }
 
+    startResendCooldown();
     toast.success("Code sent again.");
   }
 
@@ -289,8 +294,7 @@ export function SignInScreen({
           </h1>
           <p className="mt-1 text-[15px] leading-snug text-muted-foreground">
             Enter the code we sent to{" "}
-            <span className="font-medium text-foreground">{trimmedEmail}</span>
-            , or open the link in the email.
+            <span className="font-medium text-foreground">{trimmedEmail}</span>.
           </p>
           <div className={cn("mt-5 flex flex-col", FORM_FIELDS_SECTION_GAP_CLASS)}>
             <AccountField
@@ -309,11 +313,21 @@ export function SignInScreen({
           </div>
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || resendActive}
             onClick={() => void handleResend()}
             className="mt-6 text-[15px] font-medium text-primary transition-colors hover:text-primary/80 disabled:opacity-50"
           >
-            Resend code
+            {resendActive
+              ? `Resend code in ${resendRemaining}s`
+              : "Resend code"}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={handleBack}
+            className="mt-3 text-[15px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+          >
+            Use a different email
           </button>
         </StickyScreenBody>
         <StickyBottomCta
@@ -389,7 +403,7 @@ export function SignInScreen({
             aria-busy={busy}
             onClick={() => void handleSendCode()}
           >
-            {busy ? <CtaSpinner /> : "Continue"}
+            {busy ? <CtaSpinner /> : "Send Code"}
           </Button>
         </StickyBottomCta>
       </div>

@@ -1,11 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { CheckCircle2, X } from "lucide-react";
 import { AppFrame } from "@/components/app-shell/app-frame";
-import { CheckEmailIllustration } from "@/components/check-email-illustration";
+import { Button } from "@/components/ui/button";
+import { CtaSpinner } from "@/components/ui/cta-spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CircleBackButton, circleBackButtonClass } from "@/components/ui/circle-back-button";
 import {
   FORM_FIELD_GROUP_CLASS,
   FORM_FIELD_LABEL_CLASS,
@@ -20,20 +23,31 @@ import {
 import { LocationSelect } from "@/components/location-select";
 import { TimezoneSelect } from "@/components/timezone-select";
 import {
-  markAuthDeepLinkPending,
+  clearAuthDeepLinkPending,
+  DEFAULT_APP_ROUTE,
   markLaunchFlowComplete,
   markWelcomeComplete,
 } from "@/lib/app-session";
 import { isNativePlatform } from "@/lib/platform";
 import { emptyUserProfile, saveUserProfile, type UserProfile } from "@/lib/profile";
-import { savePendingSignup, SIGNUP_COMPLETE_ROUTE } from "@/lib/pending-signup";
+import {
+  applyPendingSignupProfile,
+  savePendingSignup,
+  SIGNUP_COMPLETE_ROUTE,
+} from "@/lib/pending-signup";
 import { ensureGuestSession } from "@/lib/ensure-guest-session";
 import { fetchLatestUserResume } from "@/lib/resume-documents";
+import { navigateApp } from "@/lib/navigate-app";
 import {
+  clearOnboardingProgress,
   loadOnboardingProgress,
   saveOnboardingProgress,
 } from "@/lib/onboarding-progress";
-import { sendSignupVerificationEmail } from "@/lib/signup-auth";
+import {
+  sendSignupVerificationEmail,
+  verifySignupOtp,
+} from "@/lib/signup-auth";
+import { useResendCooldown } from "@/lib/use-resend-cooldown";
 import {
   canContinueSignupStep,
   firstIncompleteSignupStep,
@@ -45,10 +59,16 @@ import {
   SIGNUP_SEARCH_STAGE_STEP_INDEX,
 } from "@/lib/signup-flow";
 import { guessProfileTimezone } from "@/lib/timezone-options";
-import { safeBottomOverlay, safeTopFloating, safeTopHomeHero } from "@/lib/safe-area";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { circleBackButtonClass } from "@/components/ui/circle-back-button";
+import { PRIMARY_FLOATING_CTA_CLASS } from "@/components/resume-upload-styles";
+import {
+  screenShellClass,
+  StickyBottomCta,
+  StickyScreenBody,
+  StickyScreenHeader,
+} from "@/components/ui/sticky-bottom-cta";
+import { safeBottomCta, safeTopTitle } from "@/lib/safe-area";
 
 function AccountField({
   id,
@@ -57,6 +77,9 @@ function AccountField({
   placeholder,
   value,
   onChange,
+  inputMode,
+  autoComplete,
+  maxLength,
 }: {
   id: string;
   label: string;
@@ -64,6 +87,9 @@ function AccountField({
   placeholder?: string;
   value: string;
   onChange: (value: string) => void;
+  inputMode?: ComponentProps<"input">["inputMode"];
+  autoComplete?: string;
+  maxLength?: number;
 }) {
   return (
     <div className={FORM_FIELD_GROUP_CLASS}>
@@ -75,6 +101,9 @@ function AccountField({
         type={type}
         placeholder={placeholder}
         value={value}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
+        maxLength={maxLength}
         onChange={(e) => onChange(e.target.value)}
         className={FORM_FIELD_INPUT_BORDERLESS_CLASS}
       />
@@ -126,30 +155,6 @@ function CompletionChecklist({
   );
 }
 
-function EmailSentState({ email }: { email: string }) {
-  return (
-    <div
-      className={`flex h-full min-h-0 flex-col px-6 ${safeBottomOverlay} ${safeTopHomeHero}`}
-    >
-      <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <div className="mb-8 flex h-[160px] w-[260px] max-w-full items-center justify-center sm:h-[180px]">
-          <CheckEmailIllustration />
-        </div>
-
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight">
-          Check your email
-        </h1>
-        <p className="mt-4 max-w-sm text-[16px] leading-relaxed text-muted-foreground">
-          We sent a sign-up link to{" "}
-          <span className="font-medium text-foreground">{email}</span>. Open it
-          to finish creating your account — your preferences are saved and ready
-          to go.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function readInitialSignupState() {
   const saved = loadOnboardingProgress();
   const baseProfile = emptyUserProfile();
@@ -188,6 +193,7 @@ export function SignUpScreen({
   onBackToWelcome,
   onDismiss,
   onSignIn,
+  onSignedIn,
 }: {
   embedded?: boolean;
   onBackToWelcome?: () => void;
@@ -195,15 +201,25 @@ export function SignUpScreen({
   onDismiss?: () => void;
   /** Switch to returning-user Sign In (does not create a new account). */
   onSignIn?: () => void;
+  /** Exit launch overlay after a successful OTP verify. */
+  onSignedIn?: () => void;
 } = {}) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [initial] = useState(readInitialSignupState);
   const [profile, setProfile] = useState<UserProfile>(initial.profile);
   const [email, setEmail] = useState(initial.email);
   const [step, setStep] = useState(initial.step);
   const [busy, setBusy] = useState(false);
   const [emailSent, setEmailSent] = useState(initial.emailSent);
+  const [otp, setOtp] = useState("");
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const [resumeBusy, setResumeBusy] = useState(false);
+  const {
+    remaining: resendRemaining,
+    active: resendActive,
+    start: startResendCooldown,
+  } = useResendCooldown();
   const progressRef = useRef({
     signupStep: initial.step,
     email: initial.email,
@@ -308,7 +324,7 @@ export function SignUpScreen({
       {
         title: "You're all set",
         subtitle:
-          "Tap below and we'll email you a link to finish creating your account.",
+          "Tap below and we'll email you a verification code to finish creating your account.",
         content: (
           <CompletionChecklist resumeUploaded={Boolean(resumeFileName)} />
         ),
@@ -354,7 +370,7 @@ export function SignUpScreen({
     return false;
   }
 
-  async function finishSignUp() {
+  async function handleSendCode() {
     const incompleteStep = firstIncompleteSignupStep(profile, email);
     if (incompleteStep !== null) {
       setStep(incompleteStep);
@@ -372,17 +388,14 @@ export function SignUpScreen({
     };
 
     setBusy(true);
-    markLaunchFlowComplete();
     savePendingSignup({ email: trimmedEmail, profile: signupProfile });
 
     // Best-effort persist for the guest session (intent fields included).
     void saveUserProfile(signupProfile, { markComplete: true });
 
-    markAuthDeepLinkPending();
     const { error } = await sendSignupVerificationEmail({
       email: trimmedEmail,
       profile: signupProfile,
-      redirectNext: SIGNUP_COMPLETE_ROUTE,
     });
     setBusy(false);
 
@@ -391,14 +404,89 @@ export function SignUpScreen({
       return;
     }
 
-    markWelcomeComplete();
+    setOtp("");
     setEmailSent(true);
+    startResendCooldown();
     persistProgress({
       emailSent: true,
       signupStep: SIGNUP_COMPLETION_STEP_INDEX,
       email: trimmedEmail,
       profile: signupProfile,
     });
+  }
+
+  function finishSignUp() {
+    markLaunchFlowComplete();
+    markWelcomeComplete();
+    clearAuthDeepLinkPending();
+    clearOnboardingProgress();
+    onSignedIn?.();
+
+    if (
+      pathname === DEFAULT_APP_ROUTE ||
+      pathname === SIGNUP_COMPLETE_ROUTE
+    ) {
+      return;
+    }
+
+    navigateApp(SIGNUP_COMPLETE_ROUTE, router, "replace");
+  }
+
+  async function handleVerifyCode() {
+    const trimmedEmail = email.trim();
+    const trimmedOtp = otp.trim();
+    if (trimmedOtp.length < 6) {
+      toast.error("Enter the verification code from your email.");
+      return;
+    }
+
+    setBusy(true);
+    const { error } = await verifySignupOtp({
+      email: trimmedEmail,
+      token: trimmedOtp,
+    });
+    setBusy(false);
+
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    await applyPendingSignupProfile();
+    finishSignUp();
+  }
+
+  async function handleResend() {
+    if (resendActive) return;
+
+    const trimmedEmail = email.trim();
+    setBusy(true);
+    const { error } = await sendSignupVerificationEmail({
+      email: trimmedEmail,
+      profile,
+    });
+    setBusy(false);
+
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    startResendCooldown();
+    toast.success("Code sent again.");
+  }
+
+  function handleBackFromOtp() {
+    setOtp("");
+    setEmailSent(false);
+    persistProgress({ emailSent: false });
+  }
+
+  function handleUseDifferentEmail() {
+    setOtp("");
+    setEmailSent(false);
+    setStep(0);
+    persistProgress({ emailSent: false, signupStep: 0 });
   }
 
   function handleStepChange(nextStep: number) {
@@ -411,6 +499,11 @@ export function SignUpScreen({
     setStep(nextStep);
     persistProgress({ signupStep: nextStep });
   }
+
+  useEffect(() => {
+    if (!initial.emailSent) return;
+    startResendCooldown();
+  }, [initial.emailSent, startResendCooldown]);
 
   useEffect(() => {
     void (async () => {
@@ -469,31 +562,98 @@ export function SignUpScreen({
 
   const continueLabel =
     step === SIGNUP_RESUME_STEP_INDEX && !resumeFileName ? "Skip" : "Continue";
+  const trimmedEmail = email.trim();
+  const trimmedOtp = otp.trim();
+  const canVerifyOtp = trimmedOtp.length >= 6;
 
   const wizard = emailSent ? (
-    <div className="relative h-full min-h-0">
-      {onDismiss ? (
+    <div className={screenShellClass}>
+      <StickyScreenHeader
+        className={`px-4 pb-3 ${embedded ? "pt-3" : safeTopTitle}`}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <CircleBackButton
+            onClick={handleBackFromOtp}
+            aria-label="Back"
+          />
+          {onDismiss ? (
+            <button
+              type="button"
+              aria-label="Close signup"
+              onClick={onDismiss}
+              className={cn(circleBackButtonClass)}
+            >
+              <X className="size-5 shrink-0" strokeWidth={2.25} aria-hidden />
+            </button>
+          ) : (
+            <span className="size-9 shrink-0" aria-hidden />
+          )}
+        </div>
+      </StickyScreenHeader>
+      <StickyScreenBody className="px-4 pb-24">
+        <h1 className="text-[26px] font-bold leading-tight tracking-tight">
+          Verify your email
+        </h1>
+        <p className="mt-1 text-[15px] leading-snug text-muted-foreground">
+          Enter the code we sent to{" "}
+          <span className="font-medium text-foreground">{trimmedEmail}</span>.
+        </p>
+        <div className={cn("mt-5 flex flex-col", FORM_FIELDS_SECTION_GAP_CLASS)}>
+          <AccountField
+            id="signup-otp"
+            label="Verification code"
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="6-digit code"
+            maxLength={8}
+            value={otp}
+            onChange={(value) =>
+              setOtp(value.replace(/\s+/g, "").replace(/[^\d]/g, ""))
+            }
+          />
+        </div>
         <button
           type="button"
-          aria-label="Close signup"
-          onClick={onDismiss}
-          className={cn(
-            circleBackButtonClass,
-            "absolute right-4 z-10",
-            safeTopFloating,
-          )}
+          disabled={busy || resendActive}
+          onClick={() => void handleResend()}
+          className="mt-6 text-[15px] font-medium text-primary transition-colors hover:text-primary/80 disabled:opacity-50"
         >
-          <X className="size-5 shrink-0" strokeWidth={2.25} aria-hidden />
+          {resendActive
+            ? `Resend code in ${resendRemaining}s`
+            : "Resend code"}
         </button>
-      ) : null}
-      <EmailSentState email={email.trim()} />
+        <button
+          type="button"
+          disabled={busy}
+          onClick={handleUseDifferentEmail}
+          className="mt-3 text-[15px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+        >
+          Use a different email
+        </button>
+      </StickyScreenBody>
+      <StickyBottomCta
+        variant="floating"
+        className={safeBottomCta}
+        inactive={busy || !canVerifyOtp}
+      >
+        <Button
+          type="button"
+          className={PRIMARY_FLOATING_CTA_CLASS}
+          disabled={busy || !canVerifyOtp}
+          aria-busy={busy}
+          onClick={() => void handleVerifyCode()}
+        >
+          {busy ? <CtaSpinner /> : "Continue"}
+        </Button>
+      </StickyBottomCta>
     </div>
   ) : (
     <OnboardingWizard
       steps={steps}
       step={step}
       onStepChange={handleStepChange}
-      onFinish={() => void finishSignUp()}
+      onFinish={() => void handleSendCode()}
       onBackFromStart={
         onDismiss
           ? onDismiss
@@ -504,7 +664,7 @@ export function SignUpScreen({
       onDismiss={onDismiss}
       busy={busy}
       canContinue={canContinue}
-      finishLabel="Sign up with email"
+      finishLabel="Send Code"
       busyLabel="Sending…"
       continueLabel={continueLabel}
       compactTopInset={embedded}
