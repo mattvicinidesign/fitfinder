@@ -10,7 +10,7 @@ with Next.js 16, TypeScript, Tailwind v4, and shadcn/ui. Wrapped for iOS with
 src/
 ├── app/
 │   ├── page.tsx              # entry redirect → /home
-│   ├── auth/callback/        # magic link + deep link (web + fitfinder://)
+│   ├── auth/callback/        # leftover magic-link / deep-link handler (web + fitfinder://)
 │   └── (app)/                # authenticated shell
 │       ├── layout.tsx        # AppShell (sidebar + bottom tabs)
 │       ├── analyze/
@@ -54,8 +54,8 @@ src/
 | `npm run cap:open` | Open Xcode |
 
 Capacitor loads the static `out/` bundle in a WKWebView. Auth on iOS uses
-client-side session handling in `AppShell` plus `fitfinder://auth-callback`
-deep links.
+client-side `signInWithOtp` + `verifyOtp` (6-digit email code). The
+`fitfinder://auth-callback` route remains for leftover link emails only.
 
 ## Setup
 

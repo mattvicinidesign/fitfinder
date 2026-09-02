@@ -64,14 +64,21 @@ npm install
 npm run cap:run                    # build static export, sync, open Xcode
 ```
 
+Enable **Anonymous sign-ins** for guest mode.
+
+Sign-in and sign-up are **email OTP**: the app calls `signInWithOtp`, the user
+enters the 6-digit code from email, then `verifyOtp({ type: "email" })` creates
+the session. No magic-link click is required. The hosted **Magic link** email
+template (Authentication → Email Templates) must include `{{ .Token }}` so the
+message shows the code — that template is not stored in this repo.
+
 Auth redirect URLs (localhost, Vercel `*.vercel.app`, iOS deep link) live in
-`supabase/config.toml`. After cloning or editing them, push to the hosted project:
+`supabase/config.toml` for leftover link emails and guest/OAuth redirects. After
+cloning or editing them, push to the hosted project:
 
 ```bash
 supabase config push --yes
 ```
-
-Enable **Anonymous sign-ins** for guest mode.
 
 After `cap sync`, open **`web/ios/App/App.xcworkspace`** in Xcode (not
 `App.xcodeproj`), then confirm the `fitfinder` URL scheme in
@@ -168,7 +175,8 @@ Quick summary:
 1. Import repo in Vercel with **Root Directory** = `web` (not `./`), **Framework Preset** = **Next.js**.
 2. Add env vars from your local `web/.env.local` (`NEXT_PUBLIC_SUPABASE_*`, `MUSE_API_KEY`, optional `SUPABASE_SERVICE_ROLE_KEY`).
 3. Do **not** set `CAPACITOR_BUILD` on Vercel.
-4. Deploy, then add your production URL to Supabase Auth redirect URLs (`/auth/callback`).
+4. Deploy. Email OTP sign-in is in-app (no magic-link click). Keep production
+   URLs in Supabase Auth redirect allow-lists for leftover link emails.
 5. Push to `main` for auto-deploys after the project is connected.
 
 ### OpenAI / AI setup

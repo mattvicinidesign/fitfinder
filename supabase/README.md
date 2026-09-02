@@ -80,8 +80,10 @@ supabase secrets set --env-file ./.env   # push OPENAI_API_KEY (+ optional OPENA
 For billing plan, credit balance, auto-reload, and out-of-credit symptoms, see
 **OpenAI / AI setup** in the [root README](../README.md#openai--ai-setup).
 
-After changing `config.toml` `[auth]` URLs, run `config push` so magic links from
-Vercel preview/production stop falling back to `localhost`.
+After changing `config.toml` `[auth]` URLs, run `config push` so leftover
+auth-link redirects from Vercel preview/production stop falling back to
+`localhost`. Sign-in itself uses email OTP (`{{ .Token }}` in the hosted
+Magic link template), not a click-through link.
 
 ### Hosted DB setup via Dashboard
 
